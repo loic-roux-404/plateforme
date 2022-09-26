@@ -1,0 +1,21 @@
+---
+dependency:
+  name: galaxy
+driver:
+  name: docker
+platforms:
+  - name: instance
+    image: jrei/systemd-ubuntu:focal
+    privileged: true
+    platform: amd64
+    pre_build_image: true
+    command: 'bash -c "sleep infinity"'
+    entrypoint: /sbin/init
+    tty: true
+    volumes:
+      - /sys/fs/cgroup:/sys/fs/cgroup:ro
+
+provisioner:
+  name: ansible
+verifier:
+  name: ansible

@@ -1,0 +1,8 @@
+---
+roles:
+    - src: loic-roux-404.kubeapps
+collections:
+    - name: community.general
+    - name: community.docker
+      version: 3.0.0-a2
+    - name: kubernetes.core

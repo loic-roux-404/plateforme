@@ -1,0 +1,30 @@
+---
+- name: Converge
+  hosts: all
+  vars:
+    docker_install_compose: False
+    # docker_apt_arch: 
+    #   "{{ {'aarch64':'arm64'}
+    #     .get(ansible_facts.architecture) | default('amd64') 
+    #   }}"
+    kubernetes_config_kubelet_configuration:
+      cgroupDriver: cgroupfs
+      failSwapOn: False
+  pre_tasks:
+    - name: Update apt cache.
+      apt: update_cache=true cache_valid_time=600
+      when: ansible_os_family == 'Debian'
+
+    - name: Ensure test dependencies are installed (Debian).
+      package: 
+        name: [iproute2,gpg-agent]
+        state: present
+      when: ansible_os_family == 'Debian'
+
+    - name: Gather facts.
+      action: setup
+
+  roles:
+    - role: geerlingguy.docker
+    - role: geerlingguy.kubernetes
+    - role: ../
