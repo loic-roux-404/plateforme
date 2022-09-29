@@ -1,5 +1,18 @@
 # Paas Tutorial
 
+L'objectif de ce tutoriel est de vous permettre de créer sur une petite machine ou sur un serveur personnel un PaaS (Platform as a service) vous permettant de déployer des applications en microservices. Celui-ci sera basé sur [kubernetes]() pour la conteneurisation et [Openshift]() pour l'interface et les automatisation autour.
+
+L'optique de cet outillage suivra :
+- le principle **d'immutable infrastructure** avec l'idée de recréer plutôt que de mettre à jour. Ainsi nous aurons recour à des iso linux déjà prêt pour déployer la plateforme **kubernetes** / **openshift** directement sur un serveur.
+
+- Le principe **d'infrastructure as code** en gardant toutes la spécification de notre infrastructure dans des configurations et scripts.
+
+Pour cela nous ferons appel à 
+- l'outil [`k3s`](https://k3s.io/) qui simplifie l'installation de kubernetes sur des machines ARM tout en restant compatible avec les architectures classiques X64.
+- ¨Packer pour créer des images iso de machine linux
+- Ansible pour provisioner cette image
+- Azure pour nous founir des serveurs accessible en ssh sur lequels nous pourrons mettre en ligne
+
 ## Requis
 
 > Ce tutoriel est dédié à Linux et Mac
@@ -34,10 +47,13 @@ On initialise un environnement virtuel pyrhon avec sa propre version de **python
 
 > Molecule est l'outil qui va nous permettre de vérifier que notre playbook fonctionne. Nous avons donc besoin de **docker** installé sur la machine.
 
+// TODO REMOVE
+> WARNING : une mise à jour est en cour de développement sur molecule afin de s'adapter à une nouveauté de docker-desktop. Pour activer la fonctionnalité de manière forcée nous devons renseigné la ligne `"default-cgroupns-mode": "host"` dans **Docker > Préférences > Docker Engine**
+
 ```bash
 conda create -n playbook-paas python=3.10
 conda activate playbook-paas
-pip install pip install molecule molecule-docker==2.0.0
+pip install pip install molecule[vagrant]
 ```
 
 Vérifier que tous fonctionne avec `ansible --version`.
@@ -64,8 +80,6 @@ Il s'agit d'un projet chargé de lancer plusieurs roles différents sur des mach
 Voici la suite complète de commande pour créer la structure du playbook.
 
 ```bash
-mkdir playbook
-cd playbook
 
 mkdir -p inventories/k8s-paas/group_vars
 touch inventories/k8s-paas/hosts
@@ -85,16 +99,21 @@ Ensuite dans `requirements.yaml` on importe les roles que l'on utilise en dépen
 > [playbook/requirements.yaml](playbook/requirements.yaml)
 ```yaml
 ---
-roles: []
+roles: 
+    - src: xanmanning.k3s
+
 collections:
     - name: community.general
     - name: community.docker
+      version: 3.0.0-a2
     - name: kubernetes.core
 ```
 
 Les **collections** vont servir à ajouter des fonctionnalités à ansible et ses directives de tâches. Ici on ajoute des fonctionnalités pour manipuler facilement les commandes docker et kubernetes.
 
-Les **roles** correspondent à des suites de tâches qui vont installer et configurer un outil sur une machine. Ici on utilisera un [role kubernetes](https://github.com/geerlingguy/ansible-role-kubernetes) qui inclus comme dépendance ce role [docker](https://github.com/geerlingguy/ansible-role-docker).
+Les **roles** correspondent à des suites de tâches qui vont installer et configurer un outil sur une machine. Ici on utilisera un [role k3s](https://github.com/PyratLabs/ansible-role-k3s) qui s'occupe de configurer en fonction de nos paramètre le cluster k3s.
+
+> K3s n'utilise pas docker mais containerd pour utiliser les focntionnalités de container linux.
 
 Pour installer ces requirements maintenant on lance dans le dossier `playbook/` :
 
@@ -163,25 +182,29 @@ Nous allons d'abord définir l'utilisaton d'une distribution ubuntu pour install
 
 > [playbook/roles/kubeapps/molecule/default/molecule.yml](playbook/roles/kubeapps/molecule/default/molecule.yml)
 ```yaml
+---
 dependency:
   name: galaxy
 driver:
   name: docker
 platforms:
   - name: instance
-    # pour les utilisateurs de Mac M1 ou autre ARM
-    # build:
-    #   platform: "linux/arm64"
-    image: jrei/systemd-ubuntu:22.04
-    pre_build_image: true
+    image: geerlingguy/docker-${MOLECULE_DISTRO:-ubuntu2004}-ansible:latest
+    command: ${MOLECULE_DOCKER_COMMAND:-""}
     privileged: true
+    pre_build_image: true
+    tty: true
     volumes:
-      - /sys/fs/cgroup:/sys/fs/cgroup:ro
+      - /sys/fs/cgroup:/sys/fs/cgroup:rw
+      - /var/lib/docker
+    networks:
+      - name: k3snet
 
 provisioner:
   name: ansible
 verifier:
   name: ansible
+
 
 ```
 
@@ -189,11 +212,16 @@ Le playbook de test va ensuite nous permettre de vérifier la bonne execution du
 
 > [playbook/roles/kubeapps/molecule/default/converge.yml](playbook/roles/kubeapps/molecule/default/converge.yml)
 ```yaml
-
+---
 - name: Converge
   hosts: all
+  become: true
   vars:
-    docker_install_compose_plugin: False
+    molecule_is_test: true
+    k3s_build_cluster: false
+  roles:
+    - role: "{{ lookup('env', 'MOLECULE_PROJECT_DIRECTORY') | basename }}"
+
   pre_tasks:
     - name: Update apt cache.
       apt: update_cache=true cache_valid_time=600
@@ -201,20 +229,25 @@ Le playbook de test va ensuite nous permettre de vérifier la bonne execution du
 
     - name: Ensure test dependencies are installed (Debian).
       package: 
-        name: ['iproute2', 'gpg-agent']
+        name: [iproute2,gpg-agent]
         state: present
       when: ansible_os_family == 'Debian'
 
     - name: Gather facts.
       action: setup
 
-  roles:
-    - role: geerlingguy.docker
-    - role: geerlingguy.kubernetes
-    - role: ../
 ```
 
-Lancer le premier test avec `molecule test`. Vous pouvez aussi lancer `molecule test --destroy never` pour ensuite garder le container et debugger l'état du système après le provision ansible avec `docker exec -it "hash-container" sh`
+Lancer le premier test avec 
+
+
+```bash
+molecule test
+```
+
+Vous pouvez aussi lancer `molecule test --destroy never` pour ensuite garder le container et debugger l'état du système après le provision ansible avec `docker exec -it "hash-container obtenu via docker ps" sh`
+
+> Tips : En cas d'erreur `export ANSIBLE_STDOUT_CALLBACK=yaml` avant de lancer `molecule test` pour avoir un meilleur rendu de la possible erreur.
 
 ### E. Utiliser le rôle dans un playbook 
 

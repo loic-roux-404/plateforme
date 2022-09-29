@@ -1,6 +1,7 @@
 ---
-roles:
-    - src: loic-roux-404.kubeapps
+roles: 
+    - src: xanmanning.k3s
+
 collections:
     - name: community.general
     - name: community.docker
