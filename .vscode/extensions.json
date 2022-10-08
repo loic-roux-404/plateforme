@@ -1,0 +1,7 @@
+{
+    "recommendations": [
+        "4ops.packer",
+        "redhat.ansible",
+        "donjayamanne.python-extension-pack"
+    ]
+}
