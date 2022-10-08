@@ -283,15 +283,80 @@ Voici comment le flux de création d'une VM avec packer s'organise :
 
 ## 3. Créer votre définition de machine virtuelle avec packer
 
+0. Sources
+
+- https://www.packer.io/guides/packer-on-cicd/pipelineing-builds
+- https://www.packer.io/docs
+
 1. Initialisation des configurations de test
 
 - [packer](https://www.packer.io/) - 1.7+ 
 
-> INFO: recommandation : extension`4ops.packer`
+> INFO: recommandation : extension `4ops.packer`
 
 Pour l'installer [cliquez ici](https://www.packer.io/downloads)
 
-Initialisez un projet packer
+
+Vérification packer 1.8+ bien installé
+```sh
+packer --version
+```
+
+### Initialisez un projet packer
+
+```sh
+cd packer
+touch sources.pk.hcl
+touch ubuntu.pkr.hcl
+```
+
+> [packer/sources.pkr.hcl](packer/sources.pkr.hcl)
+
+```packer
+// In your sources file, you can create a configuration for a builder that you
+// want to reuse between multiple steps in the build. Just leave the source
+// and destination images out of this source, and set them specifically in each
+// step without having to set all of the other options over and over again.
+
+source "docker" "example" {
+  commit = true
+  // any other configuration you want for your Docker containers
+}
+```
+
+
+> [ubuntu.pkr.hcl](ubuntu.pkr.hcl)
+
+```packer
+build {
+  // Make sure to name your builds so that you can selectively run them one at
+  // a time.
+  name = "virtualbox-ovf"
+
+  source "source.docker.example" {
+    image = "ubuntu"
+  }
+
+  provisioner "shell" {
+    inline = ["echo example provisioner"]
+  }
+  provisioner "shell" {
+    inline = ["echo another example provisioner"]
+  }
+  provisioner "shell" {
+    inline = ["echo a third example provisioner"]
+  }
+
+  // Make sure that the output from your build can be used in the next build.
+  // In this example, we're tagging the Docker image so that the step-2
+  // builder can find it without us having to track it down in a manifest.
+  post-processor "docker-tag" {
+    repository = "ubuntu"
+    tag = ["step-1-output"]
+  }
+}
+
+```
 
 ```bash
 packer init
