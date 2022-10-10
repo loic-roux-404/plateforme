@@ -8,21 +8,53 @@ L'optique de cet outillage suivra :
 - Le principe **d'infrastructure as code** en gardant toutes la spécification de notre infrastructure dans des configurations et scripts.
 
 Pour cela nous ferons appel à 
-- l'outil [`k3s`](https://k3s.io/) qui simplifie l'installation de kubernetes sur des machines ARM tout en restant compatible avec les architectures classiques X64.
+- l'outil [`k3s`](https://k3s.io/) qui simplifie l'installation de kubernetes sur des machines ARM tout en restant compatible avec les architectures classiques X64. Il fourni par défaut des pods (containers en execution) pour inclure des fonctionnalités souvent recherchés sur ce type de configuration edge computing. (reverse proxy, configuration DNS...)
 - ¨Packer pour créer des images iso de machine linux
 - Ansible pour provisioner cette image
 - Azure pour nous founir des serveurs accessible en ssh sur lequels nous pourrons mettre en ligne
 
-## Requis
+## 0/ Installer les pré-requis
 
 > Ce tutoriel est dédié à Linux et Mac
 > Pour utilisateurs de windows il faut un [**WSL**](https://learn.microsoft.com/fr-fr/windows/wsl/install)
 
-- Docker [docker.com](htts://docker.com)
+- **Multipass** [multipass](https://multipass.run/docs/how-to-guides#heading--install-multipass-)
 
-- Conda : [docs.conda.io](https://docs.conda.io/en/latest/miniconda.html)
+Lancer une machine virtuelle ubuntu 22 avec
 
-Recommandations:
+```
+multipass launch --name primary --disk 4G
+```
+
+> INFO Nous n'allons pas utiliser Docker desktop pour nos tests car il a été déprécié comme runtime disponible dans les dernières versions de kubernetes.
+
+- **Conda** : [docs.conda.io](https://docs.conda.io/en/latest/miniconda.html)
+
+Installer le avec cette suite de commande, le setup est interactif et va vous demander de confirmer des localisations d'installation avec entrée et `y`. Accepter aussi de lancer le `conda init`.
+
+```bash
+wget https://repo.anaconda.com/miniconda/Miniconda3-py39_4.12.0-Linux-aarch64.sh -P /tmp
+chmod +x /tmp/Miniconda3-py39_4.12.0-Linux-aarch64.sh
+/tmp/Miniconda3-py39_4.12.0-Linux-aarch64.sh -p $HOME/miniconda
+```
+
+**Relancer votre shell** (`bash`)
+
+- **Docker for linux :** 
+
+```bash
+curl -fsSL https://get.docker.com -o /tmp/get-docker.sh
+chmod +x /tmp/get-docker.sh
+sh /tmp/get-docker.sh
+
+# Pouvoir utiliser un autre utilisateur que l'admin
+sudo apt-get install -y uidmap
+dockerd-rootless-setuptool.sh install
+
+echo 'export DOCKER_HOST=unix:///run/user/1000/docker.sock' >> ~/.bashrc
+```
+
+##### Recommandations:
 - extension vscode: `redhat.ansible`, `donjayamanne.python-extension-pack`
 
 > **Warning** Exotic shells like fish are not recommanded for molecule testing
@@ -50,11 +82,40 @@ On initialise un environnement virtuel pyrhon avec sa propre version de **python
 // TODO REMOVE
 > WARNING : une mise à jour est en cour de développement sur molecule afin de s'adapter à une nouveauté de docker-desktop. Pour activer la fonctionnalité de manière forcée nous devons renseigné la ligne `"default-cgroupns-mode": "host"` dans **Docker > Préférences > Docker Engine**
 
-```bash
-conda create -n playbook-paas python=3.10
-conda activate playbook-paas
-pip install pip install molecule[vagrant]
+
+Créer votre espace de travail
+
+> INFO Par défaut dans votre dossier utilisateur ubuntu vous pouvez utiliser les répertoires de votre système hôte dans votre machine virtuelle (mount) avec le dossier `~/Home`.
+
+```bash 
+mkdir paas-turorial/
 ```
+
+Logger vous sur la machine ubuntu
+
+```bash
+multipass shell
+```
+
+> DANGER suivez bien la suite du tutoriel dans la machine ubuntu.
+
+Ensuite pour créer l'environnement python avec ses dépendances
+
+```bash
+conda create -n playbook-paas python=3.9
+conda activate playbook-paas
+pip install ansible>=2.10.7 molecule[docker]
+```
+
+Pourquoi pas geler les versions des dépendances dans un fichier requirements pour qu'un autre environnement puisse facilement retrouver l'état de votre installation.
+
+```sh
+# ~/Home est un dossier de votre hôte (windows / mac)
+cd ~/Home/paas-turorial/
+echo "ansible==6.4.0\nmolecule==4.0.1\n" > requirements.txt
+```
+
+Le prochaine fois lorsque vous aurez recréer un nouvel environnement vous aurez juste à faire `pip install -r requirements.txt`
 
 Vérifier que tous fonctionne avec `ansible --version`.
 
@@ -96,16 +157,20 @@ Ensuite dans `requirements.yaml` on importe les roles que l'on utilise en dépen
 
 > Ansible galaxy est le gestionnaire de paquet pour importer des rôles et des collections ansible dans un playbook.
 
+> INFO pour l'instant il y a un bug avec galaxy nous empêchant de récupérer la bonne version de k3s. On peut forcer l'utilisation direct de git pour récupérer la version 3.3.0
+
 > [playbook/requirements.yaml](playbook/requirements.yaml)
 ```yaml
 ---
 roles: 
-    - src: xanmanning.k3s
+    - name: xanmanning.k3s
+      src: https://github.com/PyratLabs/ansible-role-k3s.git
+      version: v3.3.0
 
 collections:
     - name: community.general
     - name: community.docker
-      version: 3.0.0-a2
+      version: 3.0.2
     - name: kubernetes.core
 ```
 
@@ -160,7 +225,8 @@ Nous allons ensuite mettre à jour les métadonnées ansible galaxy avec notamme
 > Ligne 50 de [playbook/roles/kubeapps/meta/main.yml](playbook/roles/kubeapps/meta/main.yml)
 ```yaml
 dependencies:
-    - src: geerlingguy.kubernetes
+    - src: xanmanning.k3s
+      version: v3.3.0
 ```
 
 Ensuite vous devez obligatoirement définir ces informations sur les metas du rôles:
@@ -188,7 +254,7 @@ dependency:
 driver:
   name: docker
 platforms:
-  - name: instance
+  - name: k3s-node-0
     image: geerlingguy/docker-${MOLECULE_DISTRO:-ubuntu2004}-ansible:latest
     command: ${MOLECULE_DOCKER_COMMAND:-""}
     privileged: true
@@ -208,6 +274,8 @@ verifier:
 
 ```
 
+> WARNING : le `name` de la platform va nous servir d'addresse de l'hôte à laquelle ansible va pourvoir accèder en ssh dans notre environnement de test. Il est indispensable de le renseigner car le role k3s en a besoin pour bien créer les noeud du cluster kubernetes.
+
 Le playbook de test va ensuite nous permettre de vérifier la bonne execution du rôle et de ses dépendances.
 
 > [playbook/roles/kubeapps/molecule/default/converge.yml](playbook/roles/kubeapps/molecule/default/converge.yml)
@@ -218,19 +286,17 @@ Le playbook de test va ensuite nous permettre de vérifier la bonne execution du
   become: true
   vars:
     molecule_is_test: true
-    k3s_build_cluster: false
+    k3s_state: started
   roles:
     - role: "{{ lookup('env', 'MOLECULE_PROJECT_DIRECTORY') | basename }}"
 
   pre_tasks:
-    - name: Update apt cache.
-      apt: update_cache=true cache_valid_time=600
-      when: ansible_os_family == 'Debian'
 
     - name: Ensure test dependencies are installed (Debian).
       package: 
-        name: [iproute2,gpg-agent]
+        name: iptables
         state: present
+        update_cache: true
       when: ansible_os_family == 'Debian'
 
     - name: Gather facts.
@@ -238,12 +304,75 @@ Le playbook de test va ensuite nous permettre de vérifier la bonne execution du
 
 ```
 
-Lancer le premier test avec 
+Ensuite nous allons vérifier que k3s est bien prêt avec deux vérifications :
+- Vérification de la bonne initialisation du noeud **master**
 
+> [playbook/roles/kubeapps/molecule/default/verify.yml](playbook/roles/kubeapps/molecule/default/verify.yml)
+```yaml
+---
+- name: Verify
+  hosts: all
+  gather_facts: false
+  tasks:
+    - name: Get single node
+      command: kubectl get nodes
+      changed_when: false
+      register: kubernetes_nodes
 
-```bash
-molecule test
+    - name: Assert master node ready
+      when: '"Ready    master" in kubernetes_nodes.stdout'
+      ansible.builtin.assert:
+        that: true
+
+    - name: Print list of running nodes.
+      debug: var=kubernetes_nodes.stdout
+
 ```
+
+Et ensuite dans la suite du fichier on fait une vérification des pods de la suite k3s.
+
+Voici comment on procède.
+
+Le retour de l'utilisation du `command` est stocké sous forme de variable ou fact grâce à `register: <nom variable>`. Ensuite on pourra faire nos tests sur le retour de la commande.
+
+Notez bien l'utilisation des `filters ansible` hérité du langage de templating python `jinja` que l'on peut utiliser en ouvrant la moustache de ansible `"{{}}"`. Nous avons recour à :
+- `select('nom action', 'valeur à comparé')` qui nous permet de faire une selection des cases de la liste répondant à certaines conditions (cf fonction `filter()` en javascript / java...)
+- `reject`qui fait l'inverse d'un select en excluant les données d'une liste répondants à une condition
+- `length` qui permet d'avoir la taille d'une liste
+
+On accède également dans les `"{{}}"` aux fonctionnalités de python avec les méthodes rattachées aux type de données. Par exemple avec l'utilisation de `.split()` pour obtenir la liste des pods kubernetes dans une liste python.
+
+Enfin `assert` permet de déclencher une erreur ansible si certaines conditions ne sont pas remplies.
+
+```yaml
+    - name: Get all running pods.
+      command: kubectl get pods --all-namespaces
+      changed_when: false
+      register: kubernetes_pods
+
+    - name: Tranform pods stdout to list
+      ansible.builtin.set_fact:
+        pods: "{{ kubernetes_pods.stdout.split('\n') | list | 
+          reject('search', 'NAMESPACE') }}"
+
+    - name: Print list of pods.
+      debug: var=pods
+
+    - name: Get running pods
+      ansible.builtin.set_fact:
+        running: "{{ pods | select('search', 'Running') }}"
+    
+    - name: Assert required pods up
+      ansible.builtin.assert:
+        that:
+          - "{{ (pods | length) == 6 }}"
+          - "{{ (running | select('search', '1/1') | length) == 4 }}"
+          - "{{ (running | select('search', '2/2') | length) == 1 }}"
+          - "{{ (pods | select('search', 'Completed')) == 1 }}"
+
+```
+
+Lancer le test avec `molecule test` et voilà vous avez un playbook prêt à l'emploi en suivant rigoureusement le concept du test driven development pour plus de fiabilité.
 
 Vous pouvez aussi lancer `molecule test --destroy never` pour ensuite garder le container et debugger l'état du système après le provision ansible avec `docker exec -it "hash-container obtenu via docker ps" sh`
 
@@ -253,16 +382,28 @@ Vous pouvez aussi lancer `molecule test --destroy never` pour ensuite garder le 
 
 Nous allons créer le fichier `site.yaml` (dans le dossier `playbook/`) qui va se charger avec la commande `ansible-playbook` de lancer les rôles dans le bon ordre sur les machines.
 
+Cette étape servira pour utiliser le playbook dans la [partie 2](#2-créer-une-première-image-virtuelle-pour-le-test) avec packer
 
-> playbook/site.yaml
+> [playbook/site.yaml](playbook/site.yaml)
 ```yaml
 ---
-- hosts: k8s-paas
+- hosts: k3s-node-0
   gather_facts: True
   become: True
   become_user: root
   roles:
     - role: roles/kubeapps
+
+```
+
+Ensuite on définit la configuration des hôtes disponible pour notre playbook. On se contente ici de simplement se connecter en root sur localhost car nous allons provisionner sur un envionnement virtualisé en local plus tard.
+
+> [playbook/inventories/k8s-paas/hosts](playbook/inventories/k8s-paas/hosts)
+
+```ini
+[k3s-node-0]
+ansible_user=root
+ansible_host=localhost
 
 ```
 
@@ -281,28 +422,25 @@ Voici comment le flux de création d'une VM avec packer s'organise :
 1. Des **provisionners** sont ensuite joués pour configurer la machine. Nous utiliserons à cette étape le plugin ansible qui va nous permettre d'utiliser le travail précédent.
 1. Enfin des **post processors** vont effectuer des traitements après le build une fois l'iso rendu. Par exemple nous pourrons upload **l'artifact** sur un registre comme [HCP](https://cloud.hashicorp.com/products/packer) ou sur un service comme [Azure resource manager](https://learn.microsoft.com/fr-fr/azure/azure-resource-manager/management/overview)
 
-## 3. Créer votre définition de machine virtuelle avec packer
+### A. Sources
 
-0. Sources
+- [packer docs](https://www.packer.io/docs)
+- [packer on ci](https://www.packer.io/guides/packer-on-cicd/pipelineing-builds)
+- [authentication](https://www.packer.io/plugins/builders/azure#authentication-for-azure)
+- [Arm](https://www.packer.io/plugins/builders/azure/arm)
 
-- https://www.packer.io/guides/packer-on-cicd/pipelineing-builds
-- https://www.packer.io/docs
+### Installation
 
-1. Initialisation des configurations de test
-
-- [packer](https://www.packer.io/) - 1.7+ 
+Pour installer packer [c'est ici](https://www.packer.io/downloads)
 
 > INFO: recommandation : extension `4ops.packer`
 
-Pour l'installer [cliquez ici](https://www.packer.io/downloads)
-
-
-Vérification packer 1.8+ bien installé
+Vérification packer 1.8+ bien installé dans votre ligne de commande
 ```sh
 packer --version
 ```
 
-### Initialisez un projet packer
+### B. Initialisez un projet packer et
 
 ```sh
 cd packer
@@ -325,7 +463,7 @@ source "docker" "example" {
 ```
 
 
-> [ubuntu.pkr.hcl](ubuntu.pkr.hcl)
+> [packer/ubuntu.pkr.hcl](packer/ubuntu.pkr.hcl)
 
 ```packer
 build {
@@ -358,11 +496,8 @@ build {
 
 ```
 
+Toujours dans `packer/`
+
 ```bash
 packer init
 ```
-
-### Sources
-
-- [authentication](https://www.packer.io/plugins/builders/azure#authentication-for-azure)
-- [Arm](https://www.packer.io/plugins/builders/azure/arm)

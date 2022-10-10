@@ -1,9 +1,12 @@
 ---
 roles: 
-    - src: xanmanning.k3s
+    - name: xanmanning.k3s
+      src: https://github.com/PyratLabs/ansible-role-k3s.git
+      version: v3.3.0
+    # - src: geerlingguy.helm
 
 collections:
     - name: community.general
     - name: community.docker
-      version: 3.0.0-a2
+      version: 3.0.2
     - name: kubernetes.core

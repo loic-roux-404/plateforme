@@ -4,20 +4,16 @@
   become: true
   vars:
     molecule_is_test: true
-    k3s_build_cluster: false
+    k3s_state: started
+    k3s_become: true
+
   roles:
     - role: "{{ lookup('env', 'MOLECULE_PROJECT_DIRECTORY') | basename }}"
 
   pre_tasks:
-    - name: Update apt cache.
-      apt: update_cache=true cache_valid_time=600
-      when: ansible_os_family == 'Debian'
-
     - name: Ensure test dependencies are installed (Debian).
       package: 
-        name: [iproute2,gpg-agent]
+        name: iptables
         state: present
+        update_cache: true
       when: ansible_os_family == 'Debian'
-
-    - name: Gather facts.
-      action: setup

@@ -1,10 +1,42 @@
 ---
-# This is an example playbook to execute Ansible tests.
-
 - name: Verify
   hosts: all
   gather_facts: false
   tasks:
-  - name: Example assertion
-    ansible.builtin.assert:
-      that: true
+    - name: Get single node
+      command: kubectl get nodes
+      changed_when: false
+      register: kubernetes_nodes
+
+    - name: Assert master node ready
+      when: '"Ready    master" in kubernetes_nodes.stdout'
+      ansible.builtin.assert:
+        that: true
+
+    - name: Print list of running nodes.
+      debug: var=kubernetes_nodes.stdout
+
+    - name: Get all running pods.
+      command: kubectl get pods --all-namespaces
+      changed_when: false
+      register: kubernetes_pods
+
+    - name: Tranform pods stdout to list
+      ansible.builtin.set_fact:
+        pods: "{{ kubernetes_pods.stdout.split('\n') | list | 
+          reject('search', 'NAMESPACE') }}"
+
+    - name: Print list of pods.
+      debug: var=pods
+
+    - name: Get running pods
+      ansible.builtin.set_fact:
+        running: "{{ pods | select('search', 'Running') }}"
+    
+    - name: Assert required pods up
+      ansible.builtin.assert:
+        that:
+          - "{{ (pods | length) == 6 }}"
+          - "{{ (running | select('search', '1/1') | length) == 4 }}"
+          - "{{ (running | select('search', '2/2') | length) == 1 }}"
+          - "{{ (pods | select('search', 'Completed')) == 1 }}"

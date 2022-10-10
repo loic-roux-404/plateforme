@@ -4,15 +4,13 @@ dependency:
 driver:
   name: docker
 platforms:
-  - name: instance
+  - name: k3s-node-0
     image: geerlingguy/docker-${MOLECULE_DISTRO:-ubuntu2004}-ansible:latest
     command: ${MOLECULE_DOCKER_COMMAND:-""}
     privileged: true
     pre_build_image: true
-    tty: true
     volumes:
-      - /sys/fs/cgroup:/sys/fs/cgroup:rw
-      - /var/lib/docker
+      - /sys/fs/cgroup:/sys/fs/cgroup:ro
     networks:
       - name: k3snet
 

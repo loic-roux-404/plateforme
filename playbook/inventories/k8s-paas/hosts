@@ -1,0 +1,3 @@
+[k3s-node-0]
+ansible_user=root
+ansible_host=localhost

@@ -1,0 +1,6 @@
+- hosts: k8s-node-0
+  gather_facts: True
+  become: True
+  become_user: root
+  roles:
+    - role: roles/kubeapps
