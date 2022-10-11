@@ -1,9 +1,9 @@
 # Paas Tutorial
 
-L'objectif de ce tutoriel est de vous permettre de créer sur une petite machine ou sur un serveur personnel un PaaS (Platform as a service) vous permettant de déployer des applications en microservices. Celui-ci sera basé sur [kubernetes]() pour la conteneurisation et [Openshift]() pour l'interface et les automatisation autour.
+L'objectif de ce tutoriel est de vous permettre de créer sur une petite machine ou sur un serveur personnel un PaaS (Platform as a service) vous permettant de déployer des applications en microservices. Celui-ci sera basé sur [kubernetes]() pour la conteneurisation et [Kubeapps]() pour l'interface et les automatisation autour.
 
 L'optique de cet outillage suivra :
-- le principle **d'immutable infrastructure** avec l'idée de recréer plutôt que de mettre à jour. Ainsi nous aurons recour à des iso linux déjà prêt pour déployer la plateforme **kubernetes** / **openshift** directement sur un serveur.
+- le principle **d'immutable infrastructure** avec l'idée de recréer plutôt que de mettre à jour. Ainsi nous aurons recour à des iso linux déjà prêt pour déployer la plateforme **kubernetes** / **kubeapps** directement sur un serveur.
 
 - Le principe **d'infrastructure as code** en gardant toutes la spécification de notre infrastructure dans des configurations et scripts.
 
@@ -15,47 +15,16 @@ Pour cela nous ferons appel à
 
 ## 0/ Installer les pré-requis
 
-> Ce tutoriel est dédié à Linux et Mac
 > Pour utilisateurs de windows il faut un [**WSL**](https://learn.microsoft.com/fr-fr/windows/wsl/install)
 
-- **Multipass** [multipass](https://multipass.run/docs/how-to-guides#heading--install-multipass-)
-
-Lancer une machine virtuelle ubuntu 22 avec
-
-```
-multipass launch --name primary --disk 4G
-```
-
-> INFO Nous n'allons pas utiliser Docker desktop pour nos tests car il a été déprécié comme runtime disponible dans les dernières versions de kubernetes.
+- [Rancher](https://rancherdesktop.io/) l'alternative mieux configurée et sans soucis de license à docker desktop. Il est portable sur windows et mac et permet d'avoir une expérience similaire à une utilisation native de docker sur linux.
 
 - **Conda** : [docs.conda.io](https://docs.conda.io/en/latest/miniconda.html)
 
-Installer le avec cette suite de commande, le setup est interactif et va vous demander de confirmer des localisations d'installation avec entrée et `y`. Accepter aussi de lancer le `conda init`.
-
-```bash
-wget https://repo.anaconda.com/miniconda/Miniconda3-py39_4.12.0-Linux-aarch64.sh -P /tmp
-chmod +x /tmp/Miniconda3-py39_4.12.0-Linux-aarch64.sh
-/tmp/Miniconda3-py39_4.12.0-Linux-aarch64.sh -p $HOME/miniconda
-```
-
-**Relancer votre shell** (`bash`)
-
-- **Docker for linux :** 
-
-```bash
-curl -fsSL https://get.docker.com -o /tmp/get-docker.sh
-chmod +x /tmp/get-docker.sh
-sh /tmp/get-docker.sh
-
-# Pouvoir utiliser un autre utilisateur que l'admin
-sudo apt-get install -y uidmap
-dockerd-rootless-setuptool.sh install
-
-echo 'export DOCKER_HOST=unix:///run/user/1000/docker.sock' >> ~/.bashrc
-```
+**Relancer votre shell pour utiliser** (`bash`)
 
 ##### Recommandations:
-- extension vscode: `redhat.ansible`, `donjayamanne.python-extension-pack`
+- extension vscode: `redhat.ansible`, `donjayamanne.python-extension-pack` et `ms-kubernetes-tools.vscode-kubernetes-tools`
 
 > **Warning** Exotic shells like fish are not recommanded for molecule testing
 
@@ -74,44 +43,29 @@ Ansible est un outil dépendant de l'écosystème python. Pour simplifier la ges
 qui risquent de faire conflit avec d'autres installations
 de python, nous allons utiliser `miniconda`.
 
-
 On initialise un environnement virtuel pyrhon avec sa propre version de **python 3.10** et les dépendences ansible et molecule. Ainsi nos dépendences n'entrent pas en conflit avec d'autres non compatibles installé ailleur.
 
-> Molecule est l'outil qui va nous permettre de vérifier que notre playbook fonctionne. Nous avons donc besoin de **docker** installé sur la machine.
-
-// TODO REMOVE
-> WARNING : une mise à jour est en cour de développement sur molecule afin de s'adapter à une nouveauté de docker-desktop. Pour activer la fonctionnalité de manière forcée nous devons renseigné la ligne `"default-cgroupns-mode": "host"` dans **Docker > Préférences > Docker Engine**
-
+> Molecule est l'outil qui va nous permettre de vérifier que notre playbook fonctionne.
 
 Créer votre espace de travail
-
-> INFO Par défaut dans votre dossier utilisateur ubuntu vous pouvez utiliser les répertoires de votre système hôte dans votre machine virtuelle (mount) avec le dossier `~/Home`.
 
 ```bash 
 mkdir paas-turorial/
 ```
-
-Logger vous sur la machine ubuntu
-
-```bash
-multipass shell
-```
-
-> DANGER suivez bien la suite du tutoriel dans la machine ubuntu.
 
 Ensuite pour créer l'environnement python avec ses dépendances
 
 ```bash
 conda create -n playbook-paas python=3.9
 conda activate playbook-paas
-pip install ansible>=2.10.7 molecule[docker]
+pip install ansible>=2.10.7 molecule
 ```
 
 Pourquoi pas geler les versions des dépendances dans un fichier requirements pour qu'un autre environnement puisse facilement retrouver l'état de votre installation.
 
 ```sh
 # ~/Home est un dossier de votre hôte (windows / mac)
-cd ~/Home/paas-turorial/
+cd paas-turorial/
 echo "ansible==6.4.0\nmolecule==4.0.1\n" > requirements.txt
 ```
 
@@ -169,8 +123,6 @@ roles:
 
 collections:
     - name: community.general
-    - name: community.docker
-      version: 3.0.2
     - name: kubernetes.core
 ```
 
@@ -200,7 +152,7 @@ cd roles
 ansible-galaxy init kubeapps
 cd kubeapps
 # Créer un scénario de test par défaut
-molecule init scenario -d docker default
+molecule init scenario -d podman default
 ```
 
 Vous devriez obtenir cette structure dans le nouveau dossier `playbook/` :
@@ -254,17 +206,22 @@ dependency:
 driver:
   name: docker
 platforms:
-  - name: k3s-node-0
+  - name: node-0
     image: geerlingguy/docker-${MOLECULE_DISTRO:-ubuntu2004}-ansible:latest
     command: ${MOLECULE_DOCKER_COMMAND:-""}
     privileged: true
     pre_build_image: true
-    tty: true
+    published_ports:
+      - 6443
+      - 80
     volumes:
       - /sys/fs/cgroup:/sys/fs/cgroup:rw
-      - /var/lib/docker
+      - /var/lib/rancher/k3s
     networks:
       - name: k3snet
+    tmpfs:
+      - /var/run
+      - /run
 
 provisioner:
   name: ansible
@@ -281,17 +238,17 @@ Le playbook de test va ensuite nous permettre de vérifier la bonne execution du
 > [playbook/roles/kubeapps/molecule/default/converge.yml](playbook/roles/kubeapps/molecule/default/converge.yml)
 ```yaml
 ---
+---
 - name: Converge
   hosts: all
   become: true
   vars:
     molecule_is_test: true
-    k3s_state: started
+
   roles:
-    - role: "{{ lookup('env', 'MOLECULE_PROJECT_DIRECTORY') | basename }}"
+    - role: "{{ lookup('env', 'MOLECULE_PROJECT_DIRECTORY') | basename }"
 
   pre_tasks:
-
     - name: Ensure test dependencies are installed (Debian).
       package: 
         name: iptables
@@ -299,13 +256,26 @@ Le playbook de test va ensuite nous permettre de vérifier la bonne execution du
         update_cache: true
       when: ansible_os_family == 'Debian'
 
-    - name: Gather facts.
-      action: setup
+
+```
+
+On lance le cluster avec une autre configuration du role pour démarrer le cluster k3s.
+
+> [playbook/roles/kubeapps/molecule/default/playbook.yml](playbook/roles/kubeapps/molecule/default/playbook.yml)
+```yaml
+---
+- name: Converge
+  hosts: all
+  become: true
+  vars:
+    molecule_is_test: true
+  roles:
+    - role: "{{ lookup('env', 'MOLECULE_PROJECT_DIRECTORY') | basename }"
 
 ```
 
 Ensuite nous allons vérifier que k3s est bien prêt avec deux vérifications :
-- Vérification de la bonne initialisation du noeud **master**
+- Vérification de la bonne initialisation du noeud **master** simplement en vérifiant que le retour de la commande contient bien "Ready    master".
 
 > [playbook/roles/kubeapps/molecule/default/verify.yml](playbook/roles/kubeapps/molecule/default/verify.yml)
 ```yaml
@@ -374,7 +344,7 @@ Enfin `assert` permet de déclencher une erreur ansible si certaines conditions 
 
 Lancer le test avec `molecule test` et voilà vous avez un playbook prêt à l'emploi en suivant rigoureusement le concept du test driven development pour plus de fiabilité.
 
-Vous pouvez aussi lancer `molecule test --destroy never` pour ensuite garder le container et debugger l'état du système après le provision ansible avec `docker exec -it "hash-container obtenu via docker ps" sh`
+Vous pouvez aussi lancer `molecule test --destroy never` pour ensuite garder le container et debugger l'état du système après le provision ansible avec `docker exec -it node-0 bash`
 
 > Tips : En cas d'erreur `export ANSIBLE_STDOUT_CALLBACK=yaml` avant de lancer `molecule test` pour avoir un meilleur rendu de la possible erreur.
 
@@ -387,7 +357,7 @@ Cette étape servira pour utiliser le playbook dans la [partie 2](#2-créer-une-
 > [playbook/site.yaml](playbook/site.yaml)
 ```yaml
 ---
-- hosts: k3s-node-0
+- hosts: node-0
   gather_facts: True
   become: True
   become_user: root
@@ -401,7 +371,7 @@ Ensuite on définit la configuration des hôtes disponible pour notre playbook. 
 > [playbook/inventories/k8s-paas/hosts](playbook/inventories/k8s-paas/hosts)
 
 ```ini
-[k3s-node-0]
+[node-0]
 ansible_user=root
 ansible_host=localhost
 

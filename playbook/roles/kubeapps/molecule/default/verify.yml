@@ -8,13 +8,21 @@
       changed_when: false
       register: kubernetes_nodes
 
-    - name: Assert master node ready
-      when: '"Ready    master" in kubernetes_nodes.stdout'
-      ansible.builtin.assert:
-        that: true
-
     - name: Print list of running nodes.
       debug: var=kubernetes_nodes.stdout
+
+    - name: Assert master node ready
+      ansible.builtin.assert:
+        that: '"Ready    control-plane,master" in kubernetes_nodes.stdout'
+
+    - name: Ensure k3s service is restarted
+      ansible.builtin.systemd:
+        name: k3s
+        state: restarted
+
+    - name: Wait for pods to start fully
+      ansible.builtin.pause:
+        minutes: 1
 
     - name: Get all running pods.
       command: kubectl get pods --all-namespaces
@@ -31,12 +39,17 @@
 
     - name: Get running pods
       ansible.builtin.set_fact:
-        running: "{{ pods | select('search', 'Running') }}"
-    
+        running: "{{ pods | select('search', 'Running') | list }}"
+
+    - name: Set assertions list
+      ansible.builtin.set_fact:
+        pod_assertions:
+          - "{{ (pods | length) == 7 }}"
+          - "{{ (running | select('search', '1/1') | list) | length >= 3 }}"
+          - "{{ (running | select('search', '2/2') | list) | length == 1 }}"
+          - "{{ (pods | select('search', 'Completed') | list) | length == 2 }}"
+
     - name: Assert required pods up
       ansible.builtin.assert:
-        that:
-          - "{{ (pods | length) == 6 }}"
-          - "{{ (running | select('search', '1/1') | length) == 4 }}"
-          - "{{ (running | select('search', '2/2') | length) == 1 }}"
-          - "{{ (pods | select('search', 'Completed')) == 1 }}"
+        that: "{{ pod_assertions | list }}"
+        fail_msg: "{{ pod_assertions | join(' - ') }}"

@@ -51,3 +51,5 @@ galaxy_info:
 dependencies:
   - src: xanmanning.k3s
     version: v3.3.0
+    vars:
+      k3s_release_version: v1.21
