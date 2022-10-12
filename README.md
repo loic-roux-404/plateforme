@@ -15,11 +15,17 @@ Pour cela nous ferons appel à
 
 ## 0/ Installer les pré-requis
 
-> Pour utilisateurs de windows il faut un [**WSL**](https://learn.microsoft.com/fr-fr/windows/wsl/install)
+Pour utilisateurs de **windows** il faut un [**WSL**](https://learn.microsoft.com/fr-fr/windows/wsl/install). Télécharger après avoir suivi cette documentation une distribution linux Ubuntu depuis le windows store.
 
-- [Rancher](https://rancherdesktop.io/) l'alternative mieux configurée et sans soucis de license à docker desktop. Il est portable sur windows et mac et permet d'avoir une expérience similaire à une utilisation native de docker sur linux.
+[**Rancher**](https://rancherdesktop.io/) l'alternative mieux configurée et sans soucis de license à docker desktop. Il est portable sur windows et mac et permet d'avoir une expérience similaire à une utilisation native de docker sur linux.
 
-- **Conda** : [docs.conda.io](https://docs.conda.io/en/latest/miniconda.html)
+Dans les choix proposés dans la mise en place :
+- **Décocher kubernetes**
+- Choisissez **dockerd** comme moteur de conteneurisation
+
+Laissez le ensuite finir de s'initialiser.
+
+**Conda** : [docs.conda.io](https://docs.conda.io/en/latest/miniconda.html)
 
 **Relancer votre shell pour utiliser** (`bash`)
 
@@ -289,13 +295,26 @@ Ensuite nous allons vérifier que k3s est bien prêt avec deux vérifications :
       changed_when: false
       register: kubernetes_nodes
 
-    - name: Assert master node ready
-      when: '"Ready    master" in kubernetes_nodes.stdout'
-      ansible.builtin.assert:
-        that: true
-
     - name: Print list of running nodes.
       debug: var=kubernetes_nodes.stdout
+
+    - name: Assert master node ready
+      ansible.builtin.assert:
+        that: '"Ready    control-plane,master" in kubernetes_nodes.stdout'
+
+    - name: Ensure k3s service is restarted
+      ansible.builtin.systemd:
+        name: k3s
+        state: restarted
+
+    - name: Wait for pods to start fully
+      ansible.builtin.pause:
+        minutes: 1
+
+    - name: Get all running pods.
+      command: kubectl get pods --all-namespaces
+      changed_when: false
+      register: kubernetes_pods
 
 ```
 
@@ -312,14 +331,9 @@ Notez bien l'utilisation des `filters ansible` hérité du langage de templating
 
 On accède également dans les `"{{}}"` aux fonctionnalités de python avec les méthodes rattachées aux type de données. Par exemple avec l'utilisation de `.split()` pour obtenir la liste des pods kubernetes dans une liste python.
 
-Enfin `assert` permet de déclencher une erreur ansible si certaines conditions ne sont pas remplies.
+Enfin `assert` permet de déclencher une erreur ansible si certaines conditions ne sont pas remplies. Ces conditions sont multiples et placées dans la liste `pod_assertions`.
 
 ```yaml
-    - name: Get all running pods.
-      command: kubectl get pods --all-namespaces
-      changed_when: false
-      register: kubernetes_pods
-
     - name: Tranform pods stdout to list
       ansible.builtin.set_fact:
         pods: "{{ kubernetes_pods.stdout.split('\n') | list | 
@@ -330,25 +344,33 @@ Enfin `assert` permet de déclencher une erreur ansible si certaines conditions 
 
     - name: Get running pods
       ansible.builtin.set_fact:
-        running: "{{ pods | select('search', 'Running') }}"
-    
+        running: "{{ pods | select('search', 'Running') | list }}"
+
+    - name: Set assertions list
+      ansible.builtin.set_fact:
+        pod_assertions:
+          - "{{ (pods | length) == 7 }}"
+          - "{{ (running | select('search', '1/1') | list) | length >= 3 }}"
+          - "{{ (running | select('search', '2/2') | list) | length == 1 }}"
+          - "{{ (pods | select('search', 'Completed') | list) | length == 2 }}"
+
     - name: Assert required pods up
       ansible.builtin.assert:
-        that:
-          - "{{ (pods | length) == 6 }}"
-          - "{{ (running | select('search', '1/1') | length) == 4 }}"
-          - "{{ (running | select('search', '2/2') | length) == 1 }}"
-          - "{{ (pods | select('search', 'Completed')) == 1 }}"
+        that: "{{ pod_assertions | list }}"
+        fail_msg: "{{ pod_assertions | join(' - ') }}"
+
 
 ```
 
-Lancer le test avec `molecule test` et voilà vous avez un playbook prêt à l'emploi en suivant rigoureusement le concept du test driven development pour plus de fiabilité.
+Lancer le test avec `molecule test` et voilà vous avez un playbook offrant un cluster kubernetes prêt à l'emploi tout en suivant rigoureusement le concept du test driven development pour plus de fiabilité.
 
-Vous pouvez aussi lancer `molecule test --destroy never` pour ensuite garder le container et debugger l'état du système après le provision ansible avec `docker exec -it node-0 bash`
+> INFO : Vous pouvez aussi lancer `molecule test --destroy never` pour ensuite garder le container et debugger l'état du système après le provision ansible avec `docker exec -it node-0 bash`
 
-> Tips : En cas d'erreur `export ANSIBLE_STDOUT_CALLBACK=yaml` avant de lancer `molecule test` pour avoir un meilleur rendu de la possible erreur.
+> INFO : En cas d'erreur `export ANSIBLE_STDOUT_CALLBACK=yaml` avant de lancer `molecule test` pour avoir un meilleur rendu de la possible erreur.
 
-### E. Utiliser le rôle dans un playbook 
+### E. Premiers tests sur notre playbook
+
+### F. Playbook et inventaire final
 
 Nous allons créer le fichier `site.yaml` (dans le dossier `playbook/`) qui va se charger avec la commande `ansible-playbook` de lancer les rôles dans le bon ordre sur les machines.
 

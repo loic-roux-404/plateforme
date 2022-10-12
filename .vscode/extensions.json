@@ -2,6 +2,7 @@
     "recommendations": [
         "4ops.packer",
         "redhat.ansible",
-        "donjayamanne.python-extension-pack"
+        "donjayamanne.python-extension-pack",
+        "ms-kubernetes-tools.vscode-kubernetes-tools"
     ]
 }
