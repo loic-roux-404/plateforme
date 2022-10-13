@@ -25,14 +25,30 @@ Dans les choix proposés dans la mise en place :
 
 Laissez le ensuite finir de s'initialiser.
 
-**Conda** : [docs.conda.io](https://docs.conda.io/en/latest/miniconda.html)
+
+### Maintenant tout ce que nous allons faire se trouve dans la ligne de commande.
+
+**Conda** : [docs.conda.io](https://docs.conda.io/en/latest/miniconda.html). Installer simplement avec le setup `.pkg` pour mac.
+
+> Pour Linux et Windows avec WSL utilisez la ligne de commande ci dessous pour l'installer
+
+```bash
+wget https://repo.anaconda.com/miniconda/Miniconda3-py39_4.12.0-Linux-aarch64.sh -P /tmp
+chmod +x /tmp/Miniconda3-py39_4.12.0-Linux-aarch64.sh
+/tmp/Miniconda3-py39_4.12.0-Linux-aarch64.sh -p $HOME/miniconda
+```
 
 **Relancer votre shell pour utiliser** (`bash`)
 
 ##### Recommandations:
-- extension vscode: `redhat.ansible`, `donjayamanne.python-extension-pack` et `ms-kubernetes-tools.vscode-kubernetes-tools`
 
-> **Warning** Exotic shells like fish are not recommanded for molecule testing
+Extensions vscode : 
+
+  - `redhat.ansible` serveur de langage ansibke
+  - `ms-kubernetes-tools.vscode-kubernetes-tools` debug des cluster directement depuis l'IDE
+  - `mindaro.mindaro` permet de faire pont vers kubernetes
+
+> **Warning** Les shell un peu exotique comme fish pour l'utilisation de molecule ne sont pas recommandés
 
 # I/ Créer la machine virtuelle servant de cluster
 
@@ -49,11 +65,11 @@ Ansible est un outil dépendant de l'écosystème python. Pour simplifier la ges
 qui risquent de faire conflit avec d'autres installations
 de python, nous allons utiliser `miniconda`.
 
-On initialise un environnement virtuel pyrhon avec sa propre version de **python 3.10** et les dépendences ansible et molecule. Ainsi nos dépendences n'entrent pas en conflit avec d'autres non compatibles installé ailleur.
+Molecule est un outil permettant de tester nos suite de configurations ansible contenus dans des rôles ou des tâches.
 
-> Molecule est l'outil qui va nous permettre de vérifier que notre playbook fonctionne.
+On initialise un environnement virtuel python avec sa propre version de **python 3.10** et les dépendences ansible et molecule. Ainsi nos dépendences n'entrent pas en conflit avec d'autres non compatibles installés pour un autre projet.
 
-Créer votre espace de travail
+Créer votre espace de travail :
 
 ```bash 
 mkdir paas-turorial/
@@ -64,7 +80,7 @@ Ensuite pour créer l'environnement python avec ses dépendances
 ```bash
 conda create -n playbook-paas python=3.9
 conda activate playbook-paas
-pip install ansible>=2.10.7 molecule
+pip install ansible molecule[docker]
 ```
 
 Pourquoi pas geler les versions des dépendances dans un fichier requirements pour qu'un autre environnement puisse facilement retrouver l'état de votre installation.
@@ -91,10 +107,9 @@ Vous devriez avoir `ansible [core 2.13.4]` dans le retour
 }
 ```
 
-### B. Playbook
+### B. Playbook ansible
 
-Nous allons créer un playbook ansible qui va appeler plusieurs rôles ansible.
-Il s'agit d'un projet chargé de lancer plusieurs roles différents sur des machines disponibles sur le réseau via **ssh**. (localhost par exemple peut être provisioné)
+n playbook ansible est un projet chargé de lancer plusieurs rôles différents sur des machines disponibles sur le réseau via **ssh**. (localhost par exemple peut être provisioné)
 
 > Nous allons suivre l'alternative-directory-layout recommandé par cette [documentation](https://docs.ansible.com/ansible/latest/user_guide/sample_setup.html#alternative-directory-layout)
 
@@ -146,9 +161,9 @@ ansible-galaxy install -r requirements.yaml
 
 Normalement tous est installé correctement et prêt à l'emploi
 
-### C. Initialiser le role qui installe kubeapps
+### C. Initialiser le rôle
 
-Pour suivre la convention d'ansible nous allons procédé en créant un role interne à notre projet. L'objectif sera d'installer [kubeapps](https://github.com/vmware-tanzu/kubeapps) l'outil qui nous permettra de déployer les containers de nos applications et leur dépendances.
+Pour suivre la convention d'ansible nous allons procédé en créant un role interne à notre projet. L'objectif sera d'installer [kubeapps](https://github.com/vmware-tanzu/kubeapps) l'outil qui nous permettra de déployer les containers de nos applications et leurs dépendances.
 
 Dans le dossier `playbook` faites donc :
 
@@ -200,7 +215,7 @@ galaxy_info:
 
 Le rôle kubernetes se lancera donc directement avant les tâches de celui de kubeapps.
 
-### D. Premiers tests sur notre playbook
+### D. Cluster kubernetes et premiers tests sur notre rôle 
 
 Nous allons d'abord définir l'utilisaton d'une distribution ubuntu pour installer nos outils. Pour les tests en local nous faisons donc du docker in docker ce qui impose quelques difficulés de test parfois et des configurations particulières.
 
@@ -262,7 +277,6 @@ Le playbook de test va ensuite nous permettre de vérifier la bonne execution du
         update_cache: true
       when: ansible_os_family == 'Debian'
 
-
 ```
 
 On lance le cluster avec une autre configuration du role pour démarrer le cluster k3s.
@@ -307,15 +321,6 @@ Ensuite nous allons vérifier que k3s est bien prêt avec deux vérifications :
         name: k3s
         state: restarted
 
-    - name: Wait for pods to start fully
-      ansible.builtin.pause:
-        minutes: 1
-
-    - name: Get all running pods.
-      command: kubectl get pods --all-namespaces
-      changed_when: false
-      register: kubernetes_pods
-
 ```
 
 Et ensuite dans la suite du fichier on fait une vérification des pods de la suite k3s.
@@ -334,6 +339,15 @@ On accède également dans les `"{{}}"` aux fonctionnalités de python avec les 
 Enfin `assert` permet de déclencher une erreur ansible si certaines conditions ne sont pas remplies. Ces conditions sont multiples et placées dans la liste `pod_assertions`.
 
 ```yaml
+    - name: Wait for pods to start fully
+      ansible.builtin.pause:
+        minutes: 1
+
+    - name: Get all running pods.
+      command: kubectl get pods --all-namespaces
+      changed_when: false
+      register: kubernetes_pods
+
     - name: Tranform pods stdout to list
       ansible.builtin.set_fact:
         pods: "{{ kubernetes_pods.stdout.split('\n') | list | 
@@ -368,9 +382,80 @@ Lancer le test avec `molecule test` et voilà vous avez un playbook offrant un c
 
 > INFO : En cas d'erreur `export ANSIBLE_STDOUT_CALLBACK=yaml` avant de lancer `molecule test` pour avoir un meilleur rendu de la possible erreur.
 
-### E. Premiers tests sur notre playbook
+> **Bonus : Vscode avec kubernetes**
 
-### F. Playbook et inventaire final
+Nous allons chercher la kubeconfig dans notre container qui embarque K3s et le cluster.
+Récupérez l'identifiant du container avec :
+
+```sh
+docker ps | grep node-0 | awk '{print $1}'
+# ex de retour 61a74719f7c4
+```
+
+Copier la kube config k3s avec :
+
+```sh
+docker cp 61a74719f7c4:/etc/rancher/k3s/k3s.yaml ~/.kube/config
+```
+
+Si vous n'avez pas kubectl en local :
+- [Pour mac](https://kubernetes.io/docs/tasks/tools/install-kubectl-macos/)
+- [Pour Wsl / Linux](https://kubernetes.io/docs/tasks/tools/install-kubectl-linux/)
+
+On check ensuite avec `kubectl cluster-info` qui devrait nous donner les information du node k3s.
+
+##### Ensuite sur `vscode` utiliser ces paramètres utilisateur pour voir et utiliser votre cluster
+
+> [.vscode/settings.json](.vscode/settings.json)
+```json
+    "vs-kubernetes": {
+        "vs-kubernetes.knownKubeconfigs": [
+            "<Chemin-vers-home>/.kube/config"
+        ],
+        "vs-kubernetes.kubeconfig": "<Chemin-vers-home>/.kube/config"
+    }
+```
+
+Et voilà vous avez accès à une interface pour controller votre cluster directement depuis vscode. Utiliser cette configuration `json` autant que vous voulez dans les repository de vos applications pour avoir une expérience au plus proche de la production.
+
+### E. Tâches ansible pour l'environnement kubernetes en local
+
+La tâche **Mkcert** va nous permettre d'activer en local le https en TLS. Cela va nous permettre d'avoir une expérience encore plus proche de la réalité de la production.
+
+Pour l'installer :
+
+- **Linux** :
+
+> Renseigner bien `arm64` à la place de `amd64` si vous possèder ce genre de processeur
+
+```sh
+wget https://github.com/FiloSottile/mkcert/releases/download/v1.4.4/mkcert-v1.4.4-linux-amd64
+sudo mv mkcert-v1.4.4-linux-amd64 /usr/local/bin/mkcert && chmod +x /usr/local/bin/mkcert
+```
+
+- **Mac** : `brew install mkcert`
+
+Ensuite générons les certificats pour activer https sur tous les domaines finissant par `k3s.localhost`
+
+```
+mkdir certs/
+echo 'certs/*
+!.gitkeep' >> .gitignore # we don't want to commit auto-signed certs
+mkcert -install
+mkcert -cert-file certs/local-cert.pem -key-file certs/local-key.pem "k3s.localhost" "*.k3s.localhost" 
+```
+
+https://blog.stephane-robert.info/post/homelab-ingress-k3s-certificats-self-signed/
+
+### F. Développement de notre rôle pour installer la solution de PaaS Kubeapps
+
+Donc dans [playbook/roles/kubeapps/tasks]([playbook/roles/kubeapps/tasks) nous allons créer les fichiers suivants :
+
+- `dev.yaml` : ce fichier servira à tester en local notre PaaS
+- `install.yaml`: celui-ci installe le binaire de la solution et déploie sur notre cluster kubernetes (k3s)
+
+
+### G. Playbook et inventaire final
 
 Nous allons créer le fichier `site.yaml` (dans le dossier `playbook/`) qui va se charger avec la commande `ansible-playbook` de lancer les rôles dans le bon ordre sur les machines.
 

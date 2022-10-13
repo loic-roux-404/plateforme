@@ -1,0 +1,4 @@
+# /var/lib/rancher/k3s/server/manifests
+---
+- name: toto
+  ansible.builtin.command: echo  'toto'

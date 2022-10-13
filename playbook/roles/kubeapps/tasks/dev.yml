@@ -1,0 +1,12 @@
+---
+# tasks file for dnsmasq local domain setup with ssl
+# - name: Install dnsmasq
+#   local_action ansible.builtin.command: >
+#     echo 'dns'
+
+# - name: Setup local dev domain
+#   local_action ansible.builtin.command: >
+#     echo 'domain'
+
+- name: toto 2
+  ansible.builtin.command: echo  'toto'
