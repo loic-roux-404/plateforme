@@ -25,8 +25,9 @@ Dans les choix proposés dans la mise en place :
 
 Laissez le ensuite finir de s'initialiser.
 
+# I/ Partie 1 : Iso du PaaS sous Linux
 
-### Maintenant tout ce que nous allons faire se trouve dans la ligne de commande.
+### Maintenant tout ce que nous allons faire se trouve dans la ligne de commande sur un shell `bash` ou `zsh`.
 
 **Conda** : [docs.conda.io](https://docs.conda.io/en/latest/miniconda.html). Installer simplement avec le setup `.pkg` pour mac.
 
@@ -38,9 +39,9 @@ chmod +x /tmp/Miniconda3-py39_4.12.0-Linux-aarch64.sh
 /tmp/Miniconda3-py39_4.12.0-Linux-aarch64.sh -p $HOME/miniconda
 ```
 
-**Relancer votre shell pour utiliser** (`bash`)
+**Relancer votre shell pour utiliser** (commande `exec $SHELL`)
 
-##### Recommandations:
+##### Recommandations pour la partie ansible :
 
 Extensions vscode : 
 
@@ -49,10 +50,6 @@ Extensions vscode :
   - `mindaro.mindaro` permet de faire pont vers kubernetes
 
 > **Warning** Les shell un peu exotique comme fish pour l'utilisation de molecule ne sont pas recommandés
-
-# I/ Créer la machine virtuelle servant de cluster
-
-## Un iso pour Azure
 
 ## 1. Le playbook ansible
 
@@ -144,7 +141,6 @@ roles:
 
 collections:
     - name: community.general
-    - name: kubernetes.core
 ```
 
 Les **collections** vont servir à ajouter des fonctionnalités à ansible et ses directives de tâches. Ici on ajoute des fonctionnalités pour manipuler facilement les commandes docker et kubernetes.
@@ -161,7 +157,7 @@ ansible-galaxy install -r requirements.yaml
 
 Normalement tous est installé correctement et prêt à l'emploi
 
-### C. Initialiser le rôle
+### C. Initialiser le rôle installant un Cluster kubernetes (k3s) 
 
 Pour suivre la convention d'ansible nous allons procédé en créant un role interne à notre projet. L'objectif sera d'installer [kubeapps](https://github.com/vmware-tanzu/kubeapps) l'outil qui nous permettra de déployer les containers de nos applications et leurs dépendances.
 
@@ -193,7 +189,7 @@ vars/
 
 Voici ce que va être rendu comme structure de [**role**](https://docs.ansible.com/ansible/latest/user_guide/playbooks_reuse_roles.html).
 
-Nous allons ensuite mettre à jour les métadonnées ansible galaxy avec notamment la dépendance kubernetes (rôle)
+Nous allons ensuite mettre à jour les métadonnées ansible galaxy avec notamment la dépendance kubernetes (rôle k3s)
 
 > Ligne 50 de [playbook/roles/kubeapps/meta/main.yml](playbook/roles/kubeapps/meta/main.yml)
 ```yaml
@@ -215,9 +211,37 @@ galaxy_info:
 
 Le rôle kubernetes se lancera donc directement avant les tâches de celui de kubeapps.
 
-### D. Cluster kubernetes et premiers tests sur notre rôle 
+### D. Notions théorique sur kubernetes (k3s)
 
-Nous allons d'abord définir l'utilisaton d'une distribution ubuntu pour installer nos outils. Pour les tests en local nous faisons donc du docker in docker ce qui impose quelques difficulés de test parfois et des configurations particulières.
+### Noeud
+
+Un nœud est une machine de travail dans Kubernetes, un groupe de noeud va composer ce qu'on appelle un cluster (grappe) de serveurs. Chaque nœud contient les services nécessaires à l'exécution de pods et est géré par les composants du master.
+
+> INFO dans notre cas nous ferons appel à un seul noeud master
+
+### Les pods
+
+[source documentation officielle](https://kubernetes.io/fr/docs/concepts)
+
+Un pod est un groupe d'un ou plusieurs conteneurs (comme des conteneurs Docker), ayant du stockage/réseau partagé, et une spécification sur la manière d'exécuter ces conteneurs. Les éléments d'un pod sont toujours co-localisés et co-ordonnancés, et s'exécutent dans un contexte partagé. Un pod modélise un "hôte logique" spécifique à une application - il contient un ou plusieurs conteneurs applicatifs qui sont étroitement liés.
+
+Un pod peut être :
+- Temporaire (Completed) pour effectuer une tâches particulière (cron, jouer des script, déploiement d'autres pods...)
+- Définitif soit une application en éxecution
+
+### Services
+Une manière abstraite d'exposer une application s'exécutant sur un ensemble de Pods en tant que service réseau.
+
+## Ingress
+
+Il s'agit du composant de kubernetes permettant de gérer au travers d'une technologie de reverse proxy et de répartition de charge le traffic réseau entrant (http(s)).
+
+> INFO Un **reverse proxy** est à l'inverse d'un proxy chargé d'effectuer une action à partir d'une requète réseau externe. On l'utilise majoritairement avec un serveur DNS qui fait pointé des noms de domaines et sous domaines vers l'adresse Ip du serveur sur lequel un reverse proxy est installé.
+> Par exemple il va servir à rediriger le traffic de la requète `kubeapps.localhost` vers une addresse et port réseau attribué par kubernetes à un pod.
+
+### E. Premiers tests sur notre rôle 
+
+Nous allons d'abord définir l'utilisaton d'une distribution ubuntu pour installer nos outils. Pour les tests en local nous faisons du **docker in docker** ce qui impose des configurations particulières.
 
 > [playbook/roles/kubeapps/molecule/default/molecule.yml](playbook/roles/kubeapps/molecule/default/molecule.yml)
 ```yaml
@@ -233,8 +257,9 @@ platforms:
     privileged: true
     pre_build_image: true
     published_ports:
-      - 6443
-      - 80
+      - 6443:6443
+      - 80:80
+      - 443:443
     volumes:
       - /sys/fs/cgroup:/sys/fs/cgroup:rw
       - /var/lib/rancher/k3s
@@ -249,16 +274,29 @@ provisioner:
 verifier:
   name: ansible
 
-
 ```
 
 > WARNING : le `name` de la platform va nous servir d'addresse de l'hôte à laquelle ansible va pourvoir accèder en ssh dans notre environnement de test. Il est indispensable de le renseigner car le role k3s en a besoin pour bien créer les noeud du cluster kubernetes.
 
-Le playbook de test va ensuite nous permettre de vérifier la bonne execution du rôle et de ses dépendances.
+L'image du container `geerlingguy/docker-${MOLECULE_DISTRO:-ubuntu2004}` va nous permettre d'utiliser un linux préconfiguré qui s'initialise avec le démon `systemd`. Celui ci est une fonctionnalité assez neuve du coeur et recommandé pour la gestion des services en arrière plan et donc pour kubernetes.
+
+On note que l'on publie le port `80` et `443` à des fins de debug pour exposer le controller Ingress. Ici dans k3s il s'agit de l'outil [traefik](https://doc.traefik.io/traefik/).
+
+> **WARNING vérifiez bien que aucun autre processus su votre machine n'utilise le port 80 et 443**
+
+Les **volumes** que l'on utilise servent à rendre disponible des fonctionnalités du coeur linux désactivées par défaut sur des containers docker comme `systemd` et les [espaces de nom](https://fr.wikipedia.org/wiki/Espace_de_noms) / [`cgroup` version 2](https://kubernetes.io/docs/concepts/architecture/cgroups/). 
+Même chose pour les répertoire temporaire `tmpfs` qui assurent le bon fonctionnement de ces outils. 
+Enfin `priviledgied: true` nous donne les droits administrateur complets sur le système du container.
+
+Le playbook `verifier` va ensuite nous permettre de tester la bonne execution du rôle et de ses dépendances.
+
+>Notes :
+> - `hosts: all` permet de jouer le playbook sur tous les hôtes
+> - `role: {{etc...}}` résoud le chemin de fichier vers le répertoire du rôle
+> - Les pré-tâches servent à installer un package manquant à notre container basé sur debian et indispensable au bon fonctionnement de k3s.
 
 > [playbook/roles/kubeapps/molecule/default/converge.yml](playbook/roles/kubeapps/molecule/default/converge.yml)
 ```yaml
----
 ---
 - name: Converge
   hosts: all
@@ -267,7 +305,7 @@ Le playbook de test va ensuite nous permettre de vérifier la bonne execution du
     molecule_is_test: true
 
   roles:
-    - role: "{{ lookup('env', 'MOLECULE_PROJECT_DIRECTORY') | basename }"
+    - role: "{{ lookup('env', 'MOLECULE_PROJECT_DIRECTORY') | basename }}"
 
   pre_tasks:
     - name: Ensure test dependencies are installed (Debian).
@@ -279,26 +317,12 @@ Le playbook de test va ensuite nous permettre de vérifier la bonne execution du
 
 ```
 
-On lance le cluster avec une autre configuration du role pour démarrer le cluster k3s.
-
-> [playbook/roles/kubeapps/molecule/default/playbook.yml](playbook/roles/kubeapps/molecule/default/playbook.yml)
-```yaml
----
-- name: Converge
-  hosts: all
-  become: true
-  vars:
-    molecule_is_test: true
-  roles:
-    - role: "{{ lookup('env', 'MOLECULE_PROJECT_DIRECTORY') | basename }"
-
-```
-
 Ensuite nous allons vérifier que k3s est bien prêt avec deux vérifications :
 - Vérification de la bonne initialisation du noeud **master** simplement en vérifiant que le retour de la commande contient bien "Ready    master".
 
 > [playbook/roles/kubeapps/molecule/default/verify.yml](playbook/roles/kubeapps/molecule/default/verify.yml)
 ```yaml
+---
 ---
 - name: Verify
   hosts: all
@@ -314,16 +338,19 @@ Ensuite nous allons vérifier que k3s est bien prêt avec deux vérifications :
 
     - name: Assert master node ready
       ansible.builtin.assert:
-        that: '"Ready    control-plane,master" in kubernetes_nodes.stdout'
-
-    - name: Ensure k3s service is restarted
-      ansible.builtin.systemd:
-        name: k3s
-        state: restarted
+        that: '"node-0   Ready    control-plane,master" in kubernetes_nodes.stdout'
 
 ```
 
-Et ensuite dans la suite du fichier on fait une vérification des pods de la suite k3s.
+Lancer votre premier test avec `molecule test` et voilà vous avez un playbook offrant un cluster kubernetes prêt à l'emploi tout en suivant rigoureusement le concept du test driven development pour plus de fiabilité.
+
+> INFO : Vous pouvez aussi lancer `molecule test --destroy never` pour ensuite garder le container et debugger l'état du système après le provision ansible avec `molecule login` (qui équivaut à `docker exec -it node-0 bash`)
+
+> INFO : En cas d'erreur `export ANSIBLE_STDOUT_CALLBACK=yaml` avant de lancer `molecule test` pour avoir un meilleur rendu de la possible erreur.
+
+Eensuite dans la suite du fichier on procède à une vérification des pods de la suite k3s. 
+
+> Vous pourrez relancer seulement la suite de vérification avec `molecule verify` si votre container n'a pas été détruit
 
 Voici comment on procède.
 
@@ -338,13 +365,15 @@ On accède également dans les `"{{}}"` aux fonctionnalités de python avec les 
 
 Enfin `assert` permet de déclencher une erreur ansible si certaines conditions ne sont pas remplies. Ces conditions sont multiples et placées dans la liste `pod_assertions`.
 
+> [playbook/roles/kubeapps/molecule/default/verify.yml](playbook/roles/kubeapps/molecule/default/verify.yml)
 ```yaml
+
     - name: Wait for pods to start fully
       ansible.builtin.pause:
         minutes: 1
 
     - name: Get all running pods.
-      command: kubectl get pods --all-namespaces
+      command: kubectl get pods -n kube-system
       changed_when: false
       register: kubernetes_pods
 
@@ -363,10 +392,9 @@ Enfin `assert` permet de déclencher une erreur ansible si certaines conditions 
     - name: Set assertions list
       ansible.builtin.set_fact:
         pod_assertions:
-          - "{{ (pods | length) == 7 }}"
           - "{{ (running | select('search', '1/1') | list) | length >= 3 }}"
           - "{{ (running | select('search', '2/2') | list) | length == 1 }}"
-          - "{{ (pods | select('search', 'Completed') | list) | length == 2 }}"
+          - "{{ (pods | select('search', 'Completed') | list) | length == 3 }}"
 
     - name: Assert required pods up
       ansible.builtin.assert:
@@ -376,13 +404,27 @@ Enfin `assert` permet de déclencher une erreur ansible si certaines conditions 
 
 ```
 
-Lancer le test avec `molecule test` et voilà vous avez un playbook offrant un cluster kubernetes prêt à l'emploi tout en suivant rigoureusement le concept du test driven development pour plus de fiabilité.
+Ici on a vérifier plusieurs choses dans la liste des pods :
 
-> INFO : Vous pouvez aussi lancer `molecule test --destroy never` pour ensuite garder le container et debugger l'état du système après le provision ansible avec `docker exec -it node-0 bash`
+> INFO Pour rappel nous avions lancé cette commande `kubectl get pods -n kube-system` qui récupère la liste des pods dans le namespace du système de k3s
 
-> INFO : En cas d'erreur `export ANSIBLE_STDOUT_CALLBACK=yaml` avant de lancer `molecule test` pour avoir un meilleur rendu de la possible erreur.
+`"{{ (running | select('search', '1/1') | list) | length >= 3 }}"` et `{{ (running | select('search', '2/2') | list) | length == 1 }}` vérifient que nous avons bien tous les containers des pods prêt et en cour d'éxecution
 
-> **Bonus : Vscode avec kubernetes**
+```
+  "local-path-provisioner-84bb864455-8dz4g   1/1     Running     0          7h58m",
+  "svclb-traefik-qv89r                       2/2     Running     0          7h57m",
+  "coredns-574bcc6c46-pr6vq                  1/1     Running     0          7h58m",
+  "metrics-server-ff9dbcb6c-ncr4n            1/1     Running     0          7h58m",
+  "traefik-56c4b88c4b-p4xt6                  1/1     Running     0          7h57m",
+```
+
+`"{{ (pods | select('search', 'Completed') | list) | length == 3 }}"` vérifient que les déploiement on bien été complèté sans problèmes.
+
+Nous sommes maintenant sur d'avoir un cluster k3s prêt à l'emploi pour déployer notre solution de PaaS et des applications.
+
+### F. Vscode avec kubernetes
+
+Pour consolider le debuggage de notre environnement de dev ops nous allons intégré notre cluster kubernetes dans l'IDE vscode.
 
 Nous allons chercher la kubeconfig dans notre container qui embarque K3s et le cluster.
 Récupérez l'identifiant du container avec :
@@ -404,7 +446,9 @@ Si vous n'avez pas kubectl en local :
 
 On check ensuite avec `kubectl cluster-info` qui devrait nous donner les information du node k3s.
 
-##### Ensuite sur `vscode` utiliser ces paramètres utilisateur pour voir et utiliser votre cluster
+##### Ensuite sur `vscode` utilisez ces paramètres utilisateur pour voir et utiliser le cluster
+
+> Pour afficher le chemin vers home `cd ~ && pwd && cd -`
 
 > [.vscode/settings.json](.vscode/settings.json)
 ```json
@@ -418,44 +462,127 @@ On check ensuite avec `kubectl cluster-info` qui devrait nous donner les informa
 
 Et voilà vous avez accès à une interface pour controller votre cluster directement depuis vscode. Utiliser cette configuration `json` autant que vous voulez dans les repository de vos applications pour avoir une expérience au plus proche de la production.
 
-### E. Tâches ansible pour l'environnement kubernetes en local
+### G. Ajout de la solution de PaaS Kubeapps dans notre rôle
 
-La tâche **Mkcert** va nous permettre d'activer en local le https en TLS. Cela va nous permettre d'avoir une expérience encore plus proche de la réalité de la production.
+Nous allons avoir recours ici à deux nouvelles notions de l'écosytème de kubernetes qui sont
 
-Pour l'installer :
+- Les manifests que l'on utilise pour décrire une resources (pods, service, ingress,...) à déployer dans le cluster avec la commande `kubectl`
 
-- **Linux** :
+- [Helm](https://helm.sh/fr/docs/intro/using_helm/) un gestionnaire de paquet pour distribuer des **charts** (ou package) contenant des suites de manifest kubernetes à déployer sur le cluster.
 
-> Renseigner bien `arm64` à la place de `amd64` si vous possèder ce genre de processeur
+Donc dans [playbook/roles/kubeapps/tasks]([playbook/roles/kubeapps/tasks) nous allons travailler sur les fichiers suivants :
+
+- `main.yaml`: déclenche certaines suite de tâches en fonction de l'état choisi dans les variables de configuration. Elles sont définis dans l'ordre :
+  1. playbook avec de son inventaire
+  2. Puis celles par défaut du role (dossier `default/`)
+
+- `templates/kubeapps-chart-crd.yml.j2` qui est un template `jinja` représentant plusieurs manifests kubernetes.
+
+- `tasks/manifests.yaml` : celui-ci va s'occuper de placer les manifests kubernetes dans le répertoire `/var/lib/rancher/k3s/server/manifests` pour que k3s déploie automatiquement les resources décrites dans ceux-ci.
+
+> Source pour plus d'informations [doc k3s](https://docs.k3s.io/helm#customizing-packaged-components-with-helmchartconfig)
+
+Commencons par construire notre manifeste. Pour cela nous avons besoin de définir plusieurs variables pour rendre configurable l'utilisation de notre rôle :
+
+- `kubeapps_namespace` pour définir le namespace à créer et sur lequel on déploie kubeapps
+
+- `kubeapps_chart_crd` qui permet de stocker le nom du fichier de [custom resource definition helm](https://helm.sh/docs/chart_best_practices/custom_resource_definitions/)
+
+- `kubeapps_user` définit à ansible_user une variable censé être définie dans un playbook de production
+
+- `kubeapps_ingress` qui est un objet configurant diverses fonctionnalité autour du routage http et de tls
+
+> Par défaut kubeapps sera disponible sur `kubeapps.localhost`
+
+[playbook/roles/kubeapps/defaults/main.yml](playbook/roles/kubeapps/defaults/main.yml)
+
+```yaml
+---
+# HelmChart Custom Resource Definition for kubeapps variables
+kubeapps_namespace: kubeapps
+kubeapps_chart_crd: kubeapps-chart-crd.yml
+kubeapps_user: "{{ ansible_user | default('root') }}"
+kubeapps_ingress:
+  enabled: true
+  hostname: kubeapps.localhost
+  selfSigned: true
+```
+
+Ensuite nous allons utiliser toutes ces variables dans un manifest kubernetes qui inclus deux resources. Un namespace et une définition de dépendance helm avec sa configuration.
+
+```yaml
+
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: {{ kubeapps_namespace }}
+---
+apiVersion: helm.cattle.io/v1
+kind: HelmChart
+metadata:
+  name: kubeapps
+  namespace: kube-system
+spec:
+  chart: kubeapps
+  targetNamespace: "{{ kubeapps_namespace }}"
+  repo: https://charts.bitnami.com/bitnami
+  valuesContent: |-
+    ingress:
+      enabled: {{ kubeapps_ingress.enabled }}
+      selfSigned: {{ kubeapps_ingress.selfSigned }}
+      hostname: "{{ kubeapps_ingress.hostname }}"
+      annotations:
+        kubernetes.io/ingress.class: traefik
+
+```
+
+> INFO On configure le ingress directement dans la définition helm tout en précisant bien que l'on utilise traefik en sachant que par défaut kubernetes utilise `nginx` comme cntroller ingress
+
+Nous allons lancer la commande de templating grâce au module `template` de la collection **builtin** (fonctionnalités inclus par défaut) de ansible.
+
+Celle ci va faire le remplacement des variable utilisées dans les moustaches `{{}}` et placer le fichier au bon endroit dans notre machine invité. Ici il se trouvera dans notre container `node-0` dans le répertoire `/var/lib/rancher/k3s/server/manifests/kubeapps-chart-crd.yml`
+
+```yaml
+---
+- name: deploy kubeapps chart with k3s
+  ansible.builtin.template:
+    src: "{{ kubeapps_chart_crd }}.j2"
+    dest: "/var/lib/rancher/k3s/server/manifests/{{ kubeapps_chart_crd }}"
+    owner: "{{ kubeapps_user }}"
+    group: "{{ kubeapps_user }}"
+    mode: '0644'
+
+```
+
+Enfin on rempli le fichier d'entrée comme ceci :
+
+[playbook/roles/kubeapps/tasks/main.yml](playbook/roles/kubeapps/tasks/main.yml)
+
+```yaml
+---
+- import_tasks: manifests.yml
+  tags: [kubeapps]
+```
+
+Ici c'est assez simple on inclus les tâches du fichier `manifests.yml` et on tag cette inclusions avec le label `kubeapps`. Ainsi avec ansible on peut choisir d'éxécuté seulement les tâches avec ce tag et donc seulement ce qu'on trouve dans notre rôle kubeapps.
+
+Voici la commande molecule qui permettra de faire ceci une fois notre playbook utilisable :
+
+```bash
+molecule test --destroy never -- -t kubeapps
+```
+
+Ajouter comme enregistrement alias à `localhost` l'url de kubeapps dans le fichier des hôtes. Voici la commande
 
 ```sh
-wget https://github.com/FiloSottile/mkcert/releases/download/v1.4.4/mkcert-v1.4.4-linux-amd64
-sudo mv mkcert-v1.4.4-linux-amd64 /usr/local/bin/mkcert && chmod +x /usr/local/bin/mkcert
+echo '127.0.0.1 kubeapps.localhost' | sudo tee -a /etc/hosts
 ```
 
-- **Mac** : `brew install mkcert`
+Et voilà normalement vous devriez accèder à kubeapps depuis chrome avec [http://kubeapps.localhost/](http://kubeapps.localhost/)
 
-Ensuite générons les certificats pour activer https sur tous les domaines finissant par `k3s.localhost`
+### H. Une authentification et des habilitations fine pour kubeapps
 
-```
-mkdir certs/
-echo 'certs/*
-!.gitkeep' >> .gitignore # we don't want to commit auto-signed certs
-mkcert -install
-mkcert -cert-file certs/local-cert.pem -key-file certs/local-key.pem "k3s.localhost" "*.k3s.localhost" 
-```
-
-https://blog.stephane-robert.info/post/homelab-ingress-k3s-certificats-self-signed/
-
-### F. Développement de notre rôle pour installer la solution de PaaS Kubeapps
-
-Donc dans [playbook/roles/kubeapps/tasks]([playbook/roles/kubeapps/tasks) nous allons créer les fichiers suivants :
-
-- `dev.yaml` : ce fichier servira à tester en local notre PaaS
-- `install.yaml`: celui-ci installe le binaire de la solution et déploie sur notre cluster kubernetes (k3s)
-
-
-### G. Playbook et inventaire final
+### I. Playbook et inventaire final
 
 Nous allons créer le fichier `site.yaml` (dans le dossier `playbook/`) qui va se charger avec la commande `ansible-playbook` de lancer les rôles dans le bon ordre sur les machines.
 

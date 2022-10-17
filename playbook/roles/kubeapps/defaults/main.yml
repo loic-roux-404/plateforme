@@ -1,3 +1,9 @@
 ---
-# defaults file for role-kubeapps
-kubeapps_dev: False
+# HelmChart Custom Resource Definition for kubeapps variables
+kubeapps_namespace: kubeapps
+kubeapps_chart_crd: kubeapps-chart-crd.yml
+kubeapps_user: "{{ ansible_user | default('root') }}"
+kubeapps_ingress:
+  enabled: true
+  hostname: kubeapps.localhost
+  selfSigned: true

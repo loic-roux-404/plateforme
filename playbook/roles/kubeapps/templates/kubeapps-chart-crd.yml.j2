@@ -1,0 +1,21 @@
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: {{ kubeapps_namespace }}
+---
+apiVersion: helm.cattle.io/v1
+kind: HelmChart
+metadata:
+  name: kubeapps
+  namespace: kube-system
+spec:
+  chart: kubeapps
+  targetNamespace: "{{ kubeapps_namespace }}"
+  repo: https://charts.bitnami.com/bitnami
+  valuesContent: |-
+    ingress:
+      enabled: {{ kubeapps_ingress.enabled }}
+      selfSigned: {{ kubeapps_ingress.selfSigned }}
+      hostname: "{{ kubeapps_ingress.hostname }}"
+      annotations:
+        kubernetes.io/ingress.class: traefik

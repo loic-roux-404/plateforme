@@ -1,7 +1,0 @@
----
-- name: Install required dependencies
-  package:
-    name:
-      - curl
-      - unzip
-    state: present

@@ -13,19 +13,14 @@
 
     - name: Assert master node ready
       ansible.builtin.assert:
-        that: '"Ready    control-plane,master" in kubernetes_nodes.stdout'
-
-    - name: Ensure k3s service is restarted
-      ansible.builtin.systemd:
-        name: k3s
-        state: restarted
+        that: '"node-0   Ready    control-plane,master" in kubernetes_nodes.stdout'
 
     - name: Wait for pods to start fully
       ansible.builtin.pause:
         minutes: 1
 
     - name: Get all running pods.
-      command: kubectl get pods --all-namespaces
+      command: kubectl get pods -n kube-system
       changed_when: false
       register: kubernetes_pods
 
@@ -44,10 +39,9 @@
     - name: Set assertions list
       ansible.builtin.set_fact:
         pod_assertions:
-          - "{{ (pods | length) == 7 }}"
           - "{{ (running | select('search', '1/1') | list) | length >= 3 }}"
           - "{{ (running | select('search', '2/2') | list) | length == 1 }}"
-          - "{{ (pods | select('search', 'Completed') | list) | length == 2 }}"
+          - "{{ (pods | select('search', 'Completed') | list) | length == 3 }}"
 
     - name: Assert required pods up
       ansible.builtin.assert:
