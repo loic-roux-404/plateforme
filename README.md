@@ -17,6 +17,8 @@ Pour cela nous ferons appel à
 
 Pour utilisateurs de **windows** il faut un [**WSL**](https://learn.microsoft.com/fr-fr/windows/wsl/install). Télécharger après avoir suivi cette documentation une distribution linux Ubuntu depuis le windows store.
 
+Ensuite dans vscode installer l'extension wsl `ms-vscode-remote.remote-wsl`.
+
 [**Rancher**](https://rancherdesktop.io/) l'alternative mieux configurée et sans soucis de license à docker desktop. Il est portable sur windows et mac et permet d'avoir une expérience similaire à une utilisation native de docker sur linux.
 
 Dans les choix proposés dans la mise en place :
@@ -86,8 +88,9 @@ Créer votre espace de travail :
 ```bash
 cd ~
 mkdir paas-tutorial/
-cd paas-tutorial/
 ```
+
+> WARNING: Utilisateur du WSL **Pour utiliser vscode, faites le impérativement via la ligne de commande linux WSL dans votre projet `~/paas-tutorial`** : `code .`
 
 Ensuite pour créer l'environnement python avec ses dépendances
 
@@ -115,6 +118,7 @@ Vous devriez avoir `ansible [core 2.13.4]` dans le retour
 
 > Vscode : .vscode/settings.json
 > Remplacez bien le chemin avec le résultat de cette commande `which python`
+> Pour WSL vous retrouverez le chemin vers home avec `\\wsl$\Ubuntu\root` (ou `\home\ton-username`)
 ```json
 {
     "ansible.python.interpreterPath": "<User-Path>/mambaforge/envs/playbook-paas/bin/python"
