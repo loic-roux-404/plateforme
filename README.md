@@ -45,6 +45,8 @@ chmod +x /tmp/Miniconda3-py39_4.12.0-Linux-aarch64.sh
 /tmp/Miniconda3-py39_4.12.0-Linux-aarch64.sh -p $HOME/miniconda
 ```
 
+Veillez à bien accepter toutes les propositions (licence terms, initialize Miniconda3)
+
 **Relancer votre shell pour utiliser** (commande `exec $SHELL`)
 
 ##### Recommandations pour la partie ansible :
@@ -74,8 +76,10 @@ On initialise un environnement virtuel python avec sa propre version de **python
 
 Créer votre espace de travail :
 
-```bash 
+```bash
+cd ~
 mkdir paas-tutorial/
+cd paas-tutorial/
 ```
 
 Ensuite pour créer l'environnement python avec ses dépendances
