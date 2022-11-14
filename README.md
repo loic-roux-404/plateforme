@@ -74,6 +74,11 @@ Molecule est un outil permettant de tester nos suite de configurations ansible c
 
 On initialise un environnement virtuel python avec sa propre version de **python 3.10** et les dépendences ansible et molecule. Ainsi nos dépendences n'entrent pas en conflit avec d'autres non compatibles installés pour un autre projet.
 
+Mettre a jour l'environnement linux :
+```bash
+apt update && apt upgrade -y
+```
+
 Créer votre espace de travail :
 
 ```bash
