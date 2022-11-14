@@ -90,22 +90,23 @@ cd ~
 mkdir paas-tutorial/
 ```
 
-> WARNING: Utilisateur du WSL **Pour utiliser vscode, faites le impérativement via la ligne de commande linux WSL dans votre projet `~/paas-tutorial`** : `code .`
-
 Ensuite pour créer l'environnement python avec ses dépendances
 
 ```bash
 conda create -n playbook-paas python=3.9
 conda activate playbook-paas
-pip install ansible molecule[docker]
 ```
 
-Pourquoi pas geler les versions des dépendances dans un fichier requirements pour qu'un autre environnement puisse facilement retrouver l'état de votre installation.
+Installer la bonne version de pip :
+```bash
+sudo apt install python3-pip
+pip install --upgrade pip
+echo "export PATH=\"${HOME}/.local/bin:$PATH\"" >>"${HOME}"/.bashrc
+```
 
-```sh
-# ~/Home est un dossier de votre hôte (windows / mac)
-cd paas-tutorial/
-echo "ansible==6.4.0\nmolecule==4.0.1\n" > requirements.txt
+Installer ansible
+```bash
+pip install ansible molecule[docker]
 ```
 
 Le prochaine fois lorsque vous aurez recréer un nouvel environnement vous aurez juste à faire `pip install -r requirements.txt`
@@ -114,11 +115,13 @@ Vérifier que tous fonctionne avec `ansible --version`.
 
 Vous devriez avoir `ansible [core 2.13.4]` dans le retour
 
+> WARNING: Utilisateur du WSL **Pour utiliser vscode, faites le impérativement via la ligne de commande linux WSL dans votre projet `~/paas-tutorial`** : `code .`
+
 ### **Bonus** pour faire fonctionner l'extension VsCode ansible
 
 > Vscode : .vscode/settings.json
 > Remplacez bien le chemin avec le résultat de cette commande `which python`
-> Pour WSL vous retrouverez le chemin vers home avec `\\wsl$\Ubuntu\root` (ou `\home\ton-username`)
+> miniconda sur wsl, mambaforge sur mac
 ```json
 {
     "ansible.python.interpreterPath": "<User-Path>/mambaforge/envs/playbook-paas/bin/python"
@@ -127,7 +130,18 @@ Vous devriez avoir `ansible [core 2.13.4]` dans le retour
 
 ### B. Playbook ansible
 
-n playbook ansible est un projet chargé de lancer plusieurs rôles différents sur des machines disponibles sur le réseau via **ssh**. (localhost par exemple peut être provisioné)
+Un playbook ansible est un projet chargé de lancer plusieurs rôles différents sur des machines disponibles sur le réseau via **ssh**. (localhost par exemple peut être provisioné)
+
+On va créer un dossier playbook pour mettre tout ce qui concerne ansible
+
+Aussi pas geler les versions des dépendances dans un fichier requirements pour qu'un autre environnement puisse facilement retrouver l'état de votre installation.
+
+```sh
+# ~/Home est un dossier de votre hôte (windows / mac)
+mkdir -p paas-tutorial/playbook
+cd paas-tutorial/playbook
+echo "ansible==6.4.0\nmolecule==4.0.1\n" > requirements.txt
+```
 
 > Nous allons suivre l'alternative-directory-layout recommandé par cette [documentation](https://docs.ansible.com/ansible/latest/user_guide/sample_setup.html#alternative-directory-layout)
 
