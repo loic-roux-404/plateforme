@@ -15,7 +15,7 @@ Pour cela nous ferons appel à
 
 ## 0/ Installer les pré-requis
 
-Pour utilisateurs de **windows** il faut un [**WSL**](https://learn.microsoft.com/fr-fr/windows/wsl/install). Télécharger après avoir suivi cette documentation une distribution linux Ubuntu depuis le windows store.
+Pour utilisateurs de **windows** il faut un [**WSL**](https://learn.microsoft.com/fr-fr/windows/wsl/install). Télécharger après avoir suivi cette documentation la distribution linux ``Ubuntu 20.04.5 LTS`` depuis le windows store.
 
 Ensuite dans vscode installer l'extension wsl `ms-vscode-remote.remote-wsl`.
 
