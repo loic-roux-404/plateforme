@@ -32,7 +32,13 @@ Laissez le ensuite finir de s'initialiser.
 **Conda** : [docs.conda.io](https://docs.conda.io/en/latest/miniconda.html). Installer simplement avec le setup `.pkg` pour mac.
 
 > Pour Linux et Windows avec WSL utilisez la ligne de commande ci dessous pour l'installer
+```bash
+wget https://repo.anaconda.com/miniconda/Miniconda3-latest-Linux-x86_64.sh -P /tmp
+chmod +x /tmp/Miniconda3-latest-Linux-x86_64.sh
+/tmp/Miniconda3-latest-Linux-x86_64.sh -p $HOME/miniconda
+```
 
+> Pour arm :
 ```bash
 wget https://repo.anaconda.com/miniconda/Miniconda3-py39_4.12.0-Linux-aarch64.sh -P /tmp
 chmod +x /tmp/Miniconda3-py39_4.12.0-Linux-aarch64.sh
