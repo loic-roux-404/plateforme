@@ -75,7 +75,7 @@ On initialise un environnement virtuel python avec sa propre version de **python
 Créer votre espace de travail :
 
 ```bash 
-mkdir paas-turorial/
+mkdir paas-tutorial/
 ```
 
 Ensuite pour créer l'environnement python avec ses dépendances
@@ -90,7 +90,7 @@ Pourquoi pas geler les versions des dépendances dans un fichier requirements po
 
 ```sh
 # ~/Home est un dossier de votre hôte (windows / mac)
-cd paas-turorial/
+cd paas-tutorial/
 echo "ansible==6.4.0\nmolecule==4.0.1\n" > requirements.txt
 ```
 
