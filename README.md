@@ -27,7 +27,7 @@ Laissez le ensuite finir de s'initialiser.
 
 # I/ Partie 1 : Iso du PaaS sous Linux
 
-### Maintenant tout ce que nous allons faire se trouve dans la ligne de commande sur un shell `bash` ou `zsh`.
+### Maintenant tout ce que nous allons faire se trouve dans la ligne de commande sur un shell `bash` ou `zsh` **app Ubuntu téléchargée depuis le Windows Store**.
 
 **Conda** : [docs.conda.io](https://docs.conda.io/en/latest/miniconda.html). Installer simplement avec le setup `.pkg` pour mac.
 
@@ -78,6 +78,8 @@ Mettre a jour l'environnement linux :
 ```bash
 apt update && apt upgrade -y
 ```
+
+Redemarrer l'app Ubuntu.
 
 Créer votre espace de travail :
 
