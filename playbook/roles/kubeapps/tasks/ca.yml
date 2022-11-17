@@ -1,0 +1,39 @@
+# Certificate authority
+
+- name: Change file ownership, group and permissions
+  become_user: "{{ ansible_user | d('root') }}"
+  become: True
+  ansible.builtin.file:
+    path: "{{ kubeapps_ca_ssl_dir }}"
+    owner: "{{ ansible_user | d('root') }}"
+    group: "{{ ansible_user | d('root') }}"
+    state: directory
+    mode: '0755'
+
+- name: Create private key (RSA, 4096 bits)
+  community.crypto.openssl_privatekey:
+    path: "{{ kubeapps_ca_root_location_pem }}"
+    passphrase: "{{ kubeapps_ca_root_key_passphrase }}"
+    cipher: auto
+
+- name: Create certificate signing request (CSR) for CA certificate
+  community.crypto.openssl_csr_pipe:
+    privatekey_path: "{{ kubeapps_ca_root_location_pem }}"
+    privatekey_passphrase: "{{ kubeapps_ca_root_key_passphrase }}"
+    common_name: K3s cluster CA
+    use_common_name_for_san: false  # since we do not specify SANs, don't use CN as a SAN
+    basic_constraints:
+      - 'CA:TRUE'
+    basic_constraints_critical: true
+    key_usage:
+      - keyCertSign
+    key_usage_critical: true
+  register: ca_csr
+
+- name: Create self-signed CA certificate from CSR
+  community.crypto.x509_certificate:
+    path: "{{ kubeapps_ca_root_location_crt }}"
+    csr_content: "{{ ca_csr.csr }}"
+    privatekey_path: "{{ kubeapps_ca_root_location_pem }}"
+    privatekey_passphrase: "{{ kubeapps_ca_root_key_passphrase }}"
+    provider: selfsigned

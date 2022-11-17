@@ -17,16 +17,16 @@
 
     - name: Wait for pods to start fully
       ansible.builtin.pause:
-        minutes: 1
+        minutes: 2
 
     - name: Get all running pods.
       command: kubectl get pods -n kube-system
       changed_when: false
-      register: kubernetes_pods
+      register: kube_system_pods
 
     - name: Tranform pods stdout to list
       ansible.builtin.set_fact:
-        pods: "{{ kubernetes_pods.stdout.split('\n') | list | 
+        pods: "{{ kube_system_pods.stdout.split('\n') | list | 
           reject('search', 'NAMESPACE') }}"
 
     - name: Print list of pods.
@@ -41,9 +41,34 @@
         pod_assertions:
           - "{{ (running | select('search', '1/1') | list) | length >= 3 }}"
           - "{{ (running | select('search', '2/2') | list) | length == 1 }}"
-          - "{{ (pods | select('search', 'Completed') | list) | length == 3 }}"
+          - "{{ (pods | select('search', 'Completed') | list) | length >= 3 }}"
 
     - name: Assert required pods up
       ansible.builtin.assert:
         that: "{{ pod_assertions | list }}"
         fail_msg: "{{ pod_assertions | join(' - ') }}"
+
+    - name: Assert kube-system helm task for kubeapps is ok
+      ansible.builtin.assert:
+        that: "{{ (pods | 
+          select('search', 'helm-install-kubeapps') | 
+          select('search', 'Completed') | list
+          ) | length }}"
+
+    - name: Get all kubeapps running pods.
+      command: kubectl get pods -n kubeapps
+      changed_when: false
+      register: kubeapps_pods
+
+    - name: Get kubeapps pods
+      ansible.builtin.set_fact:
+        kubeapps_running: "{{ kubeapps_pods.stdout.split('\n') | 
+          reject('search', 'NAMESPACE') | 
+          select('search', 'Running') | list }}"
+
+    - name: Print list of kubeapps pods.
+      debug: var=kubeapps_running
+
+    - name: Assert kubeapps all pods running
+      ansible.builtin.assert:
+        that: "{{ (kubeapps_running | list) | length >= 9 }}"

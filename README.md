@@ -1,5 +1,15 @@
 # Paas Tutorial
 
+## Requis
+
+- Un PC / Mac peut importe l'OS
+- Des bases d'administration linux
+- Un minimum de culture sur les systèmes d'**Info**rmation
+- Connaissance des concepts d'environnements isolés linux ou **containers**
+- Un compte [github](http://github.com/)
+
+## Intro
+
 L'objectif de ce tutoriel est de vous permettre de créer sur une petite machine ou sur un serveur personnel un PaaS (Platform as a service) vous permettant de déployer des applications en microservices. Celui-ci sera basé sur [kubernetes]() pour la conteneurisation et [Kubeapps]() pour l'interface et les automatisation autour.
 
 L'optique de cet outillage suivra :
@@ -59,7 +69,7 @@ Extensions vscode :
   - `ms-kubernetes-tools.vscode-kubernetes-tools` debug des cluster directement depuis l'IDE
   - `mindaro.mindaro` permet de faire pont vers kubernetes
 
-> **Warning** Les shell un peu exotique comme fish pour l'utilisation de molecule ne sont pas recommandés
+> ****Warning**** Les shell un peu exotique comme fish pour l'utilisation de molecule ne sont pas recommandés
 
 ## 1. Le playbook ansible
 
@@ -164,7 +174,7 @@ Ensuite dans `requirements.yaml` on importe les roles que l'on utilise en dépen
 
 > Ansible galaxy est le gestionnaire de paquet pour importer des rôles et des collections ansible dans un playbook.
 
-> INFO pour l'instant il y a un bug avec galaxy nous empêchant de récupérer la bonne version de k3s. On peut forcer l'utilisation direct de git pour récupérer la version 3.3.0
+> **Info** pour l'instant il y a un bug avec galaxy nous empêchant de récupérer la bonne version de k3s. On peut forcer l'utilisation direct de git pour récupérer la version 3.3.0
 
 > [playbook/requirements.yaml](playbook/requirements.yaml)
 ```yaml
@@ -233,11 +243,11 @@ dependencies:
       version: v3.3.0
 ```
 
-Ensuite vous devez obligatoirement définir ces informations sur les metas du rôles:
+Ensuite vous devez obligatoirement définir ces **Info**rmations sur les metas du rôles:
 
 > [playbook/roles/role-kubeapps/meta/main.yml](playbook/roles/role-kubeapps/meta/main.yml)
 ```yaml
-galaxy_info:
+galaxy_**Info**:
   author: loic-roux-404
   namespace: paas_tutorial
   description: kubeapps deployment
@@ -252,7 +262,7 @@ Le rôle kubernetes se lancera donc directement avant les tâches de celui de ku
 
 Un nœud est une machine de travail dans Kubernetes, un groupe de noeud va composer ce qu'on appelle un cluster (grappe) de serveurs. Chaque nœud contient les services nécessaires à l'exécution de pods et est géré par les composants du master.
 
-> INFO dans notre cas nous ferons appel à un seul noeud master
+> **Info** dans notre cas nous ferons appel à un seul noeud master
 
 ### Les pods
 
@@ -271,8 +281,8 @@ Une manière abstraite d'exposer une application s'exécutant sur un ensemble de
 
 Il s'agit du composant de kubernetes permettant de gérer au travers d'une technologie de reverse proxy et de répartition de charge le traffic réseau entrant (http(s)).
 
-> INFO Un **reverse proxy** est à l'inverse d'un proxy chargé d'effectuer une action à partir d'une requète réseau externe. On l'utilise majoritairement avec un serveur DNS qui fait pointé des noms de domaines et sous domaines vers l'adresse Ip du serveur sur lequel un reverse proxy est installé.
-> Par exemple il va servir à rediriger le traffic de la requète `kubeapps.localhost` vers une addresse et port réseau attribué par kubernetes à un pod.
+> **Info** Un **reverse proxy** est à l'inverse d'un proxy chargé d'effectuer une action à partir d'une requète réseau externe. On l'utilise majoritairement avec un serveur DNS qui fait pointé des noms de domaines et sous domaines vers l'adresse Ip du serveur sur lequel un reverse proxy est installé.
+> Par exemple il va servir à rediriger le traffic de la requète `kubeapps.svc.test` vers une addresse et port réseau attribué par kubernetes à un pod.
 
 ### E. Premiers tests sur notre rôle 
 
@@ -311,13 +321,13 @@ verifier:
 
 ```
 
-> WARNING : le `name` de la platform va nous servir d'addresse de l'hôte à laquelle ansible va pourvoir accèder en ssh dans notre environnement de test. Il est indispensable de le renseigner car le role k3s en a besoin pour bien créer les noeud du cluster kubernetes.
+> **Warning** : le `name` de la platform va nous servir d'addresse de l'hôte à laquelle ansible va pourvoir accèder en ssh dans notre environnement de test. Il est indispensable de le renseigner car le role k3s en a besoin pour bien créer les noeud du cluster kubernetes.
 
 L'image du container `geerlingguy/docker-${MOLECULE_DISTRO:-ubuntu2004}` va nous permettre d'utiliser un linux préconfiguré qui s'initialise avec le démon `systemd`. Celui ci est une fonctionnalité assez neuve du coeur et recommandé pour la gestion des services en arrière plan et donc pour kubernetes.
 
 On note que l'on publie le port `80` et `443` à des fins de debug pour exposer le controller Ingress. Ici dans k3s il s'agit de l'outil [traefik](https://doc.traefik.io/traefik/).
 
-> **WARNING vérifiez bien que aucun autre processus su votre machine n'utilise le port 80 et 443**
+> ****Warning** vérifiez bien que aucun autre processus su votre machine n'utilise le port 80 et 443**
 
 Les **volumes** que l'on utilise servent à rendre disponible des fonctionnalités du coeur linux désactivées par défaut sur des containers docker comme `systemd` et les [espaces de nom](https://fr.wikipedia.org/wiki/Espace_de_noms) / [`cgroup` version 2](https://kubernetes.io/docs/concepts/architecture/cgroups/). 
 Même chose pour les répertoire temporaire `tmpfs` qui assurent le bon fonctionnement de ces outils. 
@@ -379,9 +389,9 @@ Ensuite nous allons vérifier que k3s est bien prêt avec deux vérifications :
 
 Lancer votre premier test avec `molecule test` et voilà vous avez un playbook offrant un cluster kubernetes prêt à l'emploi tout en suivant rigoureusement le concept du test driven development pour plus de fiabilité.
 
-> INFO : Vous pouvez aussi lancer `molecule test --destroy never` pour ensuite garder le container et debugger l'état du système après le provision ansible avec `molecule login` (qui équivaut à `docker exec -it node-0 bash`)
+> **Info** : Vous pouvez aussi lancer `molecule test --destroy never` pour ensuite garder le container et debugger l'état du système après le provision ansible avec `molecule login` (qui équivaut à `docker exec -it node-0 bash`)
 
-> INFO : En cas d'erreur `export ANSIBLE_STDOUT_CALLBACK=yaml` avant de lancer `molecule test` pour avoir un meilleur rendu de la possible erreur.
+> **Info** : En cas d'erreur `export ANSIBLE_STDOUT_CALLBACK=yaml` avant de lancer `molecule test` pour avoir un meilleur rendu de la possible erreur.
 
 Eensuite dans la suite du fichier on procède à une vérification des pods de la suite k3s. 
 
@@ -441,7 +451,7 @@ Enfin `assert` permet de déclencher une erreur ansible si certaines conditions 
 
 Ici on a vérifier plusieurs choses dans la liste des pods :
 
-> INFO Pour rappel nous avions lancé cette commande `kubectl get pods -n kube-system` qui récupère la liste des pods dans le namespace du système de k3s
+> **Info** Pour rappel nous avions lancé cette commande `kubectl get pods -n kube-system` qui récupère la liste des pods dans le namespace du système de k3s
 
 `"{{ (running | select('search', '1/1') | list) | length >= 3 }}"` et `{{ (running | select('search', '2/2') | list) | length == 1 }}` vérifient que nous avons bien tous les containers des pods prêt et en cour d'éxecution
 
@@ -479,7 +489,7 @@ Si vous n'avez pas kubectl en local :
 - [Pour mac](https://kubernetes.io/docs/tasks/tools/install-kubectl-macos/)
 - [Pour Wsl / Linux](https://kubernetes.io/docs/tasks/tools/install-kubectl-linux/)
 
-On check ensuite avec `kubectl cluster-info` qui devrait nous donner les information du node k3s.
+On check ensuite avec `kubectl cluster-**Info**` qui devrait nous donner les **Info**rmation du node k3s.
 
 ##### Ensuite sur `vscode` utilisez ces paramètres utilisateur pour voir et utiliser le cluster
 
@@ -515,7 +525,7 @@ Donc dans [playbook/roles/kubeapps/tasks]([playbook/roles/kubeapps/tasks) nous a
 
 - `tasks/manifests.yaml` : celui-ci va s'occuper de placer les manifests kubernetes dans le répertoire `/var/lib/rancher/k3s/server/manifests` pour que k3s déploie automatiquement les resources décrites dans ceux-ci.
 
-> Source pour plus d'informations [doc k3s](https://docs.k3s.io/helm#customizing-packaged-components-with-helmchartconfig)
+> Source pour plus d'**Info**rmations [doc k3s](https://docs.k3s.io/helm#customizing-packaged-components-with-helmchartconfig)
 
 Commencons par construire notre manifeste. Pour cela nous avons besoin de définir plusieurs variables pour rendre configurable l'utilisation de notre rôle :
 
@@ -527,7 +537,7 @@ Commencons par construire notre manifeste. Pour cela nous avons besoin de défin
 
 - `kubeapps_ingress` qui est un objet configurant diverses fonctionnalité autour du routage http et de tls
 
-> Par défaut kubeapps sera disponible sur `kubeapps.localhost`
+> Par défaut kubeapps sera disponible sur `kubeapps.svc.test`
 
 [playbook/roles/kubeapps/defaults/main.yml](playbook/roles/kubeapps/defaults/main.yml)
 
@@ -539,14 +549,17 @@ kubeapps_chart_crd: kubeapps-chart-crd.yml
 kubeapps_user: "{{ ansible_user | default('root') }}"
 kubeapps_ingress:
   enabled: true
-  hostname: kubeapps.localhost
+  hostname: kubeapps.svc.test
   selfSigned: true
 ```
 
 Ensuite nous allons utiliser toutes ces variables dans un manifest kubernetes qui inclus deux resources. Un namespace et une définition de dépendance helm avec sa configuration.
 
-```yaml
+> **Info** sur le templating jinja dans la moustache `{{}}` rajouter un `-` signifie que l'on ignore le format du côté ou l'on utilise. Par exemple un retour à la ligne (colonne 0) sera ignorer pour `-}}`.
 
+> WARN le filtre `to_nice_yaml` convertis nos objet ansible en yaml et l'indispensable `indent(width=6)`.
+
+```yaml
 apiVersion: v1
 kind: Namespace
 metadata:
@@ -559,19 +572,15 @@ metadata:
   namespace: kube-system
 spec:
   chart: kubeapps
-  targetNamespace: "{{ kubeapps_namespace }}"
+  targetNamespace: {{ kubeapps_namespace }}
   repo: https://charts.bitnami.com/bitnami
   valuesContent: |-
     ingress:
-      enabled: {{ kubeapps_ingress.enabled }}
-      selfSigned: {{ kubeapps_ingress.selfSigned }}
-      hostname: "{{ kubeapps_ingress.hostname }}"
-      annotations:
-        kubernetes.io/ingress.class: traefik
+      {{ kubeapps_ingress | to_nice_yaml | indent(width=6) -}}
 
 ```
 
-> INFO On configure le ingress directement dans la définition helm tout en précisant bien que l'on utilise traefik en sachant que par défaut kubernetes utilise `nginx` comme cntroller ingress
+> **Info** On configure le ingress directement dans la définition helm tout en précisant bien que l'on utilise traefik en sachant que par défaut kubernetes utilise `nginx` comme cntroller ingress
 
 Nous allons lancer la commande de templating grâce au module `template` de la collection **builtin** (fonctionnalités inclus par défaut) de ansible.
 
@@ -601,23 +610,197 @@ Enfin on rempli le fichier d'entrée comme ceci :
 
 Ici c'est assez simple on inclus les tâches du fichier `manifests.yml` et on tag cette inclusions avec le label `kubeapps`. Ainsi avec ansible on peut choisir d'éxécuté seulement les tâches avec ce tag et donc seulement ce qu'on trouve dans notre rôle kubeapps.
 
+
+Enfin on ajoute un test pour vérifier que les pods de kubeapps sont bien prêt :
+
+- On regarde d'abord si la tâche `helm` a bien pu se finir
+
+> [playbook/roles/kubeapps/molecule/default/verify.yml](playbook/roles/kubeapps/molecule/default/verify.yml)
+```yaml
+    - name: Assert kube-system helm task for kubeapps is ok
+      ansible.builtin.assert:
+        that: "{{ (pods | 
+          select('search', 'helm-install-kubeapps') | 
+          select('search', 'Completed') | list
+          ) | length }}"
+
+```
+- On vérifie que les pods en cour d'éxécution sont bien au nombre de 10 (on utilise la même méthode que pour vérifier que k3s est bien prêt)
+
+> [playbook/roles/kubeapps/molecule/default/verify.yml](playbook/roles/kubeapps/molecule/default/verify.yml)
+```yaml
+    - name: Get all kubeapps running pods.
+      command: kubectl get pods -n kubeapps
+      changed_when: false
+      register: kubeapps_pods
+
+    - name: Get kubeapps pods
+      ansible.builtin.set_fact:
+        kubeapps_running: "{{ kubeapps_pods.stdout.split('\n') | 
+          reject('search', 'NAMESPACE') | 
+          select('search', 'Running') | list }}"
+
+    - name: Print list of kubeapps pods.
+      debug: var=kubeapps_running
+
+    - name: Assert kubeapps all pods running
+      ansible.builtin.assert:
+        that: "{{ (kubeapps_running | 
+          select('search', '1/1') | list) | length == 10 }}"
+
+
+```
+
 Voici la commande molecule qui permettra de faire ceci une fois notre playbook utilisable :
 
 ```bash
 molecule test --destroy never -- -t kubeapps
 ```
 
-Ajouter comme enregistrement alias à `localhost` l'url de kubeapps dans le fichier des hôtes. Voici la commande
+Si votre playbook est déjà passé en entier un `molecule verify` va suffire pour jouer le playbook `verify.yml`.
 
-```sh
-echo '127.0.0.1 kubeapps.localhost' | sudo tee -a /etc/hosts
+Vous devriez voir passer les assertions et les autres tâches sans problèmes.
+
+```
+node-0                     : ok=15 ...
 ```
 
-Et voilà normalement vous devriez accèder à kubeapps depuis chrome avec [http://kubeapps.localhost/](http://kubeapps.localhost/)
+### Dnsmasq pour obtenir utiliser des bons liens vers l'interface
+
+ l'objectif va être de pouvoir utiliser des domaines de test en local. Par exemple on veut utiliser kubeapps.svc.test pour accèder à l'api de notre cluster kubernetes.
+
+L'installation sur **mac** est un peu différente de celle de Linux là voici pour commencer :
+
+- `brew install dnsmasq` (si vous n'avez pas encore hombrew c'est [ici pour l'installer](https://brew.sh/index_fr))
+
+- Créer le répertoire des configurations `mkdir -pv $(brew --prefix)/etc/`
+
+- Préparer une variable pointant vers la config dnsmasq :
+
+```sh
+export DNSMASQ_CNF_DIR="$(brew --prefix)/etc/dnsmasq.conf"
+```
+
+Pour **Linux** :
+
+- Commencer par désactiver le resolveur par défaut qui écoute sur le port `53`
+```sh
+sudo systemctl disable systemd-resolved
+sudo systemctl stop systemd-resolved
+```
+
+- Surpprimer la configuration du résolveur par défaut
+
+```sh
+ls -lh /etc/resolv.conf
+sudo rm /etc/resolv.conf
+```
+
+- Installer le package: `sudo apt install -y dnsmasq`
+
+- Préparer une variable pointant vers la config dnsmasq pour l'étape suivante :
+
+```sh
+export DNSMASQ_CNF_DIR="/etc/dnsmasq.conf"
+```
+
+Pour **Linux** et **Mac** mettons ainsi tout en place :
+
+- On précise bien que l'on veut résoudre toute les requète vers le domaine `.dev` avec l'adresse IP 127.0.0.1 : 
+
+```sh
+echo 'port=53' >> $DNSMASQ_CNF_DIR
+echo 'address=/.test/127.0.0.1' >> $DNSMASQ_CNF_DIR
+```
+
+- On ajoute un resolveur avec :
+
+```sh
+sudo mkdir -v /etc/resolver
+echo "nameserver 127.0.0.1" | sudo tee -a /etc/resolver/local
+```
+
+Redémarrer dnsmasq :
+
+- Linux : `sudo systemctl restart dnsmasq`
+- Mac : `sudo brew services restart dnsmasq`
+
+Vérifier que tout fonctionne avec `scutil --dns` qui devrait donner :
+
+```txt
+resolver ...
+  domain   : dev
+  nameserver[0] : 127.0.0.1
+```
+Et voilà normalement vous devriez accèder à kubeapps depuis chrome avec [http://kubeapps.svc.dev/](http://kubeapps.svc.dev/)
 
 ### H. Une authentification et des habilitations fine pour kubeapps
 
-### I. Playbook et inventaire final
+Pour plus d'**Info**s : https://oauth2-proxy.github.io/oauth2-proxy/docs/configuration/oauth_provider#github-auth-provider
+
+Nous allons adapter le rôle en vue de cette fois ci le rendre utilisable par un playbook de pré-production.
+
+> [playbook/roles/kubeapps/defaults/main.yml](playbook/roles/kubeapps/defaults/main.yml) **ligne 18 jusqu'à la fin**
+
+```yaml
+# ...
+# Authentication to kubeapps
+kubeapps_github_org: ""
+kubeapps_github_team: ""
+kubeapps_github_extra_flags: 
+  - --email-domain=*
+  - --github-org="{{ kubeapps_github_org }}"
+  - --github-team="{{ kubeapps_github_team }}"
+
+kubeapps_authProxy: {}
+kubeapps_authProxy_default:
+  enabled: false
+  provider: github
+  clientID: ""
+  clientSecret: ""
+  # default to result of echo "not-good-secret" | base64
+  cookieSecret: bm90LWdvb2Qtc2VjcmV0Cg==
+  extraFlags: "{{ kubeapps_github_extra_flags }}"
+# Merge user config with defaults
+kubeapps_authProxy_final: "{{ kubeapps_authProxy_default + kubeapps_authProxy }}"
+
+```
+
+[playbook/roles/kubeapps/templates/kubeapps-chart-crd.yml.j2](playbook/roles/kubeapps/templates/kubeapps-chart-crd.yml.j2) **ligne 19**
+```yaml
+    authProxy:
+      {{ kubeapps_authProxy_final | to_nice_yaml | indent(width=6) -}}
+```
+
+Par défaut si on relance notre test molecule nous n'aurons pas d'activation de l'authentificaiton avec github. Nous allons donc pour cette fois faire un test manuelle de celle-ci car elle dépend de configuration propre à une production soit tls activé que kubeapps soit disponible en ligne. (obligation en terme de sécurité de oauth2 / github)
+
+### I. Configuration de notre organisation github et application oauth
+
+Créer une nouvelle organisation [ici](https://github.com/account/organizations/new) :
+
+- Sélectionner le free plan
+- Choisissez un nom à l'organisation
+- Renseignez votre email
+- Cocher bien que elle vous appartient (rattaché à votre pseudo github)
+
+> On peut créer une équipe particulière dans notre organisation qui pourra avoir accès à kubeapps. Le Lien vers le formulaire de création ressemble à ça : https://github.com/orgs/nom-de-ton-organisation/new-team.
+
+> Nommez là comme vous voulez. On pourra la configurer avec la variable `kubeapps_github_team`.
+
+#### Créer l'application github
+
+[créer votre application ici](https://github.com/organizations/<my-org>/settings/applications/new)
+
+Configuré la comme ceci **pour l'instant** en utilisant les url en local qui ne fonctionnerons pas (pas de tls activé / ni online)
+
+- Application name : `kubeapps_test`
+- Homepage URL : `https://kubeapps.svc.test`
+- Application description (optionel): `test kubeapps`
+- Authorization callback URL : `https://kubeapps.svc.test/oauth2/callback`
+
+Ensuite noté bien votre **Client Id** et générer un nouveau **Client secret** que vous devez aussi conserver pour la prochaine étape.
+
+### J. Playbook et inventaire final
 
 Nous allons créer le fichier `site.yaml` (dans le dossier `playbook/`) qui va se charger avec la commande `ansible-playbook` de lancer les rôles dans le bon ordre sur les machines.
 
@@ -646,6 +829,20 @@ ansible_host=localhost
 
 ```
 
+#### Configurer notre rôle avec notre application github
+
+Nous allons crypter les **Info**rmations dangereuses dans un vault ansible que l'on pourra créer avec :
+
+```bash
+ansible-vault create inventories/k8s-paas/group_vars/secrets
+```
+
+#### Tester l'authentification github
+
+
+> `--tag kubeapps` permet de choisir uniquement de lancer les tâches que l'on a bien taggé kubeapps pour gagner du temps
+
+
 ## 2. Créer une première image virtuelle pour le test
 
 Maintenant que nous savons que notre playbook est fonctionnel nous allons l'intégrer dans la chaine de création de notre image.
@@ -672,7 +869,7 @@ Voici comment le flux de création d'une VM avec packer s'organise :
 
 Pour installer packer [c'est ici](https://www.packer.io/downloads)
 
-> INFO: recommandation : extension `4ops.packer`
+> **Info**: recommandation : extension `4ops.packer`
 
 Vérification packer 1.8+ bien installé dans votre ligne de commande
 ```sh

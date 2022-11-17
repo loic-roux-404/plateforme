@@ -1,0 +1,12 @@
+- name: check cert-manager issuer exists
+  assert:
+    that:
+      - cert_manager_cluster_issuer 
+        is in ["letsencrypt-prod", "letsencrypt-staging", "selfsigned-ca-issuer"]
+
+- name: check email when cert-manager Acme enabled
+  assert:
+    that:
+      - cert_manager_email | default(false)
+  when:
+    - cert_manager_cluster_issuer != "selfsigned-ca-issuer"

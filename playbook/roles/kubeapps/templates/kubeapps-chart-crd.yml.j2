@@ -10,12 +10,22 @@ metadata:
   namespace: kube-system
 spec:
   chart: kubeapps
-  targetNamespace: "{{ kubeapps_namespace }}"
+  targetNamespace: {{ kubeapps_namespace }}
   repo: https://charts.bitnami.com/bitnami
   valuesContent: |-
     ingress:
-      enabled: {{ kubeapps_ingress.enabled }}
-      selfSigned: {{ kubeapps_ingress.selfSigned }}
-      hostname: "{{ kubeapps_ingress.hostname }}"
+      tls: true
+      enabled: true
+      hostname: "{{ kubeapps_hostname }}"
       annotations:
-        kubernetes.io/ingress.class: traefik
+        cert-manager.io/issuer-kind: ClusterIssuer
+        cert-manager.io/cluster-issuer: "{{ cert_manager_cluster_issuer }}"
+        cert-manager.io/issuer-group: cert-manager.io
+        cert-manager.io/certificate-name: "{{ kubeapps_hostname }}-tls"
+        kubernetes.io/ingress.class: "{{ kubeapps_k8s_ingress_class }}"
+        certmanager.k8s.io/acme-challenge-type: "http01"
+        traefik.frontend.passHostHeader: "true"
+        traefik.backend.loadbalancer.sticky: "true"
+
+    authProxy:
+      {{ kubeapps_authProxy_final | to_nice_yaml | indent(width=6) }}

@@ -1,9 +1,13 @@
 ---
 
-- name: deploy kubeapps chart with k3s
+- name: "deploy charts with k3s"
   ansible.builtin.template:
-    src: "{{ kubeapps_chart_crd }}.j2"
-    dest: "/var/lib/rancher/k3s/server/manifests/{{ kubeapps_chart_crd }}"
+    src: "{{ item }}.j2"
+    dest: "/var/lib/rancher/k3s/server/manifests/{{ item }}"
     owner: "{{ kubeapps_user }}"
     group: "{{ kubeapps_user }}"
     mode: '0644'
+  loop:
+    - "{{ cert_manager_chart_crd }}"
+    - "{{ kubeapps_dex_chart_crd }}"
+    - "{{ kubeapps_chart_crd }}"
