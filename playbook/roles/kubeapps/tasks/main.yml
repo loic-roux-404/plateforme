@@ -3,9 +3,5 @@
 - import_tasks: checks.yml
   tags: [kubeapps]
 
-- import_tasks: ca.yml
-  tags: [kubeapps]
-  when: cert_manager_cluster_issuer == "selfsigned-ca-issuer"
-
 - import_tasks: manifests.yml
   tags: [kubeapps]

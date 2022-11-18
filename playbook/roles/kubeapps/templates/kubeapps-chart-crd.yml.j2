@@ -19,7 +19,7 @@ spec:
       hostname: "{{ kubeapps_hostname }}"
       annotations:
         cert-manager.io/issuer-kind: ClusterIssuer
-        cert-manager.io/cluster-issuer: "{{ cert_manager_cluster_issuer }}"
+        cert-manager.io/cluster-issuer: letsencrypt-acme-issuer
         cert-manager.io/issuer-group: cert-manager.io
         cert-manager.io/certificate-name: "{{ kubeapps_hostname }}-tls"
         kubernetes.io/ingress.class: "{{ kubeapps_k8s_ingress_class }}"

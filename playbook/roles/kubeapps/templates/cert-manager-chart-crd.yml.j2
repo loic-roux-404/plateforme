@@ -2,6 +2,7 @@ apiVersion: v1
 kind: Namespace
 metadata:
   name: {{ cert_manager_namespace }}
+
 ---
 apiVersion: helm.cattle.io/v1
 kind: HelmChart
@@ -15,36 +16,32 @@ spec:
   valuesContent: |-
     installCRDs: true
 ---
-apiVersion: v1
-data:
-  tls.crt: "{{ kubeapps_ca_root_location_crt }}"
-  tls.key: "{{ kubeapps_ca_root_location_pem }}"
-kind: Secret
+
+{% if cert_manager_cluster_issuer == 'letsencrypt-local' -%}
+apiVersion: helm.cattle.io/v1
+kind: HelmChart
 metadata:
-  name: cert-manager-root-ca
-  namespace: {{ cert_manager_namespace }}
-type: kubernetes.io/tls
----
-apiVersion: cert-manager.io/v1
-kind: ClusterIssuer
-metadata:
-  name: selfsigned-ca-issuer
+  name: pebble
+  namespace: kube-system
 spec:
-  ca:
-    secretName: cert-manager-root-ca
+  chart: pebble
+  targetNamespace: {{ cert_manager_namespace }}
+  repo: https://jupyterhub.github.io/helm-chart
 ---
+{% endif -%}
+
 apiVersion: cert-manager.io/v1
 kind: ClusterIssuer
 metadata:
-  name: letsencrypt-staging
+  name: letsencrypt-acme-issuer
 spec:
   acme:
+    skipTLSVerify: {{ cert_manager_skipTLSVerify }}
     email: {{ cert_manager_email }}
-    server: https://acme-staging-v02.api.letsencrypt.org/directory
+    server: {{ cert_manager_servers[cert_manager_cluster_issuer] }}
     privateKeySecretRef:
-      name: {{ cert_manager_private_key_secret }}
+      name: acme-account-key
     solvers:
     - http01:
         ingress:
           class: {{ kubeapps_k8s_ingress_class }}
-# TODO prod

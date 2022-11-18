@@ -2,11 +2,9 @@
   assert:
     that:
       - cert_manager_cluster_issuer 
-        is in ["letsencrypt-prod", "letsencrypt-staging", "selfsigned-ca-issuer"]
+        is in (cert_manager_servers.keys() | list)
 
 - name: check email when cert-manager Acme enabled
   assert:
     that:
       - cert_manager_email | default(false)
-  when:
-    - cert_manager_cluster_issuer != "selfsigned-ca-issuer"

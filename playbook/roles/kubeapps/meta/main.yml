@@ -56,7 +56,7 @@ dependencies:
       k3s_server:
         kube-apiserver-arg=oidc-issuer-url: "https://{{ kubeapps_dex_issuer }}"
         kube-apiserver-arg=oidc-client-id: "{{ kubeapps_dex_client_id }}"
-        kube-apiserver-arg=oidc-ca-file: "{{ kubeapps_ca_root_location_pem }}"
+        # kube-apiserver-arg=oidc-ca-file: "{{ kubeapps_ca_root_location_ca }}"
         kube-apiserver-arg=oidc-username-claim: email
         kube-apiserver-arg=oidc-groups-claim: groups
         kube-apiserver-arg=authorization-mode: Node,RBAC
