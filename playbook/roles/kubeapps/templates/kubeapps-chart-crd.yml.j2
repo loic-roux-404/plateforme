@@ -18,14 +18,13 @@ spec:
       enabled: true
       hostname: "{{ kubeapps_hostname }}"
       annotations:
-        cert-manager.io/issuer-kind: ClusterIssuer
         cert-manager.io/cluster-issuer: letsencrypt-acme-issuer
-        cert-manager.io/issuer-group: cert-manager.io
-        cert-manager.io/certificate-name: "{{ kubeapps_hostname }}-tls"
+        #acme.cert-manager.io/http01-edit-in-place: "true"
+        #certmanager.k8s.io/acme-http01-edit-in-place: "true"
         kubernetes.io/ingress.class: "{{ kubeapps_k8s_ingress_class }}"
-        certmanager.k8s.io/acme-challenge-type: "http01"
         traefik.frontend.passHostHeader: "true"
         traefik.backend.loadbalancer.sticky: "true"
+        # traefik.ingress.kubernetes.io/router.tls: "true"
 
     authProxy:
       {{ kubeapps_authProxy_final | to_nice_yaml | indent(width=6) }}

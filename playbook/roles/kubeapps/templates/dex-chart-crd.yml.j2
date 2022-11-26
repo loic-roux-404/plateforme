@@ -7,6 +7,7 @@ apiVersion: v1
 kind: Secret
 metadata:
   name: github-client
+  namespace: {{ kubeapps_dex_namespace }}
 type: Opaque
 data:
   client-id: {{ kubeapps_dex_github_client_id }}
@@ -22,8 +23,7 @@ spec:
   targetNamespace: {{ kubeapps_dex_namespace }}
   repo: https://charts.dexidp.io
   valuesContent: |-
-
-    env:
+    envVars:
       - name: GITHUB_CLIENT_ID
         valueFrom:
           secretKeyRef:
@@ -34,35 +34,26 @@ spec:
           secretKeyRef:
             name: github-client
             key: client-secret
-
-      readinessProbe:
-        httpGet:
-          path: /healthz
-          port: 5556
-          scheme: HTTP
-
-    {# volumeMounts:
-      - mountPath: "{{ kubeapps_ca_ssl_dir }}"
-        name: tls
-
-    volumes:
-      - name: tls
-        hostPath:
-          path: "{{ kubeapps_ca_ssl_dir }}"
-          type: DirectoryOrCreate #}
-
     service:
       ports:
         http:
           nodePort: 5556
-
     ingress:
       enabled: true
-        hosts:
-        - host: {{ kubeapps_dex_issuer }}
-          paths:
-            - path: /
-
+      annotations:
+        #cert-manager.io/issuer-kind: ClusterIssuer
+        #cert-manager.io/cluster-issuer: letsencrypt-acme-issuer
+        #cert-manager.io/issuer-group: cert-manager.io
+        #cert-manager.io/certificate-name: "{{ kubeapps_dex_hostname }}-tls"
+        #certmanager.k8s.io/acme-challenge-type: "http01"
+        kubernetes.io/ingress.class: "{{ kubeapps_k8s_ingress_class }}"
+        traefik.frontend.passHostHeader: "true"
+        traefik.backend.loadbalancer.sticky: "true"
+      hosts:
+      - host: {{ kubeapps_dex_hostname }}
+        paths:
+          - path: /
+            pathType: ImplementationSpecific
     config:
       issuer: {{ kubeapps_dex_issuer }}
       storage:
@@ -71,8 +62,6 @@ spec:
           inCluster: true
       web:
         http: 0.0.0.0:5556
-        {# tlsCert: $DEX_CERT
-        tlsKey: $DEX_KEY #}
       connectors:
       - type: github
         id: github
@@ -87,13 +76,7 @@ spec:
       staticClients:
       - id: example-app
         redirectURIs:
-        - 'http://0.0.0.0:5556/callback'
+        - 'http://0.0.0.0/callback'
         name: 'Example App'
         secret: ZXhhbXBsZS1hcHAtc2VjcmV0
       enablePasswordDB: true
-      staticPasswords:
-      - email: "admin@example.com"
-        # bcrypt hash of the string "password": $(echo password | htpasswd -BinC 10 admin | cut -d: -f2)
-        hash: "$2a$10$2b2cU8CPhOTaGrs1HRQuAueS7JTT5ZHsHSzYiFPm1leZck7Mc8T4W"
-        username: "admin"
-        userID: "08a8684b-db88-4b73-90a9-3cd1661f5466"

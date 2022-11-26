@@ -710,7 +710,7 @@ Pour **Linux** et **Mac** mettons ainsi tout en place :
 
 ```sh
 echo 'port=53' >> $DNSMASQ_CNF_DIR
-echo 'address=/.test/127.0.0.1' >> $DNSMASQ_CNF_DIR
+echo 'address=/.local/127.0.0.1' >> $DNSMASQ_CNF_DIR
 ```
 
 - On ajoute un resolveur avec :

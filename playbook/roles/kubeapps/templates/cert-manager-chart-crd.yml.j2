@@ -17,7 +17,7 @@ spec:
     installCRDs: true
 ---
 
-{% if cert_manager_cluster_issuer == 'letsencrypt-local' -%}
+{% if cert_manager_is_local -%}
 apiVersion: helm.cattle.io/v1
 kind: HelmChart
 metadata:
@@ -27,6 +27,7 @@ spec:
   chart: pebble
   targetNamespace: {{ cert_manager_namespace }}
   repo: https://jupyterhub.github.io/helm-chart
+
 ---
 {% endif -%}
 
@@ -36,12 +37,13 @@ metadata:
   name: letsencrypt-acme-issuer
 spec:
   acme:
-    skipTLSVerify: {{ cert_manager_skipTLSVerify }}
+    skipTLSVerify: {{ cert_manager_is_local }}
     email: {{ cert_manager_email }}
     server: {{ cert_manager_servers[cert_manager_cluster_issuer] }}
     privateKeySecretRef:
       name: acme-account-key
     solvers:
-    - http01:
+    - selector: {}
+      http01:
         ingress:
           class: {{ kubeapps_k8s_ingress_class }}

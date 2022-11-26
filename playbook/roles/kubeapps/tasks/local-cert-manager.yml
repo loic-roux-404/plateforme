@@ -1,0 +1,33 @@
+- name: Install pre-requisites for k8s module
+  ansible.builtin.pip:
+    name:
+      - openshift
+      - pyyaml
+      - kubernetes
+
+- name: Get Ingress service infos
+  kubernetes.core.k8s_info:
+    api_version: v1
+    kind: Service
+    name: traefik
+    kubeconfig: /etc/rancher/k3s/k3s.yaml
+    wait: yes
+    namespace: kube-system
+  register: ingress_infos
+
+- name: check ingress service infos available
+  assert:
+    that:
+      - ingress_infos.resources | length > 0
+
+- set_fact:
+    kubeapps_ingress_controller_ip: "{{ ingress_infos.resources[0].spec.clusterIP }}"
+    core_dns_crd: core-dns-config.yml
+
+- name: "Deploy core dns config to k3s"
+  ansible.builtin.template:
+    src: "{{ core_dns_crd }}.j2"
+    dest: "/var/lib/rancher/k3s/server/manifests/{{ core_dns_crd }}"
+    owner: "{{ kubeapps_user }}"
+    group: "{{ kubeapps_user }}"
+    mode: '0644'

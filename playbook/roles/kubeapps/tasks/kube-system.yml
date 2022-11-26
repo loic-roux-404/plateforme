@@ -1,0 +1,10 @@
+- set_fact:
+    ingress_nginx_crd: ingress-nginx-chart-crd.yml
+
+- name: "Deploy ninx-ingress instead of traefik in k3s"
+  ansible.builtin.template:
+    src: "{{ ingress_nginx_crd }}.j2"
+    dest: "/var/lib/rancher/k3s/server/manifests/{{ ingress_nginx_crd }}"
+    owner: "{{ kubeapps_user }}"
+    group: "{{ kubeapps_user }}"
+    mode: '0644'

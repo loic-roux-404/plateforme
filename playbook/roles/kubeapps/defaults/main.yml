@@ -8,39 +8,41 @@ kubeapps_k8s_ingress_class: traefik
 cert_manager_namespace: cert-manager
 
 cert_manager_email: ""
-cert_manager_chart_crd: cert-manager-chart-crd.yml
 cert_manager_private_key_secret: test_secret
 
 # Default to local acme issuer
 cert_manager_cluster_issuer: letsencrypt-local
-cert_manager_skipTLSVerify: "{{ cert_manager_cluster_issuer == 'letsencrypt-local' }}"
 # HelmChart Custom Resource Definition for dex oidc connector
-kubeapps_dex_chart_crd: dex-chart-crd.yml
+cert_manager_is_local: "{{ cert_manager_cluster_issuer == 'letsencrypt-local' }}"
 
 kubeapps_dex_namespace: dex
-kubeapps_dex_issuer: dex.svc.local:5556
+kubeapps_dex_hostname: dex.k3s.local
+kubeapps_dex_issuer: token.actions.githubusercontent.com
 kubeapps_dex_client_id: example-app
 kubeapps_dex_client_secret: ZXhhbXBsZS1hcHAtc2VjcmV0
 
-kubeapps_dex_github_client_id: ""
-kubeapps_dex_github_client_secret: ""
-kubeapps_dex_github_client_org: ""
-kubeapps_dex_github_client_team: ""
+kubeapps_dex_github_client_id: ~
+kubeapps_dex_github_client_secret: ~
+kubeapps_dex_github_client_org: ~
+kubeapps_dex_github_client_team: ~
 
 # HelmChart Custom Resource Definition for kubeapps variables
 kubeapps_namespace: kubeapps
-kubeapps_chart_crd: kubeapps-chart-crd.yml
 kubeapps_user: "{{ ansible_user | default('root') }}"
-kubeapps_hostname: kubeapps.svc.local
+kubeapps_hostname: kubeapps.k3s.local
 
 kubeapps_authProxy: {}
 kubeapps_authProxy_default:
   scope: email
   enabled: true
-  provider: oidc  
-  clientID: "{{ kubeapps_dex_client_id }}"
-  clientSecret: "{{ kubeapps_dex_client_secret }}"
+  provider: github
+  clientID: "{{ kubeapps_dex_github_client_id }}"
+  clientSecret: "{{ kubeapps_dex_github_client_secret }}"
   # default to result of echo "not-good-secret" | base64
   cookieSecret: bm90LWdvb2Qtc2VjcmV0Cg==
+  #extraFlags:
+    #- --oidc-issuer-url=https://{{ kubeapps_dex_issuer }}
+    #- --reverse-proxy=true
+
 # Merge user config with defaults
 kubeapps_authProxy_final: "{{ kubeapps_authProxy_default | combine(kubeapps_authProxy) }}"

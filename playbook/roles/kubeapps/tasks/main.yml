@@ -1,6 +1,13 @@
 ---
 
+# - import_tasks: kube-system.yml
+#   tags: [kubeapps]
+
 - import_tasks: checks.yml
+  tags: [kubeapps]
+
+- import_tasks: local-cert-manager.yml
+  when: cert_manager_is_local
   tags: [kubeapps]
 
 - import_tasks: manifests.yml

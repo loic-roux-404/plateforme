@@ -13,6 +13,7 @@ platforms:
       - 6443:6443
       - 80:80
       - 443:443
+      - 32444:32444 # pebble management
     volumes:
       - /sys/fs/cgroup:/sys/fs/cgroup:rw
       - /var/lib/rancher/k3s

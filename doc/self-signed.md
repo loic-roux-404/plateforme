@@ -3,7 +3,7 @@
 > Mac OS
 
 ```sh
-echo | openssl s_client -servername kubeapps.svc.test -connect kubeapps.svc.local:443 | sed -ne '/-BEGIN CERTIFICATE-/,/-END CERTIFICATE-/p' > certificate.crt
+echo | openssl s_client -servername kubeapps.svc.test -connect kubeapps.k3s.local:443 | sed -ne '/-BEGIN CERTIFICATE-/,/-END CERTIFICATE-/p' > certificate.crt
 
 # For mac users
 sudo security authorizationdb read com.apple.trust-settings.admin > /tmp/security.plist; 
