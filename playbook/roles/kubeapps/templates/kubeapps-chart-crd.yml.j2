@@ -10,6 +10,7 @@ metadata:
   namespace: kube-system
 spec:
   chart: kubeapps
+  version: 12.1.1
   targetNamespace: {{ kubeapps_namespace }}
   repo: https://charts.bitnami.com/bitnami
   valuesContent: |-
@@ -26,20 +27,18 @@ spec:
 
     authProxy:
       {{ kubeapps_authProxy_final | to_nice_yaml | indent(width=6) }}
+{% if cert_manager_is_local %}
       extraVolumeMounts:
-        - name: dex-tls
-          mountPath: /etc/ssl/certs/
-          readOnly: true
+      - mountPath: /etc/ssl/certs/pebble-root.pem
+        name: pebble-ca-share
+        subPath: pebble-root.pem
     frontend:
       extraVolumes:
-        - name: dex-tls
-          csi:
-            readOnly: true
-            driver: csi.cert-manager.io
-            volumeAttributes:
-              csi.cert-manager.io/issuer-name: {{ cert_manager_cluster_issuer }}
-              csi.cert-manager.io/dns-names: {{ kubeapps_dex_hostname }}
-              csi.cert-manager.io/issuer-kind: ClusterIssuer
+      - name: pebble-ca-share
+        configMap:
+          name: pebble-ca-share
+
+{% endif %}
 
 ---
 apiVersion: rbac.authorization.k8s.io/v1

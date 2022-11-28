@@ -1,0 +1,15 @@
+
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: {{ cert_manager_namespace }}
+---
+apiVersion: helm.cattle.io/v1
+kind: HelmChart
+metadata:
+  name: pebble
+  namespace: kube-system
+spec:
+  chart: pebble
+  targetNamespace: {{ cert_manager_namespace }}
+  repo: https://jupyterhub.github.io/helm-chart
