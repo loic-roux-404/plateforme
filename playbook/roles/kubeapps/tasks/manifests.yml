@@ -7,10 +7,7 @@
     owner: "{{ kubeapps_user }}"
     group: "{{ kubeapps_user }}"
     mode: '0644'
-  loop: "{{
-      (['core-dns-config.yml'] if cert_manager_is_local else []) + 
-      [
-        'cert-manager-chart-crd.yml', 
-        'kubeapps-chart-crd.yml'
-      ]
-    }}"
+  loop: 
+    - cert-manager-chart-crd.yml
+    - dex-chart-crd.yml
+    - kubeapps-chart-crd.yml

@@ -24,10 +24,12 @@ data:
         reload
         loadbalance
     }
-    {{ kubeapps_hostname }} {
+    {% for host in [kubeapps_dex_hostname, kubeapps_hostname] -%}
+    {{ host }} {
       hosts {
-        {{ kubeapps_ingress_controller_ip }} {{ kubeapps_hostname }}
+        {{ kubeapps_ingress_controller_ip }} {{ host }}
         fallthrough
       }
       whoami
     }
+    {% endfor -%}

@@ -17,8 +17,7 @@ cert_manager_is_local: "{{ cert_manager_cluster_issuer == 'letsencrypt-local' }}
 
 kubeapps_dex_namespace: dex
 kubeapps_dex_hostname: dex.k3s.local
-kubeapps_dex_issuer: token.actions.githubusercontent.com
-kubeapps_dex_client_id: example-app
+kubeapps_dex_client_id: kubeapps
 kubeapps_dex_client_secret: ZXhhbXBsZS1hcHAtc2VjcmV0
 
 kubeapps_dex_github_client_id: ~
@@ -35,14 +34,14 @@ kubeapps_authProxy: {}
 kubeapps_authProxy_default:
   scope: email
   enabled: true
-  provider: github
-  clientID: "{{ kubeapps_dex_github_client_id }}"
-  clientSecret: "{{ kubeapps_dex_github_client_secret }}"
+  provider: oidc
+  clientID: "{{ kubeapps_dex_client_id }}"
+  clientSecret: "{{ kubeapps_dex_client_secret }}"
   # default to result of echo "not-good-secret" | base64
-  cookieSecret: bm90LWdvb2Qtc2VjcmV0Cg==
-  #extraFlags:
-    #- --oidc-issuer-url=https://{{ kubeapps_dex_issuer }}
-    #- --reverse-proxy=true
+  cookieSecret: 'bm90LWdvb2Qtc2VjcmV0Cg=='
+  extraFlags:
+    - --oidc-issuer-url=https://{{ kubeapps_dex_hostname }}
+    - --reverse-proxy=true
 
 # Merge user config with defaults
 kubeapps_authProxy_final: "{{ kubeapps_authProxy_default | combine(kubeapps_authProxy) }}"

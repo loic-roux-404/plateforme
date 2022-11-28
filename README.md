@@ -580,7 +580,7 @@ spec:
 
 ```
 
-> **Info** On configure le ingress directement dans la définition helm tout en précisant bien que l'on utilise traefik en sachant que par défaut kubernetes utilise `nginx` comme cntroller ingress
+> **Info** On configure le ingress directement dans la définition helm tout en précisant bien que l'on utilise traefik en sachant que par défaut il est souvent utilisé `nginx` comme cntroller ingress
 
 Nous allons lancer la commande de templating grâce au module `template` de la collection **builtin** (fonctionnalités inclus par défaut) de ansible.
 
@@ -733,6 +733,30 @@ resolver ...
   nameserver[0] : 127.0.0.1
 ```
 Et voilà normalement vous devriez accèder à kubeapps depuis chrome avec [http://kubeapps.svc.dev/](http://kubeapps.svc.dev/)
+
+### H. Tls avec cert manager (et local)
+
+#### Faire confiance à notre autorité de certification de test
+
+- `curl -k https://localhost:32444/roots/0 > ~/Downloads/pebble-ca.pem`
+
+#### On Mac it is not much work see here
+
+- Open Keychain Access
+- File > import items...
+- Select ~/Downloads/pebble-ca.pem
+- Right click on minica root ca choose get info
+- Open Trust and select Always Trust on When using this certificate
+
+#### Sur Linux
+
+```
+sudo cp ~/Downloads/pebble-ca.pem /usr/local/share/ca-certificates/pebble-ca.pem
+sudo chmod 644 /usr/local/share/ca-certificates/pebble-ca.pem
+sudo update-ca-certificates
+```
+
+***After close the web page and re open it. Https should be enabled***
 
 ### H. Une authentification et des habilitations fine pour kubeapps
 

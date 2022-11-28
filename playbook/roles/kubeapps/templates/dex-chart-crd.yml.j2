@@ -3,16 +3,6 @@ kind: Namespace
 metadata:
   name: {{ kubeapps_dex_namespace }}
 ---
-apiVersion: v1
-kind: Secret
-metadata:
-  name: github-client
-  namespace: {{ kubeapps_dex_namespace }}
-type: Opaque
-data:
-  client-id: {{ kubeapps_dex_github_client_id }}
-  client-secret: {{ kubeapps_dex_github_client_secret }}
----
 apiVersion: helm.cattle.io/v1
 kind: HelmChart
 metadata:
@@ -23,60 +13,54 @@ spec:
   targetNamespace: {{ kubeapps_dex_namespace }}
   repo: https://charts.dexidp.io
   valuesContent: |-
-    envVars:
-      - name: GITHUB_CLIENT_ID
-        valueFrom:
-          secretKeyRef:
-            name: github-client
-            key: client-id
-      - name: GITHUB_CLIENT_SECRET
-        valueFrom:
-          secretKeyRef:
-            name: github-client
-            key: client-secret
     service:
       ports:
         http:
           nodePort: 5556
     ingress:
+
       enabled: true
       annotations:
-        #cert-manager.io/issuer-kind: ClusterIssuer
-        #cert-manager.io/cluster-issuer: letsencrypt-acme-issuer
-        #cert-manager.io/issuer-group: cert-manager.io
-        #cert-manager.io/certificate-name: "{{ kubeapps_dex_hostname }}-tls"
-        #certmanager.k8s.io/acme-challenge-type: "http01"
+        cert-manager.io/cluster-issuer: letsencrypt-acme-issuer
         kubernetes.io/ingress.class: "{{ kubeapps_k8s_ingress_class }}"
         traefik.frontend.passHostHeader: "true"
         traefik.backend.loadbalancer.sticky: "true"
+        traefik.ingress.kubernetes.io/router.tls: "true"
       hosts:
       - host: {{ kubeapps_dex_hostname }}
         paths:
           - path: /
             pathType: ImplementationSpecific
+      tls:
+        - secretName: {{ kubeapps_dex_hostname }}-tls
+          hosts:
+            - {{ kubeapps_dex_hostname }}
     config:
-      issuer: {{ kubeapps_dex_issuer }}
+      issuer: "https://{{ kubeapps_dex_hostname }}"
+      web:
+        http: 127.0.0.1:5556
       storage:
         type: kubernetes
         config:
           inCluster: true
-      web:
-        http: 0.0.0.0:5556
       connectors:
       - type: github
         id: github
         name: GitHub
         config:
-          clientID: $GITHUB_CLIENT_ID
-          clientSecret: $GITHUB_CLIENT_SECRET
-          redirectURI: https://{{ kubeapps_dex_issuer }}/callback
-          org: {{ kubeapps_dex_github_client_org }}
+          clientID: '{{ kubeapps_dex_github_client_id }}'
+          clientSecret: '{{ kubeapps_dex_github_client_secret }}'
+          redirectURI: "https://{{ kubeapps_dex_hostname }}/callback"
+          orgs:
+          - name: '{{ kubeapps_dex_github_client_org }}'
+            teams: 
+            - '{{ kubeapps_dex_github_client_team }}'
       oauth2:
         skipApprovalScreen: true
       staticClients:
-      - id: example-app
+      - id: kubeapps
         redirectURIs:
-        - 'http://0.0.0.0/callback'
+        - 'https://{{ kubeapps_hostname }}/callback'
         name: 'Example App'
         secret: ZXhhbXBsZS1hcHAtc2VjcmV0
       enablePasswordDB: true

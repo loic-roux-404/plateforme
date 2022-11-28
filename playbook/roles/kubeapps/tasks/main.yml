@@ -6,7 +6,7 @@
 - import_tasks: checks.yml
   tags: [kubeapps]
 
-- import_tasks: local-cert-manager.yml
+- import_tasks: local-dns-ingress.yml
   when: cert_manager_is_local
   tags: [kubeapps]
 
