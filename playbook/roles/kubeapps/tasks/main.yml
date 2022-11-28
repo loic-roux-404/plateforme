@@ -1,8 +1,5 @@
 ---
 
-# - import_tasks: kube-system.yml
-#   tags: [kubeapps]
-
 - import_tasks: checks.yml
   tags: [kubeapps]
 

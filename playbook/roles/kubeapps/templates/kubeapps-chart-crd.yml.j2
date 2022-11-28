@@ -26,6 +26,20 @@ spec:
 
     authProxy:
       {{ kubeapps_authProxy_final | to_nice_yaml | indent(width=6) }}
+      extraVolumeMounts:
+        - name: dex-tls
+          mountPath: /etc/ssl/certs/
+          readOnly: true
+    frontend:
+      extraVolumes:
+        - name: dex-tls
+          csi:
+            readOnly: true
+            driver: csi.cert-manager.io
+            volumeAttributes:
+              csi.cert-manager.io/issuer-name: {{ cert_manager_cluster_issuer }}
+              csi.cert-manager.io/dns-names: {{ kubeapps_dex_hostname }}
+              csi.cert-manager.io/issuer-kind: ClusterIssuer
 
 ---
 apiVersion: rbac.authorization.k8s.io/v1
