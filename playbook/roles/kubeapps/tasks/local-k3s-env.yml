@@ -1,10 +1,3 @@
-- name: Install pre-requisites for k8s module
-  ansible.builtin.pip:
-    name:
-      - openshift
-      - pyyaml
-      - kubernetes
-
 - name: Get Ingress service infos
   kubernetes.core.k8s_info:
     api_version: v1
@@ -35,19 +28,10 @@
     - local-pebble-chart-crd.yml
 
 - name: Wait pebble start
-  kubernetes.core.k8s_info:
-    api_version: v1
-    kind: Service
-    name: pebble
-    kubeconfig: /etc/rancher/k3s/k3s.yaml
-    wait: yes
-    namespace: "{{ cert_manager_namespace }}"
-  register: pebble_infos
-
-- name: Ensure pebble resource exists
-  assert:
-    that:
-      - pebble_infos.resources | length > 0
+  ansible.builtin.wait_for:
+    host: localhost
+    port: 32444
+    delay: 5
 
 - name: Get Pebble Root Ca cert
   ansible.builtin.uri:
@@ -68,7 +52,22 @@
       data:
         ca.crt: "{{ pebble_ca.content }}"
 
-- name: Define volumes facts for CA
+- name: CA for pebble setup
+  ansible.builtin.copy:
+    dest: /var/lib/rancher/k3s/server/tls/oidc-ca.crt
+    content: "{{ pebble_ca.content }}"
+
+- name: Add pebble CA to k3s oidc 
+  ansible.builtin.lineinfile:
+    path: /etc/rancher/k3s/config.yaml
+    regexp: 'kube-apiserver-arg=oidc-ca-file'
+    line: 'kube-apiserver-arg=oidc-ca-file: /var/lib/rancher/k3s/server/tls/oidc-ca.crt'
+    owner: "{{ ansible_user | d('root') }}"
+    group: "{{ ansible_user | d('root') }}"
+    mode: '0644'
+  notify: Restart k3s service
+
+- name: Define volumes facts for CA (after trust-manager sharing)
   set_fact:
     dex_ca_extra_volumes:
       - name: 'pebble-ca-share'

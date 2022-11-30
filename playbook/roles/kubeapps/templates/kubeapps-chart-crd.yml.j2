@@ -3,19 +3,6 @@ kind: Namespace
 metadata:
   name: {{ kubeapps_namespace }}
 ---
-apiVersion: cert-manager.io/v1
-kind: Certificate
-metadata:
-  name: pinniped-proxy
-  namespace: {{ kubeapps_namespace }}
-spec:
-  secretName: pinniped-proxy-tls
-  dnsNames:
-    - pinniped-proxy.{{ kubeapps_hostname }}
-  issuerRef:
-    name: letsencrypt-acme-issuer
-    kind: ClusterIssuer
----
 
 apiVersion: helm.cattle.io/v1
 kind: HelmChart
@@ -36,17 +23,9 @@ spec:
         cert-manager.io/cluster-issuer: letsencrypt-acme-issuer
         kubernetes.io/ingress.class: "{{ kubeapps_k8s_ingress_class }}"
         traefik.frontend.passHostHeader: "true"
-        traefik.backend.loadbalancer.sticky: "true"
         traefik.ingress.kubernetes.io/router.tls: "true"
-      # extraHosts:
-      #   - name: pinniped-proxy.{{ kubeapps_hostname }}
-      #     path: /
-      #     serviceName: pinniped-proxy
-      #     servicePort: 3000
-      # extraTls:
-      #   - hosts:
-      #     - "{{ kubeapps_hostname }}"
-      #     secretName: pinniped-proxy-tls
+        ingress.kubernetes.io/auth-trust-headers: "true"
+        ingress.kubernetes.io/auth-response-headers: "X-Auth-Request-User, X-Auth-Request-Groups, X-Auth-Request-Email, Authorization, Set-Cookie"
 
     authProxy:
       enabled: true
@@ -54,40 +33,30 @@ spec:
       clientID: "{{ kubeapps_dex_client_id }}"
       clientSecret: "{{ kubeapps_dex_client_secret }}"
       cookieSecret: '{{ kubeapps_oauth_proxy_cookie_secret }}'
+      cookieRefresh: 5m
       extraFlags:
         - --oidc-issuer-url=https://{{ kubeapps_dex_hostname }}
-        # - --reverse-proxy=true
+        - --set-authorization-header=true
+        - --set-xauthrequest=true
+        - --pass-access-token=true 
+        - --skip-auth-preflight
       extraVolumeMounts:
         {{ dex_ca_extra_volumes_mounts | to_nice_yaml | indent(8) }}
 
-    pinnipedProxy:
-      enabled: true
-      defaultPinnipedNamespace: default
-      tls:
-        # existingSecret: pinniped-proxy-tls
-        caCertificate: pebble-ca-share
-      extraVolumeMounts:
-        {{ dex_ca_extra_volumes_mounts | to_nice_yaml | indent(8) }}
-
-    frontend: 
+    frontend:
+      # proxypassAccessTokenAsBearer: true
       extraVolumes:
         {{ dex_ca_extra_volumes | to_nice_yaml | indent(8) }}
-
-    clusters:
-    - name: default
-      pinnipedConfig:
-        enabled: true
 
 ---
 apiVersion: rbac.authorization.k8s.io/v1
 kind: ClusterRoleBinding
 metadata:
-  name: dex-cluster-auth
+  name: kubeapps-github-teams
 roleRef:
   apiGroup: rbac.authorization.k8s.io
   kind: ClusterRole
-  name: edit
+  name: cluster-admin
 subjects:
   - kind: Group
     name: "{{ kubeapps_dex_github_client_org }}:{{ kubeapps_dex_github_client_team }}"
-    apiGroup: rbac.authorization.k8s.io

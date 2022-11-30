@@ -20,6 +20,5 @@
     mode: '0644'
   loop:
     - cert-manager-chart-crd.yml
-    - pinniped-proxy-crd.yml
     - dex-chart-crd.yml
     - kubeapps-chart-crd.yml

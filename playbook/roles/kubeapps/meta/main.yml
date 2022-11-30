@@ -55,8 +55,7 @@ dependencies:
       k3s_release_version: v1.21
       k3s_server:
         kube-apiserver-arg=authorization-mode: Node,RBAC
-      # k3s_server_manifests_urls:
-      #   - url: https://github.com/vmware-tanzu/pinniped/releases/download/v0.18.0/install-pinniped-concierge-crds.yaml
-      #     filename: install-pinniped-concierge-crds.yaml
-      #   - url: https://github.com/vmware-tanzu/pinniped/releases/download/v0.18.0/install-pinniped-concierge.yaml
-      #     filename: install-pinniped-concierge.yaml
+        kube-apiserver-arg=oidc-issuer-url: "https://{{ kubeapps_dex_hostname }}"
+        kube-apiserver-arg=oidc-client-id: "{{ kubeapps_dex_client_id }}"
+        kube-apiserver-arg=oidc-username-claim: email
+        kube-apiserver-arg=oidc-groups-claim: groups

@@ -18,13 +18,11 @@ spec:
         http:
           nodePort: 5556
     ingress:
-
       enabled: true
       annotations:
         cert-manager.io/cluster-issuer: letsencrypt-acme-issuer
         kubernetes.io/ingress.class: "{{ kubeapps_k8s_ingress_class }}"
         traefik.frontend.passHostHeader: "true"
-        traefik.backend.loadbalancer.sticky: "true"
         traefik.ingress.kubernetes.io/router.tls: "true"
       hosts:
       - host: {{ kubeapps_dex_hostname }}

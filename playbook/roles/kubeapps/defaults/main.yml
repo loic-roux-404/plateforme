@@ -25,6 +25,19 @@ kubeapps_dex_github_client_secret: ~
 kubeapps_dex_github_client_org: ~
 kubeapps_dex_github_client_team: ~
 
+# kubeapps_dex_k3s_server:
+#   kube-apiserver-arg=authorization-mode: Node,RBAC
+#   kube-apiserver-arg=oidc-issuer-url: "https://{{ kubeapps_dex_hostname }}"
+#   kube-apiserver-arg=oidc-client-id: "{{ kubeapps_dex_client_id }}"
+#   kube-apiserver-arg=oidc-username-claim: email
+#   kube-apiserver-arg=oidc-groups-claim: groups
+
+# kubeapps_dex_k3s_server_local: "{{ {
+#     'kube-apiserver-arg=oidc-ca-file': '/var/lib/rancher/k3s/server/tls/oidc-ca.crt'
+#     } if cert_manager_is_local else {} 
+#   }}"
+# kubeapps_dex_k3s_server_final: "{{ kubeapps_dex_k3s_server | combine(kubeapps_dex_k3s_server_local) }}"
+
 # HelmChart Custom Resource Definition for kubeapps variables
 kubeapps_namespace: kubeapps
 kubeapps_user: "{{ ansible_user | default('root') }}"

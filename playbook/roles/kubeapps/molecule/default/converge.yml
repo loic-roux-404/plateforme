@@ -22,3 +22,10 @@
         state: present
         update_cache: true
       when: ansible_os_family == 'Debian'
+
+    - name: Install pre-requisites for k8s module
+      ansible.builtin.pip:
+        name:
+          - openshift
+          - pyyaml
+          - kubernetes
