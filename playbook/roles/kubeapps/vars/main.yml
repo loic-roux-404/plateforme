@@ -7,3 +7,6 @@ cert_manager_servers:
 
 # local acme issuer vars
 cert_manager_local_acme_cert_url: https://raw.githubusercontent.com/jupyterhub/pebble-helm-chart/main/pebble/files/root-cert.pem
+
+dex_ca_extra_volumes: []
+dex_ca_extra_volumes_mounts: []

@@ -29,20 +29,5 @@ kubeapps_dex_github_client_team: ~
 kubeapps_namespace: kubeapps
 kubeapps_user: "{{ ansible_user | default('root') }}"
 kubeapps_hostname: kubeapps.k3s.local
-
-kubeapps_authProxy: {}
-kubeapps_authProxy_default:
-  scope: email openid profile
-  enabled: true
-  provider: oidc
-  clientID: "{{ kubeapps_dex_client_id }}"
-  clientSecret: "{{ kubeapps_dex_client_secret }}"
-  # default to result of echo "not-good-secret" | base64
-  cookieSecret: 'bm90LWdvb2Qtc2VjcmV0Cg=='
-  extraFlags:
-    - --oidc-issuer-url=https://{{ kubeapps_dex_hostname }}
-    - --redirect-url=https://{{ kubeapps_hostname }}/oauth2/callback
-    - --reverse-proxy=true
-
-# Merge user config with defaults
-kubeapps_authProxy_final: "{{ kubeapps_authProxy_default | combine(kubeapps_authProxy) }}"
+# default to result of echo "not-good-secret" | base64
+kubeapps_oauth_proxy_cookie_secret: bm90LWdvb2Qtc2VjcmV0Cg==

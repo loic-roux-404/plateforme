@@ -1,4 +1,5 @@
 ---
+
 - name: "Deploy manifests to k3s cattle crd processor"
   ansible.builtin.template:
     src: "{{ item }}.j2"
@@ -17,7 +18,8 @@
     owner: "{{ kubeapps_user }}"
     group: "{{ kubeapps_user }}"
     mode: '0644'
-  loop: 
+  loop:
     - cert-manager-chart-crd.yml
+    - pinniped-proxy-crd.yml
     - dex-chart-crd.yml
     - kubeapps-chart-crd.yml

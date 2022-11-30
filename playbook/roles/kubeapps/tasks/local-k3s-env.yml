@@ -66,4 +66,15 @@
         name: pebble-root-ca
         namespace: "{{ cert_manager_namespace }}"
       data:
-        pebble-root.pem: "{{ pebble_ca.content }}"
+        ca.crt: "{{ pebble_ca.content }}"
+
+- name: Define volumes facts for CA
+  set_fact:
+    dex_ca_extra_volumes:
+      - name: 'pebble-ca-share'
+        configMap: {'name': 'pebble-ca-share'}
+
+    dex_ca_extra_volumes_mounts:
+      - name: pebble-ca-share
+        mountPath: /etc/ssl/certs/pebble-ca.crt
+        subPath: ca.crt

@@ -1,0 +1,40 @@
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: pinniped
+---
+apiVersion: helm.cattle.io/v1
+kind: HelmChart
+metadata:
+  name: pinniped
+  namespace: kube-system
+spec:
+  chart: pinniped
+  targetNamespace: pinniped
+  repo: https://charts.bitnami.com/bitnami
+  valuesContent: |-
+    supervisor:
+      enabled: false
+    concierge:
+      extraVolumesMounts:
+        {{ dex_ca_extra_volumes_mounts | to_nice_yaml | indent(8) }}
+
+      extraVolumes:
+        {{ dex_ca_extra_volumes | to_nice_yaml | indent(8) }}
+
+---
+kind: JWTAuthenticator
+apiVersion: authentication.concierge.pinniped.dev/v1alpha1
+metadata:
+  name: jwt-authenticator
+  namespace: vmware-system-tmc
+spec:
+  issuer: https://{{ kubeapps_dex_hostname }}
+  audience: "{{ kubeapps_dex_client_id }}"
+  claims:
+    groups: groups
+    username: email
+{% if cert_manager_is_local %}
+  tls:
+    certificateAuthorityData: "{{ pebble_ca.content | string | b64encode }}"
+{% endif %}

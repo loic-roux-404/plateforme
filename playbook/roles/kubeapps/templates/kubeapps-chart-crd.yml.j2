@@ -3,6 +3,20 @@ kind: Namespace
 metadata:
   name: {{ kubeapps_namespace }}
 ---
+apiVersion: cert-manager.io/v1
+kind: Certificate
+metadata:
+  name: pinniped-proxy
+  namespace: {{ kubeapps_namespace }}
+spec:
+  secretName: pinniped-proxy-tls
+  dnsNames:
+    - pinniped-proxy.{{ kubeapps_hostname }}
+  issuerRef:
+    name: letsencrypt-acme-issuer
+    kind: ClusterIssuer
+---
+
 apiVersion: helm.cattle.io/v1
 kind: HelmChart
 metadata:
@@ -24,21 +38,45 @@ spec:
         traefik.frontend.passHostHeader: "true"
         traefik.backend.loadbalancer.sticky: "true"
         traefik.ingress.kubernetes.io/router.tls: "true"
+      # extraHosts:
+      #   - name: pinniped-proxy.{{ kubeapps_hostname }}
+      #     path: /
+      #     serviceName: pinniped-proxy
+      #     servicePort: 3000
+      # extraTls:
+      #   - hosts:
+      #     - "{{ kubeapps_hostname }}"
+      #     secretName: pinniped-proxy-tls
 
     authProxy:
-      {{ kubeapps_authProxy_final | to_nice_yaml | indent(width=6) }}
-{% if cert_manager_is_local %}
+      enabled: true
+      provider: oidc
+      clientID: "{{ kubeapps_dex_client_id }}"
+      clientSecret: "{{ kubeapps_dex_client_secret }}"
+      cookieSecret: '{{ kubeapps_oauth_proxy_cookie_secret }}'
+      extraFlags:
+        - --oidc-issuer-url=https://{{ kubeapps_dex_hostname }}
+        # - --reverse-proxy=true
       extraVolumeMounts:
-      - mountPath: /etc/ssl/certs/pebble-root.pem
-        name: pebble-ca-share
-        subPath: pebble-root.pem
-    frontend:
-      extraVolumes:
-      - name: pebble-ca-share
-        configMap:
-          name: pebble-ca-share
+        {{ dex_ca_extra_volumes_mounts | to_nice_yaml | indent(8) }}
 
-{% endif %}
+    pinnipedProxy:
+      enabled: true
+      defaultPinnipedNamespace: default
+      tls:
+        # existingSecret: pinniped-proxy-tls
+        caCertificate: pebble-ca-share
+      extraVolumeMounts:
+        {{ dex_ca_extra_volumes_mounts | to_nice_yaml | indent(8) }}
+
+    frontend: 
+      extraVolumes:
+        {{ dex_ca_extra_volumes | to_nice_yaml | indent(8) }}
+
+    clusters:
+    - name: default
+      pinnipedConfig:
+        enabled: true
 
 ---
 apiVersion: rbac.authorization.k8s.io/v1
