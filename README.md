@@ -10,26 +10,29 @@
 
 ## Intro
 
-L'objectif de ce tutoriel est de vous permettre de créer sur une petite machine ou sur un serveur personnel un PaaS (Platform as a service) vous permettant de déployer des applications en microservices. Celui-ci sera basé sur [kubernetes]() pour la conteneurisation et [Kubeapps]() pour l'interface et les automatisation autour.
+L'objectif de ce tutoriel est de vous permettre de créer sur une petite machine ou sur un serveur personnel un PaaS (Platform as a service) vous permettant de déployer des applications en microservices. Celui-ci sera basé sur [kubernetes](https://kubernetes.io/fr/) pour la conteneurisation et [Kubeapps](https://kubeapps.dev/) pour l'interface de déploiement. En bonus si le temps nous le permet on utilisera concourse pour ajouter l'automatisation des mise à jour de l'application.
 
 L'optique de cet outillage suivra :
 - le principle **d'immutable infrastructure** avec l'idée de recréer plutôt que de mettre à jour. Ainsi nous aurons recour à des iso linux déjà prêt pour déployer la plateforme **kubernetes** / **kubeapps** directement sur un serveur.
 
 - Le principe **d'infrastructure as code** en gardant toutes la spécification de notre infrastructure dans des configurations et scripts.
 
-Pour cela nous ferons appel à 
+Pour cela nous ferons appel à un socle technique composé de :
 - l'outil [`k3s`](https://k3s.io/) qui simplifie l'installation de kubernetes sur des machines ARM tout en restant compatible avec les architectures classiques X64. Il fourni par défaut des pods (containers en execution) pour inclure des fonctionnalités souvent recherchés sur ce type de configuration edge computing. (reverse proxy, configuration DNS...)
-- ¨Packer pour créer des images iso de machine linux
-- Ansible pour provisioner cette image
-- Azure pour nous founir des serveurs accessible en ssh sur lequels nous pourrons mettre en ligne
+- [¨Packer](https://www.packer.io/) pour créer des images iso de machine linux
+- [Ansible](https://www.ansible.com/) pour provisioner cette image
+- [Azure](https://azure.microsoft.com/fr-fr/) pour nous founir des serveurs accessible en ssh sur lequels nous pourrons mettre en ligne
 
 ## 0/ Installer les pré-requis
 
-Pour utilisateurs de **windows** il faut un [**WSL**](https://learn.microsoft.com/fr-fr/windows/wsl/install). Télécharger après avoir suivi cette documentation la distribution linux ``Ubuntu 20.04.5 LTS`` depuis le windows store.
+Pour utilisateurs de **windows** il faut un [**WSL**](https://learn.microsoft.com/fr-fr/windows/wsl/install). 
+
+- Télécharger après avoir suivi cette documentation la distribution linux ``Ubuntu 20.04.5 LTS`` depuis le windows store. 
+- **+ Windows terminal bien que pas obligatoire il est très pratique pour accèder au shell**
 
 Ensuite dans vscode installer l'extension wsl `ms-vscode-remote.remote-wsl`.
 
-[**Rancher**](https://rancherdesktop.io/) l'alternative mieux configurée et sans soucis de license à docker desktop. Il est portable sur windows et mac et permet d'avoir une expérience similaire à une utilisation native de docker sur linux.
+[**Rancher**](https://rancherdesktop.io/) l'alternative mieux configurée et sans soucis de license à docker desktop. Il est portable sur windows et mac et nous permet d'avoir une expérience docker complète et fonctionnelle sur notre machine.
 
 Dans les choix proposés dans la mise en place :
 - **Décocher kubernetes**
@@ -37,9 +40,9 @@ Dans les choix proposés dans la mise en place :
 
 Laissez le ensuite finir de s'initialiser.
 
-# I/ Partie 1 : Iso du PaaS sous Linux
+# I/ Partie 1 : Provisionning du PaaS sous Linux
 
-### Maintenant tout ce que nous allons faire se trouve dans la ligne de commande sur un shell `bash` ou `zsh` **app Ubuntu téléchargée depuis le Windows Store**.
+### Maintenant tout ce que nous allons faire se trouve dans la ligne de commande sur un shell `bash` ou `zsh` 
 
 **Conda** : [docs.conda.io](https://docs.conda.io/en/latest/miniconda.html). Installer simplement avec le setup `.pkg` pour mac.
 
@@ -59,17 +62,13 @@ chmod +x /tmp/Miniconda3-py39_4.12.0-Linux-aarch64.sh
 
 Veillez à bien accepter toutes les propositions (licence terms, initialize Miniconda3)
 
-**Relancer votre shell pour utiliser** (commande `exec $SHELL`)
+**Relancer votre shell pour utiliser conda** (commande `exec $SHELL`)
 
-##### Recommandations pour la partie ansible :
-
-Extensions vscode : 
+#### Extensions vscode recommandés : 
 
   - `redhat.ansible` serveur de langage ansibke
   - `ms-kubernetes-tools.vscode-kubernetes-tools` debug des cluster directement depuis l'IDE
   - `mindaro.mindaro` permet de faire pont vers kubernetes
-
-> ****Warning**** Les shell un peu exotique comme fish pour l'utilisation de molecule ne sont pas recommandés
 
 ## 1. Le playbook ansible
 
@@ -84,14 +83,15 @@ de python, nous allons utiliser `miniconda`.
 
 Molecule est un outil permettant de tester nos suite de configurations ansible contenus dans des rôles ou des tâches.
 
-On initialise un environnement virtuel python avec sa propre version de **python 3.10** et les dépendences ansible et molecule. Ainsi nos dépendences n'entrent pas en conflit avec d'autres non compatibles installés pour un autre projet.
+Pour commencer bonne habitude, on met à jour linux :
 
-Mettre a jour l'environnement linux :
 ```bash
 apt update && apt upgrade -y
 ```
 
-Redemarrer l'app Ubuntu.
+Puis redemarrer l'app Ubuntu. Si des problèmes appraissent encore lancer la comande `wsl --shutdown` depuis un powershell en administrateur avant de lancer le shell WSL.
+
+Ensuite on initialise un environnement virtuel python avec sa propre version de **python 3.10** et les dépendences ansible et molecule. Ainsi nos dépendences n'entrent pas en conflit avec d'autres pouvant être incompatible.
 
 Créer votre espace de travail :
 
@@ -107,27 +107,31 @@ conda create -n playbook-paas python=3.9
 conda activate playbook-paas
 ```
 
+<!--
+
 Installer la bonne version de pip :
 ```bash
 sudo apt install python3-pip
 pip install --upgrade pip
 echo "export PATH=\"${HOME}/.local/bin:$PATH\"" >>"${HOME}"/.bashrc
 ```
+-->
 
-Installer ansible
+
+Installer ansible et molecule préconfiguré pour utiliser docker (rancher desktop).
 ```bash
 pip install ansible molecule[docker]
 ```
 
-Le prochaine fois lorsque vous aurez recréer un nouvel environnement vous aurez juste à faire `pip install -r requirements.txt`
+> ****Warning**** Les shell un peu exotique comme fish pour l'utilisation de molecule ne sont pas recommandés
 
 Vérifier que tous fonctionne avec `ansible --version`.
 
 Vous devriez avoir `ansible [core 2.13.4]` dans le retour
 
-> WARNING: Utilisateur du WSL **Pour utiliser vscode, faites le impérativement via la ligne de commande linux WSL dans votre projet `~/paas-tutorial`** : `code .`
-
 ### **Bonus** pour faire fonctionner l'extension VsCode ansible
+
+> WARNING: Utilisateur du WSL **Pour utiliser vscode, faites le impérativement via la ligne de commande linux WSL dans votre projet `~/paas-tutorial`** : `code .`
 
 > Vscode : .vscode/settings.json
 > Remplacez bien le chemin avec le résultat de cette commande `which python`
@@ -140,11 +144,15 @@ Vous devriez avoir `ansible [core 2.13.4]` dans le retour
 
 ### B. Playbook ansible
 
-Un playbook ansible est un projet chargé de lancer plusieurs rôles différents sur des machines disponibles sur le réseau via **ssh**. (localhost par exemple peut être provisioné)
+Un playbook ansible est un projet chargé de lancer plusieurs rôles différents sur des machines disponibles sur le réseau via **ssh**. (localhost par exemple peut être provisioné).
+
+Pour aller plus loin dans le fonctionnement de ansible, cet outil s'appuie intégralement sur l'environnement python installé sur une machine invités (que l'on provisionne). Grâce à python ansible va abstraire la complexité de l'administration système linux avec des **déclaration yaml**, des **templates** pour créer des fichiers dynamiquements, des **structure de contrôles** algorithmique et des variables manipulables avec des **filters**.
+
+#### On Commence :
 
 On va créer un dossier playbook pour mettre tout ce qui concerne ansible
 
-Aussi pas geler les versions des dépendances dans un fichier requirements pour qu'un autre environnement puisse facilement retrouver l'état de votre installation.
+Aussi, on va geler les versions des dépendances dans un fichier requirements pour qu'un autre environnement puisse facilement retrouver l'état de votre installation sans problèmes de compatibilités.
 
 ```sh
 # ~/Home est un dossier de votre hôte (windows / mac)
@@ -186,13 +194,14 @@ roles:
 
 collections:
     - name: community.general
+    - name: kubernetes.core
 ```
 
-Les **collections** vont servir à ajouter des fonctionnalités à ansible et ses directives de tâches. Ici on ajoute des fonctionnalités pour manipuler facilement les commandes docker et kubernetes.
+Les **collections** vont servir à ajouter des fonctionnalités à ansible et ses directives de tâches. Ici on ajoute les fonctionnalités fondamentales ainsi que celles pour manipuler notre cluster kubernetes (abstraction de la commande `kubectl`).
 
 Les **roles** correspondent à des suites de tâches qui vont installer et configurer un outil sur une machine. Ici on utilisera un [role k3s](https://github.com/PyratLabs/ansible-role-k3s) qui s'occupe de configurer en fonction de nos paramètre le cluster k3s.
 
-> K3s n'utilise pas docker mais containerd pour utiliser les focntionnalités de container linux.
+> **INFO** K3s n'utilise pas `docker` mais `containerd` pour utiliser les fonctionnalités de container linux.
 
 Pour installer ces requirements maintenant on lance dans le dossier `playbook/` :
 
@@ -200,11 +209,11 @@ Pour installer ces requirements maintenant on lance dans le dossier `playbook/` 
 ansible-galaxy install -r requirements.yaml
 ```
 
-Normalement tous est installé correctement et prêt à l'emploi
+Normalement tous est installé correctement et prêt à l'emploi.
 
 ### C. Initialiser le rôle installant un Cluster kubernetes (k3s) 
 
-Pour suivre la convention d'ansible nous allons procédé en créant un role interne à notre projet. L'objectif sera d'installer [kubeapps](https://github.com/vmware-tanzu/kubeapps) l'outil qui nous permettra de déployer les containers de nos applications et leurs dépendances.
+Pour suivre la convention d'ansible nous allons procédé en créant un role interne à notre projet. L'objectif sera d'installer un ensemble de solution autour de kubeapps pour le faire fonctionner de manière sécurisée en local et en production.
 
 Dans le dossier `playbook` faites donc :
 
@@ -264,6 +273,10 @@ Un nœud est une machine de travail dans Kubernetes, un groupe de noeud va compo
 
 > **Info** dans notre cas nous ferons appel à un seul noeud master
 
+### Namespace
+
+Clusters virtuels présents sur le même cluster physique. Ces clusters virtuels sont appelés namespaces. Ils utilisents les fonctionnalités de groupage de linux Cgroup.
+
 ### Les pods
 
 [source documentation officielle](https://kubernetes.io/fr/docs/concepts)
@@ -273,6 +286,10 @@ Un pod est un groupe d'un ou plusieurs conteneurs (comme des conteneurs Docker),
 Un pod peut être :
 - Temporaire (Completed) pour effectuer une tâches particulière (cron, jouer des script, déploiement d'autres pods...)
 - Définitif soit une application en éxecution
+
+### Déploiement
+
+Comme un le fait en développement un fichier docker-compose, cette ressource décrits la mise en place des containers avant de les placer dans un pod (plusieurs containers peuvent se placer dans un pod)
 
 ### Services
 Une manière abstraite d'exposer une application s'exécutant sur un ensemble de Pods en tant que service réseau.
@@ -284,7 +301,24 @@ Il s'agit du composant de kubernetes permettant de gérer au travers d'une techn
 > **Info** Un **reverse proxy** est à l'inverse d'un proxy chargé d'effectuer une action à partir d'une requète réseau externe. On l'utilise majoritairement avec un serveur DNS qui fait pointé des noms de domaines et sous domaines vers l'adresse Ip du serveur sur lequel un reverse proxy est installé.
 > Par exemple il va servir à rediriger le traffic de la requète `kubeapps.svc.test` vers une addresse et port réseau attribué par kubernetes à un pod.
 
-### E. Premiers tests sur notre rôle 
+## Spécificité de k3s
+
+K3s est une sorte d'implémentation allèger de kubernetes pour le rendre portable sur plus de plateformes comme des nano ordinateur et des infrastructures en périphérie de réseau (Edge computing).
+
+Nous avons donc à la place de `etcd` comme outil de persistence du stockage `sqlite`, un ingress (ou reverse proxy) par défaut à `traefik` et on trouve nombreux composants coeur comme le kuber-controller-manager ou le scheduder ramener au plus proche du système (services réseaux au lieu de pods).
+
+## L'architecture autour de Kubeapps
+
+Pour rappel kubeapps nous sert à déployer des applications conteneurisée "packagées" au format helm chart dans un cluster kubernetes. Il à accès à
+Il aura besoin de plusieurs autres outils pour fonctionner de manière sécurisée avec kubernetes.
+
+- Une autorité de certification locale et Acme server pour nos tests [pebble](https://github.com/letsencrypt/pebble)
+- Un gestionnaire de certificats dédié à kubernetes [cert-manager](https://cert-manager.io/)
+- Un **serveur openid** exploitant une application oauth2 github : [dex idp](https://dexidp.io/)
+
+Voilà donc tout ce qu'on aura à mettre en place dans notre rôle ansible.
+
+### E. Premiers tests sur le rôle 
 
 Nous allons d'abord définir l'utilisaton d'une distribution ubuntu pour installer nos outils. Pour les tests en local nous faisons du **docker in docker** ce qui impose des configurations particulières.
 
@@ -305,6 +339,7 @@ platforms:
       - 6443:6443
       - 80:80
       - 443:443
+      - 32444:32444 # pebble management
     volumes:
       - /sys/fs/cgroup:/sys/fs/cgroup:rw
       - /var/lib/rancher/k3s
@@ -321,13 +356,15 @@ verifier:
 
 ```
 
-> **Warning** : le `name` de la platform va nous servir d'addresse de l'hôte à laquelle ansible va pourvoir accèder en ssh dans notre environnement de test. Il est indispensable de le renseigner car le role k3s en a besoin pour bien créer les noeud du cluster kubernetes.
+> **Warning** : le `name` de la platform va nous servir d'addresse réseau par laquelle ansible sur l'hôte va pourvoir accèder en ssh. Il est indispensable de le renseigner car le role k3s en a besoin pour bien créer les noeud du cluster kubernetes. (même si on en utilise un seul)
 
-L'image du container `geerlingguy/docker-${MOLECULE_DISTRO:-ubuntu2004}` va nous permettre d'utiliser un linux préconfiguré qui s'initialise avec le démon `systemd`. Celui ci est une fonctionnalité assez neuve du coeur et recommandé pour la gestion des services en arrière plan et donc pour kubernetes.
+L'image du container `geerlingguy/docker-${MOLECULE_DISTRO:-ubuntu2004}` va nous permettre d'utiliser un linux préconfiguré qui s'initialise avec le démon `systemd`. Celui ci est une fonctionnalité assez neuve du coeur et recommandée pour la gestion des services en arrière plan (daemons) soit ici k3s
 
-On note que l'on publie le port `80` et `443` à des fins de debug pour exposer le controller Ingress. Ici dans k3s il s'agit de l'outil [traefik](https://doc.traefik.io/traefik/).
+On note que l'on publie le port `80` et `443` à des fins de debug pour exposer Ingress.
 
-> ****Warning** vérifiez bien que aucun autre processus su votre machine n'utilise le port 80 et 443**
+> `32444` le port pebble servira plus tard pour accèder à notre serveur ACME
+
+> ****Warning** vérifiez bien que aucun autre processus su votre machine n'utilise déjà le port 80 et 443**
 
 Les **volumes** que l'on utilise servent à rendre disponible des fonctionnalités du coeur linux désactivées par défaut sur des containers docker comme `systemd` et les [espaces de nom](https://fr.wikipedia.org/wiki/Espace_de_noms) / [`cgroup` version 2](https://kubernetes.io/docs/concepts/architecture/cgroups/). 
 Même chose pour les répertoire temporaire `tmpfs` qui assurent le bon fonctionnement de ces outils. 
@@ -338,7 +375,7 @@ Le playbook `verifier` va ensuite nous permettre de tester la bonne execution du
 >Notes :
 > - `hosts: all` permet de jouer le playbook sur tous les hôtes
 > - `role: {{etc...}}` résoud le chemin de fichier vers le répertoire du rôle
-> - Les pré-tâches servent à installer un package manquant à notre container basé sur debian et indispensable au bon fonctionnement de k3s.
+> - Les pré-tâches servent à installer des packages linux et python manquant à notre container utiles pour l'environnement local et les tests.
 
 > [playbook/roles/kubeapps/molecule/default/converge.yml](playbook/roles/kubeapps/molecule/default/converge.yml)
 ```yaml
@@ -360,14 +397,24 @@ Le playbook `verifier` va ensuite nous permettre de tester la bonne execution du
         update_cache: true
       when: ansible_os_family == 'Debian'
 
+    - name: Install pre-requisites for k8s module
+      ansible.builtin.pip:
+        name:
+          - openshift
+          - pyyaml
+          - kubernetes
+
 ```
 
-Ensuite nous allons vérifier que k3s est bien prêt avec deux vérifications :
-- Vérification de la bonne initialisation du noeud **master** simplement en vérifiant que le retour de la commande contient bien "Ready    master".
+Ensuite grâce au module ansible [k8s info](https://docs.ansible.com/ansible/latest/collections/kubernetes/core/k8s_info_module.html) nous allons vérifier que k3s est bien prêt avec deux vérifications :
+
+- Vérification de la bonne initialisation du noeud **master** 
+simplement en vérifiant que le retour de la commande contient bien "Ready    master".
+
+On utilise pour cette fois la commande `kubectl` directement. Pour en savoir plus pour cette commande centrale dans l'utilisation d'un cluster kubernetes [c'est ici](https://kubernetes.io/docs/reference/generated/kubectl/kubectl-commands)
 
 > [playbook/roles/kubeapps/molecule/default/verify.yml](playbook/roles/kubeapps/molecule/default/verify.yml)
 ```yaml
----
 ---
 - name: Verify
   hosts: all
@@ -387,6 +434,8 @@ Ensuite nous allons vérifier que k3s est bien prêt avec deux vérifications :
 
 ```
 
+> On note qu'il est important de préciser à `k8s_info` la localisation kubeconfig qui se trouve à un endroit un peu exotique sur k3s. Cette config comporte des informations utilisateur et des certificats permettant de se connecter sur le cluster.
+
 Lancer votre premier test avec `molecule test` et voilà vous avez un playbook offrant un cluster kubernetes prêt à l'emploi tout en suivant rigoureusement le concept du test driven development pour plus de fiabilité.
 
 > **Info** : Vous pouvez aussi lancer `molecule test --destroy never` pour ensuite garder le container et debugger l'état du système après le provision ansible avec `molecule login` (qui équivaut à `docker exec -it node-0 bash`)
@@ -395,59 +444,36 @@ Lancer votre premier test avec `molecule test` et voilà vous avez un playbook o
 
 Eensuite dans la suite du fichier on procède à une vérification des pods de la suite k3s. 
 
-> Vous pourrez relancer seulement la suite de vérification avec `molecule verify` si votre container n'a pas été détruit
+> Vous pourrez relancer seulement la suite de vérification avec `molecule verify` si votre container n'a pas été détruit (`--destroy false`)
 
-Voici comment on procède.
+Nous savons ici que k3s est lancé. En sachant que ce rôle est externe nous n'avons pas besoin de faire plus de tests sur ces composants centraux disposés dans le namespace `kube-system`.
 
-Le retour de l'utilisation du `command` est stocké sous forme de variable ou fact grâce à `register: <nom variable>`. Ensuite on pourra faire nos tests sur le retour de la commande.
-
-Notez bien l'utilisation des `filters ansible` hérité du langage de templating python `jinja` que l'on peut utiliser en ouvrant la moustache de ansible `"{{}}"`. Nous avons recour à :
-- `select('nom action', 'valeur à comparé')` qui nous permet de faire une selection des cases de la liste répondant à certaines conditions (cf fonction `filter()` en javascript / java...)
-- `reject`qui fait l'inverse d'un select en excluant les données d'une liste répondants à une condition
-- `length` qui permet d'avoir la taille d'une liste
-
-On accède également dans les `"{{}}"` aux fonctionnalités de python avec les méthodes rattachées aux type de données. Par exemple avec l'utilisation de `.split()` pour obtenir la liste des pods kubernetes dans une liste python.
-
-Enfin `assert` permet de déclencher une erreur ansible si certaines conditions ne sont pas remplies. Ces conditions sont multiples et placées dans la liste `pod_assertions`.
+Nous allons par contre de manière originale se lancer dans une approche Test driven developement / test first en écrivant directement les scénarios pour vérifier les resources de kubeapps. 
 
 > [playbook/roles/kubeapps/molecule/default/verify.yml](playbook/roles/kubeapps/molecule/default/verify.yml)
 ```yaml
 
-    - name: Wait for pods to start fully
-      ansible.builtin.pause:
-        minutes: 1
+- name: Get Kubeapps service infos
+  kubernetes.core.k8s_info:
+    api_version: v1
+    kind: Service
+    name: kubeapps
+    kubeconfig: /etc/rancher/k3s/k3s.yaml
+    wait: yes
+    namespace: "kubeapps"
+  register: kubeapps_infos
 
-    - name: Get all running pods.
-      command: kubectl get pods -n kube-system
-      changed_when: false
-      register: kubernetes_pods
-
-    - name: Tranform pods stdout to list
-      ansible.builtin.set_fact:
-        pods: "{{ kubernetes_pods.stdout.split('\n') | list | 
-          reject('search', 'NAMESPACE') }}"
-
-    - name: Print list of pods.
-      debug: var=pods
-
-    - name: Get running pods
-      ansible.builtin.set_fact:
-        running: "{{ pods | select('search', 'Running') | list }}"
-
-    - name: Set assertions list
-      ansible.builtin.set_fact:
-        pod_assertions:
-          - "{{ (running | select('search', '1/1') | list) | length >= 3 }}"
-          - "{{ (running | select('search', '2/2') | list) | length == 1 }}"
-          - "{{ (pods | select('search', 'Completed') | list) | length == 3 }}"
-
-    - name: Assert required pods up
-      ansible.builtin.assert:
-        that: "{{ pod_assertions | list }}"
-        fail_msg: "{{ pod_assertions | join(' - ') }}"
-
+- name: Assertions on service kubeapps 
+  assert:
+    that:
+      - kubeapps_infos.resources | length > 0
+      - kubeapps_infos.resources[0].spec.type == "ClusterIP"
 
 ```
+
+> On test bien que le service est de type cluster ip. Cela signfie qu'il est exposé dans le cluster avec sa propre adresse. Si le type aurait été vide cela aurait voulu dire soit que quelque chose n'est pas correctement configuré soit que kubernetes n'est pas disposé à attribué une configuration réseau à ce service.
+
+> **INFO** Kubernetes utilise l'outil natif de linux `iptables` pour faire fonctionner cette ressource.
 
 Ici on a vérifier plusieurs choses dans la liste des pods :
 

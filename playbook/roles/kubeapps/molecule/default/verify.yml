@@ -15,60 +15,21 @@
       ansible.builtin.assert:
         that: '"node-0   Ready    control-plane,master" in kubernetes_nodes.stdout'
 
-    - name: Wait for pods to start fully
-      ansible.builtin.pause:
-        minutes: 2
+    - name: Get Kubeapps service infos
+      kubernetes.core.k8s_info:
+        api_version: v1
+        kind: Service
+        name: kubeapps
+        kubeconfig: /etc/rancher/k3s/k3s.yaml
+        wait: yes
+        namespace: "kubeapps"
+      register: kubeapps_infos
 
-    - name: Get all running pods.
-      command: kubectl get pods -n kube-system
-      changed_when: false
-      register: kube_system_pods
+    - name: Print list of running nodes.
+      debug: var=kubeapps_infos.resources
 
-    - name: Tranform pods stdout to list
-      ansible.builtin.set_fact:
-        pods: "{{ kube_system_pods.stdout.split('\n') | list | 
-          reject('search', 'NAMESPACE') }}"
-
-    - name: Print list of pods.
-      debug: var=pods
-
-    - name: Get running pods
-      ansible.builtin.set_fact:
-        running: "{{ pods | select('search', 'Running') | list }}"
-
-    - name: Set assertions list
-      ansible.builtin.set_fact:
-        pod_assertions:
-          - "{{ (running | select('search', '1/1') | list) | length >= 3 }}"
-          - "{{ (running | select('search', '2/2') | list) | length == 1 }}"
-          - "{{ (pods | select('search', 'Completed') | list) | length >= 3 }}"
-
-    - name: Assert required pods up
-      ansible.builtin.assert:
-        that: "{{ pod_assertions | list }}"
-        fail_msg: "{{ pod_assertions | join(' - ') }}"
-
-    - name: Assert kube-system helm task for kubeapps is ok
-      ansible.builtin.assert:
-        that: "{{ (pods | 
-          select('search', 'helm-install-kubeapps') | 
-          select('search', 'Completed') | list
-          ) | length }}"
-
-    - name: Get all kubeapps running pods.
-      command: kubectl get pods -n kubeapps
-      changed_when: false
-      register: kubeapps_pods
-
-    - name: Get kubeapps pods
-      ansible.builtin.set_fact:
-        kubeapps_running: "{{ kubeapps_pods.stdout.split('\n') | 
-          reject('search', 'NAMESPACE') | 
-          select('search', 'Running') | list }}"
-
-    - name: Print list of kubeapps pods.
-      debug: var=kubeapps_running
-
-    - name: Assert kubeapps all pods running
-      ansible.builtin.assert:
-        that: "{{ (kubeapps_running | list) | length >= 9 }}"
+    - name: Assertions on service kubeapps 
+      assert:
+        that:
+          - kubeapps_infos.resources | length > 0
+          - kubeapps_infos.resources[0].spec.type == "ClusterIP"
