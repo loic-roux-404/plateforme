@@ -4,7 +4,7 @@
       - cert_manager_cluster_issuer 
         is in (cert_manager_servers.keys() | list)
 
-- name: check email when cert-manager Acme enabled
+- name: check email when cert-manager
   assert:
     that:
       - cert_manager_email | default(false)

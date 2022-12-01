@@ -7,17 +7,6 @@
     owner: "{{ kubeapps_user }}"
     group: "{{ kubeapps_user }}"
     mode: '0644'
-  loop: 
-    - local-pebble-chart-crd.yml
-  when: cert_manager_is_local
-
-- name: "Deploy manifests to k3s cattle crd processor"
-  ansible.builtin.template:
-    src: "{{ item }}.j2"
-    dest: "/var/lib/rancher/k3s/server/manifests/{{ item }}"
-    owner: "{{ kubeapps_user }}"
-    group: "{{ kubeapps_user }}"
-    mode: '0644'
   loop:
     - cert-manager-chart-crd.yml
     - dex-chart-crd.yml

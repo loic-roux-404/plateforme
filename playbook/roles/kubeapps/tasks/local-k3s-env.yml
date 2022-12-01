@@ -52,26 +52,26 @@
       data:
         ca.crt: "{{ pebble_ca.content }}"
 
-- name: CA for pebble setup
+- name: Create Pebble Root Ca file
   ansible.builtin.copy:
     dest: /var/lib/rancher/k3s/server/tls/oidc-ca.crt
     content: "{{ pebble_ca.content }}"
 
-- name: Add pebble CA to k3s oidc 
-  ansible.builtin.lineinfile:
-    path: /etc/rancher/k3s/config.yaml
-    regexp: 'kube-apiserver-arg=oidc-ca-file'
-    line: 'kube-apiserver-arg=oidc-ca-file: /var/lib/rancher/k3s/server/tls/oidc-ca.crt'
-    owner: "{{ ansible_user | d('root') }}"
-    group: "{{ ansible_user | d('root') }}"
+- name: Add pebble CA to k3s oidc config
+  ansible.builtin.copy:
+    content: 'kube-apiserver-arg=oidc-ca-file: /var/lib/rancher/k3s/server/tls/oidc-ca.crt'
+    dest: "{{ k3s_config_yaml_d_dir }}/oidc-ca-file.yaml"
+    owner: "{{ kubeapps_user }}"
+    group: "{{ kubeapps_user }}"
     mode: '0644'
   notify: Restart k3s service
 
 - name: Define volumes facts for CA (after trust-manager sharing)
   set_fact:
     dex_ca_extra_volumes:
-      - name: 'pebble-ca-share'
-        configMap: {'name': 'pebble-ca-share'}
+      - name: pebble-ca-share
+        configMap: 
+          name: pebble-ca-share
 
     dex_ca_extra_volumes_mounts:
       - name: pebble-ca-share

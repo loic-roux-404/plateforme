@@ -247,7 +247,7 @@ Ensuite vous devez obligatoirement définir ces **Info**rmations sur les metas d
 
 > [playbook/roles/role-kubeapps/meta/main.yml](playbook/roles/role-kubeapps/meta/main.yml)
 ```yaml
-galaxy_**Info**:
+galaxy_info:
   author: loic-roux-404
   namespace: paas_tutorial
   description: kubeapps deployment
@@ -818,11 +818,15 @@ Créer une nouvelle organisation [ici](https://github.com/account/organizations/
 Configuré la comme ceci **pour l'instant** en utilisant les url en local qui ne fonctionnerons pas (pas de tls activé / ni online)
 
 - Application name : `kubeapps_test`
-- Homepage URL : `https://kubeapps.svc.test`
+- Homepage URL : `https://kubeapps.k3s.local`
 - Application description (optionel): `test kubeapps`
-- Authorization callback URL : `https://kubeapps.svc.test/oauth2/callback`
+- Authorization callback URL : `https://kubeapps.k3s.local/oauth2/callback`
 
 Ensuite noté bien votre **Client Id** et générer un nouveau **Client secret** que vous devez aussi conserver pour la prochaine étape.
+
+#### Connecter notre application oauth 2 à Dex IDP
+
+- [restart k3s handler](https://github.com/PyratLabs/ansible-role-k3s/blob/dae3eb928eb85960c6fc3f8bf1806578d4d1dfd9/handlers/main.yml#L28)
 
 ### J. Playbook et inventaire final
 

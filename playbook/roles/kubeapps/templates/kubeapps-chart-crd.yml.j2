@@ -44,7 +44,6 @@ spec:
         {{ dex_ca_extra_volumes_mounts | to_nice_yaml | indent(8) }}
 
     frontend:
-      # proxypassAccessTokenAsBearer: true
       extraVolumes:
         {{ dex_ca_extra_volumes | to_nice_yaml | indent(8) }}
 
