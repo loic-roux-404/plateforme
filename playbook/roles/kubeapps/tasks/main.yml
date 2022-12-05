@@ -3,9 +3,21 @@
 - import_tasks: checks.yml
   tags: [kubeapps]
 
-- import_tasks: local-k3s-env.yml
-  when: cert_manager_is_local
+- import_tasks: internal-acme.yml
+  when: cert_manager_is_internal
   tags: [kubeapps]
 
-- import_tasks: manifests.yml
+- include_tasks: manifests.yml
   tags: [kubeapps]
+  when: item.condition | default(true)
+  loop:
+    - { src: core-dns-config-crd.yml, condition: cert_manager_is_internal }
+    - { src: cert-manager-chart-crd.yml, deploy:  "{{ cert_manager_namespace }}" }
+    - src: trust-manager-chart-crd.yml
+      deploy: trust-manager 
+      ns: "{{ cert_manager_namespace }}"
+      condition: cert_manager_is_internal
+    - src: trust-bundle-config-crd.yml
+      condition: cert_manager_is_internal
+    - { src: dex-chart-crd.yml , deploy: "{{ dex_namespace }}", secret: "{{ dex_hostname }}-tls" }
+    - { src: kubeapps-chart-crd.yml, deploy:  "{{ kubeapps_namespace }}" }

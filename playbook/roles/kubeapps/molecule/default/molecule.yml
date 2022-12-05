@@ -9,16 +9,10 @@ platforms:
     command: ${MOLECULE_DOCKER_COMMAND:-""}
     privileged: true
     pre_build_image: true
-    published_ports:
-      - 6443:6443
-      - 80:80
-      - 443:443
-      - 32444:32444 # pebble management
     volumes:
       - /sys/fs/cgroup:/sys/fs/cgroup:rw
       - /var/lib/rancher/k3s
-    networks:
-      - name: k3snet
+    network_mode: host
     tmpfs:
       - /var/run
       - /run

@@ -120,8 +120,10 @@ echo "export PATH=\"${HOME}/.local/bin:$PATH\"" >>"${HOME}"/.bashrc
 
 Installer ansible et molecule préconfiguré pour utiliser docker (rancher desktop).
 ```bash
-pip install ansible molecule[docker]
+pip install ansible molecule[docker] dnspython
 ```
+
+> `dnspython` servira à faire fonctionner un module d'ansible. On ajoutera des détails plus tard.
 
 > ****Warning**** Les shell un peu exotique comme fish pour l'utilisation de molecule ne sont pas recommandés
 
@@ -158,7 +160,7 @@ Aussi, on va geler les versions des dépendances dans un fichier requirements po
 # ~/Home est un dossier de votre hôte (windows / mac)
 mkdir -p paas-tutorial/playbook
 cd paas-tutorial/playbook
-echo "ansible==6.4.0\nmolecule==4.0.1\n" > requirements.txt
+echo "ansible==6.4.0\nmolecule==4.0.1\ndnspython" > requirements.txt
 ```
 
 > Nous allons suivre l'alternative-directory-layout recommandé par cette [documentation](https://docs.ansible.com/ansible/latest/user_guide/sample_setup.html#alternative-directory-layout)
@@ -305,7 +307,7 @@ Il s'agit du composant de kubernetes permettant de gérer au travers d'une techn
 
 K3s est une sorte d'implémentation allèger de kubernetes pour le rendre portable sur plus de plateformes comme des nano ordinateur et des infrastructures en périphérie de réseau (Edge computing).
 
-Nous avons donc à la place de `etcd` comme outil de persistence du stockage `sqlite`, un ingress (ou reverse proxy) par défaut à `traefik` et on trouve nombreux composants coeur comme le kuber-controller-manager ou le scheduder ramener au plus proche du système (services réseaux au lieu de pods).
+Nous avons donc à la place de `etcd` comme outil de persistence du stockage `sqlite`, un ingress (ou reverse proxy) par défaut à `traefik` et on trouve nombreux composants coeur comme le kuber-controller-manager ou le scheduder ramené au plus proche du système (services réseaux au lieu de pods).
 
 ## L'architecture autour de Kubeapps
 
@@ -450,9 +452,8 @@ Nous savons ici que k3s est lancé. En sachant que ce rôle est externe nous n'a
 
 Nous allons par contre de manière originale se lancer dans une approche Test driven developement / test first en écrivant directement les scénarios pour vérifier les resources de kubeapps. 
 
-> [playbook/roles/kubeapps/molecule/default/verify.yml](playbook/roles/kubeapps/molecule/default/verify.yml)
+> [playbook/roles/kubeapps/molecule/default/verify.yml](playbook/roles/kubeapps/molecule/default/verify.yml#L18)
 ```yaml
-
 - name: Get Kubeapps service infos
   kubernetes.core.k8s_info:
     api_version: v1
@@ -471,27 +472,9 @@ Nous allons par contre de manière originale se lancer dans une approche Test dr
 
 ```
 
-> On test bien que le service est de type cluster ip. Cela signfie qu'il est exposé dans le cluster avec sa propre adresse. Si le type aurait été vide cela aurait voulu dire soit que quelque chose n'est pas correctement configuré soit que kubernetes n'est pas disposé à attribué une configuration réseau à ce service.
+On valide bien que le service est de type cluster ip. Cela signifie qu'il est exposé dans le cluster avec sa propre adresse. Si le type aurait été vide cela aurait voulu dire soit que quelque chose n'est pas correctement configuré soit que kubernetes n'est pas disposé à attribué une configuration réseau à ce service.
 
 > **INFO** Kubernetes utilise l'outil natif de linux `iptables` pour faire fonctionner cette ressource.
-
-Ici on a vérifier plusieurs choses dans la liste des pods :
-
-> **Info** Pour rappel nous avions lancé cette commande `kubectl get pods -n kube-system` qui récupère la liste des pods dans le namespace du système de k3s
-
-`"{{ (running | select('search', '1/1') | list) | length >= 3 }}"` et `{{ (running | select('search', '2/2') | list) | length == 1 }}` vérifient que nous avons bien tous les containers des pods prêt et en cour d'éxecution
-
-```
-  "local-path-provisioner-84bb864455-8dz4g   1/1     Running     0          7h58m",
-  "svclb-traefik-qv89r                       2/2     Running     0          7h57m",
-  "coredns-574bcc6c46-pr6vq                  1/1     Running     0          7h58m",
-  "metrics-server-ff9dbcb6c-ncr4n            1/1     Running     0          7h58m",
-  "traefik-56c4b88c4b-p4xt6                  1/1     Running     0          7h57m",
-```
-
-`"{{ (pods | select('search', 'Completed') | list) | length == 3 }}"` vérifient que les déploiement on bien été complèté sans problèmes.
-
-Nous sommes maintenant sur d'avoir un cluster k3s prêt à l'emploi pour déployer notre solution de PaaS et des applications.
 
 ### F. Vscode avec kubernetes
 
@@ -515,7 +498,7 @@ Si vous n'avez pas kubectl en local :
 - [Pour mac](https://kubernetes.io/docs/tasks/tools/install-kubectl-macos/)
 - [Pour Wsl / Linux](https://kubernetes.io/docs/tasks/tools/install-kubectl-linux/)
 
-On check ensuite avec `kubectl cluster-**Info**` qui devrait nous donner les **Info**rmation du node k3s.
+On check ensuite avec `kubectl cluster-info` qui devrait nous donner les informations du node k3s.
 
 ##### Ensuite sur `vscode` utilisez ces paramètres utilisateur pour voir et utiliser le cluster
 
@@ -539,44 +522,60 @@ Nous allons avoir recours ici à deux nouvelles notions de l'écosytème de kube
 
 - Les manifests que l'on utilise pour décrire une resources (pods, service, ingress,...) à déployer dans le cluster avec la commande `kubectl`
 
+Pour l'exemple cette commande `kubectl get pods -n kube-system` récupère la liste des pods dans le namespace du système de k3s
+Voici le retour qu'elle nous donne :
+
+```
+  "local-path-provisioner-84bb864455-8dz4g   1/1     Running     0          7h58m",
+  "svclb-traefik-qv89r                       2/2     Running     0          7h57m",
+  "coredns-574bcc6c46-pr6vq                  1/1     Running     0          7h58m",
+  "metrics-server-ff9dbcb6c-ncr4n            1/1     Running     0          7h58m",
+  "traefik-56c4b88c4b-p4xt6                  1/1     Running     0          7h57m",
+```
+
+Les commandes kubectl fonctionnent tout le temps de la sorte `kubectl <action> <resource> -n <namespace> -o <format>`
+
+- `<action>` soit une action crud : `edit`, `get`, `describe`
+- `<resource>` pour en savoir plus sur les différentes ressources disponibles `kubectl api-resources`. Nous aurons majoritairement recour à `deployment`, `service`, `ingress`, `pod`, `secret`, `configmap`
+- `-o` est très pratique quand on veut un vrai détail sur les resources avec notamment le `-o yaml`
+
+> La commande pod est un peu particulière : voivi un exemple utilisant le retour au dessus en exemple : `kubectl get pods -n kube-system traefik-56c4b88c4b-p4xt6` (on précise le nom complet du pod)
+
+> Astuce le flag `-A` permet de regarder tous les pod sur n'importe quel namespace. Par exemple `kubectl get po -A` (`po` est un diminutif de `pods`, on a aussi par exemple `svc` pour service)
+
 - [Helm](https://helm.sh/fr/docs/intro/using_helm/) un gestionnaire de paquet pour distribuer des **charts** (ou package) contenant des suites de manifest kubernetes à déployer sur le cluster.
+Pour cela nous aurons recour à cette utilisation au travers de k3s et d'un [module](https://docs.k3s.io/helm#automatically-deploying-manifests-and-helm-charts) permettant le deploiement automatique de resources kubernetes.
 
-Donc dans [playbook/roles/kubeapps/tasks]([playbook/roles/kubeapps/tasks) nous allons travailler sur les fichiers suivants :
+Donc dans [playbook/roles/kubeapps/tasks]([playbook/roles/kubeapps/) nous allons travailler sur ces éléments de ansible :
 
-- `main.yaml`: déclenche certaines suite de tâches en fonction de l'état choisi dans les variables de configuration. Elles sont définis dans l'ordre :
-  1. playbook avec de son inventaire
-  2. Puis celles par défaut du role (dossier `default/`)
+- `tasks/main.yaml`: déclenche certaines suite de tâches en fonction de l'état choisi dans les variables de configuration. Elles sont définis dans l'ordre :
+
+- Les variables par défaut `default/main.yaml`. On pourra par la suite les surcharger avec celle du playbook (inventories/{env}/all.yaml)
 
 - `templates/kubeapps-chart-crd.yml.j2` qui est un template `jinja` représentant plusieurs manifests kubernetes.
 
 - `tasks/manifests.yaml` : celui-ci va s'occuper de placer les manifests kubernetes dans le répertoire `/var/lib/rancher/k3s/server/manifests` pour que k3s déploie automatiquement les resources décrites dans ceux-ci.
 
-> Source pour plus d'**Info**rmations [doc k3s](https://docs.k3s.io/helm#customizing-packaged-components-with-helmchartconfig)
+> Source pour plus d'informations [doc k3s](https://docs.k3s.io/helm#customizing-packaged-components-with-helmchartconfig)
 
-Commencons par construire notre manifeste. Pour cela nous avons besoin de définir plusieurs variables pour rendre configurable l'utilisation de notre rôle :
+Commencons par construire notre manifest. Pour cela nous avons besoin de définir plusieurs variables pour rendre configurable l'utilisation de notre rôle :
 
 - `kubeapps_namespace` pour définir le namespace à créer et sur lequel on déploie kubeapps
 
-- `kubeapps_chart_crd` qui permet de stocker le nom du fichier de [custom resource definition helm](https://helm.sh/docs/chart_best_practices/custom_resource_definitions/)
+- `kubeapps_user` définit à `ansible_user` une variable censé être définie dans un playbook de production dans le fichier host. Par défaut on le met à `root` si la variable n'existe pas.
 
-- `kubeapps_user` définit à ansible_user une variable censé être définie dans un playbook de production
+- `kubeapps_hostname` pour choisir à quel url sera disponible kubeapps.
 
-- `kubeapps_ingress` qui est un objet configurant diverses fonctionnalité autour du routage http et de tls
+> Par défaut kubeapps sera disponible sur `kubeapps.k3s.local`
 
-> Par défaut kubeapps sera disponible sur `kubeapps.svc.test`
-
-[playbook/roles/kubeapps/defaults/main.yml](playbook/roles/kubeapps/defaults/main.yml)
+[playbook/roles/kubeapps/defaults/main.yml](playbook/roles/kubeapps/defaults/main.yml#L22)
 
 ```yaml
 ---
 # HelmChart Custom Resource Definition for kubeapps variables
 kubeapps_namespace: kubeapps
-kubeapps_chart_crd: kubeapps-chart-crd.yml
 kubeapps_user: "{{ ansible_user | default('root') }}"
-kubeapps_ingress:
-  enabled: true
-  hostname: kubeapps.svc.test
-  selfSigned: true
+kubeapps_hostname: kubeapps.k3s.local
 ```
 
 Ensuite nous allons utiliser toutes ces variables dans un manifest kubernetes qui inclus deux resources. Un namespace et une définition de dépendance helm avec sa configuration.
@@ -823,6 +822,30 @@ kubeapps_authProxy_final: "{{ kubeapps_authProxy_default + kubeapps_authProxy }}
 ```
 
 Par défaut si on relance notre test molecule nous n'aurons pas d'activation de l'authentificaiton avec github. Nous allons donc pour cette fois faire un test manuelle de celle-ci car elle dépend de configuration propre à une production soit tls activé que kubeapps soit disponible en ligne. (obligation en terme de sécurité de oauth2 / github)
+
+
+note manifest extrait
+```yaml
+  "conditions": [
+      {
+          "lastTransitionTime": "2022-12-05T15:11:56Z",
+          "lastUpdateTime": "2022-12-05T15:11:56Z",
+          "message": "Deployment has minimum availability.",
+          "reason": "MinimumReplicasAvailable",
+          "status": "True",
+          "type": "Available"
+      },
+      {
+          "lastTransitionTime": "2022-12-05T15:11:46Z",
+          "lastUpdateTime": "2022-12-05T15:11:56Z",
+          "message": "ReplicaSet \"dex-5bd6ffdfd\" has successfully progressed.",
+          "reason": "NewReplicaSetAvailable",
+          "status": "True",
+          "type": "Progressing"
+      }
+  ],
+
+```
 
 ### I. Configuration de notre organisation github et application oauth
 

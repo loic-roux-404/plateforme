@@ -1,12 +1,16 @@
 ---
 # vars file for role-kubeapps
-cert_manager_servers:
-  letsencrypt-staging: https://acme-staging-v02.api.letsencrypt.org/directory
-  letsencrypt-local: https://pebble/dir
-  letsencrypt-prod: https://acme-v02.api.letsencrypt.org/directory 
+kubeapps_k8s_ingress_class: traefik
+letsencrypt_staging: https://acme-staging-v02.api.letsencrypt.org/directory
+letsencrypt_prod: https://acme-v02.api.letsencrypt.org/directory 
 
-# local acme issuer vars
-cert_manager_local_acme_cert_url: https://raw.githubusercontent.com/jupyterhub/pebble-helm-chart/main/pebble/files/root-cert.pem
-
-dex_ca_extra_volumes: []
-dex_ca_extra_volumes_mounts: []
+# Mounted in acme internal
+kubeapps_internal_acme_ca_in_volume_crt: /etc/ssl/certs/acmeca.crt
+kubeapps_internal_acme_ca_extra_volumes:
+  - name: acme-internal-ca-share
+    configMap: 
+      name: acme-internal-ca-share
+kubeapps_internal_acme_ca_extra_volumes_mounts:
+  - name: acme-internal-ca-share
+    mountPath: "{{ kubeapps_internal_acme_ca_in_volume_crt }}"
+    subPath: ca.crt

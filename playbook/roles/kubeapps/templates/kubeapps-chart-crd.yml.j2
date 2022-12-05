@@ -24,28 +24,23 @@ spec:
         kubernetes.io/ingress.class: "{{ kubeapps_k8s_ingress_class }}"
         traefik.frontend.passHostHeader: "true"
         traefik.ingress.kubernetes.io/router.tls: "true"
-        ingress.kubernetes.io/auth-trust-headers: "true"
-        ingress.kubernetes.io/auth-response-headers: "X-Auth-Request-User, X-Auth-Request-Groups, X-Auth-Request-Email, Authorization, Set-Cookie"
 
     authProxy:
       enabled: true
       provider: oidc
-      clientID: "{{ kubeapps_dex_client_id }}"
-      clientSecret: "{{ kubeapps_dex_client_secret }}"
+      clientID: "{{ dex_client_id }}"
+      clientSecret: "{{ dex_client_secret }}"
       cookieSecret: '{{ kubeapps_oauth_proxy_cookie_secret }}'
       cookieRefresh: 5m
       extraFlags:
-        - --oidc-issuer-url=https://{{ kubeapps_dex_hostname }}
-        - --set-authorization-header=true
-        - --set-xauthrequest=true
-        - --pass-access-token=true 
+        - --oidc-issuer-url=https://{{ dex_hostname }}
         - --skip-auth-preflight
       extraVolumeMounts:
-        {{ dex_ca_extra_volumes_mounts | to_nice_yaml | indent(8) }}
+        {{ kubeapps_internal_acme_ca_extra_volumes_mounts | to_nice_yaml | indent(8) }}
 
     frontend:
       extraVolumes:
-        {{ dex_ca_extra_volumes | to_nice_yaml | indent(8) }}
+        {{ kubeapps_internal_acme_ca_extra_volumes | to_nice_yaml | indent(8) }}
 
 ---
 apiVersion: rbac.authorization.k8s.io/v1
@@ -58,4 +53,4 @@ roleRef:
   name: cluster-admin
 subjects:
   - kind: Group
-    name: "{{ kubeapps_dex_github_client_org }}:{{ kubeapps_dex_github_client_team }}"
+    name: "{{ dex_github_client_org }}:{{ dex_github_client_team }}"

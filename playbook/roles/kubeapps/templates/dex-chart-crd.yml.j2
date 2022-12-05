@@ -1,7 +1,7 @@
 apiVersion: v1
 kind: Namespace
 metadata:
-  name: {{ kubeapps_dex_namespace }}
+  name: {{ dex_namespace }}
 ---
 apiVersion: helm.cattle.io/v1
 kind: HelmChart
@@ -10,7 +10,7 @@ metadata:
   namespace: kube-system
 spec:
   chart: dex
-  targetNamespace: {{ kubeapps_dex_namespace }}
+  targetNamespace: {{ dex_namespace }}
   repo: https://charts.dexidp.io
   valuesContent: |-
     service:
@@ -25,18 +25,18 @@ spec:
         traefik.frontend.passHostHeader: "true"
         traefik.ingress.kubernetes.io/router.tls: "true"
       hosts:
-      - host: {{ kubeapps_dex_hostname }}
+      - host: {{ dex_hostname }}
         paths:
           - path: /
             pathType: ImplementationSpecific
       tls:
-        - secretName: {{ kubeapps_dex_hostname }}-tls
+        - secretName: {{ dex_hostname }}-tls
           hosts:
-            - {{ kubeapps_dex_hostname }}
+            - {{ dex_hostname }}
     config:
-      issuer: "https://{{ kubeapps_dex_hostname }}"
+      issuer: "https://{{ dex_hostname }}"
       web:
-        http: 127.0.0.1:5556
+        http: 0.0.0.0:5556
       storage:
         type: kubernetes
         config:
@@ -46,18 +46,18 @@ spec:
         id: github
         name: GitHub
         config:
-          clientID: '{{ kubeapps_dex_github_client_id }}'
-          clientSecret: '{{ kubeapps_dex_github_client_secret }}'
-          redirectURI: "https://{{ kubeapps_dex_hostname }}/callback"
+          clientID: '{{ dex_github_client_id }}'
+          clientSecret: '{{ dex_github_client_secret }}'
+          redirectURI: "https://{{ dex_hostname }}/callback"
           orgs:
-          - name: '{{ kubeapps_dex_github_client_org }}'
+          - name: '{{ dex_github_client_org }}'
             teams: 
-            - '{{ kubeapps_dex_github_client_team }}'
+            - '{{ dex_github_client_team }}'
       oauth2:
         skipApprovalScreen: true
       staticClients:
-      - id: "{{ kubeapps_dex_client_id }}"
+      - id: "{{ dex_client_id }}"
         redirectURIs:
         - 'https://{{ kubeapps_hostname }}/oauth2/callback'
-        name: 'Example App'
-        secret: "{{ kubeapps_dex_client_secret }}"
+        name: 'Kubeapps'
+        secret: "{{ dex_client_secret }}"

@@ -1,13 +1,30 @@
 ---
 
-- name: "Deploy manifests to k3s cattle crd processor"
+- name: "Deploy {{ item.src }} to k3s crd processor"
   ansible.builtin.template:
-    src: "{{ item }}.j2"
-    dest: "/var/lib/rancher/k3s/server/manifests/{{ item }}"
+    src: "{{ item.src }}.j2"
+    dest: "/var/lib/rancher/k3s/server/manifests/{{ item.src }}"
     owner: "{{ kubeapps_user }}"
     group: "{{ kubeapps_user }}"
     mode: '0644'
-  loop:
-    - cert-manager-chart-crd.yml
-    - dex-chart-crd.yml
-    - kubeapps-chart-crd.yml
+
+- name: "Wait {{ item.src }} deployment complete"
+  kubernetes.core.k8s_info:
+    api_version: v1
+    kind: Deployment
+    name: "{{ item.deploy }}"
+    kubeconfig: /etc/rancher/k3s/k3s.yaml
+    wait: yes
+    wait_sleep: 10
+    wait_timeout: 300
+    wait_condition:
+      type: Progressing
+      status: "True"
+      reason: "NewReplicaSetAvailable"
+    # Many times deployment name is the same that namespace
+    namespace: "{{ item.ns | d(item.deploy) }}"
+  when: item.deploy | default(false) or item.ns | default(false)
+  register: deployment_infos
+
+# - debug:
+#     msg: "{{ deployment_infos }}"

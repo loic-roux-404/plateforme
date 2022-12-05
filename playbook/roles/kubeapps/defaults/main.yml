@@ -1,42 +1,26 @@
 ---
-# Kubeapps
-# Cluster core variables
-kubeapps_k8s_ingress_class: traefik
+# Kubeapps internal acme server
+kubeapps_internal_acme_external_ip: ~
+kubeapps_internal_acme_host: acme-internal.k3s.local
+kubeapps_internal_acme_ca_file: ~
 
 # HelmChart Custom Resource Definition for cert manager
 # see https://cert-manager.io/docs/configuration/acme/
 cert_manager_namespace: cert-manager
-
+cert_manager_acme_url: "{{ letsencrypt_prod }}"
 cert_manager_email: ""
 cert_manager_private_key_secret: test_secret
+cert_manager_is_internal: "{{ kubeapps_internal_acme_ca_file != None }}"
 
-# Default to local acme issuer
-cert_manager_cluster_issuer: letsencrypt-local
 # HelmChart Custom Resource Definition for dex oidc connector
-cert_manager_is_local: "{{ cert_manager_cluster_issuer == 'letsencrypt-local' }}"
-
-kubeapps_dex_namespace: dex
-kubeapps_dex_hostname: dex.k3s.local
-kubeapps_dex_client_id: kubeapps
-kubeapps_dex_client_secret: ZXhhbXBsZS1hcHAtc2VjcmV0
-
-kubeapps_dex_github_client_id: ~
-kubeapps_dex_github_client_secret: ~
-kubeapps_dex_github_client_org: ~
-kubeapps_dex_github_client_team: ~
-
-# kubeapps_dex_k3s_server:
-#   kube-apiserver-arg=authorization-mode: Node,RBAC
-#   kube-apiserver-arg=oidc-issuer-url: "https://{{ kubeapps_dex_hostname }}"
-#   kube-apiserver-arg=oidc-client-id: "{{ kubeapps_dex_client_id }}"
-#   kube-apiserver-arg=oidc-username-claim: email
-#   kube-apiserver-arg=oidc-groups-claim: groups
-
-# kubeapps_dex_k3s_server_local: "{{ {
-#     'kube-apiserver-arg=oidc-ca-file': '/var/lib/rancher/k3s/server/tls/oidc-ca.crt'
-#     } if cert_manager_is_local else {} 
-#   }}"
-# kubeapps_dex_k3s_server_final: "{{ kubeapps_dex_k3s_server | combine(kubeapps_dex_k3s_server_local) }}"
+dex_namespace: dex
+dex_hostname: dex.k3s.local
+dex_client_id: kubeapps
+dex_client_secret: ZXhhbXBsZS1hcHAtc2VjcmV0
+dex_github_client_id: ~
+dex_github_client_secret: ~
+dex_github_client_org: ~
+dex_github_client_team: ~
 
 # HelmChart Custom Resource Definition for kubeapps variables
 kubeapps_namespace: kubeapps

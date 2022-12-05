@@ -1,0 +1,28 @@
+- name: Prepare
+  hosts: localhost
+  connection: local
+  gather_facts: false
+  no_log: "{{ molecule_no_log }}"
+  collections:
+    - community.docker
+  tasks:
+    - name: Start pebble container
+      community.docker.docker_container:
+        name: pebble
+        image: "letsencrypt/pebble:latest"
+        command: pebble -config /pebble/pebble-config.json
+        state: started
+        restart: True
+        network_mode: host
+        volumes:
+          - "{{ playbook_dir }}/pebble:/pebble:ro"
+      register: result
+      until: result is not failed
+      retries: 3
+      delay: 10
+
+    - name: Wait for pebble to start
+      ansible.builtin.wait_for:
+        host: localhost
+        port: 15000
+        delay: 5

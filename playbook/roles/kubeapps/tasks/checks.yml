@@ -1,10 +1,11 @@
-- name: check cert-manager issuer exists
-  assert:
-    that:
-      - cert_manager_cluster_issuer 
-        is in (cert_manager_servers.keys() | list)
-
 - name: check email when cert-manager
   assert:
     that:
       - cert_manager_email | default(false)
+
+- name: check acme ca defined in local
+  assert:
+    that:
+      - kubeapps_internal_acme_external_ip | default(false)
+      - kubeapps_internal_acme_host | default(false)
+  when: cert_manager_is_internal
