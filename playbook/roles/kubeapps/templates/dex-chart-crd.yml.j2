@@ -13,26 +13,6 @@ spec:
   targetNamespace: {{ dex_namespace }}
   repo: https://charts.dexidp.io
   valuesContent: |-
-    service:
-      ports:
-        http:
-          nodePort: 5556
-    ingress:
-      enabled: true
-      annotations:
-        cert-manager.io/cluster-issuer: letsencrypt-acme-issuer
-        kubernetes.io/ingress.class: "{{ kubeapps_k8s_ingress_class }}"
-        traefik.frontend.passHostHeader: "true"
-        traefik.ingress.kubernetes.io/router.tls: "true"
-      hosts:
-      - host: {{ dex_hostname }}
-        paths:
-          - path: /
-            pathType: ImplementationSpecific
-      tls:
-        - secretName: {{ dex_hostname }}-tls
-          hosts:
-            - {{ dex_hostname }}
     config:
       issuer: "https://{{ dex_hostname }}"
       web:
@@ -61,3 +41,19 @@ spec:
         - 'https://{{ kubeapps_hostname }}/oauth2/callback'
         name: 'Kubeapps'
         secret: "{{ dex_client_secret }}"
+    ingress:
+      enabled: true
+      annotations:
+        cert-manager.io/cluster-issuer: letsencrypt-acme-issuer
+        kubernetes.io/ingress.class: "{{ kubeapps_k8s_ingress_class }}"
+        traefik.frontend.passHostHeader: "true"
+        traefik.ingress.kubernetes.io/router.tls: "true"
+      hosts:
+      - host: {{ dex_hostname }}
+        paths:
+          - path: /
+            pathType: ImplementationSpecific
+      tls:
+        - secretName: {{ dex_hostname }}-tls
+          hosts:
+            - {{ dex_hostname }}

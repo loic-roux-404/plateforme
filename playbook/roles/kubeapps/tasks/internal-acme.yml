@@ -14,7 +14,7 @@
     that:
       - ingress_infos.resources | length > 0
 
-- name: Recover ca content to trust
+- name: Recover base64 encoded ca content to trust
   slurp:
     src: "{{ kubeapps_internal_acme_ca_file }}"
   register: ca_file_content
@@ -22,5 +22,3 @@
 - set_fact:
     kubeapps_internal_acme_ca_content: "{{ ca_file_content.content | b64decode }}"
     kubeapps_ingress_controller_ip: "{{ ingress_infos.resources[0].spec.clusterIP }}"
-
-- debug: msg="{{kubeapps_internal_acme_ca_content}}"

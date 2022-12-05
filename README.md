@@ -4,7 +4,7 @@
 
 - Un PC / Mac peut importe l'OS
 - Des bases d'administration linux
-- Un minimum de culture sur les systèmes d'**Info**rmation
+- Un minimum de culture sur les systèmes d'Information
 - Connaissance des concepts d'environnements isolés linux ou **containers**
 - Un compte [github](http://github.com/)
 
@@ -125,7 +125,7 @@ pip install ansible molecule[docker] dnspython
 
 > `dnspython` servira à faire fonctionner un module d'ansible. On ajoutera des détails plus tard.
 
-> ****Warning**** Les shell un peu exotique comme fish pour l'utilisation de molecule ne sont pas recommandés
+> **Warning** Les shell un peu exotique comme fish pour l'utilisation de molecule ne sont pas recommandés
 
 Vérifier que tous fonctionne avec `ansible --version`.
 
@@ -133,7 +133,7 @@ Vous devriez avoir `ansible [core 2.13.4]` dans le retour
 
 ### **Bonus** pour faire fonctionner l'extension VsCode ansible
 
-> WARNING: Utilisateur du WSL **Pour utiliser vscode, faites le impérativement via la ligne de commande linux WSL dans votre projet `~/paas-tutorial`** : `code .`
+> **Warning**: Utilisateur du WSL **Pour utiliser vscode, faites le impérativement via la ligne de commande linux WSL dans votre projet `~/paas-tutorial`** : `code .`
 
 > Vscode : .vscode/settings.json
 > Remplacez bien le chemin avec le résultat de cette commande `which python`
@@ -184,7 +184,7 @@ Ensuite dans `requirements.yaml` on importe les roles que l'on utilise en dépen
 
 > Ansible galaxy est le gestionnaire de paquet pour importer des rôles et des collections ansible dans un playbook.
 
-> **Info** pour l'instant il y a un bug avec galaxy nous empêchant de récupérer la bonne version de k3s. On peut forcer l'utilisation direct de git pour récupérer la version 3.3.0
+> **Note** pour l'instant il y a un bug avec galaxy nous empêchant de récupérer la bonne version de k3s. On peut forcer l'utilisation direct de git pour récupérer la version 3.3.0
 
 > [playbook/requirements.yaml](playbook/requirements.yaml)
 ```yaml
@@ -203,7 +203,7 @@ Les **collections** vont servir à ajouter des fonctionnalités à ansible et se
 
 Les **roles** correspondent à des suites de tâches qui vont installer et configurer un outil sur une machine. Ici on utilisera un [role k3s](https://github.com/PyratLabs/ansible-role-k3s) qui s'occupe de configurer en fonction de nos paramètre le cluster k3s.
 
-> **INFO** K3s n'utilise pas `docker` mais `containerd` pour utiliser les fonctionnalités de container linux.
+> **Note** K3s n'utilise pas `docker` mais `containerd` pour utiliser les fonctionnalités de container linux.
 
 Pour installer ces requirements maintenant on lance dans le dossier `playbook/` :
 
@@ -225,7 +225,7 @@ cd roles
 ansible-galaxy init kubeapps
 cd kubeapps
 # Créer un scénario de test par défaut
-molecule init scenario -d podman default
+molecule init scenario -d docker default
 ```
 
 Vous devriez obtenir cette structure dans le nouveau dossier `playbook/` :
@@ -254,7 +254,7 @@ dependencies:
       version: v3.3.0
 ```
 
-Ensuite vous devez obligatoirement définir ces **Info**rmations sur les metas du rôles:
+Ensuite vous devez obligatoirement définir ces Informations sur les metas du rôles:
 
 > [playbook/roles/role-kubeapps/meta/main.yml](playbook/roles/role-kubeapps/meta/main.yml)
 ```yaml
@@ -273,7 +273,7 @@ Le rôle kubernetes se lancera donc directement avant les tâches de celui de ku
 
 Un nœud est une machine de travail dans Kubernetes, un groupe de noeud va composer ce qu'on appelle un cluster (grappe) de serveurs. Chaque nœud contient les services nécessaires à l'exécution de pods et est géré par les composants du master.
 
-> **Info** dans notre cas nous ferons appel à un seul noeud master
+> **Note** dans notre cas nous ferons appel à un seul noeud master
 
 ### Namespace
 
@@ -300,8 +300,12 @@ Une manière abstraite d'exposer une application s'exécutant sur un ensemble de
 
 Il s'agit du composant de kubernetes permettant de gérer au travers d'une technologie de reverse proxy et de répartition de charge le traffic réseau entrant (http(s)).
 
-> **Info** Un **reverse proxy** est à l'inverse d'un proxy chargé d'effectuer une action à partir d'une requète réseau externe. On l'utilise majoritairement avec un serveur DNS qui fait pointé des noms de domaines et sous domaines vers l'adresse Ip du serveur sur lequel un reverse proxy est installé.
-> Par exemple il va servir à rediriger le traffic de la requète `kubeapps.svc.test` vers une addresse et port réseau attribué par kubernetes à un pod.
+> **Note** Un **reverse proxy** est à l'inverse d'un proxy chargé d'effectuer une action à partir d'une requète réseau externe. On l'utilise majoritairement avec un serveur DNS qui fait pointé des noms de domaines et sous domaines vers l'adresse Ip du serveur sur lequel un reverse proxy est installé.
+> Par exemple il va servir à rediriger le traffic de la requète `kubeapps.k3s.local` vers une addresse et port réseau attribué par kubernetes à un pod.
+
+Voici pour résumer l'achitecture réseau d'un cluster kubernetes :
+
+![architecture réseau kubernetes](./images/k8s-archi.jpg)
 
 ## Spécificité de k3s
 
@@ -337,16 +341,10 @@ platforms:
     command: ${MOLECULE_DOCKER_COMMAND:-""}
     privileged: true
     pre_build_image: true
-    published_ports:
-      - 6443:6443
-      - 80:80
-      - 443:443
-      - 32444:32444 # pebble management
     volumes:
       - /sys/fs/cgroup:/sys/fs/cgroup:rw
       - /var/lib/rancher/k3s
-    networks:
-      - name: k3snet
+    network_mode: host
     tmpfs:
       - /var/run
       - /run
@@ -374,10 +372,7 @@ Enfin `priviledgied: true` nous donne les droits administrateur complets sur le 
 
 Le playbook `verifier` va ensuite nous permettre de tester la bonne execution du rôle et de ses dépendances.
 
->Notes :
-> - `hosts: all` permet de jouer le playbook sur tous les hôtes
-> - `role: {{etc...}}` résoud le chemin de fichier vers le répertoire du rôle
-> - Les pré-tâches servent à installer des packages linux et python manquant à notre container utiles pour l'environnement local et les tests.
+Le playbook converge
 
 > [playbook/roles/kubeapps/molecule/default/converge.yml](playbook/roles/kubeapps/molecule/default/converge.yml)
 ```yaml
@@ -392,9 +387,12 @@ Le playbook `verifier` va ensuite nous permettre de tester la bonne execution du
     - role: "{{ lookup('env', 'MOLECULE_PROJECT_DIRECTORY') | basename }}"
 
   pre_tasks:
-    - name: Ensure test dependencies are installed (Debian).
+    - name: Ensure test dependencies are installed.
       package: 
-        name: iptables
+        name:
+          - iptables
+          - curl
+          - dnsutils
         state: present
         update_cache: true
       when: ansible_os_family == 'Debian'
@@ -405,10 +403,16 @@ Le playbook `verifier` va ensuite nous permettre de tester la bonne execution du
           - openshift
           - pyyaml
           - kubernetes
+          - dnspython
 
 ```
 
-Ensuite grâce au module ansible [k8s info](https://docs.ansible.com/ansible/latest/collections/kubernetes/core/k8s_info_module.html) nous allons vérifier que k3s est bien prêt avec deux vérifications :
+> Notes :
+> - `hosts: all` permet de jouer le playbook sur tous les hôtes
+> - `role: {{etc...}}` résoud le chemin de fichier vers le répertoire du rôle
+> - Les pré-tâches servent à installer des packages linux et python manquant à notre container utiles pour l'environnement local et les tests.
+
+Nous allons ensuite vérifier que k3s est bien prêt avec deux vérifications :
 
 - Vérification de la bonne initialisation du noeud **master** 
 simplement en vérifiant que le retour de la commande contient bien "Ready    master".
@@ -436,41 +440,17 @@ On utilise pour cette fois la commande `kubectl` directement. Pour en savoir plu
 
 ```
 
-> On note qu'il est important de préciser à `k8s_info` la localisation kubeconfig qui se trouve à un endroit un peu exotique sur k3s. Cette config comporte des informations utilisateur et des certificats permettant de se connecter sur le cluster.
-
 Lancer votre premier test avec `molecule test` et voilà vous avez un playbook offrant un cluster kubernetes prêt à l'emploi tout en suivant rigoureusement le concept du test driven development pour plus de fiabilité.
 
-> **Info** : Vous pouvez aussi lancer `molecule test --destroy never` pour ensuite garder le container et debugger l'état du système après le provision ansible avec `molecule login` (qui équivaut à `docker exec -it node-0 bash`)
+> **Note** : Vous pouvez aussi lancer `molecule test --destroy never` pour ensuite garder le container et debugger l'état du système après le provision ansible avec `molecule login` (qui équivaut à `docker exec -it node-0 bash`)
 
-> **Info** : En cas d'erreur `export ANSIBLE_STDOUT_CALLBACK=yaml` avant de lancer `molecule test` pour avoir un meilleur rendu de la possible erreur.
+> **Note** : En cas d'erreur `export ANSIBLE_STDOUT_CALLBACK=yaml` avant de lancer `molecule test` pour avoir un meilleur rendu de la possible erreur.
 
 Eensuite dans la suite du fichier on procède à une vérification des pods de la suite k3s. 
 
 > Vous pourrez relancer seulement la suite de vérification avec `molecule verify` si votre container n'a pas été détruit (`--destroy false`)
 
 Nous savons ici que k3s est lancé. En sachant que ce rôle est externe nous n'avons pas besoin de faire plus de tests sur ces composants centraux disposés dans le namespace `kube-system`.
-
-Nous allons par contre de manière originale se lancer dans une approche Test driven developement / test first en écrivant directement les scénarios pour vérifier les resources de kubeapps. 
-
-> [playbook/roles/kubeapps/molecule/default/verify.yml](playbook/roles/kubeapps/molecule/default/verify.yml#L18)
-```yaml
-- name: Get Kubeapps service infos
-  kubernetes.core.k8s_info:
-    api_version: v1
-    kind: Service
-    name: kubeapps
-    kubeconfig: /etc/rancher/k3s/k3s.yaml
-    wait: yes
-    namespace: "kubeapps"
-  register: kubeapps_infos
-
-- name: Assertions on service kubeapps 
-  assert:
-    that:
-      - kubeapps_infos.resources | length > 0
-      - kubeapps_infos.resources[0].spec.type == "ClusterIP"
-
-```
 
 On valide bien que le service est de type cluster ip. Cela signifie qu'il est exposé dans le cluster avec sa propre adresse. Si le type aurait été vide cela aurait voulu dire soit que quelque chose n'est pas correctement configuré soit que kubernetes n'est pas disposé à attribué une configuration réseau à ce service.
 
@@ -516,7 +496,7 @@ On check ensuite avec `kubectl cluster-info` qui devrait nous donner les informa
 
 Et voilà vous avez accès à une interface pour controller votre cluster directement depuis vscode. Utiliser cette configuration `json` autant que vous voulez dans les repository de vos applications pour avoir une expérience au plus proche de la production.
 
-### G. Ajout de la solution de PaaS Kubeapps dans notre rôle
+### G. Système d'installation des manifests des composants requis par kubeapps
 
 Nous allons avoir recours ici à deux nouvelles notions de l'écosytème de kubernetes qui sont
 
@@ -552,80 +532,15 @@ Donc dans [playbook/roles/kubeapps/tasks]([playbook/roles/kubeapps/) nous allons
 
 - Les variables par défaut `default/main.yaml`. On pourra par la suite les surcharger avec celle du playbook (inventories/{env}/all.yaml)
 
-- `templates/kubeapps-chart-crd.yml.j2` qui est un template `jinja` représentant plusieurs manifests kubernetes.
+- `templates/` qui conttient des fichier `.j2` ou templates `jinja` représentant plusieurs manifests kubernetes.
 
 - `tasks/manifests.yaml` : celui-ci va s'occuper de placer les manifests kubernetes dans le répertoire `/var/lib/rancher/k3s/server/manifests` pour que k3s déploie automatiquement les resources décrites dans ceux-ci.
 
 > Source pour plus d'informations [doc k3s](https://docs.k3s.io/helm#customizing-packaged-components-with-helmchartconfig)
 
-Commencons par construire notre manifest. Pour cela nous avons besoin de définir plusieurs variables pour rendre configurable l'utilisation de notre rôle :
+On rempli le fichier d'entrée comme ceci :
 
-- `kubeapps_namespace` pour définir le namespace à créer et sur lequel on déploie kubeapps
-
-- `kubeapps_user` définit à `ansible_user` une variable censé être définie dans un playbook de production dans le fichier host. Par défaut on le met à `root` si la variable n'existe pas.
-
-- `kubeapps_hostname` pour choisir à quel url sera disponible kubeapps.
-
-> Par défaut kubeapps sera disponible sur `kubeapps.k3s.local`
-
-[playbook/roles/kubeapps/defaults/main.yml](playbook/roles/kubeapps/defaults/main.yml#L22)
-
-```yaml
----
-# HelmChart Custom Resource Definition for kubeapps variables
-kubeapps_namespace: kubeapps
-kubeapps_user: "{{ ansible_user | default('root') }}"
-kubeapps_hostname: kubeapps.k3s.local
-```
-
-Ensuite nous allons utiliser toutes ces variables dans un manifest kubernetes qui inclus deux resources. Un namespace et une définition de dépendance helm avec sa configuration.
-
-> **Info** sur le templating jinja dans la moustache `{{}}` rajouter un `-` signifie que l'on ignore le format du côté ou l'on utilise. Par exemple un retour à la ligne (colonne 0) sera ignorer pour `-}}`.
-
-> WARN le filtre `to_nice_yaml` convertis nos objet ansible en yaml et l'indispensable `indent(width=6)`.
-
-```yaml
-apiVersion: v1
-kind: Namespace
-metadata:
-  name: {{ kubeapps_namespace }}
----
-apiVersion: helm.cattle.io/v1
-kind: HelmChart
-metadata:
-  name: kubeapps
-  namespace: kube-system
-spec:
-  chart: kubeapps
-  targetNamespace: {{ kubeapps_namespace }}
-  repo: https://charts.bitnami.com/bitnami
-  valuesContent: |-
-    ingress:
-      {{ kubeapps_ingress | to_nice_yaml | indent(width=6) -}}
-
-```
-
-> **Info** On configure le ingress directement dans la définition helm tout en précisant bien que l'on utilise traefik en sachant que par défaut il est souvent utilisé `nginx` comme cntroller ingress
-
-Nous allons lancer la commande de templating grâce au module `template` de la collection **builtin** (fonctionnalités inclus par défaut) de ansible.
-
-Celle ci va faire le remplacement des variable utilisées dans les moustaches `{{}}` et placer le fichier au bon endroit dans notre machine invité. Ici il se trouvera dans notre container `node-0` dans le répertoire `/var/lib/rancher/k3s/server/manifests/kubeapps-chart-crd.yml`
-
-```yaml
----
-- name: deploy kubeapps chart with k3s
-  ansible.builtin.template:
-    src: "{{ kubeapps_chart_crd }}.j2"
-    dest: "/var/lib/rancher/k3s/server/manifests/{{ kubeapps_chart_crd }}"
-    owner: "{{ kubeapps_user }}"
-    group: "{{ kubeapps_user }}"
-    mode: '0644'
-
-```
-
-Enfin on rempli le fichier d'entrée comme ceci :
-
-[playbook/roles/kubeapps/tasks/main.yml](playbook/roles/kubeapps/tasks/main.yml)
+[playbook/roles/kubeapps/tasks/manifests.yml](playbook/roles/kubeapps/tasks/manifests.yml#L10)
 
 ```yaml
 ---
@@ -633,66 +548,108 @@ Enfin on rempli le fichier d'entrée comme ceci :
   tags: [kubeapps]
 ```
 
-Ici c'est assez simple on inclus les tâches du fichier `manifests.yml` et on tag cette inclusions avec le label `kubeapps`. Ainsi avec ansible on peut choisir d'éxécuté seulement les tâches avec ce tag et donc seulement ce qu'on trouve dans notre rôle kubeapps.
-
-
-Enfin on ajoute un test pour vérifier que les pods de kubeapps sont bien prêt :
-
-- On regarde d'abord si la tâche `helm` a bien pu se finir
-
-> [playbook/roles/kubeapps/molecule/default/verify.yml](playbook/roles/kubeapps/molecule/default/verify.yml)
-```yaml
-    - name: Assert kube-system helm task for kubeapps is ok
-      ansible.builtin.assert:
-        that: "{{ (pods | 
-          select('search', 'helm-install-kubeapps') | 
-          select('search', 'Completed') | list
-          ) | length }}"
-
-```
-- On vérifie que les pods en cour d'éxécution sont bien au nombre de 10 (on utilise la même méthode que pour vérifier que k3s est bien prêt)
-
-> [playbook/roles/kubeapps/molecule/default/verify.yml](playbook/roles/kubeapps/molecule/default/verify.yml)
-```yaml
-    - name: Get all kubeapps running pods.
-      command: kubectl get pods -n kubeapps
-      changed_when: false
-      register: kubeapps_pods
-
-    - name: Get kubeapps pods
-      ansible.builtin.set_fact:
-        kubeapps_running: "{{ kubeapps_pods.stdout.split('\n') | 
-          reject('search', 'NAMESPACE') | 
-          select('search', 'Running') | list }}"
-
-    - name: Print list of kubeapps pods.
-      debug: var=kubeapps_running
-
-    - name: Assert kubeapps all pods running
-      ansible.builtin.assert:
-        that: "{{ (kubeapps_running | 
-          select('search', '1/1') | list) | length == 10 }}"
-
-
-```
-
-Voici la commande molecule qui permettra de faire ceci une fois notre playbook utilisable :
+> Astuce: Voici la commande molecule qui permettra de lancer seulement les taches avec le `tags: [kubeapps]` ceci une fois notre playbook utilisable :
 
 ```bash
 molecule test --destroy never -- -t kubeapps
 ```
 
-Si votre playbook est déjà passé en entier un `molecule verify` va suffire pour jouer le playbook `verify.yml`.
+Puis allons configurer une suite de tâches pour installer les manifests qu'ils soit une ressource api ou un chart helm.
 
-Vous devriez voir passer les assertions et les autres tâches sans problèmes.
+On commence par mettre en place une boucle ansible prenant en paramètre une liste de dictionnaires python. Ceux-ci comportes comme sous propriété :
+- `src` : un fichier manifest au format `yaml.j2` à déployer sur le noeud. Ce format donne la possibilité d'intégrer les `variables` et `facts` ansible. 
+- `ns` : pour un namespace sur lequel ajouter le chart et pouvant aussi être un déploiement kubernets dont il va valloir attendre le succès.
+- `deploy`: Pour préciser le nom du déploiement ci celui-ci n'est pas le même que le namespace 
+- `condition`: Simple booléen pour executé ou non le manifest
+
+> **Note** Les facts sont des variables définis dynamiquement à partir de l'environnement ou de ce qu'on décide de conserver de nos traitement pendant le processus ansible
+
+[playbook/roles/kubeapps/tasks/manifests.yml](playbook/roles/kubeapps/tasks/manifests.yml)
+
+```yml
+---
+- name: "Deploy {{ item.src }} to k3s crd processor"
+  ansible.builtin.template:
+    src: "{{ item.src }}.j2"
+    dest: "/var/lib/rancher/k3s/server/manifests/{{ item.src }}"
+    owner: "{{ kubeapps_user }}"
+    group: "{{ kubeapps_user }}"
+    mode: '0644'
+
+- name: "Wait {{ item.src }} deployment complete"
+  kubernetes.core.k8s_info:
+    api_version: v1
+    kind: Deployment
+    name: "{{ item.deploy }}"
+    kubeconfig: /etc/rancher/k3s/k3s.yaml
+    wait: yes
+    wait_sleep: 5
+    wait_timeout: 350
+    wait_condition:
+      type: Progressing
+      status: "True"
+      reason: "NewReplicaSetAvailable"
+    # Many times deployment name is the same that namespace
+    namespace: "{{ item.ns | d(item.deploy) }}"
+  when: item.deploy | default(false) or item.ns | default(false)
+  register: deployment_infos
 
 ```
-node-0                     : ok=15 ...
+
+Pour expliquer l'utilisation du module ansible [kubernetes.core.k8s_info](https://docs.ansible.com/ansible/latest/collections/kubernetes/core/k8s_info_module.html). On attend que le retour de la commande `kubectl` reformatés en json atteigne des conditions.
+Ces conditions sont ici checké toutes les 5 secondes (`wait_sleep`) et vont rendre une erreur si elles ne sont toujours pas bonne au bout de `350s`.
+
+Voici ensuite ce qui est rendus entièrement par le `deployment_infos` dans la directive `register` qui permet à ansible de stocker ce **fact**.
+
+Voici un exemple de retour pour un déploiement fonctionnel pour mieux comprendre.
+
+```yaml
+  "conditions": [
+      {
+          "lastTransitionTime": "2022-12-05T15:11:56Z",
+          "lastUpdateTime": "2022-12-05T15:11:56Z",
+          "message": "Deployment has minimum availability.",
+          "reason": "MinimumReplicasAvailable",
+          "status": "True",
+          "type": "Available"
+      },
+      {
+          "lastTransitionTime": "2022-12-05T15:11:46Z",
+          "lastUpdateTime": "2022-12-05T15:11:56Z",
+          "message": "ReplicaSet \"dex-5bd6ffdfd\" has successfully progressed.",
+          "reason": "NewReplicaSetAvailable",
+          "status": "True",
+          "type": "Progressing"
+      }
+  ],
+
 ```
 
-### Dnsmasq pour obtenir utiliser des bons liens vers l'interface
+On remarque que le `status` à "True" signigie que nous avons réussi, que la `reason` indique qu'un replica à été créer. Un replica est une instance de pod dans un contexte ou l'on peut dupliquer les pod pour répartir la charge.
 
- l'objectif va être de pouvoir utiliser des domaines de test en local. Par exemple on veut utiliser kubeapps.svc.test pour accèder à l'api de notre cluster kubernetes.
+> **Note** la commande k8s_info donne tous les états par lesquels sont passé le pod.
+
+Revenons à la déclaration de la boucle des manifests pour ajouter le plus important la boucle que l'on laise avec des null pour l'instant.
+
+[playbook/roles/kubeapps/tasks/manifests.yml](playbook/roles/kubeapps/tasks/manifests.yml#L10)
+
+```yaml
+---
+- import_tasks: manifests.yml
+  loop:
+    - { src: ~, ns: ~ }
+  tags: [kubeapps]
+```
+
+## Mise en place des communications réseau du cluster
+
+Pour détailler sur cette partie essentielle à la bonne compréhension des applications distribuées sur kubernetes on parlera du dns.
+
+Dans notre stack on a besoin de deux serveurs de nom, soit un interne **coredns** disponible uniquement dnas kubernetes et ses ressources et un serveur de nom global (qui peut être celui d'internet ou le réseau local).
+
+### Dnsmasq pour résoudre les noms de domaines en local
+
+L'objectif va être de pouvoir utiliser des domaines de test en local. Par exemple on veut utiliser dex.k3s.local pour accèder à l'authentifcation de notre cluster kubernetes.
 
 L'installation sur **mac** est un peu différente de celle de Linux là voici pour commencer :
 
@@ -735,7 +692,7 @@ Pour **Linux** et **Mac** mettons ainsi tout en place :
 
 ```sh
 echo 'port=53' >> $DNSMASQ_CNF_DIR
-echo 'address=/.local/127.0.0.1' >> $DNSMASQ_CNF_DIR
+echo 'address=/.k3s.local/127.0.0.1' >> $DNSMASQ_CNF_DIR
 ```
 
 - On ajoute un resolveur avec :
@@ -754,18 +711,549 @@ Vérifier que tout fonctionne avec `scutil --dns` qui devrait donner :
 
 ```txt
 resolver ...
-  domain   : dev
+  domain   : local
   nameserver[0] : 127.0.0.1
 ```
-Et voilà normalement vous devriez accèder à kubeapps depuis chrome avec [http://kubeapps.svc.dev/](http://kubeapps.svc.dev/)
 
-### H. Tls avec cert manager (et local)
+### Edition de coredns pour utiliser les url externes
 
-#### Faire confiance à notre autorité de certification de test
+Par défaut notre réseau privée, interne de kubernetes ne peux accèder à un serveur de nom autres que les plus répandus comme google (8.8.8.8) et cloudflare (1.1.1.1).
 
-- `curl -k https://localhost:32444/roots/0 > ~/Downloads/pebble-ca.pem`
+> **Note** : **Coredns** est l'outil qui fait office d'un des services coeur de kubernetes au même titre que ke kube-controller-manager par exemple. Ici il va donc s'agir du composant kube-dns.
 
-#### On Mac it is not much work see here
+On va donc changer la configuration par défaut de coredns en appliquant un simple manifest de type `ConfigMap`. Ce type permet de simplement définir des variables ou le contenu d'un fichier. Ici on va décrire le contenu d'un fichier Corefile qui va être monté au travers d'un volume au container coredns.
+
+Voici la configuration par défaut :
+
+[playbook/roles/kubeapps/templates/core-dns-config-crd.yml.j2](playbook/roles/kubeapps/templates/core-dns-config-crd.yml.j2)
+
+```yaml
+
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: coredns
+  namespace: kube-system
+data:
+  Corefile: |
+    .:53 {
+        errors
+        health {
+          lameduck 5s
+        }
+        ready
+        kubernetes cluster.local in-addr.arpa ip6.arpa {
+          pods insecure
+          fallthrough in-addr.arpa ip6.arpa
+          ttl 30
+        }
+        prometheus :9153
+        forward . 1.1.1.1
+        cache 30
+        loop
+        reload
+        loadbalance
+    }
+```
+
+Le ingress **en local** n'est pas accessible depuis nos pods, nous allons donc avoir besoin de son ip pour l'associé au différents noms de domaines que l'on va utiliser. (dex.k3s.local / kubeapps.k3s.local).
+
+Nous allons ainsi créer une nouvelles suite de tâche pour déduire les addresses réseau requises pour coredns.
+
+On créer un fichier `tasks/internal-acme.yml` présentant ce code pour récupérer l'addresse ip de l'ingress à l'aide du module k8s_info d'ansible :
+
+```yaml
+---
+- name: Get Ingress service infos
+  kubernetes.core.k8s_info:
+    api_version: v1
+    kind: Service
+    name: traefik
+    kubeconfig: /etc/rancher/k3s/k3s.yaml
+    wait: yes
+    namespace: kube-system
+  register: ingress_infos
+
+- name: check ingress service infos available
+  assert:
+    that:
+      - ingress_infos.resources | length > 0
+
+# ...
+
+- set_fact:
+    kubeapps_ingress_controller_ip: "{{ ingress_infos.resources[0].spec.clusterIP }}"
+
+```
+
+Maintenant la variable `kubeapps_ingress_controller_ip` est disponible et prête à être associé à une entrée dns.
+
+Venons en donc à la définitions des nom d'hôte des applications 
+
+> Ils seront déployés dans les étapes suivantes donc n'essayer pas d'y accèder pour l'instant.
+
+En sachant que le principe de base d'un dns est d'associé une adresse ip à un nom de domaine nous allons simplement associés les deux addresses `k3s.local` hériteé de notre dns local (dnsmasq) vers le ingress. Ainsi le traffic interne comme externe en direction de ces adresses arrivera bien au même endroit.
+
+> **WARN** Nous faisons cela en réseau local mais si notre serveur est en ligne nous ne serons pas obligé de le faire car on passera par des dns (typoquement google, cloudflare...) capable de résoudre notre nom de domaines public et ses sous domaines.
+
+[playbook/roles/kubeapps/templates/core-dns-config-crd.yml.j2](playbook/roles/kubeapps/templates/core-dns-config-crd.yml.j2#L28)
+
+```conf
+    {% set ingress_hosts_internals = [dex_hostname, kubeapps_hostname] | join(" ") -%}
+
+    {{ ingress_hosts_internals }} {
+      hosts {
+        {{ kubeapps_ingress_controller_ip }} {{ ingress_hosts_internals }}
+        fallthrough
+      }
+      whoami
+    }
+```
+
+Enfin on configure l'addresse de notre acme interne pour que l'étape suivante puisse bien accèder à nos urls et que l'outil cert-manager puisse accèder à ce serveur acme.
+
+```conf
+
+    {{ kubeapps_internal_acme_host }} {
+      hosts {
+        {{ kubeapps_internal_acme_external_ip }} {{ kubeapps_internal_acme_host }}
+        fallthrough
+      }
+      whoami
+    }
+
+```
+
+## Tls avec cert manager (et local)
+
+Pour que notre plateforme fonctionne de manière suffisament sécurisé on adopte un principe zero-trust pour notre réseau. On va donc s'assurer que toutes les commucation entre nos service soient cryptées avec TLS (https). Pour cela on va faire appel à un ensemble d'outils de gestion des certificats dans un cluster kubernetes.
+
+Ainsi [cert-manager](cert-manager.io)
+
+#### Autorité locale
+
+On va ici recourrir à une autorité de certification locale avec l'outil [pebble](https://github.com/letsencrypt/pebble). Il s'agit d'une implémentation de l'acme server dédiée au test. En effet il est recommandé d'utiliser un serveur acme de test pour éviter de saturer les quotas de let's encrypt.
+
+Pour rappel Acme est un protocole embarquant une autorité de certification générant des certificats pour tls simplement au travers de plusieurs type de "challenges". On peut obtenir un certificats juste en ayant sont serveur http disponible sur le réseaux (ou internet) ou en ayant accès à l'édition des zones d'un serveur dns (en fonction du fournisseur).
+
+#### Création de notre autorité avec docker et le playbook prepare de molecule
+
+Ce playbook se lance avant le converge soit avant l'execution de notre rôle et lance un container docker sur notre machine. Comme précisé avant, le `network_mode` à host nous permet d'hérité des configuration de dnsmasq et permet d'accèder aux services sur l'autre container sur lequel on installe notre rôle.
+
+[playbook/roles/kubeapps/molecule/default/prepare.yml](playbook/roles/kubeapps/molecule/default/prepare.yml)
+
+```yaml
+- name: Prepare
+  hosts: localhost
+  connection: local
+  gather_facts: false
+  no_log: "{{ molecule_no_log }}"
+  collections:
+    - community.docker
+  tasks:
+    - name: Start pebble container
+      community.docker.docker_container:
+        name: pebble
+        image: "letsencrypt/pebble:latest"
+        command: pebble -config /pebble/pebble-config.json
+        state: started
+        restart: True
+        network_mode: host
+        volumes:
+          - "{{ playbook_dir }}/pebble:/pebble:ro"
+      register: result
+      until: result is not failed
+      retries: 3
+      delay: 10
+
+    - name: Wait for pebble to start
+      ansible.builtin.wait_for:
+        host: localhost
+        port: 15000
+        delay: 5
+
+```
+
+> `playbook_dir` référence le dossier ou notre playbook molecule est lancé : `playbook/roles/kubeapps/molecule/default/`
+
+Ensuite nous avons besoin de deux certificats racines pour initialiser notre autorité de certification. On les récupère sur le [projet github de pebble](https://github.com/letsencrypt/pebble/) directement avec cette commande.
+
+> **Warning** Attention n'utiliser surtout pas pebble et ces certificats en production
+
+```bash
+mkdir -p playbook/roles/kubeapps/molecule/default/pebble
+curl -L https://raw.githubusercontent.com/letsencrypt/pebble/main/test/certs/localhost/cert.pem > playbook/roles/kubeapps/molecule/default/pebble/cert.pem
+curl -L https://raw.githubusercontent.com/letsencrypt/pebble/main/test/certs/localhost/cert.pem > playbook/roles/kubeapps/molecule/default/pebble/key.pem
+```
+
+Puis on créer le fichier de configuration de notre serveur acme :
+
+[playbook/roles/kubeapps/molecule/default/pebble/pebble-config.json](playbook/roles/kubeapps/molecule/default/pebble/pebble-config.json)
+
+```json
+{
+    "pebble": {
+      "listenAddress": "0.0.0.0:14000",
+      "managementListenAddress": "0.0.0.0:15000",
+      "certificate": "/pebble/cert.pem",
+      "privateKey": "/pebble/key.pem",
+      "httpPort": 80,
+      "tlsPort": 443,
+      "ocspResponderURL": "",
+      "externalAccountBindingRequired": false
+    }
+  }
+```
+
+Maintenant lorsque l'on lance `molecule test` nous executons dans l'ordre :
+
+- Le playbook **create.yml** qui lance les plateformes définies dans molecule.yml (le ubuntu2004 pour tester notre rôle)
+- Le playbook **prepare.yml** que l'on a entièrement créer pour lancer un pebble de test
+- Le playbook **verify.yml** pour vérifier que l'on a bien lancer notre outils
+- Le playbook **destroy.yml** qui supprime les containers de platforms
+- Enfin le playboonk **cleanup.yml** que l'on créer en entier pour supprimer l'instance de pebble définie dans le prepare.
+
+Voici le playbook **cleanup.yml** manquant :
+
+
+[playbook/roles/kubeapps/molecule/default/cleanup.yml](playbook/roles/kubeapps/molecule/default/cleanup.yml)
+```yaml
+---
+- name: Cleanup
+  hosts: localhost
+  connection: local
+  gather_facts: false
+  no_log: "{{ molecule_no_log }}"
+  collections:
+    - community.docker
+  tasks:
+    - name: Destroy pebble instance(s)
+      docker_container:
+        name: pebble
+        state: absent
+      when: {{ lookup('env', 'MOLECULE_CLEANUP') | boolean | d(false) }}
+
+```
+
+> On choisi de laisser par défaut le container pebble lancé pour pouvoir le relancer avec `molecule converge` et ne pas avoir à le relancer à chaque fois. Cependant dans un environnement de CI/CD on peut vouloir supprimer le container après chaque test.
+
+### Cert-manager
+
+Venons en à l'élement centrale de notre stack, cert-manager. Il va nous permettre de créer des certificats pour nos services kubernetes.
+
+Cert-manager permet d'utiliser le protocoles acme embarqué dans des outils comme pebble. Il permet de créer des certificats pour des services http, dns et mTLS.
+On l'utilisera avec pebble pour distribuer les certificats vers les **ingress** avec des ressources secrets contenant respectivement le certificat et la clé de déchiffrage. 
+
+Pour résumer en schéma :
+
+![stack](./images/ingress-cert-manager.jpg)
+
+Tout d'abord on ajoute les variables et puis des constantes dans le fichier vars.yml que l'on utilise dans un souci de clarté :
+
+Voici donc des constantes que l'on ne pas probablement jamais avoir besoin de changer (toutefois on pourrait le faire si besoin avec un `set_fact` mais ce n'est pas très propre)
+
+[playbook/roles/kubeapps/vars/main.yml](playbook/roles/kubeapps/vars/main.yml)
+
+```yaml
+# vars file for role-kubeapps
+kubeapps_k8s_ingress_class: traefik
+letsencrypt_staging: https://acme-staging-v02.api.letsencrypt.org/directory
+letsencrypt_prod: https://acme-v02.api.letsencrypt.org/directory 
+```
+
+> `letsencrypt_staging` et `letsencrypt_prod` sont anticipé pour l'utilisation de cert-manager en production.
+
+Les défauts :
+
+```yaml
+cert_manager_namespace: cert-manager
+cert_manager_acme_url: "{{ letsencrypt_prod }}"
+cert_manager_email: ""
+cert_manager_private_key_secret: test_secret
+```
+
+Que l'on surcharge tout de suite dans le playbool **converge.yml** :
+
+```yaml
+    cert_manager_acme_url: https://{{ kubeapps_internal_acme_host }}:14000/dir
+    cert_manager_email: test4@k3s.local
+```
+
+> `cert_manager_acme_url` doit toujours utilisé l'entrée dns que l'on a choisie juste avant et qui est par défaut `acme.k3s.local`.
+
+> **WARN** Attention en production ou recette l'addresse email doit appartenir à un domaine valide (gmail, hotmail, etc...)
+
+**Puis on installe cert-manager** avec le module helm chart de k3s.
+
+```yaml
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: {{ cert_manager_namespace }}
+---
+apiVersion: helm.cattle.io/v1
+kind: HelmChart
+metadata:
+  name: cert-manager
+  namespace: kube-system
+spec:
+  chart: cert-manager
+  targetNamespace: {{ cert_manager_namespace }}
+  repo: https://charts.jetstack.io
+  valuesContent: |-
+    installCRDs: true
+```
+
+`installCRDs: true` permet de rendre disponible des nouveaux types de manifests propre à l'outil, voici la commande pour vérifier qu'ils sont bien installés :
+
+```bash
+kubectl get crd
+# Give
+orders.acme.cert-manager.io            
+certificates.cert-manager.io            
+certificaterequests.cert-manager.io    
+challenges.acme.cert-manager.io
+clusterissuers.cert-manager.io
+issuers.cert-manager.io
+```
+
+Ensuite créeons notre **issuer** qui va s'occuper de tout le cycle de vie d'un certificat demandé par un ingress au travers de l'annotation.
+
+```yaml
+      annotations:
+        cert-manager.io/cluster-issuer: letsencrypt-acme-issuer
+```
+
+Voici le manifest de l'issuer de type acme 
+
+> **Note** il existe d'autre types d'issuer pour d'autre protocoles come vault pki, ca, etc...
+
+```yaml
+---
+apiVersion: cert-manager.io/v1
+kind: ClusterIssuer
+metadata:
+  name: letsencrypt-acme-issuer
+spec:
+  acme:
+    skipTLSVerify: {{ cert_manager_is_internal }}
+    email: {{ cert_manager_email }}
+    server: {{ cert_manager_acme_url }}
+    privateKeySecretRef:
+      name: acme-account-key
+    solvers:
+    - selector: {}
+      http01:
+        ingress:
+          class: {{ kubeapps_k8s_ingress_class }}
+
+```
+
+> **Note** Vu que l'on passe par l'ingress pour injecter les point d'accès des challenge acme, il faut bien configuré l'issuer avec la bonne classe d'ingress.
+
+> **Note** kind: `ClusterIssuer` permet de créer un issuer qui sera disponible dans tout le cluster. À l'inverse un `Issuer` est disponible dans un seul namespace.
+
+Nous voilà prêt il ne reste que à appeler la création du manifest dans notre fichier wrapper `main.yml` :
+
+[playbook/roles/kubeapps/tasks/main.yml](playbook/roles/kubeapps/tasks/main.yml#L16)
+
+```yaml
+
+- include_tasks: manifests.yml
+  # ...
+  loop:
+    # ...
+    - { src: cert-manager-chart-crd.yml, deploy:  "{{ cert_manager_namespace }}" }
+
+```
+
+Tout cela ne va cependant pas être suffisant dans le cas du mTLS car on va avoir besoin de faire confiance à notre autorité de certification.
+
+### Faire confiance à notre autorité de certification (CA)
+
+On a deux endroits où l'on va faire confiance à notre autorité de certification.
+
+- Sur notre machine dans les différents pods ou mTLS 
+- Sur le navigateur
+
+#### Sur notre machine dans les différents pods ou mTLS 
+
+Les serveurs acceptent les certificats de notre autorité de certification et se font donc suffisament confiance entre eux pour établir une connection TLS.
+
+Pour que en interne nos serveur se fassent confiance nous avons besoin de récupérer le certificat racine de notre autorité de certification et de l'ajouter dans le trust de nos serveurs.
+
+Voici la directive ansible :
+
+[playbook/roles/kubeapps/tasks/internal-acme.yml](playbook/roles/kubeapps/tasks/internal-acme.yml#L17)
+
+```yaml
+
+- name: Recover base64 encoded ca content to trust
+  slurp:
+    src: "{{ kubeapps_internal_acme_ca_file }}"
+  register: ca_file_content
+
+```
+
+[playbook/roles/kubeapps/tasks/internal-acme.yml](playbook/roles/kubeapps/tasks/internal-acme.yml#L13)
+
+```yaml
+- set_fact:
+    kubeapps_internal_acme_ca_content: "{{ ca_file_content.content | b64decode }}"
+
+```
+
+[playbook/roles/kubeapps/tasks/main.yml](playbook/roles/kubeapps/tasks/main.yml#L13)
+
+```yaml
+- import_tasks: internal-acme.yml
+  when: cert_manager_is_internal
+  tags: [kubeapps]
+```
+
+Nous introduisons ici la variable `cert_manager_is_internal` qui nous permet de savoir si nous utilisons un acme externe (les officiels comme acme-staging-v02.api ou letsencrypt_prod) ou interne (pebble, boulder, smallstep-ca).
+
+[playbook/roles/kubeapps/tasks/main.yml](playbook/roles/kubeapps/tasks/main.yml#L13)
+
+Puis on n'oublie pas de définir cette variable clé pour bien configurer notre autorité dans les composants suivants.
+
+```yaml
+cert_manager_is_internal: "{{ kubeapps_internal_acme_ca_file != None }}"
+
+```
+
+> L'idée est que si un certificat à été fourni pour accepté une autorité non référencée parmis celles digne de confiance par défaut sur l'internet global alors elle est interne.
+
+Nous avons alors besoin de plusieurs chose pour importer notre certificat racine dans le trust de nos serveurs.
+
+Une ressource kube configmap (ou secret) pour stocker le certificat racine que l'on a récupéré dans les étapes précédentes avec le module ansible `slurp`.
+
+[playbook/roles/kubeapps/templates/trust-bundle-config-crd.yml.j2](playbook/roles/kubeapps/templates/trust-bundle-config-crd.yml.j2)
+
+```yaml
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: acme-internal-root-ca
+  namespace: "{{ cert_manager_namespace }}"
+data:
+  ca.crt: |
+    {{ kubeapps_internal_acme_ca_content | indent(4) }}
+
+```
+
+> `indent` sert à rajouter les espace à chaque lignes du certificat pour qu'il soit bien formatté dans le fichier yaml.
+
+**Cependant** nous remarquon avec `kubectl get cm -A` que la ressource n'est présente que dans le namespace `cert-manager` or nous avons besoin de la récupérer dans les autres namespaces.
+
+C'est pourquoi nous allons utiliser une crd fournie par le module de jetstack `trust-manager` pour partager cette ressource.
+
+Pour commencer nous allons installer le helm chart de `trust-manager` avec le template `playbook/trust-manager.yml.j2` :
+
+[playbook/roles/kubeapps/templates/trust-manager-chart-crd.yml.j2](playbook/roles/kubeapps/templates/trust-manager-chart-crd.yml.j2)
+```yaml
+apiVersion: helm.cattle.io/v1
+kind: HelmChart
+metadata:
+  name: trust-manager
+  namespace: kube-system
+spec:
+  version: 0.3.0
+  chart: trust-manager
+  targetNamespace: {{ cert_manager_namespace }}
+  repo: https://charts.jetstack.io
+
+```
+
+> Warning : on fixe bien la version du chart car l'équipe de développement précise qu'ils apporterons des changements non rétrocompatible dans les prochaines versions.
+
+Puis on ajoute dans après notre configmap le trust-bundle pour partagé notre configmap sous le nom `acme-internal-ca-share` avec comme sous variable le fichier `ca.crt`:
+
+```yaml
+---
+apiVersion: trust.cert-manager.io/v1alpha1
+kind: Bundle
+metadata:
+  name: acme-internal-ca-share
+spec:
+  sources:
+  - configMap:
+      name: "acme-internal-root-ca"
+      key: "ca.crt"
+  target:
+    configMap:
+      key: "ca.crt"
+
+```
+
+Ensuite, **il est essentiel** d'appeler dans l'ordre tous ces manifests que l'on vient de créer :
+
+> On les lance bien après l'installation et configuration de notre issuer `cert-manager` pour éviter des erreurs de dépendances.
+
+[playbook/roles/kubeapps/tasks/main.yml](playbook/roles/kubeapps/tasks/main.yml#L17)
+```yaml
+    - src: trust-manager-chart-crd.yml
+      deploy: trust-manager 
+      ns: "{{ cert_manager_namespace }}"
+      condition: cert_manager_is_internal
+    - src: trust-bundle-config-crd.yml
+      condition: cert_manager_is_internal
+```
+
+Une fois cette configuration stocké nous allons pouvoir l'injecter dans les pods avec des `volumes`.
+
+Ces voluemes sont des espace de stockage qui seront monté dans les pods et qui seront accessible par les containers.
+
+Voici les objets volumes définie dans le fichier **vars.yml** de notre role kubeapps afin de le réutiliser sur plusieurs pods :
+
+[playbook/roles/kubeapps/vars/main.yml](playbook/roles/kubeapps/vars/main.yml#L7)
+
+```yaml
+# Mounted in acme internal
+kubeapps_internal_acme_ca_in_volume_crt: /etc/ssl/certs/acmeca.crt
+kubeapps_internal_acme_ca_extra_volumes:
+  - name: acme-internal-ca-share
+    configMap: 
+      name: acme-internal-ca-share
+kubeapps_internal_acme_ca_extra_volumes_mounts:
+  - name: acme-internal-ca-share
+    mountPath: "{{ kubeapps_internal_acme_ca_in_volume_crt }}"
+    subPath: ca.crt
+
+```
+
+> **Note** `/etc/ssl/certs/` est le répertoire par défaut des certificats sur les images linux, ils sont très souvent supportés par les framework et langages de programmation. Ainsi on fera confiance à toute requètes https vers un serveur configurés avec un certificat signé par celle-ci.
+
+Voici un exemple d'utilisation des volumes dans kubernetes :
+
+Import du volume pour le rendre disponible au montage :
+
+```yaml
+podname:
+  extraVolumes:
+    {{ kubeapps_internal_acme_ca_extra_volumes | to_nice_yaml | indent(4) }}
+
+```
+
+Montage du volume dans le container :
+
+```yaml
+podsubcontainer:
+  extraVolumeMounts:
+    {{ kubeapps_internal_acme_ca_extra_volumes_mounts | to_nice_yaml | indent(4) }}
+```
+
+#### Sur notre navigateur :
+
+Une autorité de certification est toujours initiée à partir d'une paire cryptographique faite d'une clé privée et d'un certificat contenant une clé publique. Comme pour d'autres protocole comme ssh ou même etherum il faut accepter le certificat racine de l'autorité contenant la clé publique.
+
+Vous pouvez le récupérer avec cette commande :
+
+```bash
+curl -k https://localhost:32444/roots/0 > ~/Downloads/pebble-ca.pem
+```
+
+**Mac :**
 
 - Open Keychain Access
 - File > import items...
@@ -773,7 +1261,7 @@ Et voilà normalement vous devriez accèder à kubeapps depuis chrome avec [http
 - Right click on minica root ca choose get info
 - Open Trust and select Always Trust on When using this certificate
 
-#### Sur Linux
+**Sur Linux** :
 
 ```
 sudo cp ~/Downloads/pebble-ca.pem /usr/local/share/ca-certificates/pebble-ca.pem
@@ -781,73 +1269,19 @@ sudo chmod 644 /usr/local/share/ca-certificates/pebble-ca.pem
 sudo update-ca-certificates
 ```
 
-***After close the web page and re open it. Https should be enabled***
+***Relancez la page sur votre navigateur**
 
-### H. Une authentification et des habilitations fine pour kubeapps
+### H. Une authentification et des habilitations fines pour kubeapps
 
-Pour plus d'**Info**s : https://oauth2-proxy.github.io/oauth2-proxy/docs/configuration/oauth_provider#github-auth-provider
+Il est inclu dans kubernetes deux façons d'authentifier les utilisateurs au cluster et ses resources api (`services`, `pods`, `secrets`...) :
 
-Nous allons adapter le rôle en vue de cette fois ci le rendre utilisable par un playbook de pré-production.
+- Les Service accounts utilisés pour authentifié des processus qui se lancent dans les pods. Ils s'utilisent avec un simple token et des droits rattachés.
 
-> [playbook/roles/kubeapps/defaults/main.yml](playbook/roles/kubeapps/defaults/main.yml) **ligne 18 jusqu'à la fin**
-
-```yaml
-# ...
-# Authentication to kubeapps
-kubeapps_github_org: ""
-kubeapps_github_team: ""
-kubeapps_github_extra_flags: 
-  - --email-domain=*
-  - --github-org="{{ kubeapps_github_org }}"
-  - --github-team="{{ kubeapps_github_team }}"
-
-kubeapps_authProxy: {}
-kubeapps_authProxy_default:
-  enabled: false
-  provider: github
-  clientID: ""
-  clientSecret: ""
-  # default to result of echo "not-good-secret" | base64
-  cookieSecret: bm90LWdvb2Qtc2VjcmV0Cg==
-  extraFlags: "{{ kubeapps_github_extra_flags }}"
-# Merge user config with defaults
-kubeapps_authProxy_final: "{{ kubeapps_authProxy_default + kubeapps_authProxy }}"
-
-```
-
-[playbook/roles/kubeapps/templates/kubeapps-chart-crd.yml.j2](playbook/roles/kubeapps/templates/kubeapps-chart-crd.yml.j2) **ligne 19**
-```yaml
-    authProxy:
-      {{ kubeapps_authProxy_final | to_nice_yaml | indent(width=6) -}}
-```
-
-Par défaut si on relance notre test molecule nous n'aurons pas d'activation de l'authentificaiton avec github. Nous allons donc pour cette fois faire un test manuelle de celle-ci car elle dépend de configuration propre à une production soit tls activé que kubeapps soit disponible en ligne. (obligation en terme de sécurité de oauth2 / github)
+- Users et Groups (comme pour linux). Ces resources sont créer implicitement par un client open id connect fourni sous réserve d'activation par kubernetes.
+On optera pour cette méthode en utilisant comme serveur open id : **dex** idp qui consomme plusieurs fournisseurs d'accès externes (ou interne).
 
 
-note manifest extrait
-```yaml
-  "conditions": [
-      {
-          "lastTransitionTime": "2022-12-05T15:11:56Z",
-          "lastUpdateTime": "2022-12-05T15:11:56Z",
-          "message": "Deployment has minimum availability.",
-          "reason": "MinimumReplicasAvailable",
-          "status": "True",
-          "type": "Available"
-      },
-      {
-          "lastTransitionTime": "2022-12-05T15:11:46Z",
-          "lastUpdateTime": "2022-12-05T15:11:56Z",
-          "message": "ReplicaSet \"dex-5bd6ffdfd\" has successfully progressed.",
-          "reason": "NewReplicaSetAvailable",
-          "status": "True",
-          "type": "Progressing"
-      }
-  ],
-
-```
-
-### I. Configuration de notre organisation github et application oauth
+### 1. Configuration de notre organisation github et application oauth
 
 Créer une nouvelle organisation [ici](https://github.com/account/organizations/new) :
 
@@ -858,7 +1292,14 @@ Créer une nouvelle organisation [ici](https://github.com/account/organizations/
 
 > On peut créer une équipe particulière dans notre organisation qui pourra avoir accès à kubeapps. Le Lien vers le formulaire de création ressemble à ça : https://github.com/orgs/nom-de-ton-organisation/new-team.
 
-> Nommez là comme vous voulez. On pourra la configurer avec la variable `kubeapps_github_team`.
+Nommez les comme vous voulez puis ajoutez la variable dans votre playbook de test (non conseillé en production, utilisez plutôt ansible-vault) :
+
+[playbook/roles/kubeapps/molecule/default/converge.yml](playbook/roles/kubeapps/molecule/default/converge.yml#L14)
+
+```yaml
+    dex_github_client_org: "esgi-lyon"
+    dex_github_client_team: "ops-team"
+```
 
 #### Créer l'application github
 
@@ -868,16 +1309,396 @@ Configuré la comme ceci **pour l'instant** en utilisant les url en local qui ne
 
 - Application name : `kubeapps_test`
 - Homepage URL : `https://kubeapps.k3s.local`
-- Application description (optionel): `test kubeapps`
-- Authorization callback URL : `https://kubeapps.k3s.local/oauth2/callback`
+- Authorization callback URL : `https://dex.k3s.local/callback`
 
-Ensuite noté bien votre **Client Id** et générer un nouveau **Client secret** que vous devez aussi conserver pour la prochaine étape.
+Ensuite noté bien votre **Client Id** et générer un nouveau **Client secret** en plus de ce fichier (pour l'instant dans votre playbook de test) :
 
-#### Connecter notre application oauth 2 à Dex IDP
+[playbook/roles/kubeapps/molecule/default/converge.yml](playbook/roles/kubeapps/molecule/default/converge.yml#L16)
 
-- [restart k3s handler](https://github.com/PyratLabs/ansible-role-k3s/blob/dae3eb928eb85960c6fc3f8bf1806578d4d1dfd9/handlers/main.yml#L28)
+```yaml
+    dex_github_client_id: "dedb54ac672994b1b139"
+    dex_github_client_secret: "1cbb9cbb2c3f889921fa0f14f0b2654cff66f174"
+```
+
+#### Installation et configuration
+
+D'abord comme vu précédemment avec cert-manager on créer les variables par défaut requises par dex :
+
+[playbook/roles/kubeapps/defaults/main.yml](playbook/roles/kubeapps/defaults/main.yml)
+
+D'abord des informations globales comme l'espace de nom kubernetes et l'url auquel on peut accèder au service.
+
+```yaml
+# HelmChart Custom Resource Definition for dex oidc connector
+dex_namespace: dex
+dex_hostname: dex.k3s.local
+```
+
+Ensuite on précise les informations de connexion à github ainsi que les celles qui permettrons au client de notre openid de se connecter. On laisse ces informations à null dans un but de documentation.
+
+```yaml
+dex_client_id: kubeapps
+dex_client_secret: ZXhhbXBsZS1hcHAtc2VjcmV0
+dex_github_client_id: ~
+dex_github_client_secret: ~
+dex_github_client_org: ~
+dex_github_client_team: ~
+```
+> **INFO** Le client open id est ici kubeapps. Pour résumé après ce schéma, kubeapps se sert du **claim open id** `groups` (qui aura ici comme valeur `esgi-lyon:ops-team`) renvoyé par dex pour accèder aux ressources du cluster autorisées par son rôle.
+
+Voici un schéma pour imager comment ce claim open id va servir à sécuriser l'attribution des droits en plus de la connection au cluster.
+
+```
+---|   |--------|        |------- |                      |----------|
+   |   |kubeapps|-- ask->| dex    |--convert request---->| Github   |
+k3s|<--|        |<-------| openid |                      | oauth2   |
+---|   |--------|--------|--------|<-esgi-lyon:ops-team--|----------|
+                         
+```
+
+> **WARN** Le `dex_client_secret` par défaut n'est pas du tout sécurisé et doit être changé en production
+
+Ensuite, définissons un manifest utilisant helm pour installer facilement dex sur le cluster kubernetes. Implicitement seront créer des fichiers d'attributions de droit au cluster, le fichier de déploiement des pod et les services exposants des noms et addresses dans le cluster.
+
+[playbook/roles/kubeapps/templates/dex-chart-crd.yml.j2](playbook/roles/kubeapps/templates/dex-chart-crd.yml.j2)
+
+On commence par créer le namespace
+
+```yaml
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: {{ dex_namespace }}
+```
+
+Puis on installe le chart helm de dex comme d'habitude avec ce genre de manifest :
+
+```yaml
+---
+apiVersion: helm.cattle.io/v1
+kind: HelmChart
+metadata:
+  name: dex
+  namespace: kube-system
+spec:
+  chart: dex
+  targetNamespace: {{ dex_namespace }}
+  repo: https://charts.dexidp.io
+```
+
+Dans le `valuesContent` nous allons renseigner trois prncipaux objets de configuration :
+
+**`config`** qui configure l'application web dex avec :
+  - Le `issuer` est l'url de base de dex. Il est utilisé pour construire les urls de redirection et de callback.
+  - Le connecteur github
+  - Les informations de stockage, 
+  - L'hôte et le port interne sur lequel le serveur web écoute et 
+  - Le client openid pour donner le droit à kubeapps de consommer l'authentification de dex
+
+Voici la configuration qui réutilise les variables de notre application oauth github et les credentials définies dans les defaults et le playbook converge.yml :
+
+```yaml
+  valuesContent: |-
+    config:
+      issuer: "https://{{ dex_hostname }}"
+      web:
+        http: 0.0.0.0:5556
+      storage:
+        type: kubernetes
+        config:
+          inCluster: true
+      connectors:
+      - type: github
+        id: github
+        name: GitHub
+        config:
+          clientID: '{{ dex_github_client_id }}'
+          clientSecret: '{{ dex_github_client_secret }}'
+          redirectURI: "https://{{ dex_hostname }}/callback"
+          orgs:
+          - name: '{{ dex_github_client_org }}'
+            teams: 
+            - '{{ dex_github_client_team }}'
+      oauth2:
+        skipApprovalScreen: true
+      staticClients:
+      - id: "{{ dex_client_id }}"
+        redirectURIs:
+        - 'https://{{ kubeapps_hostname }}/oauth2/callback'
+        name: 'Kubeapps'
+        secret: "{{ dex_client_secret }}"
+```
+
+Ensuite on configure le ingress pour que dex soit accessible depuis l'extérieur du cluster. 
+
+Pour cela on donne une listes d'hôtes pour lesquels les requètes amènerons bien au **service** dex (port 5556).
+
+Un **servive** kubernetes est toujours créer en accompagnement d'un **déploiement** et se voit automatiquement attribué une addresse ip interne. Ici le service sera de type clusterIp.
+
+Voici la commande pour consulter le service et son adresse ip :
+
+```bash
+kubectl get svc -n dex -o yaml
+```
+
+qui nous donne le manifest :
+
+```yaml
+kind: Service
+  metadata:
+    annotations:
+      meta.helm.sh/release-name: dex
+      meta.helm.sh/release-namespace: dex
+    creationTimestamp: "2022-12-10T17:12:50Z"
+    labels:
+      app.kubernetes.io/instance: dex
+      app.kubernetes.io/managed-by: Helm
+      app.kubernetes.io/name: dex
+      app.kubernetes.io/version: 2.35.3
+      helm.sh/chart: dex-0.12.1
+    name: dex
+    namespace: dex
+    resourceVersion: "1159"
+    uid: c88f2dcb-85d0-4f74-bdeb-4e53b964d5b5
+  spec:
+    clusterIP: 10.43.12.126
+    clusterIPs:
+    - 10.43.12.126
+    ipFamilies:
+    - IPv4
+    ipFamilyPolicy: SingleStack
+    ports:
+    - appProtocol: http
+      name: http
+      port: 5556
+      protocol: TCP
+      targetPort: http
+    - appProtocol: http
+      name: telemetry
+      port: 5558
+      protocol: TCP
+      targetPort: telemetry
+    selector:
+      app.kubernetes.io/instance: dex
+      app.kubernetes.io/name: dex
+    sessionAffinity: None
+    type: ClusterIP
+  status:
+    loadBalancer: {}
+```
+
+On utilise ici le certificat délivré par cert-manager au travers d'un secret `{{ dex_hostname }}-tls` intermédiaire automatiquement créer par l'issuer configuré avec `cert-manager.io/cluster-issuer: letsencrypt-acme-issuer`.
+
+[playbook/roles/kubeapps/templates/dex-chart-crd.yml.j2](playbook/roles/kubeapps/templates/dex-chart-crd.yml.j2#L44)
+
+```yaml  
+    ingress:
+      enabled: true
+      annotations:
+        cert-manager.io/cluster-issuer: letsencrypt-acme-issuer
+        kubernetes.io/ingress.class: "{{ kubeapps_k8s_ingress_class }}"
+        traefik.frontend.passHostHeader: "true"
+        traefik.ingress.kubernetes.io/router.tls: "true"
+      hosts:
+      - host: {{ dex_hostname }}
+        paths:
+          - path: /
+            pathType: ImplementationSpecific
+      tls:
+        - secretName: {{ dex_hostname }}-tls
+          hosts:
+            - {{ dex_hostname }}
+```
+
+> Note: `traefik.ingress.kubernetes.io/router.tls: "true"` est nécessaire pour que traefik redirige les requêtes http vers https.
+
+#### Et enfin l'installation de kubeapps
+
+Commencons par construire notre manifest. Pour cela nous avons besoin de définir plusieurs variables pour rendre configurable l'utilisation de notre rôle :
+
+Dans [playbook/roles/kubeapps/defaults/main.yml](playbook/roles/kubeapps/defaults/main.yml) on aura donc :
+
+- `kubeapps_namespace` pour définir le namespace à créer et sur lequel on déploie kubeapps
+
+- `kubeapps_user` définit à `ansible_user` une variable censé être définie dans un playbook de production dans le fichier host. Par défaut on le met à `root` si la variable n'existe pas.
+
+- `kubeapps_hostname` pour choisir à quel url sera disponible kubeapps.
+
+> Par défaut kubeapps sera disponible sur `kubeapps.k3s.local`
+
+[playbook/roles/kubeapps/defaults/main.yml](playbook/roles/kubeapps/defaults/main.yml#L22)
+
+```yaml
+---
+# HelmChart Custom Resource Definition for kubeapps variables
+kubeapps_namespace: kubeapps
+kubeapps_user: "{{ ansible_user | default('root') }}"
+kubeapps_hostname: kubeapps.k3s.local
+```
+
+Ensuite nous allons utiliser toutes ces variables dans un manifest kubernetes qui inclus deux resources. Un namespace et une définition de dépendance helm avec sa configuration.
+
+> **Note** sur le templating jinja dans la moustache `{{}}` rajouter un `-` signifie que l'on ignore le format du côté ou l'on utilise. Par exemple un retour à la ligne (colonne 0) sera ignorer pour `-}}`.
+
+```yaml
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: {{ kubeapps_namespace }}
+---
+apiVersion: helm.cattle.io/v1
+kind: HelmChart
+metadata:
+  name: kubeapps
+  namespace: kube-system
+spec:
+  chart: kubeapps
+  targetNamespace: {{ kubeapps_namespace }}
+  repo: https://charts.bitnami.com/bitnami
+  valuesContent: |-
+    ingress:
+      tls: true
+      enabled: true
+      hostname: "{{ kubeapps_hostname }}"
+      annotations:
+        cert-manager.io/cluster-issuer: letsencrypt-acme-issuer
+        kubernetes.io/ingress.class: "{{ kubeapps_k8s_ingress_class }}"
+        traefik.frontend.passHostHeader: "true"
+        traefik.ingress.kubernetes.io/router.tls: "true"
+
+```
+
+> **Note** On configure le ingress directement dans la définition helm tout en précisant bien que l'on utilise traefik en sachant que par défaut il est souvent utilisé `nginx` comme cntroller ingress
+
+Nous allons lancer la commande de templating grâce au module `template` de la collection **builtin** (fonctionnalités inclus par défaut) de ansible.
+
+Celle ci va faire le remplacement des variables utilisées dans les moustaches `{{}}` et placer le fichier au bon endroit dans notre machine invité. Ici il se trouvera dans notre container `node-0` dans le répertoire `/var/lib/rancher/k3s/server/manifests/kubeapps-chart-crd.yml`
+
+
+[playbook/roles/kubeapps/tasks/main.yml](playbook/roles/kubeapps/tasks/main.yml#L23)
+```yaml
+    - { src: kubeapps-chart-crd.yml, deploy:  "{{ kubeapps_namespace }}" }
+
+```
+
+Pour vérifier que les pods de kubeapps sont bien prêt :
+
+- On regarde d'abord si la tâche `helm` a bien pu se finir
+
+```bash
+kubectl get po -n kube-sysem
+```
+Devrait donné `helm-install-kubeapps-4cdf8` avec status `COMPLETED`
+
+##### Ensuite connection à dex Idp pour s'authentifier avec github
+
+Pour ajouter la couche d'authentification kubeapps fait appel à la solution [oauth2-proxy](https://oauth2-proxy.github.io/oauth2-proxy/docs/configuration/oauth_provider#github-auth-provider). Il s'agit donc d'un reverse proxy qui redirigent le trafik d'un client ayant effecuté une connection à un serveur implémentant oauth2 et ainsi opend id connect.
+
+> [playbook/roles/kubeapps/defaults/main.yml](playbook/roles/kubeapps/defaults/main.yml#L30) **ligne 18 jusqu'à la fin**
+
+```yaml
+# ...
+# Cookie secret
+kubeapps_oauth_proxy_cookie_secret: bm90LWdvb2Qtc2VjcmV0Cg==
+
+```
+
+[playbook/roles/kubeapps/templates/kubeapps-chart-crd.yml.j2](playbook/roles/kubeapps/templates/kubeapps-chart-crd.yml.j2#L28) **ligne 28**
+```yaml
+    authProxy:
+      enabled: true
+      provider: oidc
+      clientID: "{{ dex_client_id }}"
+      clientSecret: "{{ dex_client_secret }}"
+      cookieSecret: '{{ kubeapps_oauth_proxy_cookie_secret }}'
+      cookieRefresh: 5m
+      extraFlags:
+        - --oidc-issuer-url=https://{{ dex_hostname }}
+```
+
+Par défaut si on relance notre test molecule nous n'aurons pas d'activation de l'authentificaiton avec github. Nous allons donc pour cette fois faire un test manuelle de celle-ci car elle dépend de configuration propre à une production soit tls activé que kubeapps soit disponible en ligne. (obligation en terme de sécurité de oauth2 / github)
+
+Enfin maintenant que notre chart est déployé avec un combo **oauth-proxy** / **dex** fonctionnel nous allons configurer le contrôle d'accès à l'administration du cluster. Nous utilisons pour cela une ressource `ClusterRoleBinding` pour lier un groupe d'une organisation github à un rôle `cluster-admin` qui lui donne tous les droits sur le cluster.
+
+[playbook/roles/kubeapps/templates/kubeapps-chart-crd.yml.j2](playbook/roles/kubeapps/templates/kubeapps-chart-crd.yml.j2)
+
+```yaml
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata:
+  name: kubeapps-github-teams
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: ClusterRole
+  name: cluster-admin
+subjects:
+  - kind: Group
+    name: "{{ dex_github_client_org }}:{{ dex_github_client_team }}"
+
+```
+
+Nous voilà prêt à tester notre déploiement de kubeapps. Nous allons donc lancer notre test molecule et attendre son éxecution :
+
+```bash
+molecule test --destroy never
+```
+
+Une fois l'éxecution terminé, il faut attendre quelques secondes pour que tous les pods soient bien prêts. On peut alors se connecter à l'interface web de kubeapps en se connectant à l'adresse [https://kubeapps.k3s.local](https://kubeapps.k3s.local) et en utilisant notre compte github nous allons pouvoir nous connecter.
+
+Voici la page de login attendue :
+
+![kubeapps](./images/kubeapps-auth.png)
+
+Et voici la page de dashboard de kubeapps une fois connecté :
+
+![kubeapps](./images/kubeapps-ready.png)
+
+### Mise en place des tests de kubeapps
+
+Grâce au module ansible [k8s info](https://docs.ansible.com/ansible/latest/collections/kubernetes/core/k8s_info_module.html) on test les pods centraux de kubeapps. Si ces pod sont bien en état `ready` c'est que kubeapps est prêt
+
+> On note qu'il est important de préciser à `k8s_info` la localisation kubeconfig qui se trouve à un endroit un peu exotique avec k3s. Cette config comporte des informations utilisateur et des certificats permettant de se connecter sur le cluster.
+
+> [playbook/roles/kubeapps/molecule/default/verify.yml](playbook/roles/kubeapps/molecule/default/verify.yml#L18)
+```yaml
+    - name: Get Kubeapps service infos
+      kubernetes.core.k8s_info:
+        api_version: v1
+        kind: Pod
+        label_selectors:
+        - app.kubernetes.io/component = frontend
+        kubeconfig: /etc/rancher/k3s/k3s.yaml
+        namespace: kubeapps
+      register: kubeapps_infos
+
+    - ansible.builtin.set_fact:
+        containers_statuses: "{{ (kubeapps_infos.resources | last).status.containerStatuses }}"
+
+    - ansible.builtin.debug:
+        msg: "{{ containers_statuses | map(attribute='name') }}"
+
+    - name: Assertions on service kubeapps 
+      assert:
+        that:
+          - kubeapps_infos.resources | length > 0
+          - containers_statuses | selectattr('ready', 'equalto', true) | list | count == 2
+
+```
+
+Si votre playbook est déjà passé en entier un `molecule verify` va suffire pour jouer le playbook `verify.yml`.
+
+Vous devriez voir passer les assertions et les autres tâches.
+
+Pour autant vous ne verrez pas encore de retour de ce type tout simplement par ce que le code n'est pas complet.
+
+```
+node-0                     : ok=15 ...
+```
 
 ### J. Playbook et inventaire final
+
+Nous allons adapter le rôle en vue de cette fois ci le rendre utilisable par un playbook de pré-production.
 
 Nous allons créer le fichier `site.yaml` (dans le dossier `playbook/`) qui va se charger avec la commande `ansible-playbook` de lancer les rôles dans le bon ordre sur les machines.
 
@@ -897,7 +1718,7 @@ Cette étape servira pour utiliser le playbook dans la [partie 2](#2-créer-une-
 
 Ensuite on définit la configuration des hôtes disponible pour notre playbook. On se contente ici de simplement se connecter en root sur localhost car nous allons provisionner sur un envionnement virtualisé en local plus tard.
 
-> [playbook/inventories/k8s-paas/hosts](playbook/inventories/k8s-paas/hosts)
+> [playbook/inventories/k8s-paas/hosts](playbook/inventories/staging/hosts)
 
 ```ini
 [node-0]
@@ -908,7 +1729,7 @@ ansible_host=localhost
 
 #### Configurer notre rôle avec notre application github
 
-Nous allons crypter les **Info**rmations dangereuses dans un vault ansible que l'on pourra créer avec :
+Nous allons crypter les Informations dangereuses dans un vault ansible que l'on pourra créer avec :
 
 ```bash
 ansible-vault create inventories/k8s-paas/group_vars/secrets
@@ -946,7 +1767,7 @@ Voici comment le flux de création d'une VM avec packer s'organise :
 
 Pour installer packer [c'est ici](https://www.packer.io/downloads)
 
-> **Info**: recommandation : extension `4ops.packer`
+> **Note**: recommandation : extension `4ops.packer`
 
 Vérification packer 1.8+ bien installé dans votre ligne de commande
 ```sh

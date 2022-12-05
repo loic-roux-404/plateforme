@@ -1,0 +1,16 @@
+---
+- name: Cleanup
+  hosts: localhost
+  connection: local
+  gather_facts: false
+  no_log: "{{ molecule_no_log }}"
+  collections:
+    - community.docker
+  tasks:
+
+    - name: Destroy pebble instance(s)
+      docker_container:
+        name: pebble
+        state: absent
+      when: 
+        - lookup('env', 'MOLECULE_CLEANUP') | bool | d(false)

@@ -25,15 +25,15 @@ data:
         loadbalance
     }
 
-    {% for host in [dex_hostname, kubeapps_hostname] -%}
-    {{ host }} {
+    {% set ingress_hosts_internals = [dex_hostname, kubeapps_hostname] | join(" ") -%}
+
+    {{ ingress_hosts_internals }} {
       hosts {
-        {{ kubeapps_ingress_controller_ip }} {{ host }}
+        {{ kubeapps_ingress_controller_ip }} {{ ingress_hosts_internals }}
         fallthrough
       }
       whoami
     }
-    {% endfor -%}
 
     {{ kubeapps_internal_acme_host }} {
       hosts {

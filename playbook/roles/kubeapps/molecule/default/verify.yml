@@ -18,15 +18,21 @@
     - name: Get Kubeapps service infos
       kubernetes.core.k8s_info:
         api_version: v1
-        kind: Service
-        name: kubeapps
+        kind: Pod
+        label_selectors:
+        - app.kubernetes.io/component = frontend
         kubeconfig: /etc/rancher/k3s/k3s.yaml
-        wait: yes
-        namespace: "kubeapps"
+        namespace: kubeapps
       register: kubeapps_infos
+
+    - ansible.builtin.set_fact:
+        containers_statuses: "{{ (kubeapps_infos.resources | last).status.containerStatuses }}"
+
+    - ansible.builtin.debug:
+        msg: "{{ containers_statuses | map(attribute='name') }}"
 
     - name: Assertions on service kubeapps 
       assert:
         that:
           - kubeapps_infos.resources | length > 0
-          - kubeapps_infos.resources[0].spec.type == "ClusterIP"
+          - containers_statuses | selectattr('ready', 'equalto', true) | list | count == 2

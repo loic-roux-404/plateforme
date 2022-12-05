@@ -10,6 +10,7 @@
 - include_tasks: manifests.yml
   tags: [kubeapps]
   when: item.condition | default(true)
+  args: { apply: { tags: [kubeapps] } }
   loop:
     - { src: core-dns-config-crd.yml, condition: cert_manager_is_internal }
     - { src: cert-manager-chart-crd.yml, deploy:  "{{ cert_manager_namespace }}" }
@@ -19,5 +20,5 @@
       condition: cert_manager_is_internal
     - src: trust-bundle-config-crd.yml
       condition: cert_manager_is_internal
-    - { src: dex-chart-crd.yml , deploy: "{{ dex_namespace }}", secret: "{{ dex_hostname }}-tls" }
+    - { src: dex-chart-crd.yml , deploy: "{{ dex_namespace }}" }
     - { src: kubeapps-chart-crd.yml, deploy:  "{{ kubeapps_namespace }}" }
