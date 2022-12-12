@@ -1317,12 +1317,13 @@ Ensuite noté bien votre **Client Id** et générer un nouveau **Client secret**
 
 Nous allons crypter les Informations dangereuses dans un vault ansible que l'on pourra créer avec :
 
-
 Dans votre rôle `playbook/roles/kubeapps`
 
 ```bash
 ansible-vault create molecule/default/group_vars/molecule/secrets.yml
 ```
+
+Renseigner un mot de passe que vous devez conserver dans un autre endroit sécurisé. On risquerait de devoir recréer le fichier de secret entièrement.
 
 Vous devrez ensuite renseigner ces secrets afin de cacher les informations sensibles dans votre playbook de test.
 
@@ -1338,7 +1339,11 @@ dex_github_client_secret: "my-client-secret-from-github-oauth-app"
 
 ```
 
-Renseigner un mot de passe que vous devez conserver dans un autre endroit sécurisé. On risquerait de devoir recréer le fichier de secret entièrement.
+Si besoin vous pouvez éditer le fichier avec la commande suivante :
+
+```bash
+ansible-vault edit molecule/default/group_vars/molecule/secrets.yml --vault-password-file $HOME/.ansible/.vault
+```
 
 > Note : les **github secrets** de la CI/CD de github [https://github.com/domaine/repo/settings/secrets/actions]() peuvent être une localisation idéale.
 

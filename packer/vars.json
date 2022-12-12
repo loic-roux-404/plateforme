@@ -1,0 +1,14 @@
+{
+    "client_id": "",
+    "client_secret": "",
+    "tenant_id": "",
+    "subscription_id": "",
+    "resource_group_name": "",
+    "storage_account_name": "",
+    "location": "",
+    "image_name": "",
+    "vm_size": "Standard_D2s_v3",
+    "os_disk_name": "",
+    "admin_username": "",
+    "admin_password": ""
+}
