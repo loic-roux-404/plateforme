@@ -2,3 +2,4 @@
 certs/*
 !.gitkeep
 .env
+playbook/vault-password.txt

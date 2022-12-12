@@ -1311,14 +1311,69 @@ Configuré la comme ceci **pour l'instant** en utilisant les url en local qui ne
 - Homepage URL : `https://kubeapps.k3s.local`
 - Authorization callback URL : `https://dex.k3s.local/callback`
 
-Ensuite noté bien votre **Client Id** et générer un nouveau **Client secret** en plus de ce fichier (pour l'instant dans votre playbook de test) :
+Ensuite noté bien votre **Client Id** et générer un nouveau **Client secret** en plus.
 
-[playbook/roles/kubeapps/molecule/default/converge.yml](playbook/roles/kubeapps/molecule/default/converge.yml#L16)
+#### Encrypter les secrets de application github
+
+Nous allons crypter les Informations dangereuses dans un vault ansible que l'on pourra créer avec :
+
+
+Dans votre rôle `playbook/roles/kubeapps`
+
+```bash
+ansible-vault create molecule/default/group_vars/molecule/secrets.yml
+```
+
+Vous devrez ensuite renseigner ces secrets afin de cacher les informations sensibles dans votre playbook de test.
+
+[playbook/roles/kubeapps/molecule/default/group_vars/molecule/secrets.yml](playbook/roles/kubeapps/molecule/default/group_vars/molecule/secrets.yml)
 
 ```yaml
-    dex_github_client_id: "dedb54ac672994b1b139"
-    dex_github_client_secret: "1cbb9cbb2c3f889921fa0f14f0b2654cff66f174"
+cert_manager_email: test4@k3s.local
+
+dex_github_client_org: "esgi-lyon"
+dex_github_client_team: "ops-team"
+dex_github_client_id: "my-client-id-from-github-oauth-app"
+dex_github_client_secret: "my-client-secret-from-github-oauth-app"
+
 ```
+
+Renseigner un mot de passe que vous devez conserver dans un autre endroit sécurisé. On risquerait de devoir recréer le fichier de secret entièrement.
+
+> Note : les **github secrets** de la CI/CD de github [https://github.com/domaine/repo/settings/secrets/actions]() peuvent être une localisation idéale.
+
+Vous aviez créer un mot de passe et déplacer le dans un fichier `${HOME}/.ansible/.vault` pour pouvoir ouvrir les fichiers de secrets cryptés.
+
+```bash
+echo 'my-pass' > $HOME/.ansible/.vault
+```
+
+> Warning : en bash `>` écrase le fichier et `>>` ajoute à la fin du fichier
+
+Puis on configure molecule pour utiliser le fichier de mot de passe et le groupe de variable **`molecule`** qui contient nos secret. Il est implicitement définie quand on créer le dossier `group_vars/molecule`:
+
+Dans votre configuration de platforme de test molecule `node-0` :
+
+[playbook/roles/kubeapps/molecule/default/molecule.yml](playbook/roles/kubeapps/molecule/default/molecule.yml#L12)
+
+```yaml
+    groups:
+      - molecule
+```
+
+Puis on configure le provisioner ansible pour utiliser le fichier de mot de passe :
+
+[playbook/roles/kubeapps/molecule/default/molecule.yml](playbook/roles/kubeapps/molecule/default/molecule.yml#L22)
+
+```yaml
+provisioner:
+  name: ansible
+  config_options:
+    defaults:
+      vault_password_file: ${HOME}/.ansible/.vault
+```
+
+Voilà, maintenant molecule importe les secrets et les rend disponible dans les variables ansible.
 
 #### Installation et configuration
 
@@ -1335,6 +1390,8 @@ dex_hostname: dex.k3s.local
 ```
 
 Ensuite on précise les informations de connexion à github ainsi que les celles qui permettrons au client de notre openid de se connecter. On laisse ces informations à null dans un but de documentation.
+
+> On prend un raccourci avec le secret mais dans l'inventaire ansible final on renseignera des secrets plus sécurisées.
 
 ```yaml
 dex_client_id: kubeapps
@@ -1592,7 +1649,13 @@ Devrait donné `helm-install-kubeapps-4cdf8` avec status `COMPLETED`
 
 ##### Ensuite connection à dex Idp pour s'authentifier avec github
 
-Pour ajouter la couche d'authentification kubeapps fait appel à la solution [oauth2-proxy](https://oauth2-proxy.github.io/oauth2-proxy/docs/configuration/oauth_provider#github-auth-provider). Il s'agit donc d'un reverse proxy qui redirigent le trafik d'un client ayant effecuté une connection à un serveur implémentant oauth2 et ainsi opend id connect.
+Pour ajouter la couche d'authentification kubeapps fait appel à la solution [oauth2-proxy](https://oauth2-proxy.github.io/oauth2-proxy/docs/configuration/oauth_provider#github-auth-provider). Il s'agit donc d'un reverse proxy qui redirige le trafic http d'un client authentifier à un serveur implémentant oauth2 (et implicitement opend id connect) avant de permettre la connection à kubeapps.
+
+Cette authentification est associé à un cookie converti en base64 à partir d'un secret que l'on définie avec une commande simple : 
+
+```bash
+echo "not-good-secret" | base64
+```
 
 > [playbook/roles/kubeapps/defaults/main.yml](playbook/roles/kubeapps/defaults/main.yml#L30) **ligne 18 jusqu'à la fin**
 
@@ -1600,8 +1663,13 @@ Pour ajouter la couche d'authentification kubeapps fait appel à la solution [oa
 # ...
 # Cookie secret
 kubeapps_oauth_proxy_cookie_secret: bm90LWdvb2Qtc2VjcmV0Cg==
-
 ```
+
+`--oidc-issuer-url` est obligatoire quand l'on utilise pas un fournisseur d'authentification pré-concu comme github, gitlab, google, etc. Il faut donc le définir avec l'url de dex pour qu'il soit bien consommé par le client openid de oauth2-proxy.
+
+> Note : Pour consulter la configuration d'open id vous pouvez ouvri l'url [dex.k3s.local/.well-known/openid-configuration](https://dex.k3s.local/.well-known/openid-configuration) dans votre navigateur.
+
+Ensuite on réutilise nos secrets de **dex idp** pour créer et configurer l'accès du container `authProxy` à opend id dans le pod `frontend` de kubeapps.
 
 [playbook/roles/kubeapps/templates/kubeapps-chart-crd.yml.j2](playbook/roles/kubeapps/templates/kubeapps-chart-crd.yml.j2#L28) **ligne 28**
 ```yaml
@@ -1727,19 +1795,15 @@ ansible_host=localhost
 
 ```
 
-#### Configurer notre rôle avec notre application github
+> Note : on reste sur localhost car nous allons provisionner sur la machine même avec `packer` dans la prochaine étape.
 
-Nous allons crypter les Informations dangereuses dans un vault ansible que l'on pourra créer avec :
+**Commande ansible-playbook** pour lancer notre rôle avec de nouvelles configurations et variables d'hôte et d'inventaires.
+
+> Cette commande ne fonctionne pour l'instant pas, simplement par ce que aucun serveur ssh (port 22) n'est lancé sur localhost.
 
 ```bash
-ansible-vault create inventories/k8s-paas/group_vars/secrets
+ansible-playbook --vault-password-file vault-password.txt -i inventories/staging/hosts site.yaml
 ```
-
-#### Tester l'authentification github
-
-
-> `--tag kubeapps` permet de choisir uniquement de lancer les tâches que l'on a bien taggé kubeapps pour gagner du temps
-
 
 ## 2. Créer une première image virtuelle pour le test
 

@@ -9,6 +9,8 @@ platforms:
     command: ${MOLECULE_DOCKER_COMMAND:-""}
     privileged: true
     pre_build_image: true
+    groups:
+      - molecule
     volumes:
       - /sys/fs/cgroup:/sys/fs/cgroup:rw
       - /var/lib/rancher/k3s
@@ -19,5 +21,8 @@ platforms:
 
 provisioner:
   name: ansible
+  config_options:
+    defaults:
+      vault_password_file: ${HOME}/.ansible/.vault
 verifier:
   name: ansible

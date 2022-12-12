@@ -9,12 +9,6 @@
       {'kube-apiserver-arg=oidc-ca-file': kubeapps_internal_acme_ca_file}
     ) }}"
     cert_manager_acme_url: https://{{ kubeapps_internal_acme_host }}:14000/dir
-    cert_manager_email: test4@k3s.local
-
-    dex_github_client_org: "esgi-lyon"
-    dex_github_client_team: "ops-team"
-    dex_github_client_id: "dedb54ac672994b1b139"
-    dex_github_client_secret: "1cbb9cbb2c3f889921fa0f14f0b2654cff66f174"
     kubeapps_internal_acme_external_ip: 192.168.5.3
 
   roles:
@@ -37,7 +31,6 @@
           - openshift
           - pyyaml
           - kubernetes
-          - dnspython
 
     - name: Get Pebble Root Ca cert
       ansible.builtin.uri:
