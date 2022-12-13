@@ -16,7 +16,7 @@
     kubeconfig: /etc/rancher/k3s/k3s.yaml
     wait: yes
     wait_sleep: 10
-    wait_timeout: 300
+    wait_timeout: 600
     wait_condition:
       type: Progressing
       status: "True"

@@ -120,10 +120,8 @@ echo "export PATH=\"${HOME}/.local/bin:$PATH\"" >>"${HOME}"/.bashrc
 
 Installer ansible et molecule préconfiguré pour utiliser docker (rancher desktop).
 ```bash
-pip install ansible molecule[docker] dnspython
+pip install ansible molecule[docker]
 ```
-
-> `dnspython` servira à faire fonctionner un module d'ansible. On ajoutera des détails plus tard.
 
 > **Warning** Les shell un peu exotique comme fish pour l'utilisation de molecule ne sont pas recommandés
 
@@ -160,7 +158,7 @@ Aussi, on va geler les versions des dépendances dans un fichier requirements po
 # ~/Home est un dossier de votre hôte (windows / mac)
 mkdir -p paas-tutorial/playbook
 cd paas-tutorial/playbook
-echo "ansible==6.4.0\nmolecule==4.0.1\ndnspython" > requirements.txt
+echo "ansible==6.4.0\nmolecule==4.0.1\n" > requirements.txt
 ```
 
 > Nous allons suivre l'alternative-directory-layout recommandé par cette [documentation](https://docs.ansible.com/ansible/latest/user_guide/sample_setup.html#alternative-directory-layout)
@@ -403,7 +401,6 @@ Le playbook converge
           - openshift
           - pyyaml
           - kubernetes
-          - dnspython
 
 ```
 
@@ -584,7 +581,7 @@ On commence par mettre en place une boucle ansible prenant en paramètre une lis
     kubeconfig: /etc/rancher/k3s/k3s.yaml
     wait: yes
     wait_sleep: 5
-    wait_timeout: 350
+    wait_timeout: 600
     wait_condition:
       type: Progressing
       status: "True"
@@ -630,12 +627,15 @@ On remarque que le `status` à "True" signigie que nous avons réussi, que la `r
 > **Note** la commande k8s_info donne tous les états par lesquels sont passé le pod.
 
 Revenons à la déclaration de la boucle des manifests pour ajouter le plus important la boucle que l'on laise avec des null pour l'instant.
+De plus le `when` permet de ne pas executer certains manifests propre à une autorité de certification interne.
 
 [playbook/roles/kubeapps/tasks/manifests.yml](playbook/roles/kubeapps/tasks/manifests.yml#L10)
 
 ```yaml
 ---
 - import_tasks: manifests.yml
+  when: ("condition" in item and item.condition == True) or
+      "condition" not in item
   loop:
     - { src: ~, ns: ~ }
   tags: [kubeapps]
@@ -982,6 +982,39 @@ Que l'on surcharge tout de suite dans le playbool **converge.yml** :
 > `cert_manager_acme_url` doit toujours utilisé l'entrée dns que l'on a choisie juste avant et qui est par défaut `acme.k3s.local`.
 
 > **WARN** Attention en production ou recette l'addresse email doit appartenir à un domaine valide (gmail, hotmail, etc...)
+
+#### Mettons en place une bonne pratique
+
+L'objectif est d'éviter des comportement non souhaité lors de l'utilisation de cert-manager et donc de ne pas lancer l'installation de la suite des tâches si il manque certaines configuration. Cert-manager est un composant coeur dans notre stack car il distribue les certificats pour certains service embarquant des protocoles d'authentification. Nous ne pourrons pas utiliser ces services si il n'y a pas de certificats et d'encryption des échanges en TLS (v1.2+).
+
+On créer donc un fichier `check.yml` dans le dossier `tasks` de notre rôle. Ce fichier contient des tâches de vérification de variable configuration.
+
+[playbook/roles/kubeapps/tasks/checks.yml](playbook/roles/kubeapps/tasks/checks.yml)
+
+```yaml
+- name: check email when cert-manager
+  assert:
+    that:
+      - cert_manager_email | default(false)
+
+- name: check acme ca defined in local
+  assert:
+    that:
+      - kubeapps_internal_acme_external_ip | default(false)
+      - kubeapps_internal_acme_host | default(false)
+  when: cert_manager_is_internal
+
+```
+
+Puis on active ceci en premier dans le fichier wrapper `main.yml` :
+
+[playbook/roles/kubeapps/tasks/main.yml](playbook/roles/kubeapps/tasks/main.yml#L3)
+
+```yaml
+- import_tasks: checks.yml
+  tags: [kubeapps]
+
+```
 
 **Puis on installe cert-manager** avec le module helm chart de k3s.
 
@@ -1836,71 +1869,206 @@ Voici comment le flux de création d'une VM avec packer s'organise :
 
 Pour installer packer [c'est ici](https://www.packer.io/downloads)
 
-> **Note**: recommandation : extension `4ops.packer`
+> **Note**: recommandation : extension `szTheory.vscode-packer-powertools` (elle contient un bon fortmatteur de fichier HCL),`hashicorp.hcl` pour hashicorp configuration langage, `ms-azuretools.vscode-azureterraform` pour l'autocompletion azure sur terraform et `HashiCorp.terraform`.
 
 Vérification packer 1.8+ bien installé dans votre ligne de commande
 ```sh
 packer --version
+
 ```
 
-### B. Initialisez un projet packer et
+Puis nous avons besoin de la ligne commande de azure pour créer notre service principal. Pour cela il faut installer le [CLI azure](https://docs.microsoft.com/fr-fr/cli/azure/install-azure-cli)
+
+Connectez vous avec **`az login`** à votre compte azure.
+
+> **Note** Vous devez bien sur avoir un abonnement avec du crédit disponible.
+
+### A. Service principal azure et groupe de ressources
+
+[Doc source](https://learn.microsoft.com/en-us/cli/azure/create-an-azure-service-principal-azure-cli?view=azure-cli-latest)
+
+[resource-group-creator](resource-group-creator.json)
+
+```json
+{
+  "Name": "kubeapps group manager",
+  "IsCustom": true,
+  "Description": "Can create and delete resource groups",
+  "Actions": [
+    "*"
+  ],
+  "NotActions": [],
+  "DataActions": [],
+  "NotDataActions": [],
+  "AssignableScopes": [
+    "/subscriptions/TYPE_YOUR_SUBSCRIPTION_ID_HERE/resourceGroups/kubeapps-group"
+  ]
+}
+
+```
+
+#### 1. Création du groupe de ressources
+
+```bash
+az group create --name kubeapps-group --location westeurope
+```
+
+#### 2. Création du rôle accèdant à notre groupe de ressources
+
+```bash
+az role definition create --role-definition @resource-group-creator.json
+```
+
+```bash
+az ad sp create-for-rbac --create-cert -n 'kubeapps-sp' \
+    --role 'kubeapps group manager' \
+      --scopes /subscriptions/TYPE_YOUR_SUBSCRIPTION_ID_HERE/resourceGroups/kubeapps-group
+
+```
+
+Vous devriez obtenir ce retour au format json. on utilise un certificat auto signé pour faire un premier test.
+
+```json
+{
+  "appId": "8d83561d-02d8-4c49-89ea-1549789d221b",
+  "displayName": "azure-cli-2022-12-12-20-21-28",
+  "fileWithCertAndPrivateKey": "/Users/loic/tmp9pxje2nd.pem",
+  "password": null,
+  "tenant": "c371d4f5-b34f-4b06-9e66-517fed904220"
+}
+```
+
+### B. Initialisez un projet packer
 
 ```sh
 cd packer
-touch sources.pk.hcl
+touch vars.json
 touch ubuntu.pkr.hcl
 ```
 
-> [packer/sources.pkr.hcl](packer/sources.pkr.hcl)
-
-```packer
-// In your sources file, you can create a configuration for a builder that you
-// want to reuse between multiple steps in the build. Just leave the source
-// and destination images out of this source, and set them specifically in each
-// step without having to set all of the other options over and over again.
-
-source "docker" "example" {
-  commit = true
-  // any other configuration you want for your Docker containers
-}
-```
-
-
 > [packer/ubuntu.pkr.hcl](packer/ubuntu.pkr.hcl)
 
-```packer
+```hcl
+variable "client_id" {
+  type = string
+  default = ""
+}
+
+variable "client_cert_path" {
+  type = string
+  default = ""
+}
+
+variable "tenant_id" {
+  type = string
+  default = ""
+}
+
+variable "subscription_id" {
+  type = string
+  default = ""
+}
+
+variable "resource_group_name" {
+  type = string
+  default = "kubeapps-group"
+}
+
+variable "location" {
+  type = string
+  default = "westeurope"
+}
+
+variable "image_sku" {
+  type = string
+  default = "20_04-daily-lts-gen2"
+}
+
+variable "vm_size" {
+  type = string
+  default = "Standard_D2s_v3"
+}
+
+variable "os_disk_name" {
+  type = string
+  default = "disk1"
+}
+
+variable "admin_username" {
+  type = string
+  default = "root"
+}
+
+variable "admin_password" {
+  type = string
+  default = "pass"
+}
+
+```
+
+> [packer/ubuntu.pkr.hcl](packer/ubuntu.pkr.hcl#L56)
+
+```hcl
+source "azure-arm" "vm" {
+  subscription_id = var.subscription_id
+  client_id = var.client_id
+  client_cert_path = var.client_cert_path 
+  tenant_id = var.tenant_id
+
+  managed_image_name = "kubeapps-az-arm"
+  managed_image_resource_group_name = var.resource_group_name
+  build_resource_group_name = var.resource_group_name
+  os_type = "Linux"
+  image_publisher = "Canonical"
+  image_offer = "0001-com-ubuntu-server-focal-daily"
+  image_sku = var.image_sku
+
+  vm_size = var.vm_size
+  communicator = "ssh"
+}
+```
+
+
+[packer/ubuntu.pkr.hcl](packer/ubuntu.pkr.hcl#L74)
+
+On utilise le provisionner ansibke qui va installer notre playbook sur la machine azure :
+
+```hcl
 build {
-  // Make sure to name your builds so that you can selectively run them one at
-  // a time.
-  name = "virtualbox-ovf"
+  sources = ["sources.azure-arm.vm"]
 
-  source "source.docker.example" {
-    image = "ubuntu"
+  provisioner "ansible" {
+    playbook_file = "../playbook/site.yaml"
   }
 
   provisioner "shell" {
-    inline = ["echo example provisioner"]
-  }
-  provisioner "shell" {
-    inline = ["echo another example provisioner"]
-  }
-  provisioner "shell" {
-    inline = ["echo a third example provisioner"]
-  }
-
-  // Make sure that the output from your build can be used in the next build.
-  // In this example, we're tagging the Docker image so that the step-2
-  // builder can find it without us having to track it down in a manifest.
-  post-processor "docker-tag" {
-    repository = "ubuntu"
-    tag = ["step-1-output"]
+    execute_command = "chmod +x {{ .Path }}; {{ .Vars }} sudo -E sh '{{ .Path }}'"
+    inline = [
+      "/usr/sbin/waagent -force -deprovision+user && export HISTSIZE=0 && sync"
+    ]
+    inline_shebang = "/bin/sh -x"
   }
 }
 
 ```
 
-Toujours dans `packer/`
+Et enfin nous créons un fichier `vars.json` que l'on recommande d'ignorer sur git pour plus de sécurité (ce fichier contient les identifiants de votre compte azure):
+
+[packer/vars.json](packer/vars.json)
+
+```json
+{
+  "client_id": "<client-id>",
+  "client_cert_path": "<cert-file-location>",
+  "tenant_id": "<tenant-id>",
+  "subscription_id": "TYPE_YOUR_SUBSCRIPTION_ID_HERE"
+}
+```
+
+> **Note**: le provisionner shell est nécessaire pour déprovisionner l'agent azure qui est installé par défaut sur les images générées par azure.
+
+Toujours dans `packer/`, on lance le traitement entier avec packer :
 
 ```bash
-packer init
+packer build -var-file=vars.json ubuntu.pkr.hcl
 ```

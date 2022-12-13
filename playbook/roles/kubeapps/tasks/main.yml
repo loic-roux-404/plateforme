@@ -9,7 +9,8 @@
 
 - include_tasks: manifests.yml
   tags: [kubeapps]
-  when: item.condition | default(true)
+  when: ("condition" in item and item.condition == True) or
+      "condition" not in item
   args: { apply: { tags: [kubeapps] } }
   loop:
     - { src: core-dns-config-crd.yml, condition: cert_manager_is_internal }

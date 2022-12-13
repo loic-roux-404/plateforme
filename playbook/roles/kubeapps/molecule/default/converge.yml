@@ -9,7 +9,6 @@
       {'kube-apiserver-arg=oidc-ca-file': kubeapps_internal_acme_ca_file}
     ) }}"
     cert_manager_acme_url: https://{{ kubeapps_internal_acme_host }}:14000/dir
-    kubeapps_internal_acme_external_ip: 192.168.5.3
 
   roles:
     - role: "{{ lookup('env', 'MOLECULE_PROJECT_DIRECTORY') | basename }}"
@@ -48,6 +47,8 @@
       command: dig +short host.docker.internal
       register: dig_host_docker_internal
       changed_when: false
+      tags: [kubeapps]
 
     - ansible.builtin.set_fact:
         kubeapps_internal_acme_external_ip: "{{ dig_host_docker_internal.stdout }}"
+      tags: [kubeapps]

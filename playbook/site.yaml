@@ -1,6 +1,5 @@
-- hosts: node-0
+- hosts: all
   gather_facts: True
   become: True
-  become_user: root
   roles:
     - role: roles/kubeapps
