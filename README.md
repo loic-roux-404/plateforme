@@ -634,8 +634,7 @@ De plus le `when` permet de ne pas executer certains manifests propre à une aut
 ```yaml
 ---
 - import_tasks: manifests.yml
-  when: ("condition" in item and item.condition == True) or
-      "condition" not in item
+  when: item.condition == True
   loop:
     - { src: ~, ns: ~ }
   tags: [kubeapps]
@@ -1151,13 +1150,13 @@ Nous introduisons ici la variable `cert_manager_is_internal` qui nous permet de 
 Puis on n'oublie pas de définir cette variable clé pour bien configurer notre autorité dans les composants suivants.
 
 ```yaml
-cert_manager_is_internal: "{{ kubeapps_internal_acme_ca_file != None }}"
+cert_manager_is_internal: "{{ kubeapps_internal_acme_ca_file is not none }}"
 
 ```
 
-> L'idée est que si un certificat à été fourni pour accepté une autorité non référencée parmis celles digne de confiance par défaut sur l'internet global alors elle est interne.
+> L'idée est que si un certificat à été fourni pour accepté une autorité (par défaut non référencée comme digne de confiance sur l'internet global) alors elle est interne.
 
-Nous avons alors besoin de plusieurs chose pour importer notre certificat racine dans le trust de nos serveurs.
+Nous avons alors besoin de plusieurs choses pour importer notre certificat racine dans le trust de nos serveurs.
 
 Une ressource kube configmap (ou secret) pour stocker le certificat racine que l'on a récupéré dans les étapes précédentes avec le module ansible `slurp`.
 
@@ -1228,9 +1227,9 @@ Ensuite, **il est essentiel** d'appeler dans l'ordre tous ces manifests que l'on
     - src: trust-manager-chart-crd.yml
       deploy: trust-manager 
       ns: "{{ cert_manager_namespace }}"
-      condition: cert_manager_is_internal
+      condition: "{{ cert_manager_is_internal }}"
     - src: trust-bundle-config-crd.yml
-      condition: cert_manager_is_internal
+      condition: "{{ cert_manager_is_internal }}"
 ```
 
 Une fois cette configuration stocké nous allons pouvoir l'injecter dans les pods avec des `volumes`.
@@ -1353,10 +1352,14 @@ Nous allons crypter les Informations dangereuses dans un vault ansible que l'on 
 Dans votre rôle `playbook/roles/kubeapps`
 
 ```bash
-ansible-vault create molecule/default/group_vars/molecule/secrets.yml
+ansible-vault create --vault-password-file $HOME/.ansible/.vault molecule/default/group_vars/molecule/secrets.yml
 ```
 
-Renseigner un mot de passe que vous devez conserver dans un autre endroit sécurisé. On risquerait de devoir recréer le fichier de secret entièrement.
+Renseigner un mot de passe dans le fihcier `$HOME/.ansible/.vault`.
+
+> **Warning** : Ce mot de passe est utilisé pour décrypter les secrets de votre playbook de test. Il est donc important de le garder secret d'où une localisation à l'extérieure du repo.
+
+> **Warning** Il est aussi recommandé de le stocker en double dans un gestionnaire de mot de passe ou autre gestionnaire de secret perfectionné (Github action, hashicorp vault...)
 
 Vous devrez ensuite renseigner ces secrets afin de cacher les informations sensibles dans votre playbook de test.
 
@@ -1672,7 +1675,8 @@ Celle ci va faire le remplacement des variables utilisées dans les moustaches `
 
 [playbook/roles/kubeapps/tasks/main.yml](playbook/roles/kubeapps/tasks/main.yml#L23)
 ```yaml
-    - { src: kubeapps-chart-crd.yml, deploy:  "{{ kubeapps_namespace }}" }
+    - src: kubeapps-chart-crd.yml
+      deploy:  "{{ kubeapps_namespace }}"
 
 ```
 
@@ -1813,35 +1817,35 @@ Cette étape servira pour utiliser le playbook dans la [partie 2](#2-créer-une-
 > [playbook/site.yaml](playbook/site.yaml)
 ```yaml
 ---
-- hosts: node-0
+- hosts: all
   gather_facts: True
   become: True
-  become_user: root
   roles:
     - role: roles/kubeapps
 
 ```
 
-Ensuite on définit la configuration des hôtes disponible pour notre playbook. On se contente ici de simplement se connecter en root sur localhost car nous allons provisionner sur un envionnement virtualisé en local plus tard.
+Puis crypté la nouvelle config dédié à la production azure avec ansible vault dans un nouveau dossier `group_vars` situé dans un inventaire `prod` :
 
-> [playbook/inventories/k8s-paas/hosts](playbook/inventories/staging/hosts)
-
-```ini
-[node-0]
-ansible_user=root
-ansible_host=localhost
-
-```
-
-> Note : on reste sur localhost car nous allons provisionner sur la machine même avec `packer` dans la prochaine étape.
-
-**Commande ansible-playbook** pour lancer notre rôle avec de nouvelles configurations et variables d'hôte et d'inventaires.
-
-> Cette commande ne fonctionne pour l'instant pas, simplement par ce que aucun serveur ssh (port 22) n'est lancé sur localhost.
+> Note : on ne définit pas de fichiers `hosts`. Nous allons rester sur localhost avec un provision sur la machine même. Specificité de l'outil `packer` utilisé dans la prochaine étape.
 
 ```bash
-ansible-playbook --vault-password-file vault-password.txt -i inventories/staging/hosts site.yaml
+ansible-vault create playbook/inventories/prod/group_vars/all/secrets.yml --vault-password-file ~/.ansible/.vault
+
 ```
+[playbook/inventories/prod/group_vars/all/secrets.yml](playbook/inventories/prod/group_vars/all/secrets.yml)
+
+```yaml
+cert_manager_email: votre-email-valide@gmail.com
+
+dex_github_client_org: "esgi-lyon"
+dex_github_client_team: "ops-team"
+dex_github_client_id: "my-client-id-from-github-oauth-app"
+dex_github_client_secret: "my-client-secret-from-github-oauth-app"
+
+```
+
+N'essayez pas de consulter les secrets avec votre IDE car ils sont chiffrés.
 
 ## 2. Créer une première image virtuelle pour le test
 
@@ -1869,7 +1873,7 @@ Voici comment le flux de création d'une VM avec packer s'organise :
 
 Pour installer packer [c'est ici](https://www.packer.io/downloads)
 
-> **Note**: recommandation : extension `szTheory.vscode-packer-powertools` (elle contient un bon fortmatteur de fichier HCL),`hashicorp.hcl` pour hashicorp configuration langage, `ms-azuretools.vscode-azureterraform` pour l'autocompletion azure sur terraform et `HashiCorp.terraform`.
+> **Note**: recommandation : extension `szTheory.vscode-packer-powertools` (elle contient un bon fortmatteur de fichier HCL),`hashicorp.hcl`.
 
 Vérification packer 1.8+ bien installé dans votre ligne de commande
 ```sh
@@ -1881,13 +1885,94 @@ Puis nous avons besoin de la ligne commande de azure pour créer notre service p
 
 Connectez vous avec **`az login`** à votre compte azure.
 
-> **Note** Vous devez bien sur avoir un abonnement avec du crédit disponible.
+> **Note** Vous devez avoir un abonnement azure avec du crédit disponible. (exemple: essai de 200$ offert)
 
-### A. Service principal azure et groupe de ressources
+##### Puis créer le `groupe de ressources` dans lequel on va créer tout nos composants azure :
+
+```bash
+az group create --name kubeapps-group --location westeurope
+```
+
+### A. Obtenir un nom de domaine gratuit (étudiants)
+
+Allez sur [https://education.github.com/](https://education.github.com/) et valider votre compte étudiant. Normalement votre email étudiant devrait être reconnu très facilement.
+
+Après nous allons utilisez des noms de domaines offert par TECH :
+[https://education.github.com/pack/redeem/tech-student](https://education.github.com/pack/redeem/tech-student)
+
+Rechercher un nom de domaine disponible et rendre vous sur le panier.
+Pour l'exemple on prendra `paastutorialesgi.tech`.
+
+> **Warning** Vous devez bien avoir valider votre compte étudiant github pour pouvoir utiliser les noms de domaines offerts par TECH.
+
+Continuez jusqu'à voir une fenêtre pour confirmer l'achat, cliquez sur le bouton se connecter avec github puis vous devriez être redirigé vers la page de confirmation github que vous devez accepter.
+
+Normalement vous devriez voir un coût total de 0$ comme sur cette capture :
+
+![tech-free](images/tech-free-domain.png)
+
+Valider et ensuite dès que vous voyez apparaitre le bouton control pannel cliquez dessus.
+
+Ensuite suivez ce lien [Manager Orders](https://controlpanel.tech/servlet/ListAllOrdersServlet?formaction=listOrders) puis cliquer sur votre nom de domaine.
+
+Descendez tout en bas puis cliquer sur le bouton **`Dns Management`** puis **`Manage DNS`**.
+
+![control-panel](images/control-panel-dns.png)
+
+Une page pop-up va s'ouvrir avec l'accès à la modification des enregistrements DNS.
+
+https://learn.microsoft.com/en-us/azure/dns/dns-domain-delegation
+
+Nous allons donc faire ce qu'on appelle de la délégation de domaine. C'est à dire que nous allons dire à Azure que nous allons utiliser leur serveur DNS pour gérer notre domaine venant de TECH.
+
+Créeons la zone sur lasquelle on va déléguer le domaine avec la commande :
+
+```bash
+az network dns zone create --resource-group kubeapps-group --name k3s-paas.paastutorialesgi.tech
+```
+
+On a ce retour :
+
+```json
+{
+  "location": "global",
+  "maxNumberOfRecordSets": 10000,
+  "maxNumberOfRecordsPerRecordSet": null,
+  "name": "paas-tutorial-esgi.tech",
+  "nameServers": [
+    "ns1-03.azure-dns.com.",
+    "ns2-03.azure-dns.net.",
+    "ns3-03.azure-dns.org.",
+    "ns4-03.azure-dns.info."
+  ],
+  "numberOfRecordSets": 2,
+  "registrationVirtualNetworks": null,
+  "resolutionVirtualNetworks": null,
+  "resourceGroup": "kubeapps-group",
+  "tags": {},
+  "type": "Microsoft.Network/dnszones",
+  "zoneType": "Public"
+}
+
+```
+
+Ensuite on renseigne les enregistrements `NS` sur TECH. On ne peut déléguer que une certaine zone du domaines. Donc on va déléguer `k3s-paas.paastutorialesgi.tech` vers azure.
+
+Répétez les valeurs renseignées sur la capture ci-dessous pour chaque `nameServers` Azure : `ns1-03.azure-dns.com., "ns2-03.azure-dns.net., ns3-03.azure-dns.org., ns4-03.azure-dns.info.`.
+
+Ensuite ajouter un enregistrement CNAME pour résoudre tous les sous domaines de `k3s-paas.paastutorialesgi.tech` vers les même serveurs de noms.
+
+> **Warning** n'oubliez pas le `.` à la fin du serveur de nom. Cela ne fonctionnera pas sinon.
+
+![ns-record](images/ns-record.png)
+
+### B. Service principal azure et groupe de ressources
 
 [Doc source](https://learn.microsoft.com/en-us/cli/azure/create-an-azure-service-principal-azure-cli?view=azure-cli-latest)
 
-[resource-group-creator](resource-group-creator.json)
+#### 2. Définition du rôle associé au groupe de ressources
+
+[resource-group-creator.json](resource-group-creator.json)
 
 ```json
 {
@@ -1907,13 +1992,7 @@ Connectez vous avec **`az login`** à votre compte azure.
 
 ```
 
-#### 1. Création du groupe de ressources
-
-```bash
-az group create --name kubeapps-group --location westeurope
-```
-
-#### 2. Création du rôle accèdant à notre groupe de ressources
+#### 3. Création du service principal accèdant à notre groupe de ressources
 
 ```bash
 az role definition create --role-definition @resource-group-creator.json
@@ -1926,7 +2005,7 @@ az ad sp create-for-rbac --create-cert -n 'kubeapps-sp' \
 
 ```
 
-Vous devriez obtenir ce retour au format json. on utilise un certificat auto signé pour faire un premier test.
+Vous devriez obtenir ce retour au format json. On utilise un certificat auto signé pour faire un lancement rapide de notre stack.
 
 ```json
 {
@@ -1941,104 +2020,145 @@ Vous devriez obtenir ce retour au format json. on utilise un certificat auto sig
 ### B. Initialisez un projet packer
 
 ```sh
-cd packer
+mkdir infra/
+cd infra
 touch vars.json
 touch ubuntu.pkr.hcl
 ```
 
-> [packer/ubuntu.pkr.hcl](packer/ubuntu.pkr.hcl)
+Ajouter ce gitignore recommandé dans le dossier `infra/`
+
+```bash
+curl -L https://github.com/github/gitignore/raw/main/Packer.gitignore | tee .gitignore
+```
+
+> [infra/ubuntu.pkr.hcl](infra/ubuntu.pkr.hcl)
 
 ```hcl
 variable "client_id" {
-  type = string
+  type    = string
   default = ""
 }
 
 variable "client_cert_path" {
-  type = string
+  type    = string
   default = ""
 }
 
 variable "tenant_id" {
-  type = string
+  type    = string
   default = ""
 }
 
 variable "subscription_id" {
-  type = string
+  type    = string
   default = ""
 }
 
 variable "resource_group_name" {
-  type = string
+  type    = string
   default = "kubeapps-group"
 }
 
-variable "location" {
-  type = string
-  default = "westeurope"
-}
-
 variable "image_sku" {
-  type = string
+  type    = string
   default = "20_04-daily-lts-gen2"
 }
 
 variable "vm_size" {
-  type = string
+  type    = string
   default = "Standard_D2s_v3"
 }
 
-variable "os_disk_name" {
-  type = string
-  default = "disk1"
+variable "ansible_password_file" {
+  type    = string
+  default = ""
 }
 
-variable "admin_username" {
-  type = string
-  default = "root"
+variable "ansible_group_vars" {
+  type    = string
+  default = "prod"
 }
 
-variable "admin_password" {
-  type = string
-  default = "pass"
+variable "private_virtual_network_with_public_ip" {
+  type    = bool
+  default = true
 }
 
+variable "paas_hostname" {
+  type    = string
+  default = "k3s-paas"
+}
 ```
 
-> [packer/ubuntu.pkr.hcl](packer/ubuntu.pkr.hcl#L56)
+> [infra/ubuntu.pkr.hcl](infra/ubuntu.pkr.hcl#L56)
 
 ```hcl
 source "azure-arm" "vm" {
-  subscription_id = var.subscription_id
-  client_id = var.client_id
-  client_cert_path = var.client_cert_path 
-  tenant_id = var.tenant_id
+  subscription_id  = var.subscription_id
+  client_id        = var.client_id
+  client_cert_path = var.client_cert_path
+  tenant_id        = var.tenant_id
 
-  managed_image_name = "kubeapps-az-arm"
+  managed_image_name                = "kubeapps-az-arm"
   managed_image_resource_group_name = var.resource_group_name
-  build_resource_group_name = var.resource_group_name
-  os_type = "Linux"
-  image_publisher = "Canonical"
-  image_offer = "0001-com-ubuntu-server-focal-daily"
-  image_sku = var.image_sku
+  build_resource_group_name         = var.resource_group_name
+  os_type                           = "Linux"
+  image_publisher                   = "Canonical"
+  image_offer                       = "0001-com-ubuntu-server-focal-daily"
+  image_sku                         = var.image_sku
 
-  vm_size = var.vm_size
+  temp_compute_name = var.paas_hostname
+
+  vm_size      = var.vm_size
   communicator = "ssh"
 }
 ```
 
+Lors du processus de build packer, **nous ne sommes pas accessible sur internet** ce qui rend impossible l'installation de certificats letsencrypt avec cert-manager. Nous allons donc désactiver l'installation de kubeapps durant le build pour plutôt la lancer avec un script de démarrage qui relancera simplement le playbook avec le tag `kubeapps`.
 
-[packer/ubuntu.pkr.hcl](packer/ubuntu.pkr.hcl#L74)
+Ensuite, on utilise le provisionner ansible qui va installer notre playbook sur la machine azure :
 
-On utilise le provisionner ansibke qui va installer notre playbook sur la machine azure :
+[infra/ubuntu.pkr.hcl](infra/ubuntu.pkr.hcl#L74)
 
 ```hcl
+
 build {
+
   sources = ["sources.azure-arm.vm"]
 
-  provisioner "ansible" {
-    playbook_file = "../playbook/site.yaml"
+  provisioner "file" {
+    source      = "../playbook/requirements.txt"
+    destination = "requirements.txt"
+  }
+
+  provisioner "shell" {
+    inline = [
+      "curl https://bootstrap.pypa.io/get-pip.py -o /tmp/get-pip.py",
+      "sudo python3 /tmp/get-pip.py",
+      "sudo pip3 install --ignore-installed ansible==6.5.0 pyyaml openshift kubernetes"
+    ]
+  }
+
+  provisioner "file" {
+    source      = var.ansible_password_file
+    destination = "/tmp/.vault"
+  }
+
+  provisioner "ansible-local" {
+    command                 = "sudo ansible-playbook"
+    playbook_file           = "../playbook/site.yaml"
+    playbook_dir            = "../playbook/"
+    group_vars              = "../playbook/inventories/${var.ansible_group_vars}/group_vars"
+    extra_arguments         = [
+      "--vault-password-file /tmp/.vault",
+      "--skip-tags kubeapps"
+    ]
+    galaxy_file             = "../playbook/requirements.yaml"
+    galaxy_command          = "sudo ansible-galaxy"
+    galaxy_roles_path       = "/usr/share/ansible/roles"
+    galaxy_collections_path = "/usr/share/ansible/collections"
+    staging_directory       = "/tmp/packer-provisioner-ansible-local"
   }
 
   provisioner "shell" {
@@ -2050,11 +2170,15 @@ build {
   }
 }
 
+
 ```
+
+> **Note**: le provisionner shell est nécessaire pour déprovisionner l'agent azure qui est installé par défaut sur les images générées par azure.
+
 
 Et enfin nous créons un fichier `vars.json` que l'on recommande d'ignorer sur git pour plus de sécurité (ce fichier contient les identifiants de votre compte azure):
 
-[packer/vars.json](packer/vars.json)
+[infra/vars.json](infra/vars.json)
 
 ```json
 {
@@ -2065,10 +2189,51 @@ Et enfin nous créons un fichier `vars.json` que l'on recommande d'ignorer sur g
 }
 ```
 
-> **Note**: le provisionner shell est nécessaire pour déprovisionner l'agent azure qui est installé par défaut sur les images générées par azure.
-
-Toujours dans `packer/`, on lance le traitement entier avec packer :
+Toujours dans `infra/`, on lance le traitement entier avec packer :
 
 ```bash
 packer build -var-file=vars.json ubuntu.pkr.hcl
+```
+
+### Lancement de la vm avec Terraform
+
+Introduction sur terraform [doc](https://www.terraform.io/intro/index.html)
+
+Cet Outil de codage déclaratif ou d'**IaC** (infrastructure as code), Terraform permet d'utiliser un langage de configuration appelé HCL (HashiCorp Configuration Language) à la place de l'API d'un fournisseur de cloud. On peu ainsi décrire l'infrastructure cloud de manière déclarative et automatisée avec une seule simple ligne de commande. Terraform génère ensuite un plan permettant d'atteindre un état final de l'infrastructure et exécute le plan pour mettre à disposition l'infrastructure.
+
+Terraform permet de faire des infrastructures immuables que l'on peut versionner, partager, installer et détruire à la demande.
+Il ne se limite pas seulement à ça mais à toutes les automatisation mise à disposition par des produits souvent autour du cloud.
+
+**Toujours dans le dossier `infra/` :**
+
+Pour commencer ajouter ce gitignore dans le dossier `infra/` pour éviter le déchet :
+
+```bash
+curl -L https://github.com/github/gitignore/raw/main/Terraform.gitignore | tee -a .gitignore
+```
+
+> `-a` comme append, on ajoute à la fin du fichier et on n'écrase pas l'existant.
+
+Nomenclature des fichiers :
+
+Un block `data` dans un fichier de configuration terraform `tf` sert à importer des données existante
+
+On va maintenant créer une vm avec terraform. Pour cela, on va créer un fichier `main.tf` dans le dossier `infra/`:
+
+Plusieurs étapes pour expliquer le fichier ci-dessous :
+
+- `provider "azurerm"` : On indique à terraform qu'on utilise le provider azure.
+
+- `data "azurerm_resource_group" "paas"`
+
+[infra/main.tf](infra/main.tf#L50)
+
+```hcl
+
+```
+
+Puis appliquer l'infrastructure sans message de confirmation :
+
+```bash
+terraform apply -auto-approve
 ```

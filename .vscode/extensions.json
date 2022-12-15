@@ -1,8 +1,11 @@
 {
     "recommendations": [
-        "4ops.packer",
+        "hashicorp.hcl",
         "redhat.ansible",
         "ms-kubernetes-tools.vscode-kubernetes-tools",
-        "mindaro.mindaro"
+        "mindaro.mindaro",
+        "szTheory.vscode-packer-powertools",
+        "ms-azuretools.vscode-azureterraform",
+        "HashiCorp.terraform"
     ]
 }

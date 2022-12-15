@@ -9,17 +9,17 @@
 
 - include_tasks: manifests.yml
   tags: [kubeapps]
-  when: ("condition" in item and item.condition == True) or
-      "condition" not in item
+  when: item.condition | default(true)
   args: { apply: { tags: [kubeapps] } }
   loop:
-    - { src: core-dns-config-crd.yml, condition: cert_manager_is_internal }
-    - { src: cert-manager-chart-crd.yml, deploy:  "{{ cert_manager_namespace }}" }
+    - { src: core-dns-config-crd.yml, condition: "{{ cert_manager_is_internal }}" }
+    - { src: cert-manager-chart-crd.yml, deploy: "{{ cert_manager_namespace }}" }
     - src: trust-manager-chart-crd.yml
       deploy: trust-manager 
       ns: "{{ cert_manager_namespace }}"
-      condition: cert_manager_is_internal
+      condition: "{{ cert_manager_is_internal }}"
     - src: trust-bundle-config-crd.yml
-      condition: cert_manager_is_internal
+      condition: "{{ cert_manager_is_internal }}"
     - { src: dex-chart-crd.yml , deploy: "{{ dex_namespace }}" }
-    - { src: kubeapps-chart-crd.yml, deploy:  "{{ kubeapps_namespace }}" }
+    - src: kubeapps-chart-crd.yml
+      deploy: "{{ kubeapps_namespace }}"

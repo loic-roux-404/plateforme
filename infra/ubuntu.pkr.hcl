@@ -43,16 +43,6 @@ variable "ansible_group_vars" {
   default = "prod"
 }
 
-variable "admin_username" {
-  type    = string
-  default = "root"
-}
-
-variable "admin_password" {
-  type    = string
-  default = "pass"
-}
-
 source "azure-arm" "vm" {
   subscription_id  = var.subscription_id
   client_id        = var.client_id
@@ -72,6 +62,7 @@ source "azure-arm" "vm" {
 }
 
 build {
+
   sources = ["sources.azure-arm.vm"]
 
   provisioner "file" {
@@ -83,8 +74,7 @@ build {
     inline = [
       "curl https://bootstrap.pypa.io/get-pip.py -o /tmp/get-pip.py",
       "sudo python3 /tmp/get-pip.py",
-      "sudo pip3 install -r requirements.txt",
-      "sudo pip3 install --ignore-installed pyyaml openshift kubernetes"
+      "sudo pip3 install --ignore-installed ansible==6.5.0 pyyaml openshift kubernetes"
     ]
   }
 
@@ -98,17 +88,20 @@ build {
     playbook_file           = "../playbook/site.yaml"
     playbook_dir            = "../playbook/"
     group_vars              = "../playbook/inventories/${var.ansible_group_vars}/group_vars"
-    extra_arguments         = ["--vault-password-file /tmp/.vault"]
+    extra_arguments         = [
+      "--vault-password-file /tmp/.vault",
+      "--skip-tags kubeapps"
+    ]
     galaxy_file             = "../playbook/requirements.yaml"
     galaxy_command          = "sudo ansible-galaxy"
     galaxy_roles_path       = "/usr/share/ansible/roles"
     galaxy_collections_path = "/usr/share/ansible/collections"
+    staging_directory       = "/tmp/packer-provisioner-ansible-local"
   }
 
   provisioner "shell" {
     execute_command = "chmod +x {{ .Path }}; {{ .Vars }} sudo -E sh '{{ .Path }}'"
     inline = [
-      "rm -rf /tmp/.vault",
       "/usr/sbin/waagent -force -deprovision+user && export HISTSIZE=0 && sync"
     ]
     inline_shebang = "/bin/sh -x"

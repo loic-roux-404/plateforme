@@ -25,6 +25,3 @@
     namespace: "{{ item.ns | d(item.deploy) }}"
   when: item.deploy | default(false) or item.ns | default(false)
   register: deployment_infos
-
-# - debug:
-#     msg: "{{ deployment_infos }}"

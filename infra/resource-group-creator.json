@@ -1,14 +1,14 @@
 {
-    "Name": "kubeapps group manager",
-    "IsCustom": true,
-    "Description": "Can manage kubeapps resourceGroup",
-    "Actions": [
-      "*"
-    ],
-    "NotActions": [],
-    "DataActions": [],
-    "NotDataActions": [],
-    "AssignableScopes": [
-      "/subscriptions/98530dd6-2c57-445c-8e29-a311d1add387/resourceGroups/kubeapps-group"
-    ]
+  "Name": "kubeapps group manager",
+  "IsCustom": true,
+  "Description": "Can manage kubeapps resourceGroup",
+  "Actions": [
+    "*"
+  ],
+  "NotActions": [],
+  "DataActions": [],
+  "NotDataActions": [],
+  "AssignableScopes": [
+    "/subscriptions/98530dd6-2c57-445c-8e29-a311d1add387/resourceGroups/kubeapps-group"
+  ]
 }
