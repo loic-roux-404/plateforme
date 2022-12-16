@@ -111,7 +111,7 @@ resource "azurerm_virtual_machine" "paas" {
   location              = data.azurerm_resource_group.paas.location
   resource_group_name   = data.azurerm_resource_group.paas.name
   network_interface_ids = [azurerm_network_interface.paas.id]
-  vm_size               = "Standard_B1s"
+  vm_size               = "Standard_B2s"
 
   storage_image_reference {
     id = data.azurerm_image.search.id

@@ -74,13 +74,14 @@ build {
     inline = [
       "curl https://bootstrap.pypa.io/get-pip.py -o /tmp/get-pip.py",
       "sudo python3 /tmp/get-pip.py",
-      "sudo pip3 install --ignore-installed ansible==6.5.0 pyyaml openshift kubernetes"
+      "sudo pip3 install --ignore-installed ansible==6.5.0 pyyaml openshift kubernetes",
+      "sudo mkdir /playbook && sudo chown -R packer:packer /playbook",
     ]
   }
 
   provisioner "file" {
     source      = var.ansible_password_file
-    destination = "/tmp/.vault"
+    destination = "/playbook/.vault"
   }
 
   provisioner "ansible-local" {
@@ -89,14 +90,14 @@ build {
     playbook_dir            = "../playbook/"
     group_vars              = "../playbook/inventories/${var.ansible_group_vars}/group_vars"
     extra_arguments         = [
-      "--vault-password-file /tmp/.vault",
+      "--vault-password-file /playbook/.vault",
       "--skip-tags kubeapps"
     ]
     galaxy_file             = "../playbook/requirements.yaml"
     galaxy_command          = "sudo ansible-galaxy"
     galaxy_roles_path       = "/usr/share/ansible/roles"
     galaxy_collections_path = "/usr/share/ansible/collections"
-    staging_directory       = "/tmp/packer-provisioner-ansible-local"
+    staging_directory       = "/playbook/"
   }
 
   provisioner "shell" {
