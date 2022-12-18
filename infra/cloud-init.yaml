@@ -1,0 +1,15 @@
+#cloud-config
+ansible:
+  install_method: pip
+  package_name: ansible
+  setup_controller:
+    run_ansible:
+      - playbook_dir: /playbook
+        inventory: inventory
+        playbook_name: site.yaml
+        tags: kubeapps
+        vault_password_file: /playbook/.vault
+        extra_vars: >-
+          "kubeapps_hostname=${kubeapps_hostname} 
+          dex_hostname=${dex_hostname} -o 'IdentitiesOnly=yes'"
+        connection: local

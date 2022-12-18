@@ -1243,14 +1243,8 @@ Voici les objets volumes définie dans le fichier **vars.yml** de notre role kub
 ```yaml
 # Mounted in acme internal
 kubeapps_internal_acme_ca_in_volume_crt: /etc/ssl/certs/acmeca.crt
-kubeapps_internal_acme_ca_extra_volumes:
-  - name: acme-internal-ca-share
-    configMap: 
-      name: acme-internal-ca-share
-kubeapps_internal_acme_ca_extra_volumes_mounts:
-  - name: acme-internal-ca-share
-    mountPath: "{{ kubeapps_internal_acme_ca_in_volume_crt }}"
-    subPath: ca.crt
+kubeapps_internal_acme_ca_extra_volumes: []
+kubeapps_internal_acme_ca_extra_volumes_mounts: []
 
 ```
 
@@ -1273,6 +1267,22 @@ Montage du volume dans le container :
 podsubcontainer:
   extraVolumeMounts:
     {{ kubeapps_internal_acme_ca_extra_volumes_mounts | to_nice_yaml | indent(4) }}
+```
+
+Les volumes sont **vide par défaut**, on les renseigne seulement à la fin de la tâche internal-acme lancée en mode cert-manager interne. Voici la suite du `set_fact` (l.25) dans cette tâche :
+
+[playbook/roles/kubeapps/tasks/internal-acme.yml](playbook/roles/kubeapps/tasks/internal-acme.yml#L25)
+
+```yaml
+    kubeapps_internal_acme_ca_extra_volumes:
+    - name: acme-internal-ca-share
+      configMap: 
+        name: acme-internal-ca-share
+    kubeapps_internal_acme_ca_extra_volumes_mounts:
+    - name: acme-internal-ca-share
+      mountPath: "{{ kubeapps_internal_acme_ca_in_volume_crt }}"
+      subPath: ca.crt
+
 ```
 
 #### Sur notre navigateur :
@@ -2204,6 +2214,8 @@ Cet Outil de codage déclaratif ou d'**IaC** (infrastructure as code), Terraform
 Terraform permet de faire des infrastructures immuables que l'on peut versionner, partager, installer et détruire à la demande.
 Il ne se limite pas seulement à ça mais à toutes les automatisation mise à disposition par des produits souvent autour du cloud.
 
+https://learn.microsoft.com/en-us/azure/virtual-machines/custom-data
+
 **Toujours dans le dossier `infra/` :**
 
 Pour commencer ajouter ce gitignore dans le dossier `infra/` pour éviter le déchet :
@@ -2224,12 +2236,41 @@ Plusieurs étapes pour expliquer le fichier ci-dessous :
 
 - `provider "azurerm"` : On indique à terraform qu'on utilise le provider azure.
 
-- `data "azurerm_resource_group" "paas"`
+- `data "azurerm_resource_group" "paas"` pour aller chercher le groupe de ressource que l'on a créer en ligne de commande.
+
 
 [infra/main.tf](infra/main.tf#L50)
 
 ```hcl
 
+```
+
+[infra/main.tf](infra/main.tf#L50)
+
+```hcl
+
+```
+
+https://cloudinit.readthedocs.io/en/latest/topics/modules.html#ansible
+
+[infra/cloud-init.yml](infra/cloud-init.yml)
+
+```yaml
+#cloud-config
+ansible:
+  install_method: pip
+  package_name: ansible
+  run_user: kubeapps
+  setup_controller:
+    run_ansible:
+      - playbook_dir: /playbook
+        inventory: /playbook/inventory
+        playbook_name: site.yml
+        tags: [kubeapps]
+        vault_password_file: /playbook/.vault
+        extra_vars: kubeapps_hostname=${kubeapps_host} dex_hostname=${dex_host} -o 'IdentitiesOnly=yes'
+        connection: local
+    
 ```
 
 Puis appliquer l'infrastructure sans message de confirmation :

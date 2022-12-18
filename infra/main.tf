@@ -25,14 +25,14 @@ data "azurerm_dns_zone" "paas" {
 }
 
 resource "azurerm_virtual_network" "paas" {
-  name                = "acctvn"
+  name                = "paas-vn"
   address_space       = ["10.0.0.0/16"]
   location            = data.azurerm_resource_group.paas.location
   resource_group_name = data.azurerm_resource_group.paas.name
 }
 
 resource "azurerm_subnet" "paas" {
-  name                 = "acctsub"
+  name                 = "paas-sub"
   resource_group_name  = data.azurerm_resource_group.paas.name
   virtual_network_name = azurerm_virtual_network.paas.name
   address_prefixes     = ["10.0.2.0/24"]
@@ -97,7 +97,7 @@ resource "azurerm_dns_a_record" "paas" {
   name                = "*"
   zone_name           = data.azurerm_dns_zone.paas.name
   resource_group_name = data.azurerm_resource_group.paas.name
-  ttl                 = 300
+  ttl                 = 14400
   target_resource_id  = azurerm_public_ip.paas.id
 }
 
@@ -111,7 +111,7 @@ resource "azurerm_virtual_machine" "paas" {
   location              = data.azurerm_resource_group.paas.location
   resource_group_name   = data.azurerm_resource_group.paas.name
   network_interface_ids = [azurerm_network_interface.paas.id]
-  vm_size               = "Standard_B2s"
+  vm_size               = "Standard_DC1s_v2"
 
   storage_image_reference {
     id = data.azurerm_image.search.id
@@ -123,13 +123,21 @@ resource "azurerm_virtual_machine" "paas" {
     name              = "paasdisk1"
     create_option     = "FromImage"
     caching           = "ReadWrite"
-    managed_disk_type = "Standard_LRS"
+    managed_disk_type = "StandardSSD_LRS"
   }
 
   os_profile {
     computer_name  = "paasvm"
     admin_username = "kubeapps"
-    admin_password = "Kubeapps12?!"
+    admin_password = "Kubeapps12!?"
+
+    custom_data = templatefile(
+      "${path.module}/cloud-init.yaml",
+      {
+        kubeapps_hostname = "kubeapps.${data.azurerm_dns_zone.paas.name}",
+        dex_hostname = "dex.${data.azurerm_dns_zone.paas.name}"
+      }
+    )
   }
 
   os_profile_linux_config {

@@ -103,6 +103,7 @@ build {
   provisioner "shell" {
     execute_command = "chmod +x {{ .Path }}; {{ .Vars }} sudo -E sh '{{ .Path }}'"
     inline = [
+      "mv $(find . -name "packer-provisioner-ansible-local*" | head -1) /playbook/inventory"
       "/usr/sbin/waagent -force -deprovision+user && export HISTSIZE=0 && sync"
     ]
     inline_shebang = "/bin/sh -x"
