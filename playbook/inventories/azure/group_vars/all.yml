@@ -1,0 +1,33 @@
+---
+cert_manager_email: "{{ lookup(
+  'azure.azcollection.azure_keyvault_secret',
+  secret='cert-manager-email',
+  vault_url=vault_url
+  ) }}"
+
+dex_client_id:  "{{ lookup(
+  'azure.azcollection.azure_keyvault_secret',
+  secret='dex-client-id',
+  vault_url=vault_url
+  ) }}"
+dex_client_secret:  "{{ lookup(
+  'azure.azcollection.azure_keyvault_secret',
+  secret='dex-client-secret',
+  vault_url=vault_url
+  ) }}"
+dex_github_client_id: "{{ lookup(
+  'azure.azcollection.azure_keyvault_secret',
+  secret='dex-github-client_id',
+  vault_url=vault_url
+  ) }}"
+dex_github_client_secret: "{{ lookup(
+  'azure.azcollection.azure_keyvault_secret',
+  secret='dex-github-client-secret',
+  vault_url=vault_url
+  ) }}"
+
+kubeapps_oauth_proxy_cookie_secret: "{{ lookup(
+  'azure.azcollection.azure_keyvault_secret',
+  secret='kubeapps-oauth-proxy-cookie-secret',
+  vault_url=vault_url
+  ) }}"

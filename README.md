@@ -7,6 +7,8 @@
 - Un minimum de culture sur les systèmes d'Information
 - Connaissance des concepts d'environnements isolés linux ou **containers**
 - Un compte [github](http://github.com/)
+- Un compte [azure](https://azure.microsoft.com/fr-fr/) avec le crédit de 100$ offert pour les étudiants (avec l'email myges cela fonctionne normalement)
+- Valider votre compte github student pour ne pas avoir à acheter de nom de domaine [https://education.github.com/globalcampus/student](https://education.github.com/globalcampus/student), valider le compte avec votre adresse mail de l'université.
 
 ## Intro
 
@@ -1340,7 +1342,7 @@ Nommez les comme vous voulez puis ajoutez la variable dans votre playbook de tes
 
 ```yaml
     dex_github_client_org: "esgi-lyon"
-    dex_github_client_team: "ops-team"
+    dex_github_client_team: "ops-team-test"
 ```
 
 #### Créer l'application github
@@ -1349,7 +1351,7 @@ Nommez les comme vous voulez puis ajoutez la variable dans votre playbook de tes
 
 Configuré la comme ceci **pour l'instant** en utilisant les url en local qui ne fonctionnerons pas (pas de tls activé / ni online)
 
-- Application name : `kubeapps_test`
+- Application name : `kubeapps-test`
 - Homepage URL : `https://kubeapps.k3s.local`
 - Authorization callback URL : `https://dex.k3s.local/callback`
 
@@ -1378,8 +1380,6 @@ Vous devrez ensuite renseigner ces secrets afin de cacher les informations sensi
 ```yaml
 cert_manager_email: test4@k3s.local
 
-dex_github_client_org: "esgi-lyon"
-dex_github_client_team: "ops-team"
 dex_github_client_id: "my-client-id-from-github-oauth-app"
 dex_github_client_secret: "my-client-secret-from-github-oauth-app"
 
@@ -1446,7 +1446,7 @@ Ensuite on précise les informations de connexion à github ainsi que les celles
 
 ```yaml
 dex_client_id: kubeapps
-dex_client_secret: ZXhhbXBsZS1hcHAtc2VjcmV0
+dex_client_secret: ~
 dex_github_client_id: ~
 dex_github_client_secret: ~
 dex_github_client_org: ~
@@ -1835,27 +1835,7 @@ Cette étape servira pour utiliser le playbook dans la [partie 2](#2-créer-une-
 
 ```
 
-Puis crypté la nouvelle config dédié à la production azure avec ansible vault dans un nouveau dossier `group_vars` situé dans un inventaire `prod` :
-
 > Note : on ne définit pas de fichiers `hosts`. Nous allons rester sur localhost avec un provision sur la machine même. Specificité de l'outil `packer` utilisé dans la prochaine étape.
-
-```bash
-ansible-vault create playbook/inventories/prod/group_vars/all/secrets.yml --vault-password-file ~/.ansible/.vault
-
-```
-[playbook/inventories/prod/group_vars/all/secrets.yml](playbook/inventories/prod/group_vars/all/secrets.yml)
-
-```yaml
-cert_manager_email: votre-email-valide@gmail.com
-
-dex_github_client_org: "esgi-lyon"
-dex_github_client_team: "ops-team"
-dex_github_client_id: "my-client-id-from-github-oauth-app"
-dex_github_client_secret: "my-client-secret-from-github-oauth-app"
-
-```
-
-N'essayez pas de consulter les secrets avec votre IDE car ils sont chiffrés.
 
 ## 2. Créer une première image virtuelle pour le test
 
@@ -1907,124 +1887,42 @@ az group create --name kubeapps-group --location westeurope
 
 Allez sur [https://education.github.com/](https://education.github.com/) et valider votre compte étudiant. Normalement votre email étudiant devrait être reconnu très facilement.
 
-Après nous allons utilisez des noms de domaines offert par TECH :
-[https://education.github.com/pack/redeem/tech-student](https://education.github.com/pack/redeem/tech-student)
+Après nous allons utiliser des noms de domaines offert par **name.com** :
 
-Rechercher un nom de domaine disponible et rendre vous sur le panier.
-Pour l'exemple on prendra `paastutorialesgi.tech`.
+- Allez à [https://education.github.com/pack/offers#namecom](https://education.github.com/pack/offers#namecom)
 
-> **Warning** Vous devez bien avoir valider votre compte étudiant github pour pouvoir utiliser les noms de domaines offerts par TECH.
+- Veillez bien à ne pas être connecté à `name.com` dans le cas où vous seriez déjà inscrit
 
-Continuez jusqu'à voir une fenêtre pour confirmer l'achat, cliquez sur le bouton se connecter avec github puis vous devriez être redirigé vers la page de confirmation github que vous devez accepter.
+- Cliquer Get access by connecting your GitHub account on Name.com et accepter les droits demandés par l'application sur github.
 
-Normalement vous devriez voir un coût total de 0$ comme sur cette capture :
+- Connectez vous à github en cliquant sur le bouton qui devrait être au milieu de la page.
 
-![tech-free](images/tech-free-domain.png)
+- Dans **domains** chercher un domaine en `.live` de votre choix (par exemple `paas-tutorial-lesgi.live`)
 
-Valider et ensuite dès que vous voyez apparaitre le bouton control pannel cliquez dessus.
+- Ensuite ajoutez le au panier et aller à checkout en cliquant à nouveau. [`Panier > Checkout`](https://www.name.com/account/checkout) Le code promo est censé être appliqué automatiquement grâce à la connection à Github.
 
-Ensuite suivez ce lien [Manager Orders](https://controlpanel.tech/servlet/ListAllOrdersServlet?formaction=listOrders) puis cliquer sur votre nom de domaine.
+- Ensuite poursuivez en vous inscrivant à name.com et validez votre email puis valider l'achat qui ne doit rien vous couter si la manipulation à a été faite correctement.
 
-Descendez tout en bas puis cliquer sur le bouton **`Dns Management`** puis **`Manage DNS`**.
+##### Créer le client api pour les prochaines étapes
 
-![control-panel](images/control-panel-dns.png)
+Allez [https://www.name.com/account/settings/api](https://www.name.com/account/settings/api) et crééer un token avec le nom de votre choix.
 
-Une page pop-up va s'ouvrir avec l'accès à la modification des enregistrements DNS.
+L'objectif sera de faire pointé notre nom de domaine vers les serveurs de nom de azure grâce à un module terraform qui utilisera l'api de name.com.
 
-https://learn.microsoft.com/en-us/azure/dns/dns-domain-delegation
-
-Nous allons donc faire ce qu'on appelle de la délégation de domaine. C'est à dire que nous allons dire à Azure que nous allons utiliser leur serveur DNS pour gérer notre domaine venant de TECH.
-
-Créeons la zone sur lasquelle on va déléguer le domaine avec la commande :
-
-```bash
-az network dns zone create --resource-group kubeapps-group --name k3s-paas.paastutorialesgi.tech
-```
-
-On a ce retour :
+##### TODO move
+On a ce retour quand on list les zones dns avec la ligne de commande `TODO`
 
 ```json
 {
-  "location": "global",
-  "maxNumberOfRecordSets": 10000,
-  "maxNumberOfRecordsPerRecordSet": null,
-  "name": "paas-tutorial-esgi.tech",
+
   "nameServers": [
     "ns1-03.azure-dns.com.",
     "ns2-03.azure-dns.net.",
     "ns3-03.azure-dns.org.",
     "ns4-03.azure-dns.info."
   ],
-  "numberOfRecordSets": 2,
-  "registrationVirtualNetworks": null,
-  "resolutionVirtualNetworks": null,
-  "resourceGroup": "kubeapps-group",
-  "tags": {},
-  "type": "Microsoft.Network/dnszones",
-  "zoneType": "Public"
 }
 
-```
-
-Ensuite on renseigne les enregistrements `NS` sur TECH. On ne peut déléguer que une certaine zone du domaines. Donc on va déléguer `k3s-paas.paastutorialesgi.tech` vers azure.
-
-Répétez les valeurs renseignées sur la capture ci-dessous pour chaque `nameServers` Azure : `ns1-03.azure-dns.com., "ns2-03.azure-dns.net., ns3-03.azure-dns.org., ns4-03.azure-dns.info.`.
-
-Ensuite ajouter un enregistrement CNAME pour résoudre tous les sous domaines de `k3s-paas.paastutorialesgi.tech` vers les même serveurs de noms.
-
-> **Warning** n'oubliez pas le `.` à la fin du serveur de nom. Cela ne fonctionnera pas sinon.
-
-![ns-record](images/ns-record.png)
-
-### B. Service principal azure et groupe de ressources
-
-[Doc source](https://learn.microsoft.com/en-us/cli/azure/create-an-azure-service-principal-azure-cli?view=azure-cli-latest)
-
-#### 2. Définition du rôle associé au groupe de ressources
-
-[resource-group-creator.json](resource-group-creator.json)
-
-```json
-{
-  "Name": "kubeapps group manager",
-  "IsCustom": true,
-  "Description": "Can create and delete resource groups",
-  "Actions": [
-    "*"
-  ],
-  "NotActions": [],
-  "DataActions": [],
-  "NotDataActions": [],
-  "AssignableScopes": [
-    "/subscriptions/TYPE_YOUR_SUBSCRIPTION_ID_HERE/resourceGroups/kubeapps-group"
-  ]
-}
-
-```
-
-#### 3. Création du service principal accèdant à notre groupe de ressources
-
-```bash
-az role definition create --role-definition @resource-group-creator.json
-```
-
-```bash
-az ad sp create-for-rbac --create-cert -n 'kubeapps-sp' \
-    --role 'kubeapps group manager' \
-      --scopes /subscriptions/TYPE_YOUR_SUBSCRIPTION_ID_HERE/resourceGroups/kubeapps-group
-
-```
-
-Vous devriez obtenir ce retour au format json. On utilise un certificat auto signé pour faire un lancement rapide de notre stack.
-
-```json
-{
-  "appId": "8d83561d-02d8-4c49-89ea-1549789d221b",
-  "displayName": "azure-cli-2022-12-12-20-21-28",
-  "fileWithCertAndPrivateKey": "/Users/loic/tmp9pxje2nd.pem",
-  "password": null,
-  "tenant": "c371d4f5-b34f-4b06-9e66-517fed904220"
-}
 ```
 
 ### B. Initialisez un projet packer
@@ -2045,25 +1943,6 @@ curl -L https://github.com/github/gitignore/raw/main/Packer.gitignore | tee .git
 > [infra/ubuntu.pkr.hcl](infra/ubuntu.pkr.hcl)
 
 ```hcl
-variable "client_id" {
-  type    = string
-  default = ""
-}
-
-variable "client_cert_path" {
-  type    = string
-  default = ""
-}
-
-variable "tenant_id" {
-  type    = string
-  default = ""
-}
-
-variable "subscription_id" {
-  type    = string
-  default = ""
-}
 
 variable "resource_group_name" {
   type    = string
@@ -2085,11 +1964,6 @@ variable "ansible_password_file" {
   default = ""
 }
 
-variable "ansible_group_vars" {
-  type    = string
-  default = "prod"
-}
-
 variable "private_virtual_network_with_public_ip" {
   type    = bool
   default = true
@@ -2105,13 +1979,10 @@ variable "paas_hostname" {
 
 ```hcl
 source "azure-arm" "vm" {
-  subscription_id  = var.subscription_id
-  client_id        = var.client_id
-  client_cert_path = var.client_cert_path
-  tenant_id        = var.tenant_id
+ use_azure_cli_auth = true
 
   managed_image_name                = "kubeapps-az-arm"
-  managed_image_resource_group_name = var.resource_group_name
+  #managed_image_resource_group_name = var.resource_group_name
   build_resource_group_name         = var.resource_group_name
   os_type                           = "Linux"
   image_publisher                   = "Canonical"
@@ -2150,20 +2021,11 @@ build {
     ]
   }
 
-  provisioner "file" {
-    source      = var.ansible_password_file
-    destination = "/tmp/.vault"
-  }
-
   provisioner "ansible-local" {
     command                 = "sudo ansible-playbook"
     playbook_file           = "../playbook/site.yaml"
     playbook_dir            = "../playbook/"
-    group_vars              = "../playbook/inventories/${var.ansible_group_vars}/group_vars"
-    extra_arguments         = [
-      "--vault-password-file /tmp/.vault",
-      "--skip-tags kubeapps"
-    ]
+    extra_arguments         = ["--skip-tags kubeapps"]
     galaxy_file             = "../playbook/requirements.yaml"
     galaxy_command          = "sudo ansible-galaxy"
     galaxy_roles_path       = "/usr/share/ansible/roles"
@@ -2185,25 +2047,13 @@ build {
 
 > **Note**: le provisionner shell est nécessaire pour déprovisionner l'agent azure qui est installé par défaut sur les images générées par azure.
 
-
-Et enfin nous créons un fichier `vars.json` que l'on recommande d'ignorer sur git pour plus de sécurité (ce fichier contient les identifiants de votre compte azure):
-
-[infra/vars.json](infra/vars.json)
-
-```json
-{
-  "client_id": "<client-id>",
-  "client_cert_path": "<cert-file-location>",
-  "tenant_id": "<tenant-id>",
-  "subscription_id": "TYPE_YOUR_SUBSCRIPTION_ID_HERE"
-}
-```
-
 Toujours dans `infra/`, on lance le traitement entier avec packer :
 
 ```bash
-packer build -var-file=vars.json ubuntu.pkr.hcl
+packer build ubuntu.pkr.hcl
 ```
+
+Vous pourrez voir le résultat de la création de l'image dans le portail azure dans votre groupe de ressource `kubeapps-group`.
 
 ### Lancement de la vm avec Terraform
 
@@ -2232,12 +2082,159 @@ Un block `data` dans un fichier de configuration terraform `tf` sert à importer
 
 On va maintenant créer une vm avec terraform. Pour cela, on va créer un fichier `main.tf` dans le dossier `infra/`:
 
-Plusieurs étapes pour expliquer le fichier ci-dessous :
+Plusieurs étapes pour expliquer le début du fichier ci-dessous :
 
-- `provider "azurerm"` : On indique à terraform qu'on utilise le provider azure.
+- `provider "azurerm"`, `azuread`,... : On indique à terraform qu'on utilise les providers azure, azure active directory (gestion des comptes), github et namedotcom.
 
-- `data "azurerm_resource_group" "paas"` pour aller chercher le groupe de ressource que l'on a créer en ligne de commande.
 
+```tf
+terraform {
+
+  required_version = ">=0.12"
+
+  required_providers {
+    azurerm = {
+      source  = "hashicorp/azurerm"
+      version = "~>2.0"
+    }
+    github = {
+      source  = "integrations/github"
+      version = "~> 5.0"
+    }
+    namedotcom = {
+      source  = "lexfrei/namedotcom"
+      version = "1.1.6"
+    }
+    azuread = {
+      source  = "hashicorp/azuread"
+      version = "~> 2.15.0"
+    }
+  }
+}
+
+provider "azurerm" {
+  features {}
+}
+
+provider "azuread" {
+  tenant_id = var.azure_tenant_id
+}
+
+provider "github" {
+  token = var.github_token
+}
+
+# https://www.name.com/account/settings/api
+provider "namedotcom" {
+  token    = var.namedotcom_token    #"dd749532ddb025818f68bbe6a59829b9c2352af1"
+  username = var.namedotcom_username #"paas-tutorial-client"
+}
+
+
+```
+
+Comme il a été vu précédemment nous nous sommes connecté avec `az login` donc on n'a pas besoin de spécifier les identifiants de connexion pour azure.
+
+**Cependant** ce n'est pas le cas pour github et name.com, il faut donc spécifier les tokens dans un fichier `variables.tf` des variables terraform que l'on va déclarer de manière sécurisé par la suite:
+
+
+> Aucun secret ne doit être versionné dans un repo git, il faut donc les déclarer dans un fichier `variables.tf` et préciser quelles sont sensibles.
+
+[infra/variables.tf](infra/variables.tf)
+
+```tf
+variable "github_organization" {
+  type = string
+}
+
+variable "github_team" {
+  type = string
+}
+
+variable github_oauth2_app_client_id {
+  type = string
+  sensitive = true
+}
+
+variable github_oauth2_app_client_secret {
+  type = string
+  sensitive = true
+}
+
+variable github_token {
+  type = string
+  sensitive = true
+}
+
+variable "domain" {
+  type = string
+}
+
+variable "namedotcom_token" {
+  type = string
+  sensitive = true
+}
+
+variable "namedotcom_username" {
+  type = string
+  sensitive = true
+}
+
+variable "cert_manager_email" {
+  type = string
+  sensitive = true
+}
+
+```
+
+Première variable clé à récupérer: le tenant id. C'est l'identifiant de l'organisation azure qui va possèder les droits pour effectuer des opérations d'administration sur vos abonnements. Pour récupérer celui par défaut, il vous faut lancer une commande suivante qui va lister et filtrer les comptes
+
+> Prenez bien le compte avec `Azure For Students`, il  s'agit du compte qui vous a été fourni pour la formation et qui a bien du crédit.
+
+```bash
+az account list -o table --all --query "[].{TenantID: tenantId, Subscription: name, Default: isDefault}"
+```
+
+On peut ainsi déclarer des variables dans un fichier `prod.tfvars` qui sera ignoré par git. Veillez toute fois à bien conservé ce fichier de manière sécurisé et de ne pas le perdre par la suite. Voici un exemple à copier et remplir avec vos propres valeurs :
+
+[infra/example.tfvars.dist](infra/exemple.tfvars.dist)
+
+```tf
+tenant_id="00000000-0000-0000-0000-000000000000"
+github_organization = "github-team"
+github_team         = "ops-team"
+domain              = "paas-esgi-tutorial.live"
+namedotcom_username = "username"
+namedotcom_token = "aaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+github_token = "ghp_aaaaaaaaaaaaaaaaaaxxxxxxxxxxxx"
+
+secrets = {
+  dex_github_client_id = "dex-github-oauth2-app-client-id"
+  dex_github_client_secret = "dex-github-oauth2-app-client-secret"
+  cert_manager_email = "paas-esgi-tutorial.live4@example.com"
+}
+
+```
+
+Ces variables seront utilisées dans le fichier `main.tf` pour créer les ressources. Nous allons laissé de côté cette partie secrets pour l'instant et nous concentrer sur la mise en place des accès utilisateurs, le réseau et le dns.
+
+#### Création du compte associé au groupe de ressources
+
+#### création de l'environnement réseau
+
+#### Configuration de la zone dns
+
+#### Utilisation du keyvault azure pour transmettre les secrets à la vm
+
+- [terraform keyvault](https://registry.terraform.io/providers/hashicorp/azurerm/latest/docs/resources/key_vault_secret)
+
+- [keyvault azure](https://learn.microsoft.com/en-us/azure/active-directory/managed-identities-azure-resources/tutorial-windows-vm-access-nonaad#grant-access)
+
+- [module ansible](https://github.com/Azure/azure_preview_modules/blob/master/lookup_plugins/azure_keyvault_secret.py)
+
+#### Création de l'équipe avec Github
+
+Ensuite https://github.com/settings/tokens?type=beta
 
 [infra/main.tf](infra/main.tf#L50)
 
@@ -2250,6 +2247,8 @@ Plusieurs étapes pour expliquer le fichier ci-dessous :
 ```hcl
 
 ```
+
+### Provision final de la machine
 
 https://cloudinit.readthedocs.io/en/latest/topics/modules.html#ansible
 

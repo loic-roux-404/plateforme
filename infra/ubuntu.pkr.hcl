@@ -1,23 +1,3 @@
-variable "client_id" {
-  type    = string
-  default = ""
-}
-
-variable "client_cert_path" {
-  type    = string
-  default = ""
-}
-
-variable "tenant_id" {
-  type    = string
-  default = ""
-}
-
-variable "subscription_id" {
-  type    = string
-  default = ""
-}
-
 variable "resource_group_name" {
   type    = string
   default = "kubeapps-group"
@@ -33,21 +13,8 @@ variable "vm_size" {
   default = "Standard_D2s_v3"
 }
 
-variable "ansible_password_file" {
-  type    = string
-  default = ""
-}
-
-variable "ansible_group_vars" {
-  type    = string
-  default = "prod"
-}
-
 source "azure-arm" "vm" {
-  subscription_id  = var.subscription_id
-  client_id        = var.client_id
-  client_cert_path = var.client_cert_path
-  tenant_id        = var.tenant_id
+  use_azure_cli_auth = true
 
   managed_image_name                = "kubeapps-az-arm"
   managed_image_resource_group_name = var.resource_group_name
@@ -79,20 +46,11 @@ build {
     ]
   }
 
-  provisioner "file" {
-    source      = var.ansible_password_file
-    destination = "/playbook/.vault"
-  }
-
   provisioner "ansible-local" {
-    command                 = "sudo ansible-playbook"
-    playbook_file           = "../playbook/site.yaml"
-    playbook_dir            = "../playbook/"
-    group_vars              = "../playbook/inventories/${var.ansible_group_vars}/group_vars"
-    extra_arguments         = [
-      "--vault-password-file /playbook/.vault",
-      "--skip-tags kubeapps"
-    ]
+    command       = "sudo ansible-playbook"
+    playbook_file = "../playbook/site.yaml"
+    playbook_dir  = "../playbook/"
+    extra_arguments = ["--skip-tags kubeapps"]
     galaxy_file             = "../playbook/requirements.yaml"
     galaxy_command          = "sudo ansible-galaxy"
     galaxy_roles_path       = "/usr/share/ansible/roles"
@@ -103,7 +61,6 @@ build {
   provisioner "shell" {
     execute_command = "chmod +x {{ .Path }}; {{ .Vars }} sudo -E sh '{{ .Path }}'"
     inline = [
-      "mv $(find . -name "packer-provisioner-ansible-local*" | head -1) /playbook/inventory"
       "/usr/sbin/waagent -force -deprovision+user && export HISTSIZE=0 && sync"
     ]
     inline_shebang = "/bin/sh -x"

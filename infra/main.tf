@@ -1,29 +1,143 @@
-terraform {
+############
+# Accounts
+############
+resource "github_team" "opsteam" {
+  name                      = var.github_team
+  description               = "This is the production team"
+  privacy                   = "closed"
+  create_default_maintainer = true
+}
 
-  required_version = ">=0.12"
+resource "azuread_application" "ad_paas" {
+  display_name = "adpaas"
+  owners       = [data.azuread_client_config.current.object_id]
+}
 
-  required_providers {
-    azurerm = {
-      source  = "hashicorp/azurerm"
-      version = "~>2.0"
+resource "azuread_service_principal" "ad_paas" {
+  application_id = azuread_application.ad_paas.application_id
+  owners         = [data.azuread_client_config.current.object_id]
+}
+
+resource "azuread_application_password" "ad_paas" {
+  application_object_id = azuread_application.ad_paas.object_id
+  end_date_relative     = "4320h" # expire in 6 months
+}
+
+resource "azurerm_role_assignment" "paas" {
+  scope                = data.azurerm_resource_group.paas.id
+  role_definition_name = "Contributor"
+  principal_id         = azuread_service_principal.ad_paas.object_id
+}
+
+resource "azurerm_role_assignment" "paas_vault" {
+  scope                = data.azurerm_resource_group.paas.id
+  role_definition_name = "Key Vault Administrator"
+  principal_id         = azuread_service_principal.ad_paas.object_id
+}
+
+provider "azurerm" {
+  tenant_id = azuread_service_principal.ad_paas.application_tenant_id
+  features {
+    key_vault {
+      purge_soft_delete_on_destroy    = true
+      recover_soft_deleted_key_vaults = true
     }
   }
 }
 
-provider "azurerm" {
-  features {}
+############
+# Key vault
+############
+resource "random_id" "kvname" {
+  byte_length = 5
+  prefix      = "keyvault"
 }
 
-# Already created resource group
-data "azurerm_resource_group" "paas" {
-  name = "kubeapps-group"
+resource "azurerm_key_vault" "paas" {
+  name                       = random_id.kvname.hex
+  location                   = data.azurerm_resource_group.paas.location
+  resource_group_name        = data.azurerm_resource_group.paas.name
+  soft_delete_retention_days = 7
+
+  tenant_id = azuread_service_principal.ad_paas.application_tenant_id
+
+  enabled_for_disk_encryption = true
+  purge_protection_enabled    = false
+  enabled_for_deployment      = true
+
+  sku_name = "standard"
+
+  lifecycle {
+    create_before_destroy = true
+  }
+
+  network_acls {
+    default_action = "Allow"
+    bypass         = "AzureServices"
+  }
 }
 
-data "azurerm_dns_zone" "paas" {
-  name                = "k3s-paas.paastutorialesgi.tech"
-  resource_group_name = data.azurerm_resource_group.paas.name
+resource "azurerm_key_vault_access_policy" "paas" {
+  key_vault_id   = azurerm_key_vault.paas.id
+  tenant_id      = azuread_service_principal.ad_paas.application_tenant_id
+  object_id      = azuread_service_principal.ad_paas.object_id
+  application_id = azuread_application.ad_paas.application_id
+
+  key_permissions = [
+    "get", "create",
+  ]
+
+  secret_permissions = [
+    "get", "backup", "delete", "list", "purge", "recover", "restore", "set",
+  ]
+
+  storage_permissions = [
+    "get",
+  ]
 }
 
+# Kubeapps OAuth Proxy
+resource "random_password" "kubeapps_oauth_proxy_cookie_secret" {
+  length           = 16
+  special          = true
+  override_special = "!#$%&*()-_=+[]{}<>:?"
+}
+
+# Dex oidc client
+resource "random_password" "dex_client_id" {
+  length  = 16
+  special = false
+}
+
+resource "random_password" "dex_client_secret" {
+  length  = 24
+  special = false
+}
+
+locals {
+  final_secrets = merge(
+    var.secrets,
+    {
+      dex_client_id                      = random_password.dex_client_id.result
+      dex_client_secret                  = random_password.dex_client_secret.result
+      kubeapps_oauth_proxy_cookie_secret = random_password.kubeapps_oauth_proxy_cookie_secret.result
+    }
+  )
+}
+
+resource "azurerm_key_vault_secret" "paas_all_secrets" {
+  for_each     = local.final_secrets
+  name         = replace(each.key, "_", "-")
+  value        = each.value
+  key_vault_id = azurerm_key_vault.paas.id
+  depends_on = [
+    azurerm_key_vault_access_policy.paas,
+  ]
+}
+
+############
+# Vm Network
+############
 resource "azurerm_virtual_network" "paas" {
   name                = "paas-vn"
   address_space       = ["10.0.0.0/16"]
@@ -85,6 +199,8 @@ resource "azurerm_network_interface" "paas" {
   location            = data.azurerm_resource_group.paas.location
   resource_group_name = data.azurerm_resource_group.paas.name
 
+  enable_accelerated_networking = true
+
   ip_configuration {
     name                          = "paasconfiguration1"
     subnet_id                     = azurerm_subnet.paas.id
@@ -93,25 +209,15 @@ resource "azurerm_network_interface" "paas" {
   }
 }
 
-resource "azurerm_dns_a_record" "paas" {
-  name                = "*"
-  zone_name           = data.azurerm_dns_zone.paas.name
-  resource_group_name = data.azurerm_resource_group.paas.name
-  ttl                 = 14400
-  target_resource_id  = azurerm_public_ip.paas.id
-}
-
-data "azurerm_image" "search" {
-  name                = "kubeapps-az-arm"
-  resource_group_name = data.azurerm_resource_group.paas.name
-}
-
+############
+# Vm creation
+############
 resource "azurerm_virtual_machine" "paas" {
   name                  = "paasvm"
   location              = data.azurerm_resource_group.paas.location
   resource_group_name   = data.azurerm_resource_group.paas.name
   network_interface_ids = [azurerm_network_interface.paas.id]
-  vm_size               = "Standard_DC1s_v2"
+  vm_size               = "Standard_DS2_v2"
 
   storage_image_reference {
     id = data.azurerm_image.search.id
@@ -134,8 +240,11 @@ resource "azurerm_virtual_machine" "paas" {
     custom_data = templatefile(
       "${path.module}/cloud-init.yaml",
       {
-        kubeapps_hostname = "kubeapps.${data.azurerm_dns_zone.paas.name}",
-        dex_hostname = "dex.${data.azurerm_dns_zone.paas.name}"
+        kubeapps_hostname      = "kubeapps.${azurerm_dns_zone.paas.name}"
+        dex_hostname           = "dex.${azurerm_dns_zone.paas.name}"
+        vault_uri              = azurerm_key_vault.paas.vault_uri
+        dex_github_client_org  = github_team.opsteam.name
+        dex_github_client_team = var.github_organization
       }
     )
   }
@@ -143,4 +252,28 @@ resource "azurerm_virtual_machine" "paas" {
   os_profile_linux_config {
     disable_password_authentication = false
   }
+}
+
+############
+# Dns
+############
+resource "azurerm_dns_zone" "paas" {
+  name                = var.domain
+  resource_group_name = data.azurerm_resource_group.paas.name
+}
+
+resource "namedotcom_domain_nameservers" "namedotcom_paas_ns" {
+  domain_name = var.domain
+  nameservers = [
+    # Delete ending dot which isn't valid for namedotcom api
+    for item in azurerm_dns_zone.paas.name_servers : trimsuffix(item, ".")
+  ]
+}
+
+resource "azurerm_dns_a_record" "paas" {
+  name                = "*"
+  zone_name           = azurerm_dns_zone.paas.name
+  resource_group_name = data.azurerm_resource_group.paas.name
+  ttl                 = 3600
+  target_resource_id  = azurerm_public_ip.paas.id
 }

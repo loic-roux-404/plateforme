@@ -1,7 +1,0 @@
-{
-    "client_id": "413abe78-f465-4981-9a0d-a259049896ee",
-    "client_cert_path": "/Users/loic/tmpeyvb9wfl.pem",
-    "tenant_id": "c371d4f5-b34f-4b06-9e66-517fed904220",
-    "subscription_id": "98530dd6-2c57-445c-8e29-a311d1add387",
-    "ansible_password_file": "/Users/loic/.ansible/.vault"
-}
