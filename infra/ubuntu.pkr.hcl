@@ -39,6 +39,7 @@ build {
 
   provisioner "shell" {
     inline = [
+      "sudo apt update && sudo apt upgrade -y",
       "curl https://bootstrap.pypa.io/get-pip.py -o /tmp/get-pip.py",
       "sudo python3 /tmp/get-pip.py",
       "sudo pip3 install --ignore-installed ansible==6.5.0 pyyaml openshift kubernetes",
@@ -61,6 +62,7 @@ build {
   provisioner "shell" {
     execute_command = "chmod +x {{ .Path }}; {{ .Vars }} sudo -E sh '{{ .Path }}'"
     inline = [
+      "sudo apt autoremove"
       "/usr/sbin/waagent -force -deprovision+user && export HISTSIZE=0 && sync"
     ]
     inline_shebang = "/bin/sh -x"

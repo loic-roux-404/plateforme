@@ -1,21 +1,24 @@
 #cloud-config
+
+datasource:
+  Azure:
+    apply_network_config: true
+    data_dir: /var/lib/waagent
+    disk_aliases:
+      ephemeral0: /dev/disk/cloud/azure_resource
+
 ansible:
   install_method: pip
   package_name: ansible
-  galaxy:
-    actions:
-      - ["ansible-galaxy", "collection", "install", "azure.azcollection"]
   setup_controller:
     run_ansible:
       - playbook_dir: /playbook
-        inventory: inventories/azure/inventory
+        inventory: /playbook/inventories/azure/hosts
         playbook_name: site.yaml
         tags: kubeapps
-        # Warning : Need a space at each line end
-        extra_vars: >-
-          "vault_uri=${vault_uri} 
-           dex_github_client_org=${dex_github_client_org} 
-           dex_github_client_team=${dex_github_client_team} 
-           kubeapps_hostname=${kubeapps_hostname} 
+        extra_vars: "vault_url=${vault_url}
+           dex_github_client_org=${dex_github_client_org}
+           dex_github_client_team=${dex_github_client_team}
+           kubeapps_hostname=${kubeapps_hostname}
            dex_hostname=${dex_hostname} -o 'IdentitiesOnly=yes'"
         connection: local

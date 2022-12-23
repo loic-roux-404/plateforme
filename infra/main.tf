@@ -2,47 +2,16 @@
 # Accounts
 ############
 resource "github_team" "opsteam" {
-  name                      = var.github_team
-  description               = "This is the production team"
-  privacy                   = "closed"
-  create_default_maintainer = true
+  name        = var.github_team
+  description = "This is the production team"
+  privacy     = "closed"
 }
 
-resource "azuread_application" "ad_paas" {
-  display_name = "adpaas"
-  owners       = [data.azuread_client_config.current.object_id]
-}
-
-resource "azuread_service_principal" "ad_paas" {
-  application_id = azuread_application.ad_paas.application_id
-  owners         = [data.azuread_client_config.current.object_id]
-}
-
-resource "azuread_application_password" "ad_paas" {
-  application_object_id = azuread_application.ad_paas.object_id
-  end_date_relative     = "4320h" # expire in 6 months
-}
-
-resource "azurerm_role_assignment" "paas" {
-  scope                = data.azurerm_resource_group.paas.id
-  role_definition_name = "Contributor"
-  principal_id         = azuread_service_principal.ad_paas.object_id
-}
-
-resource "azurerm_role_assignment" "paas_vault" {
-  scope                = data.azurerm_resource_group.paas.id
-  role_definition_name = "Key Vault Administrator"
-  principal_id         = azuread_service_principal.ad_paas.object_id
-}
-
-provider "azurerm" {
-  tenant_id = azuread_service_principal.ad_paas.application_tenant_id
-  features {
-    key_vault {
-      purge_soft_delete_on_destroy    = true
-      recover_soft_deleted_key_vaults = true
-    }
-  }
+resource "github_team_membership" "opsteam_members" {
+  for_each = data.github_membership.all_admin
+  team_id  = github_team.opsteam.id
+  username = each.value.username
+  role     = "member"
 }
 
 ############
@@ -59,11 +28,11 @@ resource "azurerm_key_vault" "paas" {
   resource_group_name        = data.azurerm_resource_group.paas.name
   soft_delete_retention_days = 7
 
-  tenant_id = azuread_service_principal.ad_paas.application_tenant_id
+  tenant_id = data.azurerm_client_config.current.tenant_id
 
-  enabled_for_disk_encryption = true
-  purge_protection_enabled    = false
-  enabled_for_deployment      = true
+  purge_protection_enabled        = false
+  enabled_for_disk_encryption     = true
+  enabled_for_deployment          = true
 
   sku_name = "standard"
 
@@ -71,29 +40,14 @@ resource "azurerm_key_vault" "paas" {
     create_before_destroy = true
   }
 
-  network_acls {
-    default_action = "Allow"
-    bypass         = "AzureServices"
+  access_policy {
+    tenant_id = data.azurerm_client_config.current.tenant_id
+    object_id = data.azurerm_client_config.current.object_id
+
+    secret_permissions = [
+      "Get", "Set", "Backup", "Delete", "List", "Purge", "Recover", "Restore",
+    ]
   }
-}
-
-resource "azurerm_key_vault_access_policy" "paas" {
-  key_vault_id   = azurerm_key_vault.paas.id
-  tenant_id      = azuread_service_principal.ad_paas.application_tenant_id
-  object_id      = azuread_service_principal.ad_paas.object_id
-  application_id = azuread_application.ad_paas.application_id
-
-  key_permissions = [
-    "get", "create",
-  ]
-
-  secret_permissions = [
-    "get", "backup", "delete", "list", "purge", "recover", "restore", "set",
-  ]
-
-  storage_permissions = [
-    "get",
-  ]
 }
 
 # Kubeapps OAuth Proxy
@@ -114,10 +68,18 @@ resource "random_password" "dex_client_secret" {
   special = false
 }
 
+# Vm password
+resource "random_password" "vm_password" {
+  length           = 16
+  special          = true
+  override_special = "!#$%&*()-_=+[]{}<>:?"
+}
+
 locals {
   final_secrets = merge(
     var.secrets,
     {
+      vm_password                        = random_password.vm_password.result
       dex_client_id                      = random_password.dex_client_id.result
       dex_client_secret                  = random_password.dex_client_secret.result
       kubeapps_oauth_proxy_cookie_secret = random_password.kubeapps_oauth_proxy_cookie_secret.result
@@ -130,9 +92,6 @@ resource "azurerm_key_vault_secret" "paas_all_secrets" {
   name         = replace(each.key, "_", "-")
   value        = each.value
   key_vault_id = azurerm_key_vault.paas.id
-  depends_on = [
-    azurerm_key_vault_access_policy.paas,
-  ]
 }
 
 ############
@@ -182,7 +141,7 @@ resource "azurerm_network_security_group" "paas" {
   }
 }
 
-resource "azurerm_subnet_network_security_group_association" "example" {
+resource "azurerm_subnet_network_security_group_association" "paas_security_group" {
   subnet_id                 = azurerm_subnet.paas.id
   network_security_group_id = azurerm_network_security_group.paas.id
 }
@@ -212,6 +171,26 @@ resource "azurerm_network_interface" "paas" {
 ############
 # Vm creation
 ############
+resource "azurerm_user_assigned_identity" "paas_vm" {
+  location            = data.azurerm_resource_group.paas.location
+  name                = "paas_vm_identity"
+  resource_group_name = data.azurerm_resource_group.paas.name
+}
+
+resource "azurerm_key_vault_access_policy" "paas_vm" {
+  key_vault_id = azurerm_key_vault.paas.id
+  tenant_id    = data.azurerm_client_config.current.tenant_id
+  object_id    = azurerm_user_assigned_identity.paas_vm.principal_id
+
+  key_permissions = ["Get",]
+
+  secret_permissions = [
+    "Get", "List", "Recover", "Restore",
+  ]
+
+  storage_permissions = [ "Get" ]
+}
+
 resource "azurerm_virtual_machine" "paas" {
   name                  = "paasvm"
   location              = data.azurerm_resource_group.paas.location
@@ -223,7 +202,7 @@ resource "azurerm_virtual_machine" "paas" {
     id = data.azurerm_image.search.id
   }
 
-  delete_os_disk_on_termination = true
+  delete_os_disk_on_termination = false
 
   storage_os_disk {
     name              = "paasdisk1"
@@ -232,19 +211,26 @@ resource "azurerm_virtual_machine" "paas" {
     managed_disk_type = "StandardSSD_LRS"
   }
 
+  identity {
+    type = "UserAssigned"
+    identity_ids = [
+      azurerm_user_assigned_identity.paas_vm.id
+    ]
+  }
+
   os_profile {
     computer_name  = "paasvm"
     admin_username = "kubeapps"
-    admin_password = "Kubeapps12!?"
+    admin_password = azurerm_key_vault_secret.paas_all_secrets["vm_password"].value
 
     custom_data = templatefile(
       "${path.module}/cloud-init.yaml",
       {
         kubeapps_hostname      = "kubeapps.${azurerm_dns_zone.paas.name}"
         dex_hostname           = "dex.${azurerm_dns_zone.paas.name}"
-        vault_uri              = azurerm_key_vault.paas.vault_uri
-        dex_github_client_org  = github_team.opsteam.name
-        dex_github_client_team = var.github_organization
+        vault_url              = azurerm_key_vault.paas.vault_uri
+        dex_github_client_org  = data.github_organization.org.orgname
+        dex_github_client_team = github_team.opsteam.name
       }
     )
   }

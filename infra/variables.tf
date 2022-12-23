@@ -1,6 +1,3 @@
-variable "tenant_id" {
-  type = string
-}
 
 variable "github_organization" {
   type = string

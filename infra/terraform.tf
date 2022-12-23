@@ -3,13 +3,9 @@ terraform {
   required_version = ">=0.12"
 
   required_providers {
-    azuread = {
-      source  = "hashicorp/azuread"
-      version = "~> 2.31.0"
-    }
     azurerm = {
       source  = "hashicorp/azurerm"
-      version = "~>2.0"
+      version = "~>3.37"
     }
     github = {
       source  = "integrations/github"
@@ -26,18 +22,22 @@ terraform {
   }
 }
 
-provider "azuread" {
-  tenant_id = var.tenant_id
-}
-
 provider "github" {
   token = var.github_token
   owner = var.github_organization
 }
 
-provider "time" {}
-
 provider "namedotcom" {
   token    = var.namedotcom_token
   username = var.namedotcom_username
+}
+
+provider "azurerm" {
+  # tenant_id = var.tenant_id
+  features {
+    key_vault {
+      purge_soft_delete_on_destroy    = true
+      recover_soft_deleted_key_vaults = true
+    }
+  }
 }
