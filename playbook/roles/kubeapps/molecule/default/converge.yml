@@ -37,3 +37,6 @@
     - ansible.builtin.set_fact:
         kubeapps_internal_acme_network_ip: "{{ dig_host_docker_internal.stdout }}"
       tags: [kubeapps]
+
+    - name: Import acme certificates
+      include_tasks: "../../tasks/pre-import-cert.yml"

@@ -2,3 +2,15 @@
   assert:
     that:
       - cert_manager_email | default(false)
+
+- name: Stat acme ca cert path
+  stat:
+    path: "{{ kubeapps_internal_acme_ca_file }}"
+  register: acmeca_result
+  when: cert_manager_is_internal
+
+- name: Assert cert is present
+  assert:
+    that:
+      - acmeca_result.stat.exists
+  when: cert_manager_is_internal

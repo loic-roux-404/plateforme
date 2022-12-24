@@ -5,8 +5,8 @@ letsencrypt_staging: https://acme-staging-v02.api.letsencrypt.org/directory
 letsencrypt_prod: https://acme-v02.api.letsencrypt.org/directory
 
 letsencrypt_envs:
-  staging: "{{ letsencrypt_staging }}"
-  prod: "{{ letsencrypt_prod }}"
+  staging: '{{ letsencrypt_staging }}'
+  prod: '{{ letsencrypt_prod }}'
 
 letsencrypt_envs_ca_certs:
   staging: https://letsencrypt.org/certs/staging/letsencrypt-stg-root-x1.pem

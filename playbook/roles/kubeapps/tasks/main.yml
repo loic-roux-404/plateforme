@@ -4,7 +4,7 @@
   tags: [kubeapps]
 
 - import_tasks: internal-acme.yml
-  when: cert_manager_is_internal
+  when: kubeapps_internal_acme_network_ip is not none
   tags: [kubeapps]
 
 - include_tasks: manifests.yml
@@ -13,7 +13,7 @@
   args: { apply: { tags: [kubeapps] } }
   loop:
     - src: core-dns-config-crd.yml
-      condition: "{{ kubeapps_ingress_controller_ip is defined }}"
+      condition: "{{ kubeapps_internal_acme_network_ip is not none }}"
     - { src: cert-manager-chart-crd.yml, deploy: "{{ cert_manager_namespace }}" }
     - src: trust-manager-chart-crd.yml
       deploy: trust-manager 

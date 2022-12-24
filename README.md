@@ -407,6 +407,16 @@ Le playbook converge
           - pyyaml
           - kubernetes
 
+    - name: dig host.docker.internal address
+      command: dig +short host.docker.internal
+      register: dig_host_docker_internal
+      changed_when: false
+      tags: [kubeapps]
+
+    - ansible.builtin.set_fact:
+        kubeapps_internal_acme_network_ip: "{{ dig_host_docker_internal.stdout }}"
+      tags: [kubeapps]
+
 ```
 
 > Notes :
@@ -770,27 +780,26 @@ On créer un fichier `tasks/internal-acme.yml` présentant ce code pour récupé
 
 ```yaml
 ---
-- name: Prepare connection to localhost acme server
-  when: kubeapps_internal_acme_network_ip | d(False)
-  block:
-  - name: Get Ingress service infos
-    kubernetes.core.k8s_info:
-      api_version: v1
-      kind: Service
-      name: traefik
-      kubeconfig: /etc/rancher/k3s/k3s.yaml
-      wait: yes
-      namespace: kube-system
-    register: ingress_infos
+---
+- name: Get Ingress service infos
+  kubernetes.core.k8s_info:
+    api_version: v1
+    kind: Service
+    name: traefik
+    kubeconfig: /etc/rancher/k3s/k3s.yaml
+    wait: yes
+    namespace: kube-system
+  register: ingress_infos
 
-  - name: check ingress service infos available
-    assert:
-      that:
-        - ingress_infos.resources | length > 0
+- name: check ingress service infos available
+  assert:
+    that:
+      - ingress_infos.resources | length > 0
 
-  - name: Set localhost ip to find local acme
-    set_fact:
-      kubeapps_ingress_controller_ip: "{{ ingress_infos.resources[0].spec.clusterIP }}"
+- name: Set localhost ip to find local acme
+  set_fact:
+    kubeapps_ingress_controller_ip: "{{ ingress_infos.resources[0].spec.clusterIP }}"
+
 
 ```
 
@@ -1038,6 +1047,19 @@ On créer donc un fichier `check.yml` dans le dossier `tasks` de notre rôle. Ce
     that:
       - cert_manager_email | default(false)
 
+- name: Stat acme ca cert path
+  stat:
+    path: "{{ kubeapps_internal_acme_ca_file }}"
+  register: acmeca_result
+  when: cert_manager_is_internal
+
+- name: Assert cert is present
+  assert:
+    that:
+      - acmeca_result.stat.exists
+  when: cert_manager_is_internal
+
+
 ```
 
 Puis on active ceci en premier dans le fichier wrapper `main.yml` :
@@ -1147,11 +1169,11 @@ On a deux endroits où l'on va faire confiance à notre autorité de certificati
 
 Les serveurs acceptent les certificats de notre autorité de certification et se font donc suffisament confiance entre eux pour établir une connection TLS.
 
-Pour que en interne nos serveur se fassent confiance nous avons besoin de récupérer le certificat racine de notre autorité de certification et de l'ajouter dans le trust de nos serveurs.
+Pour que en interne nos serveur se fassent confiance nous avons besoin de récupérer le certificat racine de notre autorité de certification et de l'ajouter dans le trust de nos serveurs. De plus il faut que ce certificat soit présent avant le démarrage de k3s pour valider les requètes de dex et kubeapps.
 
-Voici la directive ansible :
+On utilise l'url du serveur staging `cert_manager_staging_ca_cert_url` qui est ici définit sur pebble pour récupérer ce certificat avant de jouer tous les rôles.
 
-[playbook/roles/kubeapps/tasks/internal-acme.yml](playbook/roles/kubeapps/tasks/internal-acme.yml#L17)
+[playbook/roles/kubeapps/tasks/pre-import-cert.yml](playbook/roles/kubeapps/tasks/pre-import-cert.yml)
 
 ```yaml
 
@@ -1162,6 +1184,11 @@ Voici la directive ansible :
     return_content: True
   register: ca_file
 
+- name: Trust cert inside current machine
+  ansible.builtin.copy:
+    dest: "{{ kubeapps_internal_acme_ca_file }}"
+    content: "{{ ca_file.content }}"
+
 ```
 
 [playbook/roles/kubeapps/tasks/internal-acme.yml](playbook/roles/kubeapps/tasks/internal-acme.yml#L13)
@@ -1169,6 +1196,15 @@ Voici la directive ansible :
 ```yaml
 - set_fact:
     kubeapps_internal_acme_ca_content: "{{ ca_file.content }}"
+    kubeapps_internal_acme_ca_extra_volumes:
+    - name: acme-internal-ca-share
+      configMap: 
+        name: acme-internal-ca-share
+    kubeapps_internal_acme_ca_extra_volumes_mounts:
+      - name: acme-internal-ca-share
+        mountPath: "{{ kubeapps_internal_acme_ca_in_volume_crt }}"
+        subPath: ca.crt
+
 
 ```
 
@@ -1863,6 +1899,9 @@ Cette étape servira pour utiliser le playbook dans la [partie 2](#2-créer-une-
 - hosts: all
   gather_facts: True
   become: True
+  pre_tasks:
+    - include_tasks: roles/kubeapps/tasks/pre-import-cert.yml
+      when: cert_manager_is_internal  
   roles:
     - role: roles/kubeapps
 
