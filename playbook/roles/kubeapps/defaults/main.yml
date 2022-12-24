@@ -11,7 +11,7 @@ cert_manager_acme_url: "{{ letsencrypt_envs[cert_manager_letsencrypt_env] }}"
 cert_manager_staging_ca_cert_url: "{{ letsencrypt_envs_ca_certs[cert_manager_letsencrypt_env] | d(none) }}"
 cert_manager_email: ""
 cert_manager_private_key_secret: test_secret
-cert_manager_is_internal: "{{ cert_manager_staging_ca_cert_url is not none }}"
+cert_manager_is_internal: "{{ (cert_manager_staging_ca_cert_url | d('')) != '' }}"
 
 # HelmChart Custom Resource Definition for dex oidc connector
 dex_namespace: dex

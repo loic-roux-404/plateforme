@@ -1125,7 +1125,7 @@ metadata:
   name: letsencrypt-acme-issuer
 spec:
   acme:
-    skipTLSVerify: {{ cert_manager_is_internal }}
+    skipTLSVerify: {{ kubeapps_internal_acme_network_ip is not none }}
     email: {{ cert_manager_email }}
     server: {{ cert_manager_acme_url }}
     privateKeySecretRef:
