@@ -6,7 +6,7 @@
     dest: "/var/lib/rancher/k3s/server/manifests/{{ item.src }}"
     owner: "{{ kubeapps_user }}"
     group: "{{ kubeapps_user }}"
-    mode: '0644'
+    mode: '0600'
 
 - name: "Wait {{ item.src }} deployment complete"
   kubernetes.core.k8s_info:

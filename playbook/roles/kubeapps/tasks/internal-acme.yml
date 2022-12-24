@@ -1,27 +1,40 @@
 ---
-- name: Get Ingress service infos
-  kubernetes.core.k8s_info:
-    api_version: v1
-    kind: Service
-    name: traefik
-    kubeconfig: /etc/rancher/k3s/k3s.yaml
-    wait: yes
-    namespace: kube-system
-  register: ingress_infos
+- name: Prepare connection to localhost acme server
+  when: kubeapps_internal_acme_network_ip | d(False)
+  block:
+  - name: Get Ingress service infos
+    kubernetes.core.k8s_info:
+      api_version: v1
+      kind: Service
+      name: traefik
+      kubeconfig: /etc/rancher/k3s/k3s.yaml
+      wait: yes
+      namespace: kube-system
+    register: ingress_infos
 
-- name: check ingress service infos available
-  assert:
-    that:
-      - ingress_infos.resources | length > 0
+  - name: check ingress service infos available
+    assert:
+      that:
+        - ingress_infos.resources | length > 0
 
-- name: Recover base64 encoded ca content to trust
-  slurp:
-    src: "{{ kubeapps_internal_acme_ca_file }}"
-  register: ca_file_content
+  - name: Set localhost ip to find local acme
+    set_fact:
+      kubeapps_ingress_controller_ip: "{{ ingress_infos.resources[0].spec.clusterIP }}"
+
+- name: Download certificate file
+  uri:
+    url: "{{ cert_manager_staging_ca_cert_url }}"
+    validate_certs: "{{ kubeapps_internal_acme_network_ip is none }}"
+    return_content: True
+  register: ca_file
+
+- name: Trust cert inside current machine
+  ansible.builtin.copy:
+    dest: "{{ kubeapps_internal_acme_ca_file }}"
+    content: "{{ ca_file.content }}"
 
 - set_fact:
-    kubeapps_internal_acme_ca_content: "{{ ca_file_content.content | b64decode }}"
-    kubeapps_ingress_controller_ip: "{{ ingress_infos.resources[0].spec.clusterIP }}"
+    kubeapps_internal_acme_ca_content: "{{ ca_file.content }}"
     kubeapps_internal_acme_ca_extra_volumes:
     - name: acme-internal-ca-share
       configMap: 

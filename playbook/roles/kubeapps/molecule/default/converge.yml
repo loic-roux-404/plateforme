@@ -4,11 +4,8 @@
   become: true
   vars:
     molecule_is_test: true
-    kubeapps_internal_acme_ca_file: /etc/ssl/certs/acme-ca.crt
-    k3s_server: "{{ k3s_server | combine(
-      {'kube-apiserver-arg=oidc-ca-file': kubeapps_internal_acme_ca_file}
-    ) }}"
     cert_manager_acme_url: https://{{ kubeapps_internal_acme_host }}:14000/dir
+    cert_manager_staging_ca_cert_url: https://localhost:15000/roots/0
 
   roles:
     - role: "{{ lookup('env', 'MOLECULE_PROJECT_DIRECTORY') | basename }}"
@@ -31,18 +28,6 @@
           - pyyaml
           - kubernetes
 
-    - name: Get Pebble Root Ca cert
-      ansible.builtin.uri:
-        url: https://localhost:15000/roots/0
-        return_content: yes
-        validate_certs: false
-      register: pebble_ca
-
-    - name: Create Pebble Root Ca file
-      ansible.builtin.copy:
-        dest: "{{ kubeapps_internal_acme_ca_file }}"
-        content: "{{ pebble_ca.content }}"
-
     - name: dig host.docker.internal address
       command: dig +short host.docker.internal
       register: dig_host_docker_internal
@@ -50,5 +35,5 @@
       tags: [kubeapps]
 
     - ansible.builtin.set_fact:
-        kubeapps_internal_acme_external_ip: "{{ dig_host_docker_internal.stdout }}"
+        kubeapps_internal_acme_network_ip: "{{ dig_host_docker_internal.stdout }}"
       tags: [kubeapps]

@@ -3,7 +3,7 @@ data "azurerm_resource_group" "paas" {
 }
 
 data "azurerm_image" "search" {
-  name                = "kubeapps-az-arm"
+  name                = "k3s-pre-paas-az-arm"
   resource_group_name = data.azurerm_resource_group.paas.name
 }
 

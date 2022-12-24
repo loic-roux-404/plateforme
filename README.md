@@ -766,31 +766,35 @@ Nous allons ainsi créer une nouvelles suite de tâche pour déduire les address
 
 On créer un fichier `tasks/internal-acme.yml` présentant ce code pour récupérer l'addresse ip de l'ingress à l'aide du module k8s_info d'ansible :
 
+[playbook/roles/kubeapps/tasks/internal-acme.yml](playbook/roles/kubeapps/tasks/internal-acme.yml)
+
 ```yaml
 ---
-- name: Get Ingress service infos
-  kubernetes.core.k8s_info:
-    api_version: v1
-    kind: Service
-    name: traefik
-    kubeconfig: /etc/rancher/k3s/k3s.yaml
-    wait: yes
-    namespace: kube-system
-  register: ingress_infos
+- name: Prepare connection to localhost acme server
+  when: kubeapps_internal_acme_network_ip | d(False)
+  block:
+  - name: Get Ingress service infos
+    kubernetes.core.k8s_info:
+      api_version: v1
+      kind: Service
+      name: traefik
+      kubeconfig: /etc/rancher/k3s/k3s.yaml
+      wait: yes
+      namespace: kube-system
+    register: ingress_infos
 
-- name: check ingress service infos available
-  assert:
-    that:
-      - ingress_infos.resources | length > 0
+  - name: check ingress service infos available
+    assert:
+      that:
+        - ingress_infos.resources | length > 0
 
-# ...
-
-- set_fact:
-    kubeapps_ingress_controller_ip: "{{ ingress_infos.resources[0].spec.clusterIP }}"
+  - name: Set localhost ip to find local acme
+    set_fact:
+      kubeapps_ingress_controller_ip: "{{ ingress_infos.resources[0].spec.clusterIP }}"
 
 ```
 
-Maintenant la variable `kubeapps_ingress_controller_ip` est disponible et prête à être associé à une entrée dns.
+Maintenant la variable `kubeapps_ingress_controller_ip` est disponible et prête à être associé à une entrée dns. Cette variable nous sert à détécté que nous sommes bien en local
 
 Venons en donc à la définitions des nom d'hôte des applications 
 
@@ -820,12 +824,23 @@ Enfin on configure l'addresse de notre acme interne pour que l'étape suivante p
 
     {{ kubeapps_internal_acme_host }} {
       hosts {
-        {{ kubeapps_internal_acme_external_ip }} {{ kubeapps_internal_acme_host }}
+        {{ kubeapps_internal_acme_network_ip }} {{ kubeapps_internal_acme_host }}
         fallthrough
       }
       whoami
     }
 
+```
+
+Ainsi nous sommes prêt à faire fonctionner notre acme en local pour les tests. Cependant dans des environnement disponible sur internet nous n'allons pas activé cette partie. Nous réutilisons donc la variable `kubeapps_ingress_controller_ip` créer dynamiquement dans `internal-acme.yml` pour installer ou non le manifest kubernetes.
+
+[playbook/roles/kubeapps/tasks/main.yml](playbook/roles/kubeapps/tasks/main.yml#L15)
+
+```yaml
+  loop:
+    - src: core-dns-config-crd.yml
+      condition: "{{ kubeapps_ingress_controller_ip is defined }}"
+   
 ```
 
 ## Tls avec cert manager (et local)
@@ -943,7 +958,7 @@ Voici le playbook **cleanup.yml** manquant :
 
 ### Cert-manager
 
-Venons en à l'élement centrale de notre stack, cert-manager. Il va nous permettre de créer des certificats pour nos services kubernetes.
+Venons en à l'élement central de notre stack, cert-manager. Il va nous permettre de créer des certificats pour nos services kubernetes.
 
 Cert-manager permet d'utiliser le protocoles acme embarqué dans des outils comme pebble. Il permet de créer des certificats pour des services http, dns et mTLS.
 On l'utilisera avec pebble pour distribuer les certificats vers les **ingress** avec des ressources secrets contenant respectivement le certificat et la clé de déchiffrage. 
@@ -963,29 +978,51 @@ Voici donc des constantes que l'on ne pas probablement jamais avoir besoin de ch
 kubeapps_k8s_ingress_class: traefik
 letsencrypt_staging: https://acme-staging-v02.api.letsencrypt.org/directory
 letsencrypt_prod: https://acme-v02.api.letsencrypt.org/directory 
+
+letsencrypt_envs:
+  staging: "{{ letsencrypt_staging }}"
+  prod: "{{ letsencrypt_prod }}"
+
+letsencrypt_envs_ca_certs:
+  staging: https://letsencrypt.org/certs/staging/letsencrypt-stg-root-x1.pem
+
 ```
 
 > `letsencrypt_staging` et `letsencrypt_prod` sont anticipé pour l'utilisation de cert-manager en production.
 
-Les défauts :
+> `letsencrypt_envs_ca_certs` est l'url que l'on ajoutera dans les containers pour activer tls entre eux sur un environnement de test en ligne.
+
+Les défauts qui utilise les variables prédéfinie précédemment :
+
+[playbook/roles/kubeapps/defaults/main.yml](playbook/roles/kubeapps/defaults/main.yml)
 
 ```yaml
+---
+# Kubeapps internal acme server
+kubeapps_internal_acme_network_ip: ~
+kubeapps_internal_acme_host: acme-internal.k3s.local
+
+cert_manager_letsencrypt_env: prod
 cert_manager_namespace: cert-manager
-cert_manager_acme_url: "{{ letsencrypt_prod }}"
+cert_manager_acme_url: "{{ letsencrypt_envs[cert_manager_letsencrypt_env] }}"
+cert_manager_staging_ca_cert_url: "{{ letsencrypt_envs_ca_certs[cert_manager_letsencrypt_env] | d(none) }}"
 cert_manager_email: ""
 cert_manager_private_key_secret: test_secret
 ```
 
 Que l'on surcharge tout de suite dans le playbool **converge.yml** :
 
+[playbook/roles/kubeapps/molecule/default/converge.yml](playbook/roles/kubeapps/molecule/default/converge.yml#L10)
+
 ```yaml
     cert_manager_acme_url: https://{{ kubeapps_internal_acme_host }}:14000/dir
-    cert_manager_email: test4@k3s.local
+    cert_manager_staging_ca_cert_url: https://localhost:15000/roots/0
+
 ```
 
-> `cert_manager_acme_url` doit toujours utilisé l'entrée dns que l'on a choisie juste avant et qui est par défaut `acme.k3s.local`.
+> `cert_manager_acme_url` doit toujours utilisé l'entrée dns que l'on a choisie juste avant et qui est par défaut `acme.k3s.local`. un nom d'hôte que l'on a choisi pour l'usage local de cert-manager.
 
-> **WARN** Attention en production ou recette l'addresse email doit appartenir à un domaine valide (gmail, hotmail, etc...)
+> **WARN** Attention en production ou recette l'addresse email `cert_manager_email` doit appartenir à un domaine valide (gmail, hotmail, etc...)
 
 #### Mettons en place une bonne pratique
 
@@ -1000,13 +1037,6 @@ On créer donc un fichier `check.yml` dans le dossier `tasks` de notre rôle. Ce
   assert:
     that:
       - cert_manager_email | default(false)
-
-- name: check acme ca defined in local
-  assert:
-    that:
-      - kubeapps_internal_acme_external_ip | default(false)
-      - kubeapps_internal_acme_host | default(false)
-  when: cert_manager_is_internal
 
 ```
 
@@ -1125,10 +1155,12 @@ Voici la directive ansible :
 
 ```yaml
 
-- name: Recover base64 encoded ca content to trust
-  slurp:
-    src: "{{ kubeapps_internal_acme_ca_file }}"
-  register: ca_file_content
+- name: Download certificate file
+  uri:
+    url: "{{ cert_manager_staging_ca_cert_url }}"
+    validate_certs: "{{ kubeapps_internal_acme_network_ip is none }}"
+    return_content: True
+  register: ca_file
 
 ```
 
@@ -1136,7 +1168,7 @@ Voici la directive ansible :
 
 ```yaml
 - set_fact:
-    kubeapps_internal_acme_ca_content: "{{ ca_file_content.content | b64decode }}"
+    kubeapps_internal_acme_ca_content: "{{ ca_file.content }}"
 
 ```
 
@@ -1148,20 +1180,18 @@ Voici la directive ansible :
   tags: [kubeapps]
 ```
 
-Nous introduisons ici la variable `cert_manager_is_internal` qui nous permet de savoir si nous utilisons un acme externe (les officiels comme acme-staging-v02.api ou letsencrypt_prod) ou interne (pebble, boulder, smallstep-ca).
+Nous introduisons ici la variable `cert_manager_is_internal` qui nous permet de savoir si nous utilisons un acme spécial autre celui que le letsecrypt de production. Effectivement les acme locaux et staging ne sont pas référencés comme digne de confiance sur l'internet global.
 
-[playbook/roles/kubeapps/tasks/main.yml](playbook/roles/kubeapps/tasks/main.yml#L13)
-
-Puis on n'oublie pas de définir cette variable clé pour bien configurer notre autorité dans les composants suivants.
+[playbook/roles/kubeapps/tasks/main.yml](playbook/roles/kubeapps/tasks/main.yml#L14)
 
 ```yaml
-cert_manager_is_internal: "{{ kubeapps_internal_acme_ca_file is not none }}"
+cert_manager_is_internal: "{{ cert_manager_staging_ca_cert_url is not none }}"
 
 ```
 
-> L'idée est que si un certificat à été fourni pour accepté une autorité (par défaut non référencée comme digne de confiance sur l'internet global) alors elle est interne.
+> L'idée est que si un url fournissant un certifiat est donné avec `cert_manager_staging_ca_cert_url` alors on considère que l'on est en environnement interne.
 
-Nous avons alors besoin de plusieurs choses pour importer notre certificat racine dans le trust de nos serveurs.
+Nous avons alors besoin de plusieurs choses pour importer notre certificat racine dans le "truststore" de nos serveurs.
 
 Une ressource kube configmap (ou secret) pour stocker le certificat racine que l'on a récupéré dans les étapes précédentes avec le module ansible `slurp`.
 
@@ -1183,7 +1213,7 @@ data:
 
 **Cependant** nous remarquon avec `kubectl get cm -A` que la ressource n'est présente que dans le namespace `cert-manager` or nous avons besoin de la récupérer dans les autres namespaces.
 
-C'est pourquoi nous allons utiliser une crd fournie par le module de jetstack `trust-manager` pour partager cette ressource.
+C'est pourquoi nous allons utiliser un module `trust-manager` fourni par jetstack pour partager cette ressource.
 
 Pour commencer nous allons installer le helm chart de `trust-manager` avec le template `playbook/trust-manager.yml.j2` :
 
@@ -2233,6 +2263,11 @@ variable "github_token" {
   sensitive = true
 }
 
+variable "cert_manager_letsencrypt_env" {
+  type = string
+  default = "prod"
+}
+
 variable "domain" {
   type = string
 }
@@ -2321,6 +2356,161 @@ Enfin au milieu de tout ça lors de la création des zones dns dans azure nous a
 
 - [keyvault azure](https://learn.microsoft.com/en-us/azure/active-directory/managed-identities-azure-resources/tutorial-windows-vm-access-nonaad#grant-access)
 
+Dans le datasource `data.tf` nous allons récupérer les membres de l'organisation github et les membres admin de notre organisation.
+Nous utilisons des boucles pour remplir les dictionnaires `github_membership.all` et `github_membership.all_admin`
+
+[infra/data.tf](infra/data.tf#L13)
+
+```tf
+data "github_organization" "org" {
+  name = var.github_organization
+}
+
+data "github_membership" "all" {
+  for_each = toset(data.github_organization.org.members)
+  username = each.value
+}
+
+data "github_membership" "all_admin" {
+  for_each = {
+    for _, member in data.github_membership.all:
+    _ => member if member.role == "admin"
+  }
+  username = each.value.username
+}
+
+```
+
+Puis nous allons créer l'équipe github puis assigner comme membre tous les administrateurs de l'organisation à celle-ci.
+
+[infra/main.tf](infra/main.tf)
+
+```tf
+############
+# Accounts
+############
+resource "github_team" "opsteam" {
+  name        = var.github_team
+  description = "This is the production team"
+  privacy     = "closed"
+}
+
+resource "github_team_membership" "opsteam_members" {
+  for_each = data.github_membership.all_admin
+  team_id  = github_team.opsteam.id
+  username = each.value.username
+  role     = "member"
+}
+```
+
+#### Création du key vault et des secrets
+
+Pour des raisons essentitelles de sécurité nous mettons à disposition de la machine virtuelle un stockage de secrets sécurisé grâce à la ressource terraform `azurerm_key_vault`
+
+```tf
+############
+# Key vault
+############
+resource "random_id" "kvname" {
+  byte_length = 5
+  prefix      = "keyvault"
+}
+
+resource "azurerm_key_vault" "paas" {
+  name                       = random_id.kvname.hex
+  location                   = data.azurerm_resource_group.paas.location
+  resource_group_name        = data.azurerm_resource_group.paas.name
+  soft_delete_retention_days = 7
+
+  tenant_id = data.azurerm_client_config.current.tenant_id
+
+  purge_protection_enabled        = false
+  enabled_for_disk_encryption     = true
+  enabled_for_deployment          = true
+
+  sku_name = "standard"
+
+  lifecycle {
+    create_before_destroy = true
+  }
+
+  access_policy {
+    tenant_id = data.azurerm_client_config.current.tenant_id
+    object_id = data.azurerm_client_config.current.object_id
+
+    secret_permissions = [
+      "Get", "Set", "Backup", "Delete", "List", "Purge", "Recover", "Restore",
+    ]
+  }
+}
+
+```
+
+On nomme donc ce keyvault avec une ressource de nom aléatoire `random_id` puis on lui associe les informations habituelles du groupe de ressource.
+
+`soft_delete_retention_days` permet de définir le nombre de jours pendant lesquels des secrets supprimés pourront être réstaurés.
+
+`tenant_id` permet de définir le propriétaire du keyvault.
+
+Ensuite nous utilisons des propriétés de base pour rendre les secrets accessibes pour différents type d'utilisation, définir le type de keyvault et son cycle de vie.
+
+Le block `lifecycle` est une fonctionnalité de terraform qui change la façon dont est recréer la ressource avant une modification.
+
+Enfin le plus important est le block `access_policy` qui permet de définir les permissions de l'utilisateur qui va accéder au keyvault. Ici on les définit pour le `tenant id` et le `principal id` contenus dans le client azure courant (utilisateur connecté avec azure cli).
+
+##### Utilisons maintenant le keyvault pour stocker nos secrets
+
+Pour stocker nos secrets nous utilisons la ressource `azurerm_key_vault_secret` qui permet de stocker des secrets dans le keyvault créé précédemment. Nous allons utiliser les secrets créer dans `variables.tf` ainsi que des mots de passes générés aléatoirement pour certaines configurations de `dex` et `kubeapps`.
+
+```tf
+# Kubeapps OAuth Proxy
+resource "random_password" "kubeapps_oauth_proxy_cookie_secret" {
+  length           = 16
+  special          = true
+  override_special = "!#$%&*()-_=+[]{}<>:?"
+}
+
+# Dex oidc client
+resource "random_password" "dex_client_id" {
+  length  = 16
+  special = false
+}
+
+resource "random_password" "dex_client_secret" {
+  length  = 24
+  special = false
+}
+
+# Vm password
+resource "random_password" "vm_password" {
+  length           = 16
+  special          = true
+  override_special = "!#$%&*()-_=+[]{}<>:?"
+}
+
+locals {
+  final_secrets = merge(
+    var.secrets,
+    {
+      vm_password                        = random_password.vm_password.result
+      dex_client_id                      = random_password.dex_client_id.result
+      dex_client_secret                  = random_password.dex_client_secret.result
+      kubeapps_oauth_proxy_cookie_secret = random_password.kubeapps_oauth_proxy_cookie_secret.result
+    }
+  )
+}
+
+resource "azurerm_key_vault_secret" "paas_all_secrets" {
+  for_each     = local.final_secrets
+  name         = replace(each.key, "_", "-")
+  value        = each.value
+  key_vault_id = azurerm_key_vault.paas.id
+}
+
+```
+> On fusionne les secrets définis dans `variables.tf` avec les secrets générés aléatoirement pour un appel à la ressource encore plus simple.
+
+> Nous utilisons donc une boucle `for_each` pour éviter la répétition des ressources secrets.
 
 #### Création de l'environnement réseau
 
@@ -2412,6 +2602,58 @@ resource "azurerm_network_interface" "paas" {
   }
 }
 ```
+
+#### Configuration de la zone dns
+
+Azure a de très bon outils pour la gestion des zones dns. On va donc utiliser le provider `azurerm` pour créer une zone dns et récupérer les serveurs dns associés.
+
+```hcl
+############
+# Dns
+############
+resource "azurerm_dns_zone" "paas" {
+  name                = var.domain
+  resource_group_name = data.azurerm_resource_group.paas.name
+}
+```
+
+Voici le retour de la ressource créer qui donne tous les serveurs dns requis pour faire fonctionner la zone dns.
+
+```json
+[
+    "ns1-03.azure-dns.com.",
+    "ns2-03.azure-dns.net.",
+    "ns3-03.azure-dns.org.",
+    "ns4-03.azure-dns.info."
+]
+```
+
+Ensuite on arrive facilement à récupérer les serveurs dns puis les reformater (enlever les `.` à la fin) avant de les injecter dans le fournisseur de noms name.com
+
+```
+resource "namedotcom_domain_nameservers" "namedotcom_paas_ns" {
+  domain_name = var.domain
+  nameservers = [
+    # Delete ending dot which isn't valid for namedotcom api
+    for item in azurerm_dns_zone.paas.name_servers : trimsuffix(item, ".")
+  ]
+}
+```
+
+Enfin on met en place le **wildcard** pour la zone dns afin que tous les sous domaines pointent vers l'ip publique de la vm. Ainsi n'importe quel sous domaine de `paas-exemple-tutorial.live` pointera vers l'ingress de k3s.
+
+```hcl
+resource "azurerm_dns_a_record" "paas" {
+  name                = "*"
+  zone_name           = azurerm_dns_zone.paas.name
+  resource_group_name = data.azurerm_resource_group.paas.name
+  ttl                 = 3600
+  target_resource_id  = azurerm_public_ip.paas.id
+}
+
+```
+
+C'est comme cela que l'on arrive à avoir un nom de domaine comme `kubeapps.paas-exemple-tutorial.live` qui pointe vers l'ingress de k3s.
 
 #### Création de l'identité de la vm
 
@@ -2515,7 +2757,7 @@ data "azurerm_image" "search" {
 
 Nous allons donc recourrir au [module cloud init ansible](https://cloudinit.readthedocs.io/en/latest/topics/modules.html#ansible) déclenché automatiquement au provision azure de la vm grâce à quelques configurations.
 
-Ce fichier cloud-init.yml est un template terraform qui va être utilisé pour générer un fichier cloud-init.yml final. On peut y injecter des variables au travers de la propriété `custom_data` du sous module `os_profile` de `azurerm_linux_virtual_machine` et de la fonction `templatefile` de terraform.
+Ce fichier cloud-init.yml est un [template terraform](https://developer.hashicorp.com/terraform/language/functions/templatefile) qui va être utilisé pour générer un fichier cloud-init.yml final. On peut y injecter des variables au travers de la propriété `custom_data` du sous module `os_profile` de `azurerm_linux_virtual_machine` et de la fonction `templatefile` de terraform.
 
 > **Note** En interne ce fichier sera converti en base64 et injecté dans la vm
 
@@ -2535,6 +2777,7 @@ On rappele que `vault_url` est une variable qui contient l'url du keyvault azure
         vault_url              = azurerm_key_vault.paas.vault_uri
         dex_github_client_org  = data.github_organization.org.orgname
         dex_github_client_team = github_team.opsteam.name
+        cert_manager_letsencrypt_env = var.cert_manager_letsencrypt_env
       }
     )
 ```
@@ -2556,8 +2799,8 @@ datasource:
     disk_aliases:
       ephemeral0: /dev/disk/cloud/azure_resource
 
-packages_update: true
-packages_upgrade: true
+runcmd:
+  - [sleep, 20]
 
 ansible:
   install_method: pip
@@ -2567,67 +2810,15 @@ ansible:
       - playbook_dir: /playbook
         inventory: /playbook/inventories/azure/hosts
         playbook_name: site.yaml
-        tags: kubeapps
         extra_vars: "vault_url=${vault_url}
            dex_github_client_org=${dex_github_client_org}
            dex_github_client_team=${dex_github_client_team}
+           cert_manager_letsencrypt_env=${cert_manager_letsencrypt_env}
            kubeapps_hostname=${kubeapps_hostname}
            dex_hostname=${dex_hostname} -o 'IdentitiesOnly=yes'"
         connection: local
   
 ```
-
-#### Configuration de la zone dns
-
-Azure a de très bon outils pour la gestion des zones dns. On va donc utiliser le provider `azurerm` pour créer une zone dns et récupérer les serveurs dns associés.
-
-```hcl
-############
-# Dns
-############
-resource "azurerm_dns_zone" "paas" {
-  name                = var.domain
-  resource_group_name = data.azurerm_resource_group.paas.name
-}
-```
-
-Voici le retour de la ressource avec tous les serveurs dns requis pour faire fonctionner la zone dns.
-
-```json
-[
-    "ns1-03.azure-dns.com.",
-    "ns2-03.azure-dns.net.",
-    "ns3-03.azure-dns.org.",
-    "ns4-03.azure-dns.info."
-]
-```
-
-Ensuite on arrive facilement à récupérer les serveurs dns puis les reformater (enlever les `.` à la fin) avant de les injecter dans le fournisseur de noms name.com
-
-```
-resource "namedotcom_domain_nameservers" "namedotcom_paas_ns" {
-  domain_name = var.domain
-  nameservers = [
-    # Delete ending dot which isn't valid for namedotcom api
-    for item in azurerm_dns_zone.paas.name_servers : trimsuffix(item, ".")
-  ]
-}
-```
-
-Enfin on met en place le **wildcard** pour la zone dns afin que tous les sous domaines pointent vers l'ip publique de la vm et donc vers **l'ingress de k3s**.
-
-```hcl
-resource "azurerm_dns_a_record" "paas" {
-  name                = "*"
-  zone_name           = azurerm_dns_zone.paas.name
-  resource_group_name = data.azurerm_resource_group.paas.name
-  ttl                 = 3600
-  target_resource_id  = azurerm_public_ip.paas.id
-}
-
-```
-
-C'est comme cela que l'on arrive à avoir un nom de domaine comme `kubeapps.paas-exemple-tutorial.live` qui pointe vers l'ingress de k3s.
 
 #### Application de l'infrastructure finale
 
@@ -2637,4 +2828,14 @@ Puis appliquer l'infrastructure sans message de confirmation :
 terraform apply -auto-approve -var-file prod.tfvars
 ```
 
-> -var-file est indispensable pour charger les variables de l'environnement, sans ça vous êtes obligé de rentrer les variables à la main.
+> `-var-file` est indispensable pour charger les variables de l'environnement, sans ça vous êtes obligé de rentrer les variables à la main.
+
+
+#### FAQ
+
+J'ai essayé plusieurs fois le provision de la vm avec des configurations différentes me forçant ainsi à apply / destroy la stack plusieurs fois. Cependant, maintenant je n'arrive plus à accèder à l'url avec une **erreur dns** ?
+
+Il s'agit probablement du cache dns qui vous renvoi l'entrée ip d'une ancienne vm car le time to live n'a pas encore expiré. Pour cela dans chrome nous devons nettoyer ce cache pour faire comme si nous n'étions jamais aller sur le site.
+Dans [chrome://net-internals/#dns]([chrome://net-internals/#dns]) faites un clear host cache et réessayez.
+
+> Pour faire des tests en cas réel, il est préférable d'utiliser des entrées `dex_hostname` et `kubeapps_hostname` différentes que vous n'utlisez pas pour un environement (staging ou production).

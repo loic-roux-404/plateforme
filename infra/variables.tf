@@ -12,6 +12,11 @@ variable "github_token" {
   sensitive = true
 }
 
+variable "cert_manager_letsencrypt_env" {
+  type = string
+  default = "prod"
+}
+
 variable "domain" {
   type = string
 }

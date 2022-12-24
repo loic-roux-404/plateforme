@@ -169,6 +169,30 @@ resource "azurerm_network_interface" "paas" {
 }
 
 ############
+# Dns
+############
+resource "azurerm_dns_zone" "paas" {
+  name                = var.domain
+  resource_group_name = data.azurerm_resource_group.paas.name
+}
+
+resource "namedotcom_domain_nameservers" "namedotcom_paas_ns" {
+  domain_name = var.domain
+  nameservers = [
+    # Delete ending dot which isn't valid for namedotcom api
+    for item in azurerm_dns_zone.paas.name_servers : trimsuffix(item, ".")
+  ]
+}
+
+resource "azurerm_dns_a_record" "paas" {
+  name                = "*"
+  zone_name           = azurerm_dns_zone.paas.name
+  resource_group_name = data.azurerm_resource_group.paas.name
+  ttl                 = 300
+  target_resource_id  = azurerm_public_ip.paas.id
+}
+
+############
 # Vm creation
 ############
 resource "azurerm_user_assigned_identity" "paas_vm" {
@@ -191,12 +215,21 @@ resource "azurerm_key_vault_access_policy" "paas_vm" {
   storage_permissions = [ "Get" ]
 }
 
+resource "random_id" "disk" {
+  byte_length = 5
+  prefix      = "disk"
+}
+
 resource "azurerm_virtual_machine" "paas" {
   name                  = "paasvm"
   location              = data.azurerm_resource_group.paas.location
   resource_group_name   = data.azurerm_resource_group.paas.name
   network_interface_ids = [azurerm_network_interface.paas.id]
   vm_size               = "Standard_DS2_v2"
+
+  depends_on = [
+    azurerm_dns_a_record.paas
+  ]
 
   storage_image_reference {
     id = data.azurerm_image.search.id
@@ -205,7 +238,7 @@ resource "azurerm_virtual_machine" "paas" {
   delete_os_disk_on_termination = false
 
   storage_os_disk {
-    name              = "paasdisk1"
+    name              = random_id.disk.hex
     create_option     = "FromImage"
     caching           = "ReadWrite"
     managed_disk_type = "StandardSSD_LRS"
@@ -231,6 +264,7 @@ resource "azurerm_virtual_machine" "paas" {
         vault_url              = azurerm_key_vault.paas.vault_uri
         dex_github_client_org  = data.github_organization.org.orgname
         dex_github_client_team = github_team.opsteam.name
+        cert_manager_letsencrypt_env = var.cert_manager_letsencrypt_env
       }
     )
   }
@@ -238,28 +272,4 @@ resource "azurerm_virtual_machine" "paas" {
   os_profile_linux_config {
     disable_password_authentication = false
   }
-}
-
-############
-# Dns
-############
-resource "azurerm_dns_zone" "paas" {
-  name                = var.domain
-  resource_group_name = data.azurerm_resource_group.paas.name
-}
-
-resource "namedotcom_domain_nameservers" "namedotcom_paas_ns" {
-  domain_name = var.domain
-  nameservers = [
-    # Delete ending dot which isn't valid for namedotcom api
-    for item in azurerm_dns_zone.paas.name_servers : trimsuffix(item, ".")
-  ]
-}
-
-resource "azurerm_dns_a_record" "paas" {
-  name                = "*"
-  zone_name           = azurerm_dns_zone.paas.name
-  resource_group_name = data.azurerm_resource_group.paas.name
-  ttl                 = 3600
-  target_resource_id  = azurerm_public_ip.paas.id
 }

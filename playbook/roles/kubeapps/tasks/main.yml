@@ -12,7 +12,8 @@
   when: item.condition | default(true)
   args: { apply: { tags: [kubeapps] } }
   loop:
-    - { src: core-dns-config-crd.yml, condition: "{{ cert_manager_is_internal }}" }
+    - src: core-dns-config-crd.yml
+      condition: "{{ kubeapps_ingress_controller_ip is defined }}"
     - { src: cert-manager-chart-crd.yml, deploy: "{{ cert_manager_namespace }}" }
     - src: trust-manager-chart-crd.yml
       deploy: trust-manager 

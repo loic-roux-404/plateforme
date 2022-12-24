@@ -16,7 +16,7 @@ variable "vm_size" {
 source "azure-arm" "vm" {
   use_azure_cli_auth = true
 
-  managed_image_name                = "kubeapps-az-arm"
+  managed_image_name                = "k3s-pre-paas-az-arm"
   managed_image_resource_group_name = var.resource_group_name
   build_resource_group_name         = var.resource_group_name
   os_type                           = "Linux"
@@ -39,7 +39,6 @@ build {
 
   provisioner "shell" {
     inline = [
-      "sudo apt update && sudo apt upgrade -y",
       "curl https://bootstrap.pypa.io/get-pip.py -o /tmp/get-pip.py",
       "sudo python3 /tmp/get-pip.py",
       "sudo pip3 install --ignore-installed ansible==6.5.0 pyyaml openshift kubernetes",
@@ -62,7 +61,7 @@ build {
   provisioner "shell" {
     execute_command = "chmod +x {{ .Path }}; {{ .Vars }} sudo -E sh '{{ .Path }}'"
     inline = [
-      "sudo apt autoremove"
+      "sudo apt autoremove",
       "/usr/sbin/waagent -force -deprovision+user && export HISTSIZE=0 && sync"
     ]
     inline_shebang = "/bin/sh -x"

@@ -37,7 +37,7 @@ data:
 
     {{ kubeapps_internal_acme_host }} {
       hosts {
-        {{ kubeapps_internal_acme_external_ip }} {{ kubeapps_internal_acme_host }}
+        {{ kubeapps_internal_acme_network_ip }} {{ kubeapps_internal_acme_host }}
         fallthrough
       }
       whoami
