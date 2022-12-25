@@ -11,10 +11,6 @@
     dest: "{{ kubeapps_internal_acme_ca_file }}"
     content: "{{ ca_file.content }}"
 
-# - name: zizou
-#   command: update-ca-certificates
-#   changed_when: false
-
 - set_fact:
     kubeapps_internal_acme_ca_content: "{{ ca_file.content }}"
     kubeapps_internal_acme_ca_extra_volumes:

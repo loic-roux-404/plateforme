@@ -21,6 +21,11 @@ variable "domain" {
   type = string
 }
 
+variable "domain_ttl" {
+  type = number
+  default = 3000
+}
+
 variable "namedotcom_token" {
   type = string
   sensitive = true

@@ -188,7 +188,7 @@ resource "azurerm_dns_a_record" "paas" {
   name                = "*"
   zone_name           = azurerm_dns_zone.paas.name
   resource_group_name = data.azurerm_resource_group.paas.name
-  ttl                 = 300
+  ttl                 = var.domain_ttl
   target_resource_id  = azurerm_public_ip.paas.id
 }
 
