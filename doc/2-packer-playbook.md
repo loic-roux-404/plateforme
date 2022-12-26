@@ -1,4 +1,22 @@
-## 2/ Utilisation de notre rôle pour créer une image virtuelle
+<div style="display: flex; width: 100%; text-align: center;">
+<h3 style="width: 20%">
+
+[Précédent](1-ansible-role.md)
+</h3>
+
+<div style="width: 35%"></div>
+
+<h3 style="width: 40%">
+
+[Suivant - Terraform / Azure](3-terraform-azure.md)
+</h3>
+</div>
+
+---
+
+## 2. Utilisation de notre rôle dans packer
+
+On va ici pré-provisionner une machine virtuelle dans une image azure ARM. On utilisera un playbook appelant le rôle kubeapps sans installer les pods qui ont besoin du réseau externe pour fonctionner. (cert-manager, dex et kubeapps)
 
 #### Playbook et inventaire final
 
@@ -8,7 +26,7 @@ Nous allons créer le fichier `site.yaml` (dans le dossier `playbook/`) qui va s
 
 Cette étape servira pour utiliser le playbook dans la [partie 2](#2-créer-une-première-image-virtuelle-pour-le-test) avec packer
 
-> [playbook/site.yaml](playbook/site.yaml)
+> [playbook/site.yaml](../playbook/site.yaml)
 ```yaml
 ---
 - hosts: all
@@ -22,6 +40,8 @@ Cette étape servira pour utiliser le playbook dans la [partie 2](#2-créer-une-
 
 ```
 
+> `include_tasks..` : comme pour le playbook converge dans les tests on doit importer un certificat dans le cas ou l'on utlise un lets encrypt de test.
+
 Ensuite on créer notre inventaire pour azure dans un dossier `playbook/inventories/azure/`. Uun inventaire ansible est constitué d'un groupe de variables (dossier `group_vars`) et d'un fichier `hosts` qui va contenir les machines sur lesquelles on va jouer le playbook.
 
 ```bash
@@ -32,7 +52,7 @@ Ces variables de groupes font appel à un plugin `lookup` permettant de lire les
 
 On peut ajouter l'installation de la collection dans les requirements du playbook si ce n'est pas déjà fait.
 
-[playbook/inventories/azure/group_vars/all.yml](playbook/inventories/azure/group_vars/all.yml)
+[playbook/inventories/azure/group_vars/all.yml](../playbook/inventories/azure/group_vars/all.yml)
 
 ```yaml
 ---
@@ -143,7 +163,7 @@ Ajouter ce gitignore recommandé dans le dossier `infra/`
 curl -L https://github.com/github/gitignore/raw/main/Packer.gitignore | tee .gitignore
 ```
 
-> [infra/ubuntu.pkr.hcl](infra/ubuntu.pkr.hcl)
+> [infra/ubuntu.pkr.hcl](../infra/ubuntu.pkr.hcl)
 
 ```hcl
 variable "resource_group_name" {
@@ -163,13 +183,13 @@ variable "vm_size" {
 
 ```
 
-> [infra/ubuntu.pkr.hcl](infra/ubuntu.pkr.hcl#L56)
+> [infra/ubuntu.pkr.hcl](../infra/ubuntu.pkr.hcl#L56)
 
 ```hcl
 source "azure-arm" "vm" {
   use_azure_cli_auth = true
 
-  managed_image_name                = "kubeapps-az-arm"
+  managed_image_name                = "k3s-pre-paas-az-arm"
   managed_image_resource_group_name = var.resource_group_name
   build_resource_group_name         = var.resource_group_name
   os_type                           = "Linux"
@@ -186,7 +206,7 @@ Lors du processus de build packer, **nous ne sommes pas accessible sur internet*
 
 Ensuite, on utilise le provisionner ansible qui va installer notre playbook sur la machine azure :
 
-[infra/ubuntu.pkr.hcl](infra/ubuntu.pkr.hcl#L74)
+[infra/ubuntu.pkr.hcl](../infra/ubuntu.pkr.hcl#L74)
 
 ```hcl
 
@@ -243,8 +263,16 @@ Vous pourrez voir le résultat de la création de l'image dans le portail azure 
 
 ---
 
-<h3 style="text-align: center;">
+<div style="display: flex; width: 100%; text-align: center;">
+<h3 style="width: 30%">
+
+[Recommencer](#2-utilisation-de-notre-rôle-dans-packer)
+</h3>
+
+<div style="width: 40%"></div>
+
+<h3 style="width: 30%">
 
 [Suivant - Terraform / Azure](3-terraform-azure.md)
-
 </h3>
+</div>

@@ -1,3 +1,12 @@
+
+<div style="display: flex; width: 100%; text-align: center;">
+<h3 style="width: 20%">
+
+[Précédent](3-terraform-azure.md)
+</h3>
+
+</div>
+
 ## Allez plus loin
 
 ### FAQ
@@ -15,10 +24,51 @@ Pour vérifier que vous avez bien compris, vous devez maintenant créer l'image 
 
 Il faudra bien veillez à créer les variables manquantes dans packer (nom image) et terraform (data source import image) pour que on puisse encore provisionner une machine de production.
 
+
+### Kubernetes sur Vscode
+
+Pour consolider le debuggage de notre environnement de dev ops nous pouvons intégré notre cluster kubernetes dans l'IDE vscode.
+
+Nous allons chercher la kubeconfig dans notre container qui embarque K3s et le cluster.
+Récupérez l'identifiant du container avec :
+
+```sh
+docker ps | grep node-0 | awk '{print $1}'
+# ex de retour 61a74719f7c4
+```
+
+Copier la kube config k3s avec :
+
+```sh
+docker cp 61a74719f7c4:/etc/rancher/k3s/k3s.yaml ~/.kube/config
+```
+
+Si vous n'avez pas kubectl en local :
+- [Pour mac](https://kubernetes.io/docs/tasks/tools/install-kubectl-macos/)
+- [Pour Wsl / Linux](https://kubernetes.io/docs/tasks/tools/install-kubectl-linux/)
+
+On check ensuite avec `kubectl cluster-info` qui devrait nous donner les informations du node k3s.
+
+##### Ensuite sur `vscode` utilisez ces paramètres utilisateur pour voir et utiliser le cluster
+
+> Pour afficher le chemin vers home `cd ~ && pwd && cd -`
+
+> [.vscode/settings.json](.vscode/settings.json)
+```json
+    "vs-kubernetes": {
+        "vs-kubernetes.knownKubeconfigs": [
+            "<Chemin-vers-home>/.kube/config"
+        ],
+        "vs-kubernetes.kubeconfig": "<Chemin-vers-home>/.kube/config"
+    }
+```
+
+Et voilà vous avez accès à une interface pour controller votre cluster directement depuis vscode. Utiliser cette configuration `json` autant que vous voulez dans les repository de vos applications pour avoir une expérience au plus proche de la production.
+
 # Sources
 
-- [start](https://github.com/vmware-tanzu/kubeapps/blob/main/site/content/docs/latest/tutorials/getting-started.md#step-3-start-the-kubeapps-dashboard)
-- [oauth](https://github.com/vmware-tanzu/kubeapps/blob/main/site/content/docs/latest/howto/OIDC/OAuth2OIDC-oauth2-proxy.md#manual-deployment)
+- [start kubeapps](https://github.com/vmware-tanzu/kubeapps/blob/main/site/content/docs/latest/tutorials/getting-started.md#step-3-start-the-kubeapps-dashboard)
+- [oauth kubeapps](https://github.com/vmware-tanzu/kubeapps/blob/main/site/content/docs/latest/howto/OIDC/OAuth2OIDC-oauth2-proxy.md#manual-deployment)
 _ https://cert-manager.io/docs/usage/ingress/#supported-annotations
 _ https://medium.com/@int128/kubectl-with-openid-connect-43120b451672
 - [pebble doc cert recover](https://github.com/letsencrypt/pebble#ca-root-and-intermediate-certificates)

@@ -1,3 +1,19 @@
+<div style="display: flex; width: 100%; text-align: center;">
+<h3 style="width: 20%">
+
+[Précédent](2-packer-playbook.md)
+</h3>
+
+<div style="width: 35%"></div>
+
+<h3 style="width: 40%">
+
+[Suivant - Faq et exercices](4-allez-plus-loin.md)
+</h3>
+</div>
+
+---
+
 ## Déploiement final sur Azure avec Terraform
 
 Ici nous mettons en place le déploiement final sur Azure avec  l'outil d'infrastructure as code Terraform.
@@ -106,7 +122,6 @@ provider "namedotcom" {
 }
 
 provider "azurerm" {
-  tenant_id = var.tenant_id
   features {
     key_vault {
       purge_soft_delete_on_destroy    = true
@@ -165,9 +180,14 @@ Pour éviter de commit des secrets sur un git distant et centralisé les configu
 
 > `sensitive` permet de cacher la valeur de la variable dans le terminal lors de l'execution de terraform.
 
-[infra/variables.tf](infra/variables.tf)
+[infra/variables.tf](../infra/variables.tf)
 
 ```tf
+
+
+variable "github_organization" {
+  type = string
+}
 
 variable "github_team" {
   type = string
@@ -185,6 +205,11 @@ variable "cert_manager_letsencrypt_env" {
 
 variable "domain" {
   type = string
+}
+
+variable "domain_ttl" {
+  type = number
+  default = 3000
 }
 
 variable "namedotcom_token" {
@@ -225,7 +250,7 @@ L'objectif sera de faire pointé notre nom de domaine vers les serveurs de nom d
 
 Enfin, voici un exemple du fichier final à réutiliser et remplir avec les vrais valeurs :
 
-[infra/example.tfvars.dist](infra/exemple.tfvars.dist)
+[infra/example.tfvars.dist](../infra/exemple.tfvars.dist)
 
 ```tf
 tenant_id="00000000-0000-0000-0000-000000000000"
@@ -274,7 +299,7 @@ Enfin au milieu de tout ça lors de la création des zones dns dans azure nous a
 Dans le datasource `data.tf` nous allons récupérer les membres de l'organisation github et les membres admin de notre organisation.
 Nous utilisons des boucles pour remplir les dictionnaires `github_membership.all` et `github_membership.all_admin`
 
-[infra/data.tf](infra/data.tf#L13)
+[infra/data.tf](../infra/data.tf#L13)
 
 ```tf
 data "github_organization" "org" {
@@ -298,7 +323,7 @@ data "github_membership" "all_admin" {
 
 Puis nous allons créer l'équipe github puis assigner comme membre tous les administrateurs de l'organisation à celle-ci.
 
-[infra/main.tf](infra/main.tf)
+[infra/main.tf](../infra/main.tf)
 
 ```tf
 ############
@@ -321,6 +346,9 @@ resource "github_team_membership" "opsteam_members" {
 #### Création du key vault et des secrets
 
 Pour des raisons essentitelles de sécurité nous mettons à disposition de la machine virtuelle un stockage de secrets sécurisé grâce à la ressource terraform `azurerm_key_vault`
+
+
+[infra/main.tf](../infra/main.tf#L17)
 
 ```tf
 ############
@@ -377,6 +405,7 @@ Enfin le plus important est le block `access_policy` qui permet de définir les 
 
 Pour stocker nos secrets nous utilisons la ressource `azurerm_key_vault_secret` qui permet de stocker des secrets dans le keyvault créé précédemment. Nous allons utiliser les secrets créer dans `variables.tf` ainsi que des mots de passes générés aléatoirement pour certaines configurations de `dex` et `kubeapps`.
 
+[infra/main.tf](../infra/main.tf#L53)
 ```tf
 # Kubeapps OAuth Proxy
 resource "random_password" "kubeapps_oauth_proxy_cookie_secret" {
@@ -434,7 +463,7 @@ Ces directives sont essentiellement tirées de la documentation officielle de te
 `azurerm_virtual_network` et `azurerm_subnet` nous permettent de faire ça facilement dans notre groupe de ressources.
 
 
-[infra/main.tf](infra/main.tf#L97)
+[infra/main.tf](../infra/main.tf#L97)
 ```
 ############
 # Vm Network
@@ -454,7 +483,7 @@ resource "azurerm_subnet" "paas" {
 }
 ```
 
-[infra/main.tf](infra/main.tf)
+[infra/main.tf](../infra/main.tf#L114)
 
 ```tf
 resource "azurerm_network_security_group" "paas" {
@@ -494,6 +523,8 @@ resource "azurerm_subnet_network_security_group_association" "paas_security_grou
 
 ```
 
+[infra/main.tf](../infra/main.tf#L149)
+
 ```tf
 resource "azurerm_public_ip" "paas" {
   name                = "paas-ip"
@@ -520,9 +551,12 @@ resource "azurerm_network_interface" "paas" {
 
 #### Configuration de la zone dns
 
-Azure a de très bon outils pour la gestion des zones dns. On va donc utiliser le provider `azurerm` pour créer une zone dns et récupérer les serveurs dns associés.
+Azure a de très bon outils pour la gestion des zones dns. On va donc utiliser le provider `azurerm` pour créer une zone et récupérer les serveurs dns associés.
 
-```hcl
+
+[infra/main.tf](../infra/main.tf#L171)
+
+```tf
 ############
 # Dns
 ############
@@ -562,7 +596,7 @@ resource "azurerm_dns_a_record" "paas" {
   name                = "*"
   zone_name           = azurerm_dns_zone.paas.name
   resource_group_name = data.azurerm_resource_group.paas.name
-  ttl                 = 3600
+  ttl                 = var.domain_ttl
   target_resource_id  = azurerm_public_ip.paas.id
 }
 
@@ -572,7 +606,7 @@ C'est comme cela que l'on arrive à avoir un nom de domaine comme `kubeapps.paas
 
 #### Création de l'identité de la vm
 
-[infra/main.tf](infra/main.tf#L50)
+[infra/main.tf](../infra/main.tf#L195)
 
 ```hcl
 ############
@@ -605,7 +639,7 @@ resource "azurerm_key_vault_access_policy" "paas_vm" {
 
 #### Création de la vm
 
-[infra/main.tf](infra/main.tf#L50)
+[infra/main.tf](../infra/main.tf#L223)
 
 ```hcl
 resource "azurerm_virtual_machine" "paas" {
@@ -682,7 +716,7 @@ On rappele que `vault_url` est une variable qui contient l'url du keyvault azure
 
 > **Note** L'inventaire [playbook/inventories](playbook/inventories) a été créer dans les étapes précédente et se trouve dans notre image créer avec `packer`
 
-[infra/main.tf l.226](infra/main.tf#L226)
+[infra/main.tf l.226](../infra/main.tf#L259)
 ```tf
     custom_data = templatefile(
       "${path.module}/cloud-init.yaml",
@@ -747,8 +781,16 @@ terraform apply -auto-approve -var-file prod.tfvars
 
 ---
 
-<h3 style="text-align: center;">
+<div style="display: flex; width: 100%; text-align: center;">
+<h3 style="width: 20%">
+
+[Recommencer](#déploiement-final-sur-azure-avec-terraform)
+</h3>
+
+<div style="width: 35%"></div>
+
+<h3 style="width: 40%">
 
 [Suivant - Faq et exercices](4-allez-plus-loin.md)
-
 </h3>
+</div>
