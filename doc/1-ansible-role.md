@@ -98,10 +98,6 @@ Voici la suite complète de commande pour créer la structure du playbook.
 
 ```bash
 
-mkdir -p inventories/k8s-paas/group_vars
-touch inventories/k8s-paas/hosts
-touch inventories/k8s-paas/group_vars/all.yaml
-
 touch site.yml
 touch requirements.yaml
 
