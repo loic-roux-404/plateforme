@@ -31,6 +31,14 @@ Pour cela nous ferons appel à un socle technique composé de :
 
 ## Installation de Docker
 
+Pour rappel l'architecture de base de docker :
+
+![docker architecture](https://docs.docker.com/engine/images/architecture.svg)
+
+et les couches des systèmes de conteneurisation docker et kubernetes :
+
+![docker k8s architecture](../images/kube-archi.png)
+
 Pour utilisateurs de **windows** il faut un [**WSL**](https://learn.microsoft.com/fr-fr/windows/wsl/install). 
 
 - Télécharger après avoir suivi cette documentation la distribution linux ``Ubuntu 20.04.5 LTS`` depuis le windows store. 
@@ -55,6 +63,19 @@ apt update && apt upgrade -y
 ```
 
 Puis redemarrer l'app Ubuntu. Si des problèmes appraissent encore lancer la comande `wsl --shutdown` depuis un powershell en administrateur avant de lancer le shell WSL.
+
+Ensuite pour finaliser l'installation de docker pour éviter les problèmes de droit avec rancher desktop :
+
+```bash
+sudo addgroup --system docker
+sudo adduser $USER docker
+newgrp docker
+# And something needs to be done so $USER always runs in group `docker` on the `Ubuntu` WSL
+sudo chown root:docker /var/run/docker.sock
+sudo chmod g+w /var/run/docker.sock
+
+sudo service docker restart
+```
 
 ## Installation de l'environnement python
 

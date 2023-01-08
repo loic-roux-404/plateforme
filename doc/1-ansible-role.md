@@ -179,7 +179,11 @@ Nous allons ensuite mettre à jour les métadonnées ansible galaxy avec notamme
 dependencies:
     - src: xanmanning.k3s
       version: v3.3.0
+      vars:
+        k3s_release_version: v1.21
 ```
+
+> `k3s_release_version` est indispensable de ne pas monter au dessus de la version `1.21`. Dans le contexte docker in docker il y a des problèmes de compatibilité avec les fonctionnalités linux récentes (QOS, cgroups, ...).
 
 Ensuite vous devez obligatoirement définir ces Informations sur les metas du rôles:
 
