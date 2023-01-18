@@ -39,18 +39,20 @@ et les couches des systèmes de conteneurisation docker et kubernetes :
 
 ![docker k8s architecture](../images/kube-archi.png)
 
-Pour utilisateurs de **windows** il faut un [**WSL**](https://learn.microsoft.com/fr-fr/windows/wsl/install). 
+Pour utilisateurs de **windows** il faut un [**WSL**](https://devblogs.microsoft.com/commandline/a-preview-of-wsl-in-the-microsoft-store-is-now-available/#how-to-install-and-use-wsl-in-the-microsoft-store). 
+
+First make sure you have these pre-requisites:
+
+Are using a Windows 11 build or higher (Windows build number 22000 or higher)
+Have the Virtual Machine Platform optional component enabled
+You can do this by running: `dism.exe /online /enable-feature /featurename:VirtualMachinePlatform /all` in an elevated PowerShell prompt
+
+Click on this [link](https://aka.ms/wslstorepage) to go the WSL store page and click Install to install WSL.
 
 - Télécharger après avoir suivi cette documentation la distribution linux ``Ubuntu 20.04.5 LTS`` depuis le windows store. 
 - **+ Windows terminal bien que pas obligatoire il est très pratique pour accèder au shell**
 
 Ensuite dans vscode installer l'extension wsl `ms-vscode-remote.remote-wsl`.
-
-[**Rancher**](https://rancherdesktop.io/) l'alternative mieux configurée et sans soucis de license à docker desktop. Il est portable sur windows et mac et nous permet d'avoir une expérience docker complète et fonctionnelle sur notre machine.
-
-Dans les choix proposés dans la mise en place :
-- **Décocher kubernetes**
-- Choisissez **dockerd** comme moteur de conteneurisation
 
 Laissez le ensuite finir de s'initialiser.
 
@@ -60,6 +62,12 @@ Ensuite bonne habitude, on met à jour linux :
 
 ```bash
 apt update && apt upgrade -y
+```
+
+Puis activer `systemd` en modifiant `/etc/wsl.conf` dans votre distribution linux :
+
+```sh
+echo -e '[boot]\nsystemd=true' >> /etc/wsl.conf
 ```
 
 Puis redemarrer l'app Ubuntu. Si des problèmes appraissent encore lancer la comande `wsl --shutdown` depuis un powershell en administrateur avant de lancer le shell WSL.
@@ -74,7 +82,20 @@ newgrp docker
 sudo chown root:docker /var/run/docker.sock
 sudo chmod g+w /var/run/docker.sock
 
-sudo service docker restart
+```
+
+## Rancher comme alternative à docker desktop
+
+[**Rancher**](https://rancherdesktop.io/) l'alternative mieux configurée et sans soucis de license à docker desktop. Il est portable sur windows et mac et nous permet d'avoir une expérience docker complète et fonctionnelle sur notre machine.
+
+Dans les choix proposés dans la mise en place :
+- **Décocher kubernetes**
+- Choisissez **dockerd** comme moteur de conteneurisation
+
+Puis dans wsl : 
+
+```sh
+sudo systemctl restart docker
 ```
 
 ## Installation de l'environnement python

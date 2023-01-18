@@ -791,6 +791,6 @@ terraform apply -auto-approve -var-file prod.tfvars
 
 <h3 style="width: 40%">
 
-[Suivant - Faq et exercices](4-allez-plus-loin.md)
+[Suivant - Helm chart](4-helm-chart.md)
 </h3>
 </div>
