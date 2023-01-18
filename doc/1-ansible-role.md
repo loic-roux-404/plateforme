@@ -435,6 +435,8 @@ Les commandes kubectl fonctionnent tout le temps de la sorte `kubectl <action> <
 - [Helm](https://helm.sh/fr/docs/intro/using_helm/) un gestionnaire de paquet pour distribuer des **charts** (ou package) contenant des suites de manifest kubernetes à déployer sur le cluster.
 Pour cela nous aurons recour à cette utilisation au travers de k3s et d'un [module `helm.cattle.io/v1`](https://docs.k3s.io/helm#automatically-deploying-manifests-and-helm-charts) permettant le deploiement automatique de resources kubernetes.
 
+![helm](../images/helm-kubernetes.png)
+
 Donc dans [playbook/roles/kubeapps/tasks](../playbook/roles/kubeapps/) nous allons travailler sur ces éléments de ansible :
 
 - `tasks/main.yaml`: déclenche certaines suite de tâches en fonction de l'état choisi dans les variables de configuration. Elles sont définis dans l'ordre :

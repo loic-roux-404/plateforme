@@ -2,7 +2,7 @@
 <div style="display: flex; width: 100%; text-align: center;">
 <h3 style="width: 20%">
 
-[Précédent](3-terraform-azure.md)
+[Précédent](4-helm-chart.md)
 </h3>
 
 </div>
@@ -23,7 +23,6 @@ Dans [chrome://net-internals/#dns]([chrome://net-internals/#dns]) faites un clea
 Pour vérifier que vous avez bien compris, vous devez maintenant créer l'image packer d'un nouvel environnement staging. (Par défaut packer utilise le rôle configuré sur l'environnement `prod`). Utilisez cet environnement avec terraform pour provisionner une vm dans un nouveau groupe de ressource.
 
 Il faudra bien veillez à créer les variables manquantes dans packer (nom image) et terraform (data source import image) pour que on puisse encore provisionner une machine de production.
-
 
 ### Kubernetes sur Vscode
 
