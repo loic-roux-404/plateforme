@@ -32,11 +32,11 @@ On vérifie avec `helm --version`
 ```bash
 mkdir charts
 cd charts
-helm create chart-ms
+helm create microservice
 cd -
 ```
 
-Dans le répertoire `chart-microservices` nous avons :
+Dans le répertoire `charts/microservice` nous avons :
 
 - un répertoire `templates` qui contient les fichiers de déploiement. 
 - un fichier `Chart.yaml` qui contient les informations sur le chart
@@ -172,14 +172,55 @@ Enfin vous pouvez ajouter le repo à helm pour tester que la publication a bien 
 helm repo add paas https://esgi-lyon.github.io/paas-tutorial
 ```
 
-> Si vous avez des soucis de fichier `index.yaml` manquant après cette commande essayez un `git push origin main -f` quelques minutes après. Les déploiements github pages peuvent dysfonctionner ou amener des désynchronisation aux premières publications de charts.
+> Si vous avez des soucis après cette commande essayez de relancer les déploiements github pages qui peuvent dysfonctionner parfois. Exemple de lien vers les jobs : https://github.com/esgi-lyon/paas-tutorial/actions/workflows/pages/pages-build-deployment
+
+### Utilisation finale de notre chart
+
+Sur le lien de votre [kubeapps](https://kubeapps.k3s.local/#/c/default/ns/default/config/repos) vous pouvez gérer les repositories helm à utiliser pour découvrir les applications. Nous allons ainsi pouvoir ajouter notre repository helm. 
+
+Cliquez sur `Add Package Repository` puis renseigner les informations suivantes :
+
+- **Name** : paas
+- **Url** : https://esgi-lyon.github.io/paas-tutorial
+- **Type** : Helm
+- **Scope** : Global Repository (accessible depuis tous les namespaces)
+
+Enfin vous pouvez rechercher l'application `chart` dans le `Catalog` de kubeapps et le déployé dans le namespace de votre choix. Arrêter vous bien à l'étape de configuration du chart avant de le déployer.
+
+**Dans la configuration** vous pourrez mettre en place :
+
+- Un container de votre choix, ici j'ai utilisé l'image docker que j'ai créé précédemment pour le microservice fraude.
+
+```yaml
+image:
+  pullPolicy: IfNotPresent
+  repository: loicroux/fraude
+  tag: latest
+
+```
+
+- un ingress avec un certificat TLS automatique.
+
+```yaml
+  hosts:
+    - host: fraud.k3s.local
+      paths:
+        - path: /
+          pathType: ImplementationSpecific
+  tls:
+    - hosts:
+        - fraud.k3s.local
+      secretName: fraud.k3s.local-tls
+```
+
+Attention cela ne risque de ne pas fonctionner correctement car les microservices ont une dépendence à postgresql. Il faudra donc déployer le chart de postgresql avant, puis mettre en place des secrets helm correspondant aux variables de connection à cette base de donnée.
 
 ### Installation du chart sur kubeapps
 
 <div style="display: flex; width: 100%; text-align: center;">
 <h3 style="width: 20%">
 
-[Recommencer](#déploiement-final-sur-azure-avec-terraform)
+[Recommencer](#Helm-chart)
 </h3>
 
 <div style="width: 35%"></div>
