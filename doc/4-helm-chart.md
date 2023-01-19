@@ -89,15 +89,21 @@ git commit -m "chore: Helm chart"
 git push
 ```
 
-Ensuite créer une branche pour github pages :
+Ensuite créer une branche vide et orpheline pour github pages :
 
 ```bash
 git checkout --orphan gh-pages
 git rm --cached -r .
+echo  "## Pages branch for helm charts" > README.md
+git add README.md
 git commit -m "init gh pages"
 git push -u origin gh-pages
-# On revient sur la branche main et on laisse celle-ci aux mains de chart releaser action
-git checkout -
+```
+
+On revient sur la branche main et on laisse la nouvelle aux mains de chart releaser action
+
+```bash
+git checkout -f main
 ```
 
 Puis on créer un fichier `.github/workflows/release.yml` dans lequel on met en place l'automatisation de la publication du chart.
@@ -140,6 +146,7 @@ jobs:
         uses: helm/chart-releaser-action@v1.4.1
         env:
           CR_TOKEN: "${{ github.token }}"
+
 ```
 
 > On a bien précisé que le token créer pour un job github action a la **permission d'écrire sur les pages github**.
@@ -150,6 +157,8 @@ git add .
 git commit -m "chore: chart releaser action"
 git push
 ```
+
+Notre chart va donc se déployer sur github pages et être disponible à l'adresse suivante : `https://my-org.github.io/my-repo`. N'hésitez pas à consulter l'avancement du job [ici](https://github.com/esgi-lyon/paas-tutorial/actions/runs/) et à suivre le déploiement sur [l'onglet deployments](https://github.com/esgi-lyon/paas-tutorial/deployments)
 
 <div style="display: flex; width: 100%; text-align: center;">
 <h3 style="width: 20%">
