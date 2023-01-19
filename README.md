@@ -1,5 +1,7 @@
 # Paas Tutorial
 
+![paas](images/archi.jpg)
+
 ## Requis pour suivre le tutoriel
 
 ### Matériel et outils
