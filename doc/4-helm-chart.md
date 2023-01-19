@@ -93,6 +93,8 @@ Ensuite créer une branche pour github pages :
 
 ```bash
 git checkout --orphan gh-pages
+git rm --cached -r .
+git commit -m "init gh pages"
 git push -u origin gh-pages
 # On revient sur la branche main et on laisse celle-ci aux mains de chart releaser action
 git checkout -
