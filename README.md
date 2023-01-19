@@ -17,6 +17,7 @@
 - Connaissance du langage de configuration `yaml`
 - Culture sur les infrastructures de déploiement multi environnements (staging, prod)
 - Connaissance des concepts d'environnements isolés linux ou **containers**
+- L'outil de gestion de version Git l'hôte git **github**
 
 ## Sommaire
 
