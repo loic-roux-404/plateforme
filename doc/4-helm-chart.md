@@ -30,7 +30,10 @@ On vérifie avec `helm --version`
 ### Création d'un chart pour un microservice
 
 ```bash
+mkdir charts
+cd charts
 helm create chart-ms
+cd -
 ```
 
 Dans le répertoire `chart-microservices` nous avons :
@@ -122,11 +125,14 @@ on:
   push:
     branches:
       - main
+    paths:
+      - 'charts/**'
 
 permissions:
   contents: write
   packages: write
   pages: write
+  id-token: write
 
 jobs:
   release:
@@ -159,6 +165,16 @@ git push
 ```
 
 Notre chart va donc se déployer sur github pages et être disponible à l'adresse suivante : `https://my-org.github.io/my-repo`. N'hésitez pas à consulter l'avancement du job [ici](https://github.com/esgi-lyon/paas-tutorial/actions/runs/) et à suivre le déploiement sur [l'onglet deployments](https://github.com/esgi-lyon/paas-tutorial/deployments)
+
+Enfin vous pouvez ajouter le repo à helm pour tester que la publication a bien fonctionnée :
+
+```bash
+helm repo add paas https://esgi-lyon.github.io/paas-tutorial
+```
+
+> Si vous avez des soucis de fichier `index.yaml` manquant après cette commande essayez un `git push origin main -f` quelques minutes après. Les déploiements github pages peuvent dysfonctionner ou amener des désynchronisation aux premières publications de charts.
+
+### Installation du chart sur kubeapps
 
 <div style="display: flex; width: 100%; text-align: center;">
 <h3 style="width: 20%">
