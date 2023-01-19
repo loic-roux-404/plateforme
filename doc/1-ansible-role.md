@@ -1272,7 +1272,7 @@ Une autorité de certification est toujours initiée à partir d'une paire crypt
 Vous pouvez le récupérer avec cette commande :
 
 ```bash
-curl -k https://localhost:32444/roots/0 > ~/Downloads/pebble-ca.pem
+curl -k https://localhost:15000/roots/0 > ~/Downloads/pebble-ca.pem
 ```
 
 **Mac :**
