@@ -60,3 +60,16 @@ Create the name of the service account to use
 {{- default "default" .Values.serviceAccount.name }}
 {{- end }}
 {{- end }}
+
+{{/*
+Create the secrets required for our app as environment var
+*/}}
+{{- define "helpers.listEnvVariables"}}
+{{- range $key, $val := .Values.env.secret }}
+- name: {{ $key }}
+  valueFrom:
+    secretKeyRef:
+      name: {{ $.Values.secret.name }}
+      key: {{ $key }}
+{{- end}}
+{{- end }}
