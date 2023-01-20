@@ -27,6 +27,32 @@ Si vous utilisez homebrew : `brew install helm`
 
 On vérifie avec `helm --version`
 
+### Déploiement des containers des microservices sur un registre
+
+Nous avons besoin pour utiliser un container dans un chart helm et donc dans un pod kube, de les déployer sur un registre. 
+
+> Un registre de containers consiste à stocker des images de containers pour pouvoir les utiliser facilement avec une technologie de conteneurisation.
+
+Nous allons utiliser docker hub pour déployer nos containers de manière publique pour bénéficier de la gratuité du stockage des images.
+
+Tout d'abord rancher (docker) doit être lancé avant de déployer les containers et vous devez vous placer dans votre projet maven / spring boot.
+
+Enuite connectez vous à votre docker hub avec `docker login` et créez un repository pour chaque microservice. Voici un exemple pour le microservice `client`.
+
+![docker hub repository](../images/docker-hub.png)
+
+Ensuite dans le dossier d'un microservice lancer la commande maven suivante. (on est toujours sur l'exemple du microservice `client`)
+
+```bash
+mvn spring-boot:build-image -Dspring-boot.build-image.imageName=loicroux/client
+```
+
+Le build devrait se terminé par un message comme celui ci :
+
+```txt
+Successfully built image 'docker.io/loicroux/client:latest'
+```
+
 ### Création d'un chart pour un microservice
 
 ```bash
@@ -57,26 +83,96 @@ On change donc seulement les valeurs par défaut du ingress pour qu'il utilise t
     cert-manager.io/cluster-issuer: letsencrypt-acme-issuer
 ```
 
+### Mise en place de la dépendance du micro service : postgres
 
-### Déploiement des containers pour les utiliser
+Avant de déployer notre microservice on sait que l'on a besoin d'une base de données postgres. On va donc ajouter comme [dépendance](https://bitnami.com/stack/postgresql/helm) le chart bitnami de postgres au notre.
 
-Tout d'abord rancher (docker) doit être lancé avant de déployer les containers et vous devez vous placer dans votre projet maven / spring boot.
+On va donc modifier le fichier `Chart.yaml` pour ajouter la dépendance.
 
-Enuite connectez vous à votre docker hub avec `docker login` et créez un repository pour chaque microservice. Voici un exemple pour le microservice `fraude`.
+[charts/microservice/Chart.yaml#L26](../charts/microservice/Chart.yaml#L26)
 
-![docker hub repository](../images/docker-hub.png)
-
-Ensuite dans le dossier d'un microservice lancer la commande maven suivante. (on est toujours sur l'exemple du microservice `fraude`)
-
-```bash
-mvn spring-boot:build-image -Dspring-boot.build-image.imageName=loicroux/fraude
+```yaml
+dependencies:
+  - name: postgresql
+    version: ~12.1.9
+    repository: https://charts.bitnami.com/bitnami
 ```
 
-Le build devrait se terminé par un message comme celui ci :
+> `~` Signifie que on garde les version de patch sans passer à la majeure ou mineure suivante.
 
-```bash
- Successfully built image 'docker.io/loicroux/fraude:latest'
+Puis on met à jour les dépendances avec la commande `helm dependency update charts/microservice`.
+
+> Cette commande génère un `Chart.lock` qui va permettre de bloquer les versions des dépendances.
+
+### Helper et secrets dans helm
+
+Nous avons besoin de pouvoir configurer nos microservices facilement avec des variables et des identifiants divers comme la connection à la base de données. Pour cela nous allons créer notre propre helper et des manifests kubernetes pour utiliser des secrets.
+
+On va donc remplir un fichier de secret comme ceci :
+
+[charts/microservice/templates/secrets.yaml](charts/microservice/templates/secrets.yaml)
+
+```yaml
+apiVersion: v1
+kind: Secret
+metadata:
+  name: {{ .Values.secret.name }}
+type: Opaque
+data:
+  {{- range $key, $val := .Values.env.secret }}
+  {{ $key }}: {{ $val | b64enc }}
+  {{- end}}
+
 ```
+
+Ensuite ce fichier de template va permettre de définir comme une fonction (helper) qui va récupérer les secrets et les injecter sous forme de variable d'environnement dans les pods.
+
+[charts/microservice/templates/_helpers.tpl](charts/microservice/templates/_helpers.tpl)
+
+```yaml
+{{/*
+Create the secrets required for our app as environment var
+*/}}
+{{- define "helpers.listEnvVariables"}}
+{{- range $key, $val := .Values.env.secret }}
+- name: {{ $key }}
+  valueFrom:
+    secretKeyRef:
+      name: {{ $.Values.secret.name }}
+      key: {{ $key }}
+{{- end}}
+{{- end }}
+
+```
+
+Puis, il esr utiliser dans le fichier de deployment avec la clé `containers`:
+
+[charts/microservice/templates/deployment.yaml](charts/microservice/templates/deployment.yaml#L36)
+
+```yaml
+          env:
+            {{- include "helpers.listEnvVariables" . | indent 10 }}
+
+```
+
+Enfin on ne doit pas oublier de définir les valeurs par défaut dans le fichier `values.yaml`:
+
+> On prépare d'avance les variable de connection au serveur de base de données que l'on test en local (role kubeapps, `molecule test --destroy never`)
+
+[charts/microservice/values.yaml](charts/microservice/values.yaml)
+
+```yaml
+secret:
+  name: all-secrets
+env:
+  secret:
+    PG_USER: ekommerce
+    PG_PASSWORD: password
+    PG_CONNECTION: jdbc:postgresql://postgres.default.pod.cluster.local:5432/client
+
+```
+
+Nous pouvons vérifier avec `helm lint charts/microservice` si il n'y a pas d'erreurs puis aussi voir le résultat de notre chart avec `helm template charts/microservice`
 
 ### Déploiement du chart
 
@@ -194,7 +290,7 @@ Enfin vous pouvez rechercher l'application `chart` dans le `Catalog` de kubeapps
 ```yaml
 image:
   pullPolicy: IfNotPresent
-  repository: loicroux/fraude
+  repository: loicroux/client
   tag: latest
 
 ```
@@ -213,7 +309,13 @@ image:
       secretName: fraud.k3s.local-tls
 ```
 
-Attention cela ne risque de ne pas fonctionner correctement car les microservices ont une dépendence à postgresql. Il faudra donc déployer le chart de postgresql avant, puis mettre en place des secrets helm correspondant aux variables de connection à cette base de donnée.
+Attention cela ne risque de ne pas fonctionner correctement car les microservices ont une dépendence à postgresql. Il faudra donc bien configurer le helm chart de posgres en dépendance comme cela :
+
+```yaml
+auth.username: ekommerce
+auth.password: password
+auth.database: client
+```
 
 ### Installation du chart sur kubeapps
 
