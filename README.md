@@ -1,6 +1,10 @@
 # Paas Tutorial
 
-![paas](images/archi.jpg)
+![resultat](images/result.gif)
+
+### Architecture
+
+![archi](images/archi.jpg)
 
 ## Requis pour suivre le tutoriel
 
@@ -10,7 +14,7 @@
 - Un compte [github](http://github.com/)
 - Un compte [azure](https://azure.microsoft.com/fr-fr/) avec le crédit de 100$ offert pour les étudiants (avec l'email myges cela fonctionne normalement)
 - Valider votre compte [github student](https://education.github.com/globalcampus/student) pour ne pas avoir à acheter de nom de domaine. Pour valider utilisez votre adresse mail de l'université.
-- Un compte docker hub
+- Un compte [docker hub](https://hub.docker.com/)
 
 ### Compétences
 - Des bases d'administration système et réseau linux
