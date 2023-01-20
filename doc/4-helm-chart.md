@@ -57,9 +57,7 @@ Successfully built image 'docker.io/loicroux/client:latest'
 
 ```bash
 mkdir charts
-cd charts
-helm create microservice
-cd -
+helm create charts/microservice
 ```
 
 Dans le répertoire `charts/microservice` nous avons :
@@ -223,6 +221,7 @@ on:
       - main
     paths:
       - 'charts/**'
+      - .github/workflows/release.yml
 
 permissions:
   contents: write
@@ -235,7 +234,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
-        uses: actions/checkout@v2
+        uses: actions/checkout@v3
         with:
           fetch-depth: 0
 
@@ -243,6 +242,10 @@ jobs:
         run: |
           git config user.name "$GITHUB_ACTOR"
           git config user.email "$GITHUB_ACTOR@users.noreply.github.com"
+
+      - name: Add repositories workaround
+        run: |
+          helm repo add bitnami https://charts.bitnami.com/bitnami
 
       - name: Run chart-releaser
         uses: helm/chart-releaser-action@v1.4.1
