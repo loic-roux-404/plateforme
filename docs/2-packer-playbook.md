@@ -1,14 +1,14 @@
 <div style="display: flex; width: 100%; text-align: center;">
 <h3 style="width: 20%">
 
-[Précédent](1-ansible-role.md)
+[Précédent](1-9-ansible-kubeapps.md)
 </h3>
 
 <div style="width: 35%"></div>
 
 <h3 style="width: 40%">
 
-[Suivant - Terraform / Azure](3-terraform-azure.md)
+[Suivant - Sécurisation de l'organisation](3-1-terraform-azure-init.md)
 </h3>
 </div>
 
@@ -273,6 +273,6 @@ Vous pourrez voir le résultat de la création de l'image dans le portail azure 
 
 <h3 style="width: 30%">
 
-[Suivant - Terraform / Azure](3-terraform-azure.md)
+[Suivant - Initialisation du déploiement final sur Azure avec Terraform](3-1-terraform-azure-init.md)
 </h3>
 </div>

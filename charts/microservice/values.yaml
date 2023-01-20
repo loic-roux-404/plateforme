@@ -18,9 +18,15 @@ secret:
   name: all-secrets
 env:
   secret:
-    PG_PASSWORD: password
-    PG_CONNECTION: client
     PG_USER: ekommerce
+    PG_PASSWORD: password
+    PG_CONNECTION: jdbc:postgresql://postgres.default.pod.cluster.local:5432/db
+
+auth:
+  username: ekommerce
+  existingSecret: all-secrets
+  secretKeys:
+    userPasswordKey: PG_PASSWORD
 
 serviceAccount:
   # Specifies whether a service account should be created

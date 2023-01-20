@@ -1,0 +1,7 @@
+site_name: PaaS Tutorial
+theme:
+  name: material
+  font: false
+plugins:
+  - pdf-export
+repo_url: https://github.com/esgi-lyon/paas-tutorial

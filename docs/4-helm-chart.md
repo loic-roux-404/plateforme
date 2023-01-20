@@ -1,12 +1,12 @@
 <div style="display: flex; width: 100%; text-align: center;">
 <h3 style="width: 20%">
 
-[Précédent](3-terraform-azure.md)
+[Précédent](3-4-terraform-azure-vm.md)
 </h3>
 
 </div>
 
-## Helm chart
+## 4. Helm chart
 
 Pour rappel helm est le gestionnaire de packages pour Kubernetes. Il vous aide à piloter Kubernetes à l’aide de cartes de navigation, appelés Charts en anglais. Nous allons donc en créer une pour le microservice que nous avons créé.
 
@@ -157,7 +157,7 @@ Enfin on ne doit pas oublier de définir les valeurs par défaut dans le fichier
 
 > On prépare d'avance les variable de connection au serveur de base de données que l'on test en local (role kubeapps, `molecule test --destroy never`)
 
-[charts/microservice/values.yaml](charts/microservice/values.yaml)
+[charts/microservice/values.yaml](charts/microservice/values.yaml#L17)
 
 ```yaml
 secret:
@@ -166,7 +166,21 @@ env:
   secret:
     PG_USER: ekommerce
     PG_PASSWORD: password
-    PG_CONNECTION: jdbc:postgresql://postgres.default.pod.cluster.local:5432/client
+    PG_CONNECTION: jdbc:postgresql://postgres.default.pod.cluster.local:5432/db
+
+```
+
+Puis on configure le chart postgres pour qu'il utilise les secrets définis dans le chart microservice.
+
+
+[charts/microservice/values.yaml](charts/microservice/values.yaml#L25)
+
+```yaml
+auth:
+  username: ekommerce
+  existingSecret: all-secrets
+  secretKeys:
+    userPasswordKey: PG_PASSWORD
 
 ```
 
@@ -325,7 +339,7 @@ auth.database: client
 <div style="display: flex; width: 100%; text-align: center;">
 <h3 style="width: 20%">
 
-[Recommencer](#Helm-chart)
+[Recommencer](#4-Helm-chart)
 </h3>
 
 <div style="width: 35%"></div>
