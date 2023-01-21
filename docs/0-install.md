@@ -24,7 +24,7 @@ Pour rappel l'architecture de base de docker :
 
 et les couches des systèmes de conteneurisation docker et kubernetes :
 
-![docker k8s architecture](../images/kube-archi.png)
+![docker k8s architecture](images/kube-archi.png)
 
 Pour utilisateurs de **windows** il faut un [**WSL**](https://devblogs.microsoft.com/commandline/a-preview-of-wsl-in-the-microsoft-store-is-now-available/#how-to-install-and-use-wsl-in-the-microsoft-store). 
 

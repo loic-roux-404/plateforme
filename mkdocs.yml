@@ -6,7 +6,7 @@ theme:
     - content.code.copy
     - content.action.edit
 plugins:
-  - with-pdf
+  - print-site
 
 repo_url: https://github.com/esgi-lyon/paas-tutorial
 markdown_extensions:

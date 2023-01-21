@@ -31,7 +31,7 @@ Tout d'abord rancher (docker) doit être lancé avant de déployer les container
 
 Enuite connectez vous à votre docker hub avec `docker login` et créez un repository pour chaque microservice. Voici un exemple pour le microservice `client`.
 
-![docker hub repository](../images/docker-hub.png)
+![docker hub repository](images/docker-hub.png)
 
 Ensuite dans le dossier d'un microservice lancer la commande maven suivante. (on est toujours sur l'exemple du microservice `client`)
 
