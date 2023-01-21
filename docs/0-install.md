@@ -1,19 +1,6 @@
-<div style="display: flex; width: 100%; text-align: center;">
-<h3 style="width: 20%">
-
-[Précédent](../README.md)
-</h3>
-
-<div style="width: 40%"></div>
-
-<h3 style="width: 45%">
-
-[Suivant - Rôle Ansible](1-ansible-role.md)
-</h3>
-</div>
+# Introduction et installation
 
 ---
-## Introduction
 
 L'objectif de ce tutoriel est de vous permettre de créer sur une petite machine ou sur un serveur personnel un PaaS (Platform as a service). Un PaaS permet de déployer des applications en microservices. Celui-ci sera basé sur [kubernetes](https://kubernetes.io/fr/) pour la conteneurisation et [Kubeapps](https://kubeapps.dev/) pour l'interface de déploiement.
 
@@ -100,7 +87,7 @@ sudo systemctl restart docker
 
 ## Installation de l'environnement python
 
-#### Maintenant tout ce que nous allons faire se trouve dans la ligne de commande sur un shell `bash` ou `zsh` 
+**Maintenant tout ce que nous allons faire se trouve dans la ligne de commande sur un shell `bash` ou `zsh`**
 
 **Conda** : [docs.conda.io](https://docs.conda.io/en/latest/miniconda.html). Installer simplement avec le setup `.pkg` pour mac.
 
@@ -124,20 +111,3 @@ Puis lancer `conda init zsh` (ou `bash` si vous préférez)
 
 **Relancer votre shell pour appliquer** (commande `exec $SHELL`)
 
----
-
-<div style="display: flex; width: 100%; text-align: center;">
-<h3 style="width: 20%">
-
-[Précédent](../README.md)
-</h3>
-
-<div style="width: 40%"></div>
-
-<h3 style="width: 45%">
-
-[Suivant - Rôle Ansible](1-ansible-role.md)
-</h3>
-</div>
-
----

@@ -1,20 +1,4 @@
-<div style="display: flex; width: 100%; text-align: center;">
-<h3 style="width: 20%">
-
-[Précédent](3-2-terraform-security.md)
-</h3>
-
-<div style="width: 35%"></div>
-
-<h3 style="width: 40%">
-
-[Suivant - Machine virtuelle](3-4-terraform-azure-vm.md)
-</h3>
-</div>
-
----
-
-## 3-3 Réseau
+# 3.3 Réseau
 
 #### Création de l'environnement réseau
 
@@ -22,9 +6,7 @@ Ces directives sont essentiellement tirées de la documentation officielle de te
 
 `azurerm_virtual_network` et `azurerm_subnet` nous permettent de faire ça facilement dans notre groupe de ressources.
 
-
-[infra/main.tf](../infra/main.tf#L97)
-```
+```tf linenums="97" title="infra/main.tf"
 ############
 # Vm Network
 ############
@@ -43,9 +25,7 @@ resource "azurerm_subnet" "paas" {
 }
 ```
 
-[infra/main.tf](../infra/main.tf#L114)
-
-```tf
+```tf linenums="114" title="infra/main.tf"
 resource "azurerm_network_security_group" "paas" {
   name                = "paas-security-gp"
   location            = data.azurerm_resource_group.paas.location
@@ -83,9 +63,7 @@ resource "azurerm_subnet_network_security_group_association" "paas_security_grou
 
 ```
 
-[infra/main.tf](../infra/main.tf#L149)
-
-```tf
+```tf linenums="149" title="infra/main.tf"
 resource "azurerm_public_ip" "paas" {
   name                = "paas-ip"
   resource_group_name = data.azurerm_resource_group.paas.name
@@ -113,10 +91,7 @@ resource "azurerm_network_interface" "paas" {
 
 Azure a de très bon outils pour la gestion des zones dns. On va donc utiliser le provider `azurerm` pour créer une zone et récupérer les serveurs dns associés.
 
-
-[infra/main.tf](../infra/main.tf#L171)
-
-```tf
+```tf linenums="171" title="infra/main.tf"
 ############
 # Dns
 ############
@@ -139,7 +114,7 @@ Voici le retour de la ressource créer qui donne tous les serveurs dns requis po
 
 Ensuite on arrive facilement à récupérer les serveurs dns puis les reformater (enlever les `.` à la fin) avant de les injecter dans le fournisseur de noms name.com
 
-```
+```tf linenums="179" title="infra/main.tf"
 resource "namedotcom_domain_nameservers" "namedotcom_paas_ns" {
   domain_name = var.domain
   nameservers = [
@@ -151,7 +126,7 @@ resource "namedotcom_domain_nameservers" "namedotcom_paas_ns" {
 
 Enfin on met en place le **wildcard** pour la zone dns afin que tous les sous domaines pointent vers l'ip publique de la vm. Ainsi n'importe quel sous domaine de `paas-exemple-tutorial.live` pointera vers l'ingress de k3s.
 
-```hcl
+```tf linenums="187" title="infra/main.tf"
 resource "azurerm_dns_a_record" "paas" {
   name                = "*"
   zone_name           = azurerm_dns_zone.paas.name
@@ -165,17 +140,3 @@ resource "azurerm_dns_a_record" "paas" {
 C'est comme cela que l'on arrive à avoir un nom de domaine comme `kubeapps.paas-exemple-tutorial.live` qui pointe vers l'ingress de k3s.
 
 ---
-
-<div style="display: flex; width: 100%; text-align: center;">
-<h3 style="width: 20%">
-
-[Recommencer](#3-3-Réseau)
-</h3>
-
-<div style="width: 35%"></div>
-
-<h3 style="width: 40%">
-
-[Suivant - Machine virtuelle](3-4-terraform-azure-vm.md)
-</h3>
-</div>

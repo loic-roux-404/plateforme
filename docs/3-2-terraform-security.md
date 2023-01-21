@@ -1,20 +1,6 @@
-<div style="display: flex; width: 100%; text-align: center;">
-<h3 style="width: 20%">
-
-[Précédent](3-1-terraform-azure-init.md)
-</h3>
-
-<div style="width: 35%"></div>
-
-<h3 style="width: 40%">
-
-[Suivant - Helm chart](3-3-terraform-azure-network.md)
-</h3>
-</div>
+# 3.2 Sécurisation de l'organisation
 
 ---
-
-#### 3-2 Sécurisation de l'organisation
 
 #### Création du key vault et des secrets
 
@@ -25,9 +11,7 @@
 Dans le datasource `data.tf` nous allons récupérer les membres de l'organisation github et les membres admin de notre organisation.
 Nous utilisons des boucles pour remplir les dictionnaires `github_membership.all` et `github_membership.all_admin`
 
-[infra/data.tf](../infra/data.tf#L13)
-
-```tf
+```tf  linenums="13" title="infra/data.tf"
 data "github_organization" "org" {
   name = var.github_organization
 }
@@ -49,9 +33,7 @@ data "github_membership" "all_admin" {
 
 Puis nous allons créer l'équipe github puis assigner comme membre tous les administrateurs de l'organisation à celle-ci.
 
-[infra/main.tf](../infra/main.tf)
-
-```tf
+```tf  linenums="1" title="infra/main.tf"
 ############
 # Accounts
 ############
@@ -73,10 +55,7 @@ resource "github_team_membership" "opsteam_members" {
 
 Pour des raisons essentitelles de sécurité nous mettons à disposition de la machine virtuelle un stockage de secrets sécurisé grâce à la ressource terraform `azurerm_key_vault`
 
-
-[infra/main.tf](../infra/main.tf#L17)
-
-```tf
+```tf linenums="17" title="infra/main.tf"
 ############
 # Key vault
 ############
@@ -131,8 +110,7 @@ Enfin le plus important est le block `access_policy` qui permet de définir les 
 
 Pour stocker nos secrets nous utilisons la ressource `azurerm_key_vault_secret` qui permet de stocker des secrets dans le keyvault créé précédemment. Nous allons utiliser les secrets créer dans `variables.tf` ainsi que des mots de passes générés aléatoirement pour certaines configurations de `dex` et `kubeapps`.
 
-[infra/main.tf](../infra/main.tf#L53)
-```tf
+```tf linenums="53" title="infra/main.tf"
 # Kubeapps OAuth Proxy
 resource "random_password" "kubeapps_oauth_proxy_cookie_secret" {
   length           = 16
@@ -183,17 +161,3 @@ resource "azurerm_key_vault_secret" "paas_all_secrets" {
 > Nous utilisons donc une boucle `for_each` pour éviter la répétition des ressources secrets.
 
 ---
-
-<div style="display: flex; width: 100%; text-align: center;">
-<h3 style="width: 20%">
-
-[Recommencer](#3-2-Sécurisation-de-l'organisation)
-</h3>
-
-<div style="width: 35%"></div>
-
-<h3 style="width: 40%">
-
-[Suivant - Helm chart](3-3-terraform-azure-network.md)
-</h3>
-</div>

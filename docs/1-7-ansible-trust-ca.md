@@ -1,20 +1,6 @@
-<div style="display: flex; width: 100%; text-align: center;">
-<h3 style="width: 20%">
-
-[Précédent](1-6-ansible-cert-manager.md)
-</h3>
-
-<div style="width: 40%"></div>
-
-<h3 style="width: 45%">
-
-[Suivant - Authentification et des habilitations](1-8-ansible-dex.md)
-</h3>
-</div>
+# 1.7 Faire confiance à notre autorité de certification
 
 ---
-
-### 1-7 Faire confiance à notre autorité de certification
 
 On a deux endroits où l'on va faire confiance à notre autorité de certification.
 
@@ -29,9 +15,7 @@ Pour que en interne nos serveur se fassent confiance nous avons besoin de récup
 
 On utilise l'url du serveur staging `cert_manager_staging_ca_cert_url` qui est ici définit sur pebble pour récupérer ce certificat avant de jouer tous les rôles.
 
-[playbook/roles/kubeapps/tasks/pre-import-cert.yml](../playbook/roles/kubeapps/tasks/pre-import-cert.yml)
-
-```yaml
+```yaml linenums="1" title="playbook/roles/kubeapps/tasks/pre-import-cert.yml"
 
 - name: Download certificate file
   uri:
@@ -49,9 +33,7 @@ On utilise l'url du serveur staging `cert_manager_staging_ca_cert_url` qui est i
 
 Ensuite il nous faut stocker dans des facts ansible le contenu du certificat et des définitions de volumes que l'on va injecter dans nos containers.
 
-[playbook/roles/kubeapps/tasks/pre-import-cert.yml](../playbook/roles/kubeapps/tasks/pre-import-cert.yml#L13)
-
-```yaml
+```yaml linenums="13" title="playbook/roles/kubeapps/tasks/pre-import-cert.yml"
 - set_fact:
     kubeapps_internal_acme_ca_content: "{{ ca_file.content }}"
     kubeapps_internal_acme_ca_extra_volumes:
@@ -67,18 +49,14 @@ Ensuite il nous faut stocker dans des facts ansible le contenu du certificat et 
 
 Il faut ensuite absolument utiliser cette tâche avant le rôle sinon k3s va s'initialiser sans le certificat de letsencrypt digne de confiance et ne validera aucune connextion en TLS. (en particulier dex qui lui permet de controller le cluster avec l'api)
 
-[playbook/roles/kubeapps/molecule/default/converge.yml](../playbook/roles/kubeapps/molecule/default/converge.yml#L41)
-
-```yaml
+```yaml linenums="41" title="playbook/roles/kubeapps/molecule/default/converge.yml"
     - name: Import acme certificates
       include_tasks: "../../tasks/pre-import-cert.yml"
 ```
 
 Nous introduisons ensuite la variable `cert_manager_is_internal` qui nous permet de savoir si nous utilisons un acme spécial autre celui que le letsecrypt de production. Effectivement les acme locaux et staging ne sont pas référencés comme digne de confiance sur l'internet global.
 
-[playbook/roles/kubeapps/defaults/main.yml](../playbook/roles/kubeapps/defaults/main.yml#L14)
-
-```yaml
+```yaml linenums="14" title="playbook/roles/kubeapps/defaults/main.yml"
 cert_manager_is_internal: "{{ (cert_manager_staging_ca_cert_url | d('')) != '' }}"
 
 ```
@@ -89,9 +67,7 @@ Nous avons alors besoin de plusieurs choses pour importer notre certificat racin
 
 Une ressource kube configmap (ou secret) pour stocker le certificat racine que l'on a récupéré dans les étapes précédentes dans une variable `kubeapps_internal_acme_ca_content`.
 
-[playbook/roles/kubeapps/templates/trust-bundle-config-crd.yml.j2](../playbook/roles/kubeapps/templates/trust-bundle-config-crd.yml.j2)
-
-```yaml
+```yaml linenums="1" title="playbook/roles/kubeapps/templates/trust-bundle-config-crd.yml.j2"
 apiVersion: v1
 kind: ConfigMap
 metadata:
@@ -111,8 +87,7 @@ C'est pourquoi nous allons utiliser un module `trust-manager` fourni par jetstac
 
 Pour commencer nous allons installer le helm chart de `trust-manager` avec le template `playbook/trust-manager.yml.j2` :
 
-[playbook/roles/kubeapps/templates/trust-manager-chart-crd.yml.j2](../playbook/roles/kubeapps/templates/trust-manager-chart-crd.yml.j2)
-```yaml
+```yaml linenums="1" title="playbook/roles/kubeapps/templates/trust-manager-chart-crd.yml.j2"
 apiVersion: helm.cattle.io/v1
 kind: HelmChart
 metadata:
@@ -130,9 +105,7 @@ spec:
 
 Puis on ajoute dans après notre configmap le trust-bundle dans un nouveau fichier pour partagé le certificat. Notre configmap s'organise avec le nom `acme-internal-ca-share` et une sous variable précisant le fichier `ca.crt`:
 
-[playbook/roles/kubeapps/templates/trust-bundle-config-crd.yml.j2](../playbook/roles/kubeapps/templates/trust-bundle-config-crd.yml.j2)
-
-```yaml
+```yaml linenums="1" title="playbook/roles/kubeapps/templates/trust-bundle-config-crd.yml.j2"
 ---
 apiVersion: trust.cert-manager.io/v1alpha1
 kind: Bundle
@@ -153,8 +126,7 @@ Ensuite, **il est essentiel** d'appeler dans l'ordre tous ces manifests que l'on
 
 > **Warning** On les lance bien après l'installation et configuration de notre issuer `cert-manager` pour éviter des erreurs de dépendances manquantes.
 
-[playbook/roles/kubeapps/tasks/main.yml](playbook/roles/kubeapps/tasks/main.yml#L17)
-```yaml
+```yaml linenums="17" title="playbook/roles/kubeapps/tasks/main.yml"
     - src: trust-manager-chart-crd.yml
       deploy: trust-manager 
       ns: "{{ cert_manager_namespace }}"
@@ -169,9 +141,7 @@ Ces voluemes sont des espace de stockage qui seront monté dans les pods et qui 
 
 Voici les objets volumes définie dans le fichier **vars.yml** de notre role kubeapps afin d'éviter qu'ils soient vide. Ils seront override si un `cert_manager_staging_ca_cert_url` est présent car on injectera l'autorité dans les pods.
 
-[playbook/roles/kubeapps/vars/main.yml](../playbook/roles/kubeapps/vars/main.yml#L7)
-
-```yaml
+```yaml linenums="7" title="playbook/roles/kubeapps/vars/main.yml"
 # Mounted in acme internal
 kubeapps_internal_acme_ca_in_volume_crt: /etc/ssl/certs/acmeca.crt
 kubeapps_internal_acme_ca_extra_volumes: []
@@ -186,7 +156,7 @@ Voici un exemple d'utilisation des volumes dans kubernetes :
 Import du volume pour le rendre disponible au montage :
 
 ```yaml
-podname:
+podnameexample:
   extraVolumes:
     {{ kubeapps_internal_acme_ca_extra_volumes | to_nice_yaml | indent(4) }}
 
@@ -195,16 +165,14 @@ podname:
 Montage du volume dans le container :
 
 ```yaml
-podsubcontainer:
+podsubcontainerexample:
   extraVolumeMounts:
     {{ kubeapps_internal_acme_ca_extra_volumes_mounts | to_nice_yaml | indent(4) }}
 ```
 
 Les volumes sont **vide par défaut**, on les renseigne seulement à la fin de la tâche internal-acme lancée en mode cert-manager interne. Voici la suite du `set_fact` (l.25) dans cette tâche :
 
-[playbook/roles/kubeapps/tasks/pre-import-cert.yml](../playbook/roles/kubeapps/tasks/pre-import-cert.yml#L18)
-
-```yaml
+```yaml linenums="18" title="playbook/roles/kubeapps/tasks/pre-import-cert.yml"
     kubeapps_internal_acme_ca_extra_volumes:
     - name: acme-internal-ca-share
       configMap: 
@@ -245,17 +213,3 @@ sudo update-ca-certificates
 ***Relancez la page sur votre navigateur**
 
 ---
-
-<div style="display: flex; width: 100%; text-align: center;">
-<h3 style="width: 30%">
-
-[Recommencer](#1-7-Faire-confiance-à-notre-autorité-de-certification)
-</h3>
-
-<div style="width: 40%"></div>
-
-<h3 style="width: 30%">
-
-[Suivant - Authentification et des habilitations](1-8-ansible-dex.md)
-</h3>
-</div>

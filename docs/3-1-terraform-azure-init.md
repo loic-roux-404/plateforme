@@ -1,20 +1,6 @@
-<div style="display: flex; width: 100%; text-align: center;">
-<h3 style="width: 20%">
-
-[Précédent](2-packer-playbook.md)
-</h3>
-
-<div style="width: 35%"></div>
-
-<h3 style="width: 40%">
-
-[Suivant - Sécurisation de l'organisation](3-2-terraform-security.md)
-</h3>
-</div>
+# 3.1 Initialisation du déploiement final sur Azure avec Terraform
 
 ---
-
-## 3-1 Initialisation du déploiement final sur Azure avec Terraform
 
 Ici nous mettons en place le déploiement final sur Azure avec  l'outil d'infrastructure as code Terraform.
 
@@ -86,7 +72,7 @@ Premièrement, nous allons créer un fichier `terraform.tf` qui va se charger de
 
 - **`namedotcom`** pour contrôler les zones du domaine que l'on a obtenu précédemment.
 
-```tf
+```tf linenums="1" title="infra/terraform.tf"
 terraform {
 
   required_version = ">=0.12"
@@ -149,9 +135,7 @@ Nous voici prêt pour créer les datasources et les ressources de nos cloud sans
 
 Nous allons premièrement définir un fichier `data.tf` accessible tout au long du processus de création des ressources terraform.
 
-[infra/data.tf](infra/data.tf)
-
-```tf
+```tf linenums="1" title="infra/data.tf"
 data "azurerm_resource_group" "paas" {
   name = "kubeapps-group"
 }
@@ -180,10 +164,7 @@ Pour éviter de commit des secrets sur un git distant et centralisé les configu
 
 > `sensitive` permet de cacher la valeur de la variable dans le terminal lors de l'execution de terraform.
 
-[infra/variables.tf](../infra/variables.tf)
-
-```tf
-
+```tf linenums="1" title="infra/variables.tf"
 
 variable "github_organization" {
   type = string
@@ -250,9 +231,7 @@ L'objectif sera de faire pointé notre nom de domaine vers les serveurs de nom d
 
 Enfin, voici un exemple du fichier final à réutiliser et remplir avec les vrais valeurs :
 
-[infra/example.tfvars.dist](../infra/exemple.tfvars.dist)
-
-```tf
+```tf linenums="1" title="infra/exemple.tfvars.dist"
 tenant_id="00000000-0000-0000-0000-000000000000"
 github_organization = "github-team"
 github_team         = "ops-team"
@@ -288,17 +267,3 @@ Ensuire dans une seconde dédié aux ressources Azure, nous allons définir :
 Enfin au milieu de tout ça lors de la création des zones dns dans azure nous ajouterons un enregistrement NS qui pointe vers les serveurs de nom de name.com grâce au provider `namedotcom`.
 
 ---
-
-<div style="display: flex; width: 100%; text-align: center;">
-<h3 style="width: 20%">
-
-[Recommencer](#3-1-Initialisation-du-déploiement-final-sur-Azure-avec-Terraform)
-</h3>
-
-<div style="width: 35%"></div>
-
-<h3 style="width: 40%">
-
-[Suivant - Sécurisation de l'organisation](3-2-terraform-security.md)
-</h3>
-</div>

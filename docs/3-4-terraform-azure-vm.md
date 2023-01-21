@@ -1,26 +1,10 @@
-<div style="display: flex; width: 100%; text-align: center;">
-<h3 style="width: 20%">
-
-[Précédent](3-3-terraform-azure-network.md)
-</h3>
-
-<div style="width: 35%"></div>
-
-<h3 style="width: 40%">
-
-[Suivant - Helm chart](4-helm-chart.md)
-</h3>
-</div>
+# 3.4 Machine virtuelle
 
 ---
 
-## 3-4 Machine virtuelle
-
 #### Création de l'identité de la vm
 
-[infra/main.tf](../infra/main.tf#L195)
-
-```hcl
+```tf linenums="195" title="infra/main.tf"
 ############
 # Vm creation
 ############
@@ -51,9 +35,7 @@ resource "azurerm_key_vault_access_policy" "paas_vm" {
 
 #### Création de la vm
 
-[infra/main.tf](../infra/main.tf#L223)
-
-```hcl
+```hcl linenums="223" title="infra/main.tf"
 resource "azurerm_virtual_machine" "paas" {
   name                  = "paasvm"
   location              = data.azurerm_resource_group.paas.location
@@ -99,9 +81,7 @@ resource "azurerm_virtual_machine" "paas" {
 
 - `storage_image_reference` permet d'indiquer l'image à utiliser pour la vm. Ici on utilise notre image que l'on récupère avec un datasource `azurerm_image`.
 
-[infra/data.tf](infra/data.tf#L5)
-
-```hcl
+```hcl linenums="5" title="infra/data.tf"
 data "azurerm_image" "search" {
   name                = "kubeapps-az-arm"
   resource_group_name = data.azurerm_resource_group.paas.name
@@ -128,8 +108,7 @@ On rappele que `vault_url` est une variable qui contient l'url du keyvault azure
 
 > **Note** L'inventaire [playbook/inventories](playbook/inventories) a été créer dans les étapes précédente et se trouve dans notre image créer avec `packer`
 
-[infra/main.tf l.226](../infra/main.tf#L259)
-```tf
+```tf linenums="259" title="infra/main.tf"
     custom_data = templatefile(
       "${path.module}/cloud-init.yaml",
       {
@@ -143,14 +122,11 @@ On rappele que `vault_url` est une variable qui contient l'url du keyvault azure
     )
 ```
 
-
 - `datasource` configure le module pour qu'il récupère les informations de la vm azure (notamment les secrets du keyvault)
 
 - `ansible` permet de construire une commande ansible qui va être exécutée au démarrage de la vm. Il s'agit d'un template terraform
 
-[infra/cloud-init.yml](infra/cloud-init.yml)
-
-```yaml
+```yaml linenums="1" title="infra/cloud-init.yml"
 #cloud-config
 
 datasource:
@@ -192,17 +168,3 @@ terraform apply -auto-approve -var-file prod.tfvars
 > `-var-file` est indispensable pour charger les variables de l'environnement, sans ça vous êtes obligé de rentrer les variables à la main.
 
 ---
-
-<div style="display: flex; width: 100%; text-align: center;">
-<h3 style="width: 20%">
-
-[Recommencer](#3-4-Machine-virtuelle)
-</h3>
-
-<div style="width: 35%"></div>
-
-<h3 style="width: 40%">
-
-[Suivant - Helm chart](4-helm-chart.md)
-</h3>
-</div>

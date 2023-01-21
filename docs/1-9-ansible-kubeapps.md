@@ -1,20 +1,6 @@
-<div style="display: flex; width: 100%; text-align: center;">
-<h3 style="width: 20%">
-
-[Précédent](1-9-ansible-kubeapps.md)
-</h3>
-
-<div style="width: 40%"></div>
-
-<h3 style="width: 45%">
-
-[Suivant - Utilisation de notre rôle dans packer](2-packer-playbook.md)
-</h3>
-</div>
+# 1.9 Installation de kubeapps
 
 ---
-
-#### 1-9 Installation de kubeapps
 
 Commencons par construire notre manifest. Pour cela nous avons besoin de définir plusieurs variables pour rendre configurable l'utilisation de notre rôle :
 
@@ -28,9 +14,7 @@ Dans [playbook/roles/kubeapps/defaults/main.yml](playbook/roles/kubeapps/default
 
 > Par défaut kubeapps sera disponible sur `kubeapps.k3s.local`
 
-[playbook/roles/kubeapps/defaults/main.yml](../playbook/roles/kubeapps/defaults/main.yml#L22)
-
-```yaml
+```yaml linenums="22" title="playbook/roles/kubeapps/defaults/main.yml"
 ---
 # HelmChart Custom Resource Definition for kubeapps variables
 kubeapps_namespace: kubeapps
@@ -42,9 +26,7 @@ Ensuite nous allons utiliser toutes ces variables dans un manifest kubernetes qu
 
 > **Note** sur le templating jinja dans la moustache `{{}}` rajouter un `-` signifie que l'on ignore le format du côté ou l'on utilise. Par exemple un retour à la ligne (colonne 0) sera ignorer pour `-}}`.
 
-[playbook/roles/kubeapps/templates/kubeapps-chart-crd.yml.j2](../playbook/roles/kubeapps/templates/kubeapps-chart-crd.yml.j2)
-
-```yaml
+```yaml linenums="1" title="playbook/roles/kubeapps/templates/kubeapps-chart-crd.yml.j2"
 apiVersion: v1
 kind: Namespace
 metadata:
@@ -78,9 +60,7 @@ Nous allons lancer la commande de templating grâce au module `template` de la c
 
 Celle ci va faire le remplacement des variables utilisées dans les moustaches `{{}}` et placer le fichier au bon endroit dans notre machine invité. Ici il se trouvera dans notre container `node-0` dans le répertoire `/var/lib/rancher/k3s/server/manifests/kubeapps-chart-crd.yml`
 
-
-[playbook/roles/kubeapps/tasks/main.yml](../playbook/roles/kubeapps/tasks/main.yml#L23)
-```yaml
+```yaml linenums="23" title="playbook/roles/kubeapps/tasks/main.yml"
     - src: kubeapps-chart-crd.yml
       deploy: "{{ kubeapps_namespace }}"
 
@@ -105,9 +85,7 @@ Cette authentification est associé à un cookie converti en base64 à partir d'
 echo "not-good-secret" | base64
 ```
 
-> [playbook/roles/kubeapps/defaults/main.yml](../playbook/roles/kubeapps/defaults/main.yml#L30) **ligne 18 jusqu'à la fin**
-
-```yaml
+```yaml linenums="30" title="playbook/roles/kubeapps/defaults/main.yml"
 # ...
 # Cookie secret
 kubeapps_oauth_proxy_cookie_secret: bm90LWdvb2Qtc2VjcmV0Cg==
@@ -119,8 +97,7 @@ kubeapps_oauth_proxy_cookie_secret: bm90LWdvb2Qtc2VjcmV0Cg==
 
 Ensuite on réutilise nos secrets de **dex idp** pour créer et configurer l'accès du container `authProxy` à opend id dans le pod `frontend` de kubeapps.
 
-[playbook/roles/kubeapps/templates/kubeapps-chart-crd.yml.j2](playbook/roles/kubeapps/templates/kubeapps-chart-crd.yml.j2#L28) **ligne 28**
-```yaml
+```yaml linenums="28" title="playbook/roles/kubeapps/templates/kubeapps-chart-crd.yml.j2"
     authProxy:
       enabled: true
       provider: oidc
@@ -134,9 +111,7 @@ Ensuite on réutilise nos secrets de **dex idp** pour créer et configurer l'acc
 
 Enfin maintenant que notre chart est déployé avec un combo **oauth-proxy** / **dex** fonctionnel nous allons configurer le contrôle d'accès à l'administration du cluster. Nous utilisons pour cela une ressource `ClusterRoleBinding` pour lier un groupe d'une organisation github à un rôle `cluster-admin` qui lui donne tous les droits sur le cluster.
 
-[playbook/roles/kubeapps/templates/kubeapps-chart-crd.yml.j2](../playbook/roles/kubeapps/templates/kubeapps-chart-crd.yml.j2)
-
-```yaml
+```yaml linenums="1" title="playbook/roles/kubeapps/templates/kubeapps-chart-crd.yml.j2"
 ---
 apiVersion: rbac.authorization.k8s.io/v1
 kind: ClusterRoleBinding
@@ -174,8 +149,7 @@ Grâce au module ansible [k8s info](https://docs.ansible.com/ansible/latest/coll
 
 > On note qu'il est important de préciser à `k8s_info` la localisation kubeconfig qui se trouve à un endroit un peu exotique avec k3s. Cette config comporte des informations utilisateur et des certificats permettant de se connecter sur le cluster.
 
-> [playbook/roles/kubeapps/molecule/default/verify.yml](../playbook/roles/kubeapps/molecule/default/verify.yml#L18)
-```yaml
+```yaml linenums="18" title="playbook/roles/kubeapps/molecule/default/verify.yml"
     - name: Get Kubeapps service infos
       kubernetes.core.k8s_info:
         api_version: v1
@@ -211,17 +185,3 @@ node-0                     : ok=15 ...
 ```
 
 ---
-
-<div style="display: flex; width: 100%; text-align: center;">
-<h3 style="width: 30%">
-
-[Recommencer](#1-9-Installation-de-kubeapps)
-</h3>
-
-<div style="width: 40%"></div>
-
-<h3 style="width: 30%">
-
-[Suivant - Installation des manifests (algo](1-3-ansible-manifests.md)
-</h3>
-</div>

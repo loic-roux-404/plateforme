@@ -1,20 +1,6 @@
-<div style="display: flex; width: 100%; text-align: center;">
-<h3 style="width: 20%">
-
-[Précédent](1-5-ansible-dns.md)
-</h3>
-
-<div style="width: 40%"></div>
-
-<h3 style="width: 45%">
-
-[Suivant - Faire confiance à notre autorité de certification](1-7-ansible-trust-ca.md)
-</h3>
-</div>
+# 1.6 Utiliser notre autorité avec cert-manager
 
 ---
-
-### 1-6 Utiliser notre autorité avec cert-manager
 
 Venons en à l'élement central de notre stack, cert-manager. Il va nous permettre de créer des certificats pour nos services kubernetes.
 
@@ -29,9 +15,7 @@ Tout d'abord on ajoute les variables et puis des constantes dans le fichier vars
 
 Voici donc des constantes que l'on ne pas probablement jamais avoir besoin de changer (toutefois on pourrait le faire si besoin avec un `set_fact` mais ce n'est pas très propre)
 
-[playbook/roles/kubeapps/vars/main.yml](playbook/roles/kubeapps/vars/main.yml)
-
-```yaml
+```yaml linenums="1" title="playbook/roles/kubeapps/vars/main.yml"
 # vars file for role-kubeapps
 kubeapps_k8s_ingress_class: traefik
 letsencrypt_staging: https://acme-staging-v02.api.letsencrypt.org/directory
@@ -52,9 +36,7 @@ letsencrypt_envs_ca_certs:
 
 Les défauts qui utilise les variables prédéfinie précédemment :
 
-[playbook/roles/kubeapps/defaults/main.yml](../playbook/roles/kubeapps/defaults/main.yml)
-
-```yaml
+```yaml linenums="1" title="playbook/roles/kubeapps/defaults/main.yml"
 ---
 # Kubeapps internal acme server
 kubeapps_internal_acme_network_ip: ~
@@ -70,9 +52,7 @@ cert_manager_private_key_secret: test_secret
 
 Que l'on surcharge tout de suite dans le playbool **converge.yml** :
 
-[playbook/roles/kubeapps/molecule/default/converge.yml](playbook/roles/kubeapps/molecule/default/converge.yml#L10)
-
-```yaml
+```yaml linenums="10" title="playbook/roles/kubeapps/molecule/default/converge.yml"
     cert_manager_acme_url: https://{{ kubeapps_internal_acme_host }}:14000/dir
     cert_manager_staging_ca_cert_url: https://localhost:15000/roots/0
 
@@ -89,9 +69,7 @@ L'objectif est d'éviter des comportement non souhaité lors de l'utilisation de
 On créer donc un fichier `check.yml` dans le dossier `tasks/` de notre rôle pour vérifier les configurations.
 Ici on veut être sur que l'email est renseigné sinon letsencrypt ne donnera pas de certificat. Enfin on veut dans le cas d'un acme de recette / test que un fichier de certificat d'autorité (CA) soit présent dans le système.
 
-[playbook/roles/kubeapps/tasks/checks.yml](playbook/roles/kubeapps/tasks/checks.yml)
-
-```yaml
+```yaml linenums="1" title="playbook/roles/kubeapps/tasks/checks.yml"
 - name: check email when cert-manager
   assert:
     that:
@@ -114,9 +92,7 @@ Ici on veut être sur que l'email est renseigné sinon letsencrypt ne donnera pa
 
 Puis on active ceci en premier dans le fichier wrapper `main.yml` :
 
-[playbook/roles/kubeapps/tasks/main.yml](playbook/roles/kubeapps/tasks/main.yml#L3)
-
-```yaml
+```yaml linenums="3" title="playbook/roles/kubeapps/tasks/main.yml"
 - import_tasks: checks.yml
   tags: [kubeapps]
 
@@ -124,7 +100,7 @@ Puis on active ceci en premier dans le fichier wrapper `main.yml` :
 
 **Puis on installe cert-manager** avec le module helm chart de k3s.
 
-```yaml
+```yaml linenums="1" title="playbook/roles/kubeapps/templates/cert-manager-chart-crd.yml.j2"
 apiVersion: v1
 kind: Namespace
 metadata:
@@ -167,7 +143,7 @@ Voici le manifest de l'issuer de type acme
 
 > **Note** il existe d'autre types d'issuer pour d'autre protocoles come vault pki, ca, etc...
 
-```yaml
+```yaml linenums="19" title="playbook/roles/kubeapps/templates/cert-manager-chart-crd.yml.j2"
 ---
 apiVersion: cert-manager.io/v1
 kind: ClusterIssuer
@@ -194,9 +170,7 @@ spec:
 
 Nous voilà prêt il ne reste que à appeler la création du manifest dans notre fichier wrapper `main.yml` :
 
-[playbook/roles/kubeapps/tasks/main.yml](playbook/roles/kubeapps/tasks/main.yml#L16)
-
-```yaml
+```yaml linenums="16" title="playbook/roles/kubeapps/tasks/main.yml"
 
 - include_tasks: manifests.yml
   # ...
@@ -207,19 +181,3 @@ Nous voilà prêt il ne reste que à appeler la création du manifest dans notre
 ```
 
 Tout cela ne va cependant pas être suffisant dans le cas du mTLS car on va avoir besoin de faire confiance à notre autorité de certification.
-
----
-
-<div style="display: flex; width: 100%; text-align: center;">
-<h3 style="width: 30%">
-
-[Recommencer](#1-6-Utiliser-notre-autorité-avec-cert-manager)
-</h3>
-
-<div style="width: 40%"></div>
-
-<h3 style="width: 30%">
-
-[Suivant - Faire confiance à notre autorité de certification](1-7-ansible-trust-ca.md)
-</h3>
-</div>
