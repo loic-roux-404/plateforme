@@ -1,20 +1,6 @@
-<div style="display: flex; width: 100%; text-align: center;">
-<h3 style="width: 20%">
-
-[Installer ansible et création du rôle](1-1-ansible-install.md)
-</h3>
-
-<div style="width: 40%"></div>
-
-<h3 style="width: 45%">
-
-[Suivant - Installation des manifests (algo](1-3-ansible-manifests.md)
-</h3>
-</div>
+# 1.1  Provisionning du paas avec ansible
 
 ---
-
-## 1. Provisionning du PaaS sous Linux
 
 Cette partie très longue présente comment créer le rôle ansible qui va permettre de provisionner un cluster kubernetes sur un serveur linux puis d'y mettre en place la solution de PaaS.
 
@@ -22,7 +8,7 @@ L'objectif d'ansible de est de déployer des configurations et des outils sur de
 proche de l'algorithmie nous pourrons amener tous les outils indispensable à la création de notre PaaS.
 
 
-### 1-1  Installer ansible et création du rôle
+### Installer ansible et création du rôle
 
 Ansible est un outil dépendant de l'écosystème python. Pour simplifier la gestion des dépendances 
 qui risquent de faire conflit avec d'autres installations
@@ -111,8 +97,7 @@ Ensuite dans `requirements.yaml` on importe les roles que l'on utilise en dépen
 
 > **Note** pour l'instant il y a un bug avec galaxy nous empêchant de récupérer la bonne version de k3s. On peut forcer l'utilisation direct de git pour récupérer la version 3.3.0
 
-> [playbook/requirements.yaml](../playbook/requirements.yaml)
-```yaml
+```yaml linenums="1" title="playbook/requirements.yaml"
 ---
 roles: 
     - name: xanmanning.k3s
@@ -175,8 +160,7 @@ Voici ce que va être rendu comme structure de [**role**](https://docs.ansible.c
 
 Nous allons ensuite mettre à jour les métadonnées ansible galaxy avec notamment la dépendance kubernetes (rôle k3s). Il y a déjà du contenu présent, ne supprimer rien et ajouter à la ligne 51 la case du tableau `dependencies`.
 
-> Ligne 50 de [playbook/roles/kubeapps/meta/main.yml](../playbook/roles/kubeapps/meta/main.yml#L51)
-```yaml
+```yaml linenums="51" title="playbook/roles/kubeapps/meta/main.yml"
 dependencies:
     - src: xanmanning.k3s
       version: v3.3.0
@@ -188,8 +172,7 @@ dependencies:
 
 Ensuite vous devez obligatoirement définir ces Informations sur les metas du rôles:
 
-> [playbook/roles/role-kubeapps/meta/main.yml](../playbook/roles/kubeapps/meta/main.yml)
-```yaml
+```yaml linenums="1" title="playbook/roles/kubeapps/meta/main.yml"
 galaxy_info:
   author: loic-roux-404
   namespace: paas_tutorial
@@ -200,17 +183,3 @@ galaxy_info:
 Le rôle kubernetes se lancera donc directement avant les tâches de celui de kubeapps.
 
 ---
-
-<div style="display: flex; width: 100%; text-align: center;">
-<h3 style="width: 30%">
-
-[Recommencer](#1-1-Installer-ansible-et-création-du-rôle)
-</h3>
-
-<div style="width: 40%"></div>
-
-<h3 style="width: 30%">
-
-[Suivant - Installation des manifests (algo](1-3-ansible-manifests.md)
-</h3>
-</div>

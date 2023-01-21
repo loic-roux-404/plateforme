@@ -3,3 +3,5 @@ certs/*
 !.gitkeep
 .env
 playbook/vault-password.txt
+charts/**/*.tgz
+site

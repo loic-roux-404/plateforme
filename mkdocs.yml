@@ -2,6 +2,18 @@ site_name: PaaS Tutorial
 theme:
   name: material
   font: false
+  features:
+    - content.code.copy
+    - content.action.edit
 plugins:
-  - pdf-export
+  - with-pdf
+
 repo_url: https://github.com/esgi-lyon/paas-tutorial
+markdown_extensions:
+  - markdown.extensions.extra
+  - pymdownx.highlight:
+      anchor_linenums: true
+  - pymdownx.inlinehilite
+  - pymdownx.snippets
+  - pymdownx.superfences
+edit_uri: ./edit/main

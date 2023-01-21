@@ -28,8 +28,8 @@
 ## Sommaire
 
 - [0. Installation](0-install.md)
-- [1. Rôle ansible](1-ansible-role.md)
-    - [1.1 Installer ansible et création du rôle](1-1-ansible-install.md)
+- [1. Rôle ansible](#)
+    - [1.1 Provisionning du paas avec ansible](1-1-ansible-install.md)
     - [1.2 Présentation de K3s et installation](1-2-ansible-k3s.md)
     - [1.3 Installation des manifests (algo)](1-3-ansible-manifests.md)
     - [1.4 Autorité de certification](1-4-ansible-pebble.md)
@@ -39,7 +39,7 @@
     - [1.8 Authentification et des habilitations](1-8-ansible-dex.md)
     - [1.9 Kubeapps](1-9-ansible-kubeapps.md)
 - [2. Packer](2-packer-playbook.md)
-- [3. Terraform / Azure](3-terraform-azure.md)
+- [3. Terraform / Azure](#)
     - [3.1 Initialisation du déploiement final sur Azure avec Terraform](3-1-terraform-azure-init.md)
     - [3.2 Sécurisation de l'organisation](3-2-terraform-security)
     - [3.3 Réseau](3-3-terraform-azure-network.md)

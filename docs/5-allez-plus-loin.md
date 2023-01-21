@@ -1,13 +1,4 @@
-
-<div style="display: flex; width: 100%; text-align: center;">
-<h3 style="width: 20%">
-
-[Précédent](4-helm-chart.md)
-</h3>
-
-</div>
-
-## Allez plus loin
+# 5. Allez plus loin
 
 ### FAQ
 

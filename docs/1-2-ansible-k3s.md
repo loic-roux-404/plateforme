@@ -1,20 +1,6 @@
-<div style="display: flex; width: 100%; text-align: center;">
-<h3 style="width: 20%">
-
-[Précédent](1-1-ansible-install.md)
-</h3>
-
-<div style="width: 40%"></div>
-
-<h3 style="width: 45%">
-
-[Suivant - Installer ansible et création du rôle](1-3-ansible-manifests.md)
-</h3>
-</div>
+# 1.2 Présentation de K3s et installation
 
 ---
-
-## 1-2 Présentation de K3s et installation
 
 K3s est une distribution légère de Kubernetes conçue pour être facile à installer et à utiliser dans des environnements à ressources limitées tels que les appareils edge et IoT. Il convient également bien pour fonctionner sur des appareils basés sur Arm, ce qui en fait un choix populaire pour les grappes Raspberry Pi. 
 
@@ -81,8 +67,7 @@ Voilà donc tout ce qu'on aura à mettre en place dans notre rôle ansible.
 
 Nous allons d'abord définir l'utilisaton d'une distribution ubuntu pour installer nos outils. Pour les tests en local nous faisons du **docker in docker** ce qui impose des configurations particulières.
 
-> [playbook/roles/kubeapps/molecule/default/molecule.yml](playbook/roles/kubeapps/molecule/default/molecule.yml)
-```yaml
+```yaml linenums="1" title="playbook/roles/kubeapps/molecule/default/molecule.yml"
 ---
 dependency:
   name: galaxy
@@ -131,8 +116,7 @@ Ce playbook représente la façon dont on utilisera en condition réelles notre 
 
 > **Note** la partie `dig_host_docker_internal` servira à récupérer l'adresse ip de l'hôte docker pour pouvoir y accèder depuis les pods. C'est une astuce pour contourner le problème de résolution de domaines des pods avec un réseau sur localhost. C'est grâce à `network_mode: host` que l'on peut faire cela.
 
-> [playbook/roles/kubeapps/molecule/default/converge.yml](playbook/roles/kubeapps/molecule/default/converge.yml)
-```yaml
+```yaml linenums="1" title="playbook/roles/kubeapps/molecule/default/converge.yml"
 ---
 - name: Converge
   hosts: all
@@ -187,8 +171,7 @@ simplement en vérifiant que le retour de la commande contient bien "Ready    ma
 
 On utilise pour cette fois la commande `kubectl` directement. Pour en savoir plus pour cette commande centrale dans l'utilisation d'un cluster kubernetes [c'est ici](https://kubernetes.io/docs/reference/generated/kubectl/kubectl-commands)
 
-> [playbook/roles/kubeapps/molecule/default/verify.yml](../playbook/roles/kubeapps/molecule/default/verify.yml)
-```yaml
+```yaml linenums="1" title="playbook/roles/kubeapps/molecule/default/verify.yml"
 ---
 - name: Verify
   hosts: all
@@ -225,20 +208,6 @@ On valide bien que le service est de type cluster ip. Cela signifie qu'il est ex
 > **INFO** Kubernetes utilise l'outil natif de linux `iptables` pour faire fonctionner cette ressource.
 
 
-#### [Optionnel - Utilisation avec les extensions Vscode](4-allez-plus-loin.md#kubernetes-sur-vscode)
+#### [Optionnel - Utilisation avec les extensions Vscode](5-allez-plus-loin.md#kubernetes-sur-vscode)
 
 ---
-
-<div style="display: flex; width: 100%; text-align: center;">
-<h3 style="width: 30%">
-
-[Recommencer](#1-1-Installer-ansible-et-création-du-rôle)
-</h3>
-
-<div style="width: 40%"></div>
-
-<h3 style="width: 30%">
-
-[Suivant - Installation des manifests (algo](1-3-ansible-manifests.md)
-</h3>
-</div>

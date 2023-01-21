@@ -1,20 +1,6 @@
-<div style="display: flex; width: 100%; text-align: center;">
-<h3 style="width: 20%">
-
-[Précédent](1-2-ansible-k3s.md)
-</h3>
-
-<div style="width: 40%"></div>
-
-<h3 style="width: 45%">
-
-[Suivant - Mise en place de l'autorité de certification](1-4-ansible-pebble.md)
-</h3>
-</div>
+# 1.3 Algo d'installation des manifests
 
 ---
-
-### 1-3 Algo d'installation des manifests
 
 Nous allons avoir recours ici à deux nouvelles notions de l'écosytème de kubernetes qui sont
 
@@ -62,11 +48,9 @@ Donc dans [playbook/roles/kubeapps/tasks](../playbook/roles/kubeapps/) nous allo
 
 On rempli le fichier d'entrée comme ceci :
 
-[playbook/roles/kubeapps/tasks/manifests.yml](../playbook/roles/kubeapps/tasks/manifests.yml#L10)
-
-```yaml
+```yaml linenums="10" title="playbook/roles/kubeapps/tasks/main.yml"
 ---
-- import_tasks: manifests.yml
+- include_tasks: manifests.yml
   tags: [kubeapps]
 ```
 
@@ -87,9 +71,7 @@ On commence par mettre en place une boucle ansible prenant en paramètre une lis
 
 > **Note** Les facts sont des variables définis dynamiquement à partir de l'environnement ou de ce qu'on décide de conserver de nos traitement pendant le processus ansible
 
-[playbook/roles/kubeapps/tasks/manifests.yml](../playbook/roles/kubeapps/tasks/manifests.yml)
-
-```yml
+```yml linenums="10" title="playbook/roles/kubeapps/tasks/manifests.yml"
 ---
 - name: "Deploy {{ item.src }} to k3s crd processor"
   ansible.builtin.template:
@@ -155,29 +137,14 @@ On remarque que le `status` à "True" signigie que nous avons réussi, que la `r
 Revenons à la déclaration de la boucle des manifests pour ajouter le la liste `loop` que l'on laise avec des null en propriétés pour l'instant.
 De plus le `when` permettra de ne pas executer certains manifests en fonction des conditions que l'on aura définis avec `condition`.
 
-[playbook/roles/kubeapps/tasks/manifests.yml](../playbook/roles/kubeapps/tasks/manifests.yml#L10)
-
-```yaml
+```yaml linenums="10" title="playbook/roles/kubeapps/tasks/manifests.yml"
 ---
 - import_tasks: manifests.yml
-  when: item.condition == True
-  loop:
-    - { src: ~, ns: ~, condition: True }
   tags: [kubeapps]
+  when: item.condition | default(true)
+  args: { apply: { tags: [kubeapps] } }
+  loop:
+    - { src: ~, ns: ~, condition: True, deploy: ~ }
 ```
 
 ---
-
-<div style="display: flex; width: 100%; text-align: center;">
-<h3 style="width: 30%">
-
-[Recommencer](#1-1-Installer-ansible-et-création-du-rôle)
-</h3>
-
-<div style="width: 40%"></div>
-
-<h3 style="width: 30%">
-
-[Suivant - Installation des manifests (algo](1-3-ansible-manifests.md)
-</h3>
-</div>

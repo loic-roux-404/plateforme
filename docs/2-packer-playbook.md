@@ -1,20 +1,6 @@
-<div style="display: flex; width: 100%; text-align: center;">
-<h3 style="width: 20%">
-
-[Précédent](1-9-ansible-kubeapps.md)
-</h3>
-
-<div style="width: 35%"></div>
-
-<h3 style="width: 40%">
-
-[Suivant - Sécurisation de l'organisation](3-1-terraform-azure-init.md)
-</h3>
-</div>
+# 2. Utilisation de notre rôle dans packer
 
 ---
-
-## 2. Utilisation de notre rôle dans packer
 
 On va ici pré-provisionner une machine virtuelle dans une image azure ARM. On utilisera un playbook appelant le rôle kubeapps sans installer les pods qui ont besoin du réseau externe pour fonctionner. (cert-manager, dex et kubeapps)
 
@@ -26,8 +12,7 @@ Nous allons créer le fichier `site.yaml` (dans le dossier `playbook/`) qui va s
 
 Cette étape servira pour utiliser le playbook dans la [partie 2](#2-créer-une-première-image-virtuelle-pour-le-test) avec packer
 
-> [playbook/site.yaml](../playbook/site.yaml)
-```yaml
+```yaml linenums="1" title="playbook/site.yaml"
 ---
 - hosts: all
   gather_facts: True
@@ -52,9 +37,7 @@ Ces variables de groupes font appel à un plugin `lookup` permettant de lire les
 
 On peut ajouter l'installation de la collection dans les requirements du playbook si ce n'est pas déjà fait.
 
-[playbook/inventories/azure/group_vars/all.yml](../playbook/inventories/azure/group_vars/all.yml)
-
-```yaml
+```yaml linenums="1" title="playbook/inventories/azure/group_vars/all.yml"
 ---
 cert_manager_email: "{{ lookup(
   'azure.azcollection.azure_keyvault_secret',
@@ -95,8 +78,7 @@ kubeapps_oauth_proxy_cookie_secret: "{{ lookup(
 
 Puis on définit un fichier `hosts` pointant directement sur localhost. 
 
-[playbook/inventories/azure/hosts](playbook/inventories/azure/hosts)
-```ini
+```ini linenums="1" title="playbook/inventories/azure/hosts"
 127.0.0.1
 ```
 
@@ -163,9 +145,7 @@ Ajouter ce gitignore recommandé dans le dossier `infra/`
 curl -L https://github.com/github/gitignore/raw/main/Packer.gitignore | tee .gitignore
 ```
 
-> [infra/ubuntu.pkr.hcl](../infra/ubuntu.pkr.hcl)
-
-```hcl
+```hcl linenums="1" title="infra/ubuntu.pkr.hcl"
 variable "resource_group_name" {
   type    = string
   default = "kubeapps-group"
@@ -183,9 +163,7 @@ variable "vm_size" {
 
 ```
 
-> [infra/ubuntu.pkr.hcl](../infra/ubuntu.pkr.hcl#L56)
-
-```hcl
+```hcl linenums="56" title="infra/ubuntu.pkr.hcl"
 source "azure-arm" "vm" {
   use_azure_cli_auth = true
 
@@ -206,9 +184,7 @@ Lors du processus de build packer, **nous ne sommes pas accessible sur internet*
 
 Ensuite, on utilise le provisionner ansible qui va installer notre playbook sur la machine azure :
 
-[infra/ubuntu.pkr.hcl](../infra/ubuntu.pkr.hcl#L74)
-
-```hcl
+```hcl linenums="74" title="infra/ubuntu.pkr.hcl"
 
 build {
 
@@ -262,17 +238,3 @@ packer build ubuntu.pkr.hcl
 Vous pourrez voir le résultat de la création de l'image dans le portail azure dans votre groupe de ressource `kubeapps-group`.
 
 ---
-
-<div style="display: flex; width: 100%; text-align: center;">
-<h3 style="width: 30%">
-
-[Recommencer](#2-utilisation-de-notre-rôle-dans-packer)
-</h3>
-
-<div style="width: 40%"></div>
-
-<h3 style="width: 30%">
-
-[Suivant - Initialisation du déploiement final sur Azure avec Terraform](3-1-terraform-azure-init.md)
-</h3>
-</div>

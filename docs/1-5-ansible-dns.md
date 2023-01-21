@@ -1,20 +1,6 @@
-<div style="display: flex; width: 100%; text-align: center;">
-<h3 style="width: 20%">
-
-[Précédent](1-4-ansible-pebble.md)
-</h3>
-
-<div style="width: 40%"></div>
-
-<h3 style="width: 45%">
-
-[Suivant - Utiliser notre autorité avec cert-manager](1-6-ansible-cert-manager.md)
-</h3>
-</div>
+# 1.5 Mise en place des communications réseau du cluster
 
 ---
-
-## 1-5 Mise en place des communications réseau du cluster
 
 Pour détailler sur cette partie essentielle à la bonne compréhension des applications distribuées sur kubernetes on parlera du **dns**.
 
@@ -100,7 +86,7 @@ Voici la configuration par défaut :
 
 [playbook/roles/kubeapps/templates/core-dns-config-crd.yml.j2](../playbook/roles/kubeapps/templates/core-dns-config-crd.yml.j2)
 
-```yaml
+```yaml linenums="1" title="playbook/roles/kubeapps/templates/core-dns-config-crd.yml.j2"
 
 apiVersion: v1
 kind: ConfigMap
@@ -135,10 +121,7 @@ Nous allons ainsi créer une nouvelles suite de tâche pour déduire les address
 
 On créer un fichier `tasks/internal-acme.yml` présentant ce code pour récupérer l'addresse ip de l'ingress à l'aide du module k8s_info d'ansible :
 
-[playbook/roles/kubeapps/tasks/internal-acme.yml](playbook/roles/kubeapps/tasks/internal-acme.yml)
-
-```yaml
----
+```yaml linenums="1" title="playbook/roles/kubeapps/tasks/internal-acme.yml"
 ---
 - name: Get Ingress service infos
   kubernetes.core.k8s_info:
@@ -174,7 +157,7 @@ En sachant que le principe de base d'un dns est d'associé une adresse ip à un 
 
 [playbook/roles/kubeapps/templates/core-dns-config-crd.yml.j2](playbook/roles/kubeapps/templates/core-dns-config-crd.yml.j2#L28)
 
-```conf
+```conf linenums="28" title="playbook/roles/kubeapps/templates/core-dns-config-crd.yml.j2"
     {% set ingress_hosts_internals = [dex_hostname, kubeapps_hostname] | join(" ") -%}
 
     {{ ingress_hosts_internals }} {
@@ -188,7 +171,7 @@ En sachant que le principe de base d'un dns est d'associé une adresse ip à un 
 
 Enfin on configure l'addresse de notre acme interne pour que l'étape suivante puisse bien accèder à nos urls et que l'outil cert-manager puisse accèder à ce serveur acme.
 
-```conf
+```conf linenums="32" title="playbook/roles/kubeapps/templates/core-dns-config-crd.yml.j2"
 
     {{ kubeapps_internal_acme_host }} {
       hosts {
@@ -202,9 +185,7 @@ Enfin on configure l'addresse de notre acme interne pour que l'étape suivante p
 
 Ainsi nous sommes prêt à faire fonctionner notre acme en local pour les tests. Cependant dans des environnement disponible sur internet nous n'allons pas activé cette partie. Nous réutilisons donc la variable `kubeapps_ingress_controller_ip` créer dynamiquement dans `internal-acme.yml` pour installer ou non le manifest kubernetes.
 
-[playbook/roles/kubeapps/tasks/main.yml](playbook/roles/kubeapps/tasks/main.yml#L15)
-
-```yaml
+```yaml linenums="15" title="playbook/roles/kubeapps/tasks/main.yml"
   loop:
     - src: core-dns-config-crd.yml
       condition: "{{ kubeapps_ingress_controller_ip is defined }}"
@@ -212,18 +193,3 @@ Ainsi nous sommes prêt à faire fonctionner notre acme en local pour les tests.
 ```
 
 ---
-
-<div style="display: flex; width: 100%; text-align: center;">
-<h3 style="width: 30%">
-
-[Recommencer](#1-5-Mise-en-place-des-communications-réseau-du-cluster)
-
-</h3>
-
-<div style="width: 40%"></div>
-
-<h3 style="width: 30%">
-
-[Suivant - Utiliser notre autorité avec cert-manager](1-6-ansible-cert-manager.md)
-</h3>
-</div>

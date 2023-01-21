@@ -1,12 +1,4 @@
-<div style="display: flex; width: 100%; text-align: center;">
-<h3 style="width: 20%">
-
-[Précédent](3-4-terraform-azure-vm.md)
-</h3>
-
-</div>
-
-## 4. Helm chart
+# 4. Helm chart
 
 Pour rappel helm est le gestionnaire de packages pour Kubernetes. Il vous aide à piloter Kubernetes à l’aide de cartes de navigation, appelés Charts en anglais. Nous allons donc en créer une pour le microservice que nous avons créé.
 
@@ -73,9 +65,7 @@ Dans ce chart nous allons mettre en places des défaut pour faire fonctionner di
 
 On change donc seulement les valeurs par défaut du ingress pour qu'il utilise traefik et le cert-manager de notre paas.
 
-[chart/values.yaml](chart/values.yaml#L46)
-
-```yaml
+```yaml linenums="46" title="chart/values.yml"
   annotations:
     kubernetes.io/ingress.class: traefik
     cert-manager.io/cluster-issuer: letsencrypt-acme-issuer
@@ -87,9 +77,7 @@ Avant de déployer notre microservice on sait que l'on a besoin d'une base de do
 
 On va donc modifier le fichier `Chart.yaml` pour ajouter la dépendance.
 
-[charts/microservice/Chart.yaml#L26](../charts/microservice/Chart.yaml#L26)
-
-```yaml
+```yaml linenums="26" title="charts/microservice/Chart.yaml"
 dependencies:
   - name: postgresql
     version: ~12.1.9
@@ -108,9 +96,7 @@ Nous avons besoin de pouvoir configurer nos microservices facilement avec des va
 
 On va donc remplir un fichier de secret comme ceci :
 
-[charts/microservice/templates/secrets.yaml](charts/microservice/templates/secrets.yaml)
-
-```yaml
+```yaml linenums="1" title="charts/microservice/templates/secrets.yaml"
 apiVersion: v1
 kind: Secret
 metadata:
@@ -125,9 +111,7 @@ data:
 
 Ensuite ce fichier de template va permettre de définir comme une fonction (helper) qui va récupérer les secrets et les injecter sous forme de variable d'environnement dans les pods.
 
-[charts/microservice/templates/_helpers.tpl](charts/microservice/templates/_helpers.tpl)
-
-```yaml
+```tpl linenums="1" title="charts/microservice/templates/_helpers.tpl"
 {{/*
 Create the secrets required for our app as environment var
 */}}
@@ -145,9 +129,7 @@ Create the secrets required for our app as environment var
 
 Puis, il esr utiliser dans le fichier de deployment avec la clé `containers`:
 
-[charts/microservice/templates/deployment.yaml](charts/microservice/templates/deployment.yaml#L36)
-
-```yaml
+```yaml linenums="36" title="charts/microservice/templates/deployment.yaml"
           env:
             {{- include "helpers.listEnvVariables" . | indent 10 }}
 
@@ -157,9 +139,7 @@ Enfin on ne doit pas oublier de définir les valeurs par défaut dans le fichier
 
 > On prépare d'avance les variable de connection au serveur de base de données que l'on test en local (role kubeapps, `molecule test --destroy never`)
 
-[charts/microservice/values.yaml](charts/microservice/values.yaml#L17)
-
-```yaml
+```yaml linenums="17" title="charts/microservice/values.yaml"
 secret:
   name: all-secrets
 env:
@@ -172,10 +152,7 @@ env:
 
 Puis on configure le chart postgres pour qu'il utilise les secrets définis dans le chart microservice.
 
-
-[charts/microservice/values.yaml](charts/microservice/values.yaml#L25)
-
-```yaml
+```yaml linenums="25" title="charts/microservice/values.yaml"
 auth:
   username: ekommerce
   existingSecret: all-secrets
@@ -224,9 +201,7 @@ mkdir -p .github/workflows
 touch .github/workflows/release.yml
 ```
 
-[.github/workflows/release.yml](../.github/workflows/release.yml)
-
-```yaml
+```yaml linenums="25" title=".github/workflows/release.yml"
 name: Release Charts
 
 on:
@@ -334,18 +309,4 @@ auth.password: password
 auth.database: client
 ```
 
-### Installation du chart sur kubeapps
-
-<div style="display: flex; width: 100%; text-align: center;">
-<h3 style="width: 20%">
-
-[Recommencer](#4-Helm-chart)
-</h3>
-
-<div style="width: 35%"></div>
-
-<h3 style="width: 40%">
-
-[Suivant - Faq et exercices](5-allez-plus-loin.md)
-</h3>
-</div>
+---

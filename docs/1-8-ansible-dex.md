@@ -1,20 +1,6 @@
-<div style="display: flex; width: 100%; text-align: center;">
-<h3 style="width: 20%">
-
-[Précédent](1-7-ansible-trust-ca.md)
-</h3>
-
-<div style="width: 40%"></div>
-
-<h3 style="width: 45%">
-
-[Suivant - Kubeapps](1-9-ansible-kubeapps.md)
-</h3>
-</div>
+# 1.8 Authentification et des habilitations
 
 ---
-
-### 1-8 Authentification et des habilitations
 
 Il est inclu dans kubernetes deux façons d'authentifier les utilisateurs au cluster et ses resources api (`services`, `pods`, `secrets`...) :
 
@@ -37,9 +23,7 @@ Créer une nouvelle organisation [ici](https://github.com/account/organizations/
 
 Nommez les comme vous voulez puis ajoutez la variable dans votre playbook de test (non conseillé en production, utilisez plutôt ansible-vault) :
 
-[playbook/roles/kubeapps/molecule/default/converge.yml](playbook/roles/kubeapps/molecule/default/converge.yml#L14)
-
-```yaml
+```yaml linenums="14" title="playbook/roles/kubeapps/molecule/default/converge.yml"
     dex_github_client_org: "esgi-lyon"
     dex_github_client_team: "ops-team-test"
 ```
@@ -74,9 +58,7 @@ Renseigner un mot de passe dans le fichier `$HOME/.ansible/.vault`.
 
 Vous devrez ensuite renseigner ces secrets afin de cacher les informations sensibles dans votre playbook de test.
 
-[playbook/roles/kubeapps/molecule/default/group_vars/molecule/secrets.yml](../playbook/roles/kubeapps/molecule/default/group_vars/molecule/secrets.yml)
-
-```yaml
+```yaml linenums="1" title="playbook/roles/kubeapps/molecule/default/group_vars/molecule/secrets.yml"
 cert_manager_email: test4@k3s.local
 
 dex_github_client_id: "my-client-id-from-github-oauth-app"
@@ -104,18 +86,14 @@ Puis on configure molecule pour utiliser le fichier de mot de passe et le groupe
 
 Dans votre configuration de platforme de test molecule `node-0` :
 
-[playbook/roles/kubeapps/molecule/default/molecule.yml](playbook/roles/kubeapps/molecule/default/molecule.yml#L12)
-
-```yaml
+```yaml linenums="12" title="playbook/roles/kubeapps/molecule/default/molecule.yml"
     groups:
       - molecule
 ```
 
 Puis on configure le provisioner ansible pour utiliser le fichier de mot de passe :
 
-[playbook/roles/kubeapps/molecule/default/molecule.yml](playbook/roles/kubeapps/molecule/default/molecule.yml#L22)
-
-```yaml
+```yaml linenums="22" title="playbook/roles/kubeapps/molecule/default/molecule.yml"
 provisioner:
   name: ansible
   config_options:
@@ -129,11 +107,9 @@ Voilà, maintenant molecule importe les secrets et les rend disponible dans les 
 
 D'abord comme vu précédemment avec cert-manager on créer les variables par défaut requises par dex :
 
-[playbook/roles/kubeapps/defaults/main.yml](../playbook/roles/kubeapps/defaults/main.yml#L16)
-
 D'abord des informations globales comme l'espace de nom kubernetes et l'url auquel on peut accèder au service.
 
-```yaml
+```yaml linenums="16" title="playbook/roles/kubeapps/defaults/main.yml"
 # HelmChart Custom Resource Definition for dex oidc connector
 dex_namespace: dex
 dex_hostname: dex.k3s.local
@@ -167,11 +143,9 @@ k3s|<--|        |<-------| openid |                      | oauth2   |
 
 Ensuite, définissons un manifest utilisant helm pour installer facilement dex sur le cluster kubernetes. Implicitement seront créer des fichiers d'attributions de droit au cluster, le fichier de déploiement des pod et les services exposants des noms et addresses dans le cluster.
 
-[playbook/roles/kubeapps/templates/dex-chart-crd.yml.j2](../playbook/roles/kubeapps/templates/dex-chart-crd.yml.j2)
-
 On commence par créer le namespace
 
-```yaml
+```yaml linenums="1" title="playbook/roles/kubeapps/templates/dex-chart-crd.yml.j2"
 apiVersion: v1
 kind: Namespace
 metadata:
@@ -180,7 +154,7 @@ metadata:
 
 Puis on installe le chart helm de dex comme d'habitude avec ce genre de manifest :
 
-```yaml
+```yaml linenums="6" title="playbook/roles/kubeapps/templates/dex-chart-crd.yml.j2"
 ---
 apiVersion: helm.cattle.io/v1
 kind: HelmChart
@@ -204,9 +178,7 @@ Dans le `valuesContent` nous allons renseigner trois prncipaux objets de configu
 
 Voici la configuration qui réutilise les variables de notre application oauth github et les credentials définies dans les defaults et le playbook converge.yml :
 
-[playbook/roles/kubeapps/templates/dex-chart-crd.yml.j2](../playbook/roles/kubeapps/templates/dex-chart-crd.yml.j2#L15)
-
-```yaml
+```yaml linenums="15" title="playbook/roles/kubeapps/templates/dex-chart-crd.yml.j2"
   valuesContent: |-
     config:
       issuer: "https://{{ dex_hostname }}"
@@ -300,9 +272,7 @@ Ensuite on met en place le ingress pour associer les noms d'hôtes à ce service
 
 On utilise ici le certificat délivré par cert-manager au travers d'un secret `{{ dex_hostname }}-tls` automatiquement créer par l'issuer cert-manager activé avec : `cert-manager.io/cluster-issuer: letsencrypt-acme-issuer`.
 
-[playbook/roles/kubeapps/templates/dex-chart-crd.yml.j2](../playbook/roles/kubeapps/templates/dex-chart-crd.yml.j2#L44)
-
-```yaml  
+```yaml linenums="44" title="playbook/roles/kubeapps/templates/dex-chart-crd.yml.j2"
     ingress:
       enabled: true
       annotations:
@@ -327,8 +297,7 @@ Enfin le plus important, il faut intégré dex dans le flux d'authentification d
 
 On ajoute donc les variables dans le fichier meta du rôle pour influencer l'installation de k3s avec ces variables. C'est la principale raison de l'utilisation de la pré-tâche `playbook/roles/kubeapps/tasks/pre-import-cert.yml` du certificat avant le rôle.
 
-[playbook/roles/kubeapps/meta/main.yml](../playbook/roles/kubeapps/meta/main.yml#L53)
-```yaml
+```yaml linenums="53" title="playbook/roles/kubeapps/meta/main.yml"
     vars:
       k3s_release_version: v1.21
       k3s_server:
@@ -343,17 +312,3 @@ On ajoute donc les variables dans le fichier meta du rôle pour influencer l'ins
 Open id configuré sur kubernetes nous sommme prêt à faire fonctionner kubeapps avec dex car ils peuvent maintenant communiquer en Tls entre eux et dex peut autorisé des connextion open id valides à contrôler k3s.
 
 ---
-
-<div style="display: flex; width: 100%; text-align: center;">
-<h3 style="width: 30%">
-
-[Recommencer](#1-8-Authentification-et-des-habilitations)
-</h3>
-
-<div style="width: 40%"></div>
-
-<h3 style="width: 30%">
-
-[Suivant - Kubeapps](1-9-ansible-kubeapps.md)
-</h3>
-</div>

@@ -1,20 +1,6 @@
-<div style="display: flex; width: 100%; text-align: center;">
-<h3 style="width: 20%">
-
-[Précédent](1-3-ansible-manifests.md)
-</h3>
-
-<div style="width: 40%"></div>
-
-<h3 style="width: 45%">
-
-[Suivant - Mise en place des communications réseau du cluster](1-3-ansible-manifests.md)
-</h3>
-</div>
+# 1.4 Autorité de certification
 
 ---
-
-## 1-4 Autorité de certification
 
 Premièrement va falloir que les services soient accessibles depuis l'extérieur du cluster sur notre réseau local.
 
@@ -32,9 +18,7 @@ Il est cependant recommandé d'utiliser un serveur acme de test pour éviter de 
 
 Ce playbook se lance avant le converge soit avant l'execution de notre rôle et lance un container docker sur notre machine. Comme précisé avant, le `network_mode` à host nous permet d'hérité du localhost de votre machine et permet d'accèder aux services sur l'autre container sur lequel on installe notre rôle.
 
-[playbook/roles/kubeapps/molecule/default/prepare.yml](../playbook/roles/kubeapps/molecule/default/prepare.yml)
-
-```yaml
+```yaml linenums="1" title="playbook/roles/kubeapps/molecule/default/prepare.yml"
 - name: Prepare
   hosts: localhost
   connection: local
@@ -107,9 +91,7 @@ Maintenant lorsque l'on lance `molecule test` nous executons dans l'ordre :
 
 Voici le playbook **cleanup.yml** manquant :
 
-
-[playbook/roles/kubeapps/molecule/default/cleanup.yml](../playbook/roles/kubeapps/molecule/default/cleanup.yml)
-```yaml
+```yaml linenums="1" title="playbook/roles/kubeapps/molecule/default/cleanup.yml"
 ---
 - name: Cleanup
   hosts: localhost
@@ -130,17 +112,3 @@ Voici le playbook **cleanup.yml** manquant :
 > On choisi de laisser par défaut le container pebble lancé pour pouvoir le relancer avec `molecule converge` et ne pas avoir à le relancer à chaque fois. Cependant dans un environnement de CI/CD on peut vouloir supprimer le container après chaque test.
 
 ---
-
-<div style="display: flex; width: 100%; text-align: center;">
-<h3 style="width: 30%">
-
-[Recommencer](#1-4-Autorité-de-certification)
-</h3>
-
-<div style="width: 40%"></div>
-
-<h3 style="width: 30%">
-
-[Suivant - Mise en place des communications réseau du cluster](1-5-ansible-dns.md)
-</h3>
-</div>
