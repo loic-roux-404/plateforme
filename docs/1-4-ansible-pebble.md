@@ -8,15 +8,15 @@ Ensuite que notre plateforme va adopter un principe zero-trust pour notre résea
 
 #### Pebble
 
-On va recourrir à une autorité de certification locale avec l'outil [pebble](https://github.com/letsencrypt/pebble). Il s'agit d'une implémentation de l'acme server de lets encrypt dédiée au test.
+On va recourir à une autorité de certification locale avec l'outil [pebble](https://github.com/letsencrypt/pebble). Il s'agit d'une implémentation de l'acme server de lets encrypt dédiée au test.
 
-Pour rappel Lets encrypt Acme est un protocole embarquant une autorité de certification générant des certificats pour tls simplement au travers de plusieurs type de "challenges". On peut obtenir un certificats juste en ayant sont serveur http disponible sur le réseau (ou internet) ou en ayant accès à l'édition des zones d'un serveur dns (en fonction du fournisseur).
+Pour rappel Lets-encrypt Acme est un protocole embarquant une autorité de certification générant des certificats pour tls simplement au travers de plusieurs type de "challenges". On peut obtenir des certificats juste en ayant un serveur http disponible sur le réseau (ou internet) ou en ayant accès à l'édition des zones d'un serveur dns (en fonction du fournisseur).
 
-Il est cependant recommandé d'utiliser un serveur acme de test pour éviter de saturer les quotas de let's encrypt. Ici nous sommes en local et nos services ne sont pas accessibles depuis internet.
+Il est cependant recommandé d'utiliser un serveur acme de test pour éviter de saturer les quotas de Let's-encrypt. Ici nous sommes en local et nos services ne sont pas accessibles depuis internet.
 
 #### Création de notre autorité avec docker et le playbook prepare de molecule
 
-Ce playbook se lance avant le converge soit avant l'execution de notre rôle et lance un container docker sur notre machine. Comme précisé avant, le `network_mode` à host nous permet d'hérité du localhost de votre machine et permet d'accèder aux services sur l'autre container sur lequel on installe notre rôle.
+Ce playbook se lance avant le converge soit avant l'exécution de notre rôle et lance un container docker sur notre machine. Comme précisé avant, le `network_mode` à host nous permet d'hérité du localhost de votre machine et permet d'accéder aux services sur l'autre container sur lequel on installe notre rôle.
 
 ```yaml linenums="1" title="playbook/roles/kubeapps/molecule/default/prepare.yml"
 - name: Prepare
@@ -62,7 +62,7 @@ curl -L https://raw.githubusercontent.com/letsencrypt/pebble/main/test/certs/loc
 curl -L https://raw.githubusercontent.com/letsencrypt/pebble/main/test/certs/localhost/cert.pem > playbook/roles/kubeapps/molecule/default/pebble/key.pem
 ```
 
-Puis on créer le fichier de configuration de notre serveur acme :
+Puis on crée le fichier de configuration de notre serveur Acme :
 
 [playbook/roles/kubeapps/molecule/default/pebble/pebble-config.json](../playbook/roles/kubeapps/molecule/default/pebble/pebble-config.json)
 
@@ -81,7 +81,7 @@ Puis on créer le fichier de configuration de notre serveur acme :
   }
 ```
 
-Maintenant lorsque l'on lance `molecule test` nous executons dans l'ordre :
+Maintenant lorsque l'on lance `molecule test` nous exécutons dans l'ordre :
 
 - Le playbook **create.yml** qui lance les plateformes définies dans molecule.yml (le ubuntu2004 pour tester notre rôle)
 - Le playbook **prepare.yml** que l'on a entièrement créer pour lancer un pebble de test
@@ -109,6 +109,6 @@ Voici le playbook **cleanup.yml** manquant :
 
 ```
 
-> On choisi de laisser par défaut le container pebble lancé pour pouvoir le relancer avec `molecule converge` et ne pas avoir à le relancer à chaque fois. Cependant dans un environnement de CI/CD on peut vouloir supprimer le container après chaque test.
+> On a choisi de laisser par défaut le container pebble lancé pour pouvoir le relancer avec `molecule converge` et ne pas avoir à le relancer à chaque fois. Cependant, dans un environnement de CI/CD on peut vouloir supprimer le container après chaque test.
 
 ---

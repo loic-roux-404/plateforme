@@ -6,7 +6,7 @@ On va ici pré-provisionner une machine virtuelle dans une image azure ARM. On u
 
 #### Playbook et inventaire final
 
-Nous allons adapter le rôle en vue de cette fois ci le rendre utilisable par un playbook de pré-production.
+Nous allons adapter le rôle en vue de cette fois ci le rendre utilisable par un playbook de préproduction.
 
 Nous allons créer le fichier `site.yaml` (dans le dossier `playbook/`) qui va se charger avec la commande `ansible-playbook` de lancer les rôles dans le bon ordre sur les machines.
 
@@ -25,9 +25,9 @@ Cette étape servira pour utiliser le playbook dans la [partie 2](#2-créer-une-
 
 ```
 
-> `include_tasks..` : comme pour le playbook converge dans les tests on doit importer un certificat dans le cas ou l'on utlise un lets encrypt de test.
+> `include_tasks..` : comme pour le playbook converge dans les tests on doit importer un certificat pour faire confiance à un Lets-encrypt de test.
 
-Ensuite on créer notre inventaire pour azure dans un dossier `playbook/inventories/azure/`. Uun inventaire ansible est constitué d'un groupe de variables (dossier `group_vars`) et d'un fichier `hosts` qui va contenir les machines sur lesquelles on va jouer le playbook.
+Ensuite on crée notre inventaire pour azure dans un dossier `playbook/inventories/azure/`. Un inventaire ansible est constitué d'un groupe de variables (dossier `group_vars`) et d'un fichier `hosts` qui va contenir les machines sur lesquelles on va jouer le playbook.
 
 ```bash
 mkdir -p playbook/inventories/azure/group_vars
@@ -74,7 +74,7 @@ kubeapps_oauth_proxy_cookie_secret: "{{ lookup(
 
 ```
 
-> **Note** Nous n'aurons pas besoin d'utiliser les variables de connection du plugin. Comme nous serons sur une machine azure, celle-ci aura les habilitations requises pour accèder directement aux secrets.
+> **Note** Nous n'aurons pas besoin d'utiliser les variables de connexion du plugin. Comme nous serons sur une machine azure, celle-ci aura les habilitations requises pour accéder directement aux secrets.
 
 Puis on définit un fichier `hosts` pointant directement sur localhost. 
 
@@ -93,11 +93,11 @@ L'objectif est d'utiliser les installations précédentes sur une distribution l
 
 Voici comment le flux de création d'une VM avec packer s'organise :
 1. Validation et parsing d'une **configuration** [HCL](https://github.com/hashicorp/hcl)
-1. Lancement d'un plugin **builder** en fonction de notre infrastructure. Par exemple on peut build des images docker, virtualbox mais aussi des images dédiés à des cloud comme Azure que nous avons choisi
+1. Lancement d'un plugin **builder** en fonction de notre infrastructure. Par exemple on peut build des images docker, virtualbox mais aussi des images dédiées à des clouds comme Azure (celui que nous avons choisi)
 1. Le plugin créer, initialise les composants système majeurs de la machine puis démarre automatiquement la machine
 1. Une fois la machine prête un système de **communicator** est disponible et nous pouvons lancer des commandes sur celle-ci. Nous utiliserons evidemment SSH.
 1. Des **provisionners** sont ensuite joués pour configurer la machine. Nous utiliserons à cette étape le plugin ansible qui va nous permettre d'utiliser le travail précédent.
-1. Enfin des **post processors** vont effectuer des traitements après le build une fois l'iso rendu. Par exemple nous pourrons upload **l'artifact** sur un registre comme [HCP](https://cloud.hashicorp.com/products/packer) ou sur un service comme [Azure resource manager](https://learn.microsoft.com/fr-fr/azure/azure-resource-manager/management/overview)
+1. Enfin des **post processors** vont effectuer des traitements après le build une fois l'Iso rendu. Par exemple nous pourrons upload **l'artifact** sur un registre comme [HCP](https://cloud.hashicorp.com/products/packer) ou sur un service comme [Azure resource manager](https://learn.microsoft.com/fr-fr/azure/azure-resource-manager/management/overview)
 
 ### A. Sources
 
@@ -110,9 +110,9 @@ Voici comment le flux de création d'une VM avec packer s'organise :
 
 Pour installer packer [c'est ici](https://www.packer.io/downloads)
 
-> **Note**: recommandation : extension `szTheory.vscode-packer-powertools` (elle contient un bon fortmatteur de fichier HCL),`hashicorp.hcl`.
+> **Note**: recommandation : extension `szTheory.vscode-packer-powertools` (elle contient un bon formateur de fichier HCL), `hashicorp.hcl`.
 
-Vérification packer 1.8+ bien installé dans votre ligne de commande
+Vérifier que packer 1.8+ est bien installé dans votre ligne de commande :
 ```sh
 packer --version
 
@@ -120,9 +120,9 @@ packer --version
 
 Puis nous avons besoin de la ligne commande de azure pour créer notre service principal. Pour cela il faut installer le [CLI azure](https://docs.microsoft.com/fr-fr/cli/azure/install-azure-cli)
 
-Connectez vous avec **`az login`** à votre compte azure.
+Connectez-vous avec **`az login`** à votre compte azure.
 
-> **Note** Vous devez avoir un abonnement azure avec du crédit disponible. (exemple: essai de 200$ offert)
+> **Note** Vous devez avoir un abonnement azure avec du crédit disponible. (exemple : essai de 200$ offert)
 
 ##### Puis créer le `groupe de ressources` dans lequel on va créer tout nos composants azure :
 
@@ -227,7 +227,7 @@ build {
 
 ```
 
-> **Note**: le provisionner shell est nécessaire pour déprovisionner l'agent azure qui est installé par défaut sur les images générées par azure.
+> **Note**: le provisionner shell est nécessaire pour nettoyer l'agent azure qui est installé par défaut sur les images automatiquement générées par ce cloud.
 
 Toujours dans `infra/`, on lance le traitement entier avec packer :
 

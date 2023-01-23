@@ -2,7 +2,7 @@
 
 ---
 
-Commencons par construire notre manifest. Pour cela nous avons besoin de définir plusieurs variables pour rendre configurable l'utilisation de notre rôle :
+Commençons par construire notre manifest. Pour cela nous avons besoin de définir plusieurs variables pour rendre configurable l'utilisation de notre rôle :
 
 Dans [playbook/roles/kubeapps/defaults/main.yml](playbook/roles/kubeapps/defaults/main.yml) on aura donc :
 
@@ -24,7 +24,7 @@ kubeapps_hostname: kubeapps.k3s.local
 
 Ensuite nous allons utiliser toutes ces variables dans un manifest kubernetes qui inclus deux resources. Un namespace et une définition de dépendance helm avec sa configuration.
 
-> **Note** sur le templating jinja dans la moustache `{{}}` rajouter un `-` signifie que l'on ignore le format du côté ou l'on utilise. Par exemple un retour à la ligne (colonne 0) sera ignorer pour `-}}`.
+> **Note** sur le templating jinja dans la moustache `{{}}` rajouter un `-` signifie qu'on ignore le format du côté où l'on utilise. Par exemple un retour à la ligne (colonne 0) sera ignorer pour `-}}`.
 
 ```yaml linenums="1" title="playbook/roles/kubeapps/templates/kubeapps-chart-crd.yml.j2"
 apiVersion: v1
@@ -54,11 +54,11 @@ spec:
 
 ```
 
-> **Note** On configure le ingress directement dans la définition helm tout en précisant bien que l'on utilise traefik en sachant que par défaut il est souvent utilisé `nginx` comme cntroller ingress
+> **Note** On configure le ingress directement dans la définition helm tout en précisant bien que l'on utilise traefik en sachant que par défaut il est souvent utilisé `nginx` comme controller ingress
 
-Nous allons lancer la commande de templating grâce au module `template` de la collection **builtin** (fonctionnalités inclus par défaut) de ansible.
+Nous allons lancer la commande de templating grâce au module `template` de la collection **builtin** (fonctionnalités incluses par défaut) de ansible.
 
-Celle ci va faire le remplacement des variables utilisées dans les moustaches `{{}}` et placer le fichier au bon endroit dans notre machine invité. Ici il se trouvera dans notre container `node-0` dans le répertoire `/var/lib/rancher/k3s/server/manifests/kubeapps-chart-crd.yml`
+Celle ci va faire le remplacement des variables utilisées dans les moustaches `{{}}` et placer le fichier au bon endroit dans notre machine invité. Ici, il se trouvera dans notre container `node-0` dans le répertoire `/var/lib/rancher/k3s/server/manifests/kubeapps-chart-crd.yml`
 
 ```yaml linenums="23" title="playbook/roles/kubeapps/tasks/main.yml"
     - src: kubeapps-chart-crd.yml
@@ -75,11 +75,11 @@ kubectl get po -n kube-sysem --watch
 ```
 Devrait donné au bout de quelque minutes : `helm-install-kubeapps-4cdf8` avec status `COMPLETED`
 
-##### Ensuite connection à dex Idp pour s'authentifier avec github
+##### Ensuite connexion à dex Idp pour s'authentifier avec github
 
-Pour ajouter la couche d'authentification kubeapps fait appel à la solution [oauth2-proxy](https://oauth2-proxy.github.io/oauth2-proxy/docs/configuration/oauth_provider#github-auth-provider). Il s'agit donc d'un reverse proxy qui redirige le trafic http d'un client à un serveur implémentant oauth2 avant de permettre la connection à kubeapps.
+Pour ajouter la couche d'authentification kubeapps fait appel à la solution [oauth2-proxy](https://oauth2-proxy.github.io/oauth2-proxy/docs/configuration/oauth_provider#github-auth-provider). Il s'agit donc d'un reverse proxy qui redirige le trafic http d'un client à un serveur implémentant oauth2 avant de permettre la connexion à kubeapps.
 
-Cette authentification est associé à un cookie converti en base64 à partir d'un secret que l'on définie avec une commande simple : 
+Cette authentification est associée à un cookie converti en base64 à partir d'un secret que l'ont définie avec une commande simple : 
 
 ```bash
 echo "not-good-secret" | base64
@@ -91,11 +91,11 @@ echo "not-good-secret" | base64
 kubeapps_oauth_proxy_cookie_secret: bm90LWdvb2Qtc2VjcmV0Cg==
 ```
 
-`--oidc-issuer-url` est obligatoire quand l'on utilise pas un fournisseur d'authentification pré-concu comme github, gitlab, google, etc. Il faut donc le définir avec l'url de `dex` pour qu'il soit bien consommé par le client openid de oauth2-proxy.
+`--oidc-issuer-url` est obligatoire quand l'on n'utilise pas un fournisseur d'authentification pré-conçu comme github, gitlab, google, etc. Il faut donc le définir avec l'url de `dex` pour qu'il soit bien consommé par le client openid de oauth2-proxy.
 
 > Note : Pour consulter la configuration d'open id vous pouvez ouvrir l'url [dex.k3s.local/.well-known/openid-configuration](https://dex.k3s.local/.well-known/openid-configuration) dans votre navigateur.
 
-Ensuite on réutilise nos secrets de **dex idp** pour créer et configurer l'accès du container `authProxy` à opend id dans le pod `frontend` de kubeapps.
+Ensuite on réutilise nos secrets de **dex idp** pour créer et configurer l'accès du container `authProxy` à open id dans le pod `frontend` de kubeapps.
 
 ```yaml linenums="28" title="playbook/roles/kubeapps/templates/kubeapps-chart-crd.yml.j2"
     authProxy:
@@ -127,13 +127,13 @@ subjects:
 
 ```
 
-Nous voilà prêt à tester notre déploiement de kubeapps. Nous allons donc lancer notre test molecule et attendre son éxecution :
+Nous voilà prêt à tester notre déploiement de kubeapps. Nous allons donc lancer notre test molecule et attendre son exécution :
 
 ```bash
 molecule test --destroy never
 ```
 
-Une fois l'éxecution terminé, il faut attendre quelques secondes pour que tous les pods soient bien prêts. On peut alors se connecter à l'interface web de kubeapps en se connectant à l'adresse [https://kubeapps.k3s.local](https://kubeapps.k3s.local) et en utilisant notre compte github nous allons pouvoir nous connecter.
+Une fois l'exécution terminée, il faut attendre quelques secondes pour que tous les pods soient bien prêts. On peut alors se connecter à l'interface web de kubeapps en se connectant à l'adresse [https://kubeapps.k3s.local](https://kubeapps.k3s.local) et en utilisant notre compte github nous allons pouvoir nous connecter.
 
 Voici la page de login attendue :
 
@@ -145,7 +145,7 @@ Et voici la page de dashboard de kubeapps une fois connecté :
 
 ### Mise en place des tests de kubeapps
 
-Grâce au module ansible [k8s info](https://docs.ansible.com/ansible/latest/collections/kubernetes/core/k8s_info_module.html) on test les pods centraux de kubeapps. Si ces pod sont bien en état `ready` c'est que kubeapps est prêt
+Grâce au module ansible [k8s info](https://docs.ansible.com/ansible/latest/collections/kubernetes/core/k8s_info_module.html) on teste les pods centraux de kubeapps. Si ces pod sont bien en état `ready`, c'est que kubeapps est prêt
 
 > On note qu'il est important de préciser à `k8s_info` la localisation kubeconfig qui se trouve à un endroit un peu exotique avec k3s. Cette config comporte des informations utilisateur et des certificats permettant de se connecter sur le cluster.
 

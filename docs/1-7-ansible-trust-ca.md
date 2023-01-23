@@ -9,11 +9,11 @@ On a deux endroits où l'on va faire confiance à notre autorité de certificati
 
 #### Sur notre machine dans les différents pods ou mTLS 
 
-Les serveurs acceptent les certificats de notre autorité de certification et se font donc suffisament confiance entre eux pour établir une connection TLS.
+Les serveurs acceptent les certificats de notre autorité de certification et se font donc suffisamment confiance entre eux pour établir une connexion TLS.
 
-Pour que en interne nos serveur se fassent confiance nous avons besoin de récupérer le certificat racine de notre autorité de certification et de l'ajouter dans le trust store de nos serveurs. De plus il faut que ce certificat soit présent avant le démarrage de k3s pour valider les requètes de dex et kubeapps.
+Pour qu'en interne nos serveur se fassent confiance, nous avons besoin de récupérer le certificat racine de notre autorité de certification et de l'ajouter dans le trust store de nos serveurs. De plus il faut que ce certificat soit présent avant le démarrage de k3s pour valider les requêtes de dex et kubeapps.
 
-On utilise l'url du serveur staging `cert_manager_staging_ca_cert_url` qui est ici définit sur pebble pour récupérer ce certificat avant de jouer tous les rôles.
+On utilise l'url du serveur staging `cert_manager_staging_ca_cert_url` qui est ici défini sur pebble pour récupérer ce certificat avant de jouer tous les rôles.
 
 ```yaml linenums="1" title="playbook/roles/kubeapps/tasks/pre-import-cert.yml"
 
@@ -31,7 +31,7 @@ On utilise l'url du serveur staging `cert_manager_staging_ca_cert_url` qui est i
 
 ```
 
-Ensuite il nous faut stocker dans des facts ansible le contenu du certificat et des définitions de volumes que l'on va injecter dans nos containers.
+Ensuite, il nous faut stocker dans des facts ansible le contenu du certificat et des définitions de volumes que l'on va injecter dans nos containers.
 
 ```yaml linenums="13" title="playbook/roles/kubeapps/tasks/pre-import-cert.yml"
 - set_fact:
@@ -47,25 +47,25 @@ Ensuite il nous faut stocker dans des facts ansible le contenu du certificat et 
 
 ```
 
-Il faut ensuite absolument utiliser cette tâche avant le rôle sinon k3s va s'initialiser sans le certificat de letsencrypt digne de confiance et ne validera aucune connextion en TLS. (en particulier dex qui lui permet de controller le cluster avec l'api)
+Il faut ensuite absolument utiliser cette tâche avant le rôle sinon k3s va s'initialiser sans le certificat de Lets_encrypt digne de confiance et ne validera aucune connextion en TLS. (en particulier dex qui lui permet de controller le cluster avec l'api)
 
 ```yaml linenums="41" title="playbook/roles/kubeapps/molecule/default/converge.yml"
     - name: Import acme certificates
       include_tasks: "../../tasks/pre-import-cert.yml"
 ```
 
-Nous introduisons ensuite la variable `cert_manager_is_internal` qui nous permet de savoir si nous utilisons un acme spécial autre celui que le letsecrypt de production. Effectivement les acme locaux et staging ne sont pas référencés comme digne de confiance sur l'internet global.
+Nous introduisons ensuite la variable `cert_manager_is_internal` qui nous permet de savoir si nous utilisons un Acme spécial autre celui que le Lets-encrypt de production. Effectivement les acme locaux et staging ne sont pas référencés comme digne de confiance sur l'internet global.
 
 ```yaml linenums="14" title="playbook/roles/kubeapps/defaults/main.yml"
 cert_manager_is_internal: "{{ (cert_manager_staging_ca_cert_url | d('')) != '' }}"
 
 ```
 
-> L'idée est que si un url fournissant un certifiat est donné avec `cert_manager_staging_ca_cert_url` alors on considère que l'on est dans un environnement utilisant un lets encrypt de test ou recette.
+> L'idée est que si un url fournissant un certificat est donné avec `cert_manager_staging_ca_cert_url` alors on considère que l'on est dans un environnement utilisant un Lets-encrypt de test ou recette.
 
-Nous avons alors besoin de plusieurs choses pour importer notre certificat racine dans le "truststore" de nos serveurs.
+Nous avons alors besoin de plusieurs choses pour importer notre certificat racine dans le "trust-store" de nos serveurs.
 
-Une ressource kube configmap (ou secret) pour stocker le certificat racine que l'on a récupéré dans les étapes précédentes dans une variable `kubeapps_internal_acme_ca_content`.
+Une ressource Kubernetes `configmap` (ou `secret`) pour stocker le certificat racine que l'on a récupéré dans les étapes précédentes dans une variable `kubeapps_internal_acme_ca_content`.
 
 ```yaml linenums="1" title="playbook/roles/kubeapps/templates/trust-bundle-config-crd.yml.j2"
 apiVersion: v1
@@ -81,7 +81,7 @@ data:
 
 > `indent` sert à rajouter les espace à chaque lignes du certificat pour qu'il soit bien formatté dans le fichier yaml.
 
-**Cependant** nous remarquon avec `kubectl get cm -A` que la ressource n'est présente que dans le namespace `cert-manager` or nous avons besoin de la récupérer dans les autres namespaces.
+**Cependant,** nous remarquon avec `kubectl get cm -A` que la ressource n'est présente que dans le namespace `cert-manager` or nous avons besoin de la récupérer dans les autres namespaces.
 
 C'est pourquoi nous allons utiliser un module `trust-manager` fourni par jetstack pour partager cette ressource.
 
@@ -101,9 +101,9 @@ spec:
 
 ```
 
-> Warning : on fixe bien la version du chart car l'équipe de développement précise qu'ils apporterons des changements non rétrocompatible dans les prochaines versions.
+> Warning : on fixe bien la version du chart car l'équipe de développement précise qu'ils apporteront des changements non rétrocompatibles dans les prochaines versions.
 
-Puis on ajoute dans après notre configmap le trust-bundle dans un nouveau fichier pour partagé le certificat. Notre configmap s'organise avec le nom `acme-internal-ca-share` et une sous variable précisant le fichier `ca.crt`:
+Puis on ajoute dans après notre `configmap` le trust-bundle dans un nouveau fichier pour partagé le certificat. Notre configmap s'organise avec le nom `acme-internal-ca-share` et une sous variable précisant le fichier `ca.crt`:
 
 ```yaml linenums="1" title="playbook/roles/kubeapps/templates/trust-bundle-config-crd.yml.j2"
 ---
@@ -137,9 +137,9 @@ Ensuite, **il est essentiel** d'appeler dans l'ordre tous ces manifests que l'on
 
 Une fois cette configuration stocké nous allons pouvoir l'injecter dans les pods avec des `volumes`.
 
-Ces voluemes sont des espace de stockage qui seront monté dans les pods et qui seront accessible par les containers.
+Ces volumes sont des espaces de stockage qui seront monté dans les pods et qui seront accessible par les containers.
 
-Voici les objets volumes définie dans le fichier **vars.yml** de notre role kubeapps afin d'éviter qu'ils soient vide. Ils seront override si un `cert_manager_staging_ca_cert_url` est présent car on injectera l'autorité dans les pods.
+Voici les objets volumes définis dans le fichier **vars.yml** de notre role kubeapps afin d'éviter qu'ils soient vide. Ils seront override si un `cert_manager_staging_ca_cert_url` est présent, car on injectera l'autorité dans les pods.
 
 ```yaml linenums="7" title="playbook/roles/kubeapps/vars/main.yml"
 # Mounted in acme internal
@@ -149,7 +149,7 @@ kubeapps_internal_acme_ca_extra_volumes_mounts: []
 
 ```
 
-> **Note** `/etc/ssl/certs/` est le répertoire par défaut des certificats sur les images linux, ils sont très souvent supportés par les framework et langages de programmation. Ainsi on fera confiance à toute requètes https vers un serveur configurés avec un certificat signé par celle-ci.
+> **Note** `/etc/ssl/certs/` est le répertoire par défaut des certificats sur les images linux, ils sont très souvent supportés par les frameworks et langages de programmation. Ainsi on fera confiance à n'importe quelle requête https vers un serveur configurés avec le certificat signé par celle-ci.
 
 Voici un exemple d'utilisation des volumes dans kubernetes :
 
@@ -186,7 +186,7 @@ Les volumes sont **vide par défaut**, on les renseigne seulement à la fin de l
 
 #### Sur notre navigateur :
 
-Une autorité de certification est toujours initiée à partir d'une paire cryptographique faite d'une clé privée et d'un certificat contenant une clé publique. Comme pour d'autres protocole comme ssh ou même etherum il faut accepter le certificat racine de l'autorité contenant la clé publique.
+Une autorité de certification est toujours initiée à partir d'une paire cryptographique faite d'une clé privée et d'un certificat contenant une clé publique. Comme pour d'autres protocoles comme ssh ou même Ethereum il faut accepter le certificat racine de l'autorité contenant la clé publique.
 
 Vous pouvez le récupérer avec cette commande :
 
@@ -196,11 +196,11 @@ curl -k https://localhost:15000/roots/0 > ~/Downloads/pebble-ca.pem
 
 **Mac :**
 
-- Open Keychain Access
-- File > import items...
-- Select ~/Downloads/pebble-ca.pem
-- Right click on minica root ca choose get info
-- Open Trust and select Always Trust on When using this certificate
+- Ouvrir Trousseaux d'accès (Keychain Access)
+- Fichier > Importer des élements
+- Sélectionner `~/Downloads/pebble-ca.pem`
+- Clic droit sur "Pebble root ca" et sélectionner "Afficher les informations"
+- Ouvrir les droits et selectionner `Toujours faire confiance` quand on utilise ce certificat
 
 **Sur Linux** :
 

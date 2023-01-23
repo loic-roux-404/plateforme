@@ -5,7 +5,7 @@
 L'objectif de ce tutoriel est de vous permettre de créer sur une petite machine ou sur un serveur personnel un PaaS (Platform as a service). Un PaaS permet de déployer des applications en microservices. Celui-ci sera basé sur [kubernetes](https://kubernetes.io/fr/) pour la conteneurisation et [Kubeapps](https://kubeapps.dev/) pour l'interface de déploiement.
 
 L'optique de cet outillage suivra :
-- le principle **d'immutable infrastructure** avec l'idée de recréer plutôt que de mettre à jour. Ainsi nous aurons recour à des iso linux déjà prêt pour déployer la plateforme **kubernetes** / **kubeapps** directement sur un serveur.
+- le principe **d'immutable infrastructure** avec l'idée de recréer plutôt que de mettre à jour. Ainsi nous aurons recour à des iso linux déjà prêt pour déployer la plateforme **kubernetes** / **kubeapps** directement sur un serveur.
 
 - Le principe **d'infrastructure as code** (IaC) en gardant toutes la spécification de notre infrastructure dans des configurations et scripts. On utilisera également des tests basiques de nos configurations.
 
@@ -30,20 +30,22 @@ et les couches des systèmes de conteneurisation docker et kubernetes :
 
 Pour utilisateurs de **windows** il faut un [**WSL**](https://devblogs.microsoft.com/commandline/a-preview-of-wsl-in-the-microsoft-store-is-now-available/#how-to-install-and-use-wsl-in-the-microsoft-store). 
 
-First make sure you have these pre-requisites:
+**Pour WSL** :
 
-Are using a Windows 11 build or higher (Windows build number 22000 or higher)
-Have the Virtual Machine Platform optional component enabled
-You can do this by running: `dism.exe /online /enable-feature /featurename:VirtualMachinePlatform /all` in an elevated PowerShell prompt
+Vous utilisez une version de Windows 11 ou supérieure (numéro de version de Windows 22000 ou supérieur).
+Vous avez activé le composant optionnel Virtual Machine Platform
+Vous pouvez le faire en exécutant : `dism.exe /online /enable-feature /featurename:VirtualMachinePlatform /all` dans une invite PowerShell élevée.
 
-Click on this [link](https://aka.ms/wslstorepage) to go the WSL store page and click Install to install WSL.
+Cliquez sur ce [lien] (https://aka.ms/wslstorepage) pour accéder à la page du magasin WSL et cliquez sur Installer pour installer WSL.
+
+Traduit avec www.DeepL.com/Translator (version gratuite)
 
 - Télécharger après avoir suivi cette documentation la distribution linux ``Ubuntu 20.04.5 LTS`` depuis le windows store. 
-- **+ Windows terminal bien que pas obligatoire il est très pratique pour accèder au shell**
+- **+ Windows terminal bien que pas obligatoire il est très pratique pour accéder au shell**
 
 Ensuite dans vscode installer l'extension wsl `ms-vscode-remote.remote-wsl`.
 
-Laissez le ensuite finir de s'initialiser.
+Laissez-le ensuite finir de s'initialiser.
 
 ## Mise à jour de Linux
 
@@ -59,7 +61,7 @@ Puis activer `systemd` en modifiant `/etc/wsl.conf` dans votre distribution linu
 echo -e '[boot]\nsystemd=true' >> /etc/wsl.conf
 ```
 
-Puis redemarrer l'app Ubuntu. Si des problèmes appraissent encore lancer la comande `wsl --shutdown` depuis un powershell en administrateur avant de lancer le shell WSL.
+Puis redémarrer l'app Ubuntu. Si des problèmes apparaissent encore lancer la commande `wsl --shutdown` depuis un powershell en administrateur avant de lancer le shell WSL.
 
 Ensuite pour finaliser l'installation de docker pour éviter les problèmes de droit avec rancher desktop :
 
@@ -93,7 +95,7 @@ sudo systemctl restart docker
 
 **Conda** : [docs.conda.io](https://docs.conda.io/en/latest/miniconda.html). Installer simplement avec le setup `.pkg` pour mac.
 
-> Pour Linux et Windows avec WSL utilisez la ligne de commande ci dessous pour l'installer
+> Pour Linux et Windows avec WSL utilisez la ligne de commande ci-dessous pour l'installer
 ```bash
 wget https://repo.anaconda.com/miniconda/Miniconda3-latest-Linux-x86_64.sh -P /tmp
 chmod +x /tmp/Miniconda3-latest-Linux-x86_64.sh

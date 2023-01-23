@@ -29,11 +29,11 @@ resource "azurerm_key_vault_access_policy" "paas_vm" {
 }
 ```
 
-- La ressource `azurerm_user_assigned_identity` permet de créer une identité et d'ensuite accèder à ses informations de connection (tenant, service principal..)
+- La ressource `azurerm_user_assigned_identity` permet de créer une identité et d'ensuite accéder à ses informations de connexion (tenant, service principal...)
 
-- `azurerm_key_vault_access_policy` défini les permissions de l'identité sur le keyvault. Ici on lui donne les droits de lecture sur les secrets. `key_vault_id` est obligatoire pour lié la politique au keyvault.
+- `azurerm_key_vault_access_policy` défini les permissions de l'identité sur le keyvault. Ici on lui donne les droits de lecture sur les secrets. `key_vault_id` est obligatoire pour lier la politique au keyvault.
 
-#### Création de la vm
+#### Création de la VM
 
 ```hcl linenums="223" title="infra/main.tf"
 resource "azurerm_virtual_machine" "paas" {
@@ -104,9 +104,9 @@ Ce fichier cloud-init.yml est un [template terraform](https://developer.hashicor
 
 On ajoute donc un objet avec toutes les variables requises au bon fonctionnement du playbook.
 
-On rappele que `vault_url` est une variable qui contient l'url du keyvault azure et que l'on va l'utiliser avec ansible et le plugin lookup [`azure_keyvault_secret`](https://docs.ansible.com/ansible/devel/collections/azure/azcollection/azure_keyvault_secret_lookup.html) pour récupérer les secrets.
+On rappelé que `vault_url` est une variable qui contient l'url du keyvault azure et que l'on va l'utiliser avec ansible et le plugin lookup [`azure_keyvault_secret`](https://docs.ansible.com/ansible/devel/collections/azure/azcollection/azure_keyvault_secret_lookup.html) pour récupérer les secrets.
 
-> **Note** L'inventaire [playbook/inventories](playbook/inventories) a été créer dans les étapes précédente et se trouve dans notre image créer avec `packer`
+> **Note** L'inventaire [playbook/inventories](playbook/inventories) a été créer dans les étapes précédentes et se trouve dans notre image créer avec `packer`
 
 ```tf linenums="259" title="infra/main.tf"
     custom_data = templatefile(

@@ -2,11 +2,11 @@
 
 ---
 
-Il est inclu dans kubernetes deux façons d'authentifier les utilisateurs au cluster et ses resources api (`services`, `pods`, `secrets`...) :
+Il est inclus dans kubernetes deux façons d'authentifier les utilisateurs au cluster et ses resources api (`services`, `pods`, `secrets`...) :
 
-- Les Service accounts utilisés pour authentifié des processus qui se lancent dans les pods. Ils s'utilisent avec un simple token et des droits rattachés.
+- Les Services accounts utilisés pour authentifier des processus qui se lancent dans les pods. Ils s'utilisent avec un simple token et des droits rattachés.
 
-- Users et Groups (comme pour linux). Ces resources sont créer implicitement par un client open id connect fourni sous réserve d'activation par kubernetes.
+- Users et Groups (comme pour linux). Ces ressources sont créé implicitement par un client Open-id Connect fourni sous réserve d'activation par kubernetes.
 On optera pour cette méthode en utilisant comme serveur open id : **dex** idp qui consomme plusieurs fournisseurs d'accès externes (ou interne).
 
 
@@ -14,14 +14,14 @@ On optera pour cette méthode en utilisant comme serveur open id : **dex** idp q
 
 Créer une nouvelle organisation [ici](https://github.com/account/organizations/new) :
 
-- Sélectionner le free plan
+- Sélectionner le "free plan"
 - Choisissez un nom à l'organisation
 - Renseignez votre email
-- Cocher bien que elle vous appartient (rattaché à votre pseudo github)
+- Cocher bien qu'elle vous appartient (rattaché à votre pseudo github)
 
 > On peut créer une équipe particulière dans notre organisation qui pourra avoir accès à kubeapps. Le Lien vers le formulaire de création ressemble à ça : https://github.com/orgs/nom-de-ton-organisation/new-team.
 
-Nommez les comme vous voulez puis ajoutez la variable dans votre playbook de test (non conseillé en production, utilisez plutôt ansible-vault) :
+Nommez-les comme vous voulez puis ajoutez la variable dans votre playbook de test (non conseillé en production, utilisez plutôt ansible-vault) :
 
 ```yaml linenums="14" title="playbook/roles/kubeapps/molecule/default/converge.yml"
     dex_github_client_org: "esgi-lyon"
@@ -40,7 +40,7 @@ Configuré la comme ceci **pour l'instant** en utilisant les url en local qui ne
 
 Ensuite noté bien votre **Client Id** et générer un nouveau **Client secret** en plus.
 
-#### Encrypter les secrets de application github
+#### Encrypter les secrets de l'application github
 
 Nous allons crypter les Informations dangereuses dans un vault ansible que l'on pourra créer avec :
 
@@ -52,9 +52,9 @@ ansible-vault create --vault-password-file $HOME/.ansible/.vault molecule/defaul
 
 Renseigner un mot de passe dans le fichier `$HOME/.ansible/.vault`.
 
-> **Warning** : Ce mot de passe est utilisé pour décrypter les secrets de votre playbook de test. Il est donc important de le garder secret d'où une localisation à l'extérieure du repo.
+> **Warning** : Ce mot de passe est utilisé pour décrypter les secrets de votre playbook de test. Il est donc important de le garder secret d'où une localisation à l'extérieur du repo.
 
-> **Warning** Il est aussi recommandé de le stocker en double dans un gestionnaire de mot de passe ou autre gestionnaire de secret perfectionné (Github action, hashicorp vault...)
+> **Warning** Il est aussi recommandé de le stocker en double dans un gestionnaire de mot de passe ou autre gestionnaire de secret perfectionné (Github action, Hashicorp vault...)
 
 Vous devrez ensuite renseigner ces secrets afin de cacher les informations sensibles dans votre playbook de test.
 
@@ -74,7 +74,7 @@ ansible-vault edit molecule/default/group_vars/molecule/secrets.yml --vault-pass
 
 > Note : les **github secrets** de la CI/CD de github [https://github.com/domaine/repo/settings/secrets/actions](#) peuvent être une localisation idéale.
 
-Vous aviez créer un mot de passe mais ce n'est pas très pratique de devoir le retenir. Déplacez le dans un fichier `${HOME}/.ansible/.vault` pour pouvoir ouvrir les fichiers de secrets cryptés plus facilement les prochaines fois. (argument de ligne de commande `--vault-password-file`)
+Vous aviez créé un mot de passe, mais ce n'est pas très pratique de devoir le retenir. Déplacez-le dans un fichier `${HOME}/.ansible/.vault` pour pouvoir ouvrir les fichiers de secrets cryptés plus facilement les prochaines fois. (argument de ligne de commande `--vault-password-file`)
 
 ```bash
 echo 'my-pass' > $HOME/.ansible/.vault
@@ -82,9 +82,9 @@ echo 'my-pass' > $HOME/.ansible/.vault
 
 > Warning : en bash `>` écrase le fichier et `>>` ajoute à la fin du fichier. L'idéal est d'utiliser la commande `tee` à la place de ces opérandes.
 
-Puis on configure molecule pour utiliser le fichier de mot de passe et le groupe de variable **`molecule`** qui contient nos secret. Il est implicitement définie quand on créer le dossier `group_vars/molecule`:
+Puis on configure molecule pour utiliser le fichier de mot de passe et le groupe de variable **`molecule`** qui contient nos secrets. Il est implicitement défini quand on crée le dossier `group_vars/molecule`:
 
-Dans votre configuration de platforme de test molecule `node-0` :
+Dans votre configuration de plateforme de test molecule `node-0` :
 
 ```yaml linenums="12" title="playbook/roles/kubeapps/molecule/default/molecule.yml"
     groups:
@@ -107,7 +107,7 @@ Voilà, maintenant molecule importe les secrets et les rend disponible dans les 
 
 D'abord comme vu précédemment avec cert-manager on créer les variables par défaut requises par dex :
 
-D'abord des informations globales comme l'espace de nom kubernetes et l'url auquel on peut accèder au service.
+D'abord des informations globales comme l'espace de nom kubernetes et l'url par lequel on peut accéder au service.
 
 ```yaml linenums="16" title="playbook/roles/kubeapps/defaults/main.yml"
 # HelmChart Custom Resource Definition for dex oidc connector
@@ -117,7 +117,7 @@ dex_hostname: dex.k3s.local
 
 Ensuite on précise les informations de connexion à github ainsi que les celles qui permettrons au client de notre openid de se connecter. On laisse ces informations à null dans un but de documentation.
 
-> On prend un raccourci avec le secret mais dans l'inventaire ansible final on renseignera des secrets plus sécurisées.
+> On prend un raccourci avec le secret, mais dans l'inventaire ansible final on renseignera des secrets plus sécurisés.
 
 ```yaml
 dex_client_id: kubeapps
@@ -127,7 +127,7 @@ dex_github_client_secret: ~
 dex_github_client_org: ~
 dex_github_client_team: ~
 ```
-> **INFO** Le client open id est ici kubeapps. Pour résumé après ce schéma, kubeapps se sert du **claim open id** `groups` (qui aura ici comme valeur `esgi-lyon:ops-team`) renvoyé par dex pour accèder aux ressources du cluster autorisées par son rôle.
+> **INFO** Le client open id est ici kubeapps. Pour résumé après ce schéma, kubeapps se sert du **claim open id** `groups` (qui aura ici comme valeur `esgi-lyon:ops-team`) renvoyé par dex pour accéder aux ressources du cluster autorisées par son rôle.
 
 Voici un schéma pour imager comment ce claim open id va servir à sécuriser l'attribution des droits en plus de la connection au cluster.
 
@@ -139,9 +139,9 @@ k3s|<--|        |<-------| openid |                      | oauth2   |
                          
 ```
 
-> **WARN** Le `dex_client_secret` par défaut n'est pas du tout sécurisé et doit être changé en production
+> **Warning** Le `dex_client_secret` par défaut n'est pas du tout sécurisé et doit être changé en production
 
-Ensuite, définissons un manifest utilisant helm pour installer facilement dex sur le cluster kubernetes. Implicitement seront créer des fichiers d'attributions de droit au cluster, le fichier de déploiement des pod et les services exposants des noms et addresses dans le cluster.
+Ensuite, définissons un manifest utilisant helm pour installer facilement dex sur le cluster kubernetes. Implicitement seront créer des fichiers d'attributions de droit au cluster, le fichier de déploiement des pod et les services exposants des noms et adresses dans le cluster.
 
 On commence par créer le namespace
 
@@ -167,7 +167,7 @@ spec:
   repo: https://charts.dexidp.io
 ```
 
-Dans le `valuesContent` nous allons renseigner trois prncipaux objets de configuration :
+Dans le `valuesContent` nous allons renseigner trois principaux objets de configuration :
 
 **`config`** qui configure l'application web dex avec :
   - Le `issuer` est l'url de base de dex. Il est utilisé pour construire les urls de redirection et de callback.
@@ -212,7 +212,7 @@ Voici la configuration qui réutilise les variables de notre application oauth g
 
 Ensuite on configure le ingress pour que dex soit accessible depuis l'extérieur du cluster. 
 
-Pour cela on donne une listes d'hôtes pour lesquels les requètes amènerons bien au **service** dex (port 5556).
+Pour cela on renseigne des d'hôtes pour lesquels les requêtes amènerons bien au **service** dex (port 5556).
 
 Un **servive** kubernetes est toujours créer en accompagnement d'un **déploiement** et se voit automatiquement attribué une addresse ip interne. Ici le service sera de type `clusterIp`.
 
@@ -268,7 +268,7 @@ kind: Service
     loadBalancer: {}
 ```
 
-Ensuite on met en place le ingress pour associer les noms d'hôtes à ce service pour le traffic externe. (reverse proxy)
+Ensuite on met en place le ingress pour associer les noms d'hôtes à ce service pour le trafic externe. (reverse proxy)
 
 On utilise ici le certificat délivré par cert-manager au travers d'un secret `{{ dex_hostname }}-tls` automatiquement créer par l'issuer cert-manager activé avec : `cert-manager.io/cluster-issuer: letsencrypt-acme-issuer`.
 
@@ -293,7 +293,7 @@ On utilise ici le certificat délivré par cert-manager au travers d'un secret `
 
 > Note: `traefik.ingress.kubernetes.io/router.tls: "true"` est nécessaire pour que traefik redirige les requêtes http vers https.
 
-Enfin le plus important, il faut intégré dex dans le flux d'authentification de kubernetes. Pour cela on active le plugin oidc avec de nouveau argument de configuration de k3s.
+Enfin le plus important, il faut intégrer dex dans le flux d'authentification de kubernetes. Pour cela on active le plugin oidc avec de nouveau argument de configuration de k3s.
 
 On ajoute donc les variables dans le fichier meta du rôle pour influencer l'installation de k3s avec ces variables. C'est la principale raison de l'utilisation de la pré-tâche `playbook/roles/kubeapps/tasks/pre-import-cert.yml` du certificat avant le rôle.
 
@@ -309,6 +309,6 @@ On ajoute donc les variables dans le fichier meta du rôle pour influencer l'ins
 
 ```
 
-Open id configuré sur kubernetes nous sommme prêt à faire fonctionner kubeapps avec dex car ils peuvent maintenant communiquer en Tls entre eux et dex peut autorisé des connextion open id valides à contrôler k3s.
+Open id configuré sur kubernetes nous sommes prêt à faire fonctionner kubeapps avec dex car ils peuvent maintenant communiquer en Tls entre eux et dex peut autoriser des connexion open id valides à contrôler k3s.
 
 ---
