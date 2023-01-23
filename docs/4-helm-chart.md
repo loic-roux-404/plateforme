@@ -8,6 +8,8 @@ Une instance exécutée d'une chart avec une configuration spécifique est appel
 
 Ce chart sert à implémenter les fonctionnalités d'un ensemble de manifests kubernetes `deployment,service,ingress`. Nous n'allons pas aller trop loin et nous contenter de seulement ces fonctionnalités de déploiement. Nous aurons un chart générique que l'on va utiliser pour chaque micro services.
 
+> Warning: La configuration que nous allons concevoir est très simple et ne prend pas en compte les bonnes pratiques de sécurité au niveau de des utilisateurs de postgresql.
+
 ### Installation
 
 Sur Linux / mac
@@ -45,6 +47,12 @@ Le build devrait se terminé par un message comme celui ci :
 Successfully built image 'docker.io/loicroux/client:latest'
 ```
 
+Puis pousser l'image avec un tag de version pour pouvoir la pull avec kubernetes après :
+  
+```bash
+docker push loicroux/client:latest
+```
+
 ### Création d'un chart pour un microservice
 
 ```bash
@@ -69,6 +77,38 @@ On change donc seulement les valeurs par défaut du ingress pour qu'il utilise t
   annotations:
     kubernetes.io/ingress.class: traefik
     cert-manager.io/cluster-issuer: letsencrypt-acme-issuer
+```
+
+Ensuite, on ajoute la possibilité de configurer le port du container car dans notre helm par défaut il est forcé sur 80 alors que nos microservice utilisent tous des ports différents.
+
+```yaml linenums="53" title="chart/values.yml"
+container:
+  port: 80
+```
+
+Puis dans le template `deployment.yaml` on place cette configuration dynamique :
+
+```yaml linenums="38" title="charts/microservice/templates/deployment.yaml"
+          ports:
+            - name: http
+              containerPort: {{ .Values.container.port }}
+              protocol: TCP
+
+```
+
+On va aussi enlever le endpoint de vérification de la santé d'un service car nous n'avons pas de route `/actuator/health` (module de spring boot) dans nos microservices.
+
+**Voici les lignes à supprimer** :
+
+```yaml linenums="42" title="charts/microservice/templates/deployment.yaml"
+          livenessProbe:
+            httpGet:
+              path: /
+              port: http
+          readinessProbe:
+            httpGet:
+              path: /
+              port: http
 ```
 
 ### Mise en place de la dépendance du micro service : postgres
@@ -146,7 +186,7 @@ env:
   secret:
     PG_USER: ekommerce
     PG_PASSWORD: password
-    PG_CONNECTION: jdbc:postgresql://postgres.default.pod.cluster.local:5432/db
+    PG_CONNECTION: jdbc:postgresql://client-postgresql.default.svc.cluster.local:5432/db
 
 ```
 
@@ -154,10 +194,9 @@ Puis on configure le chart postgres pour qu'il utilise les secrets définis dans
 
 ```yaml linenums="25" title="charts/microservice/values.yaml"
 auth:
+  database: db
   username: ekommerce
-  existingSecret: all-secrets
-  secretKeys:
-    userPasswordKey: PG_PASSWORD
+  password: password
 
 ```
 
@@ -275,9 +314,9 @@ Cliquez sur `Add Package Repository` puis renseigner les informations suivantes 
 
 Enfin vous pouvez rechercher l'application `chart` dans le `Catalog` de kubeapps et le déployé dans le namespace de votre choix. Arrêter vous bien à l'étape de configuration du chart avant de le déployer.
 
-**Dans la configuration** vous pourrez mettre en place :
+**Dans la configuration** vous pourrez mettre en place en modifiant les valeurs par défaut :
 
-- Un container de votre choix, ici j'ai utilisé l'image docker que j'ai créé précédemment pour le microservice fraude.
+- Un container de votre choix, ici j'ai utilisé l'image docker que j'ai créé précédemment pour le microservice client.
 
 ```yaml
 image:
@@ -287,26 +326,26 @@ image:
 
 ```
 
-- un ingress avec un certificat TLS automatique.
+- Le port du container en fonction de la configuration `server.port` dans le application.yaml de votre microservice. Ici c'est pour le client 8080.
 
 ```yaml
+container:
+  port: 8080
+```
+
+- Un ingress avec un certificat TLS automatique.
+
+```yaml
+ingress:
+  # ...
+  enabled: false
   hosts:
-    - host: fraud.k3s.local
+    - host: client.k3s.local
       paths:
         - path: /
           pathType: ImplementationSpecific
   tls:
     - hosts:
-        - fraud.k3s.local
-      secretName: fraud.k3s.local-tls
+        - client.k3s.local
+      secretName: client.k3s.local-tls
 ```
-
-Attention cela ne risque de ne pas fonctionner correctement, car les microservices ont une dépendance à postgresql. Il faudra donc bien configurer le helm chart de postgres en dépendance comme cela :
-
-```yaml
-auth.username: ekommerce
-auth.password: password
-auth.database: client
-```
-
----
