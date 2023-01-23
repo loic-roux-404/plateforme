@@ -6,9 +6,6 @@ theme:
     - content.code.copy
     - content.action.edit
 plugins:
-  - gen-files:
-      scripts:
-        - index.yaml
   - print-site:
       enumerate_headings: false
       add_to_navigation: true
