@@ -5,7 +5,7 @@
 replicaCount: 1
 
 image:
-  repository: loicroux/fraude
+  repository: loicroux/client
   pullPolicy: IfNotPresent
   # Overrides the image tag whose default is the chart appVersion.
   tag: "latest"
@@ -19,14 +19,14 @@ secret:
 env:
   secret:
     PG_USER: ekommerce
+    PG_CONNECTION: jdbc:postgresql://client-postgresql.default.svc.cluster.local:5432/db
     PG_PASSWORD: password
-    PG_CONNECTION: jdbc:postgresql://postgres.default.pod.cluster.local:5432/db
 
 auth:
+  enablePostgresUser: false
+  database: db
   username: ekommerce
-  existingSecret: all-secrets
-  secretKeys:
-    userPasswordKey: PG_PASSWORD
+  password: password
 
 serviceAccount:
   # Specifies whether a service account should be created
@@ -49,6 +49,9 @@ securityContext: {}
   # readOnlyRootFilesystem: true
   # runAsNonRoot: true
   # runAsUser: 1000
+
+container:
+  port: 80
 
 service:
   type: ClusterIP
