@@ -4,4 +4,7 @@ certs/*
 .env
 playbook/vault-password.txt
 charts/**/*.tgz
+# mkdocs
 site
+# helm charts index file
+index.yaml
