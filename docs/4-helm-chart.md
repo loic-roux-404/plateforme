@@ -83,7 +83,7 @@ Ensuite, on ajoute la possibilité de configurer le port du container car dans n
 
 ```yaml linenums="53" title="chart/values.yml"
 container:
-  port: 80
+  port: 8080
 ```
 
 Puis dans le template `deployment.yaml` on place cette configuration dynamique :
@@ -129,6 +129,44 @@ dependencies:
 Puis on met à jour les dépendances avec la commande `helm dependency update charts/microservice`.
 
 > Cette commande génère un `Chart.lock` qui va permettre de bloquer les versions des dépendances.
+
+Il est temps de configurer un emplacement de stockage permanent pour votre déploiement PostgreSQL. Pour ce faire, vous allez créer un `PersistentVolume` (PV) et un `PersistentVolumeClaim` (PVC) dans Kubernetes.
+
+Un PV est une ressource Kubernetes qui est utilisée pour stocker les données de vos applications. Il existe plusieurs types de PV pris en charge par Kubernetes, tels que les répertoires locaux et les fournisseurs de stockage cloud tiers tels qu'Amazon EBS et AzureDisk.
+
+Un PVC est un moyen pour votre application d'utiliser un PV spécifique. Le PVC est utilisé pour monter le PV au pod de votre application.
+
+Pour créer un stockage persistant, vous devrez créer deux nouveaux manifests Kubernetes que l'on place tous les deux dans un template volume.yaml. Le premier manifeste est un PV qui définit le stockage persistant. Le second manifeste est un PVC qui définit la revendication de stockage persistant.
+
+```yaml linenums="1" title="charts/microservice/templates/persistence.yaml"
+apiVersion: v1
+kind: PersistentVolume # Create a PV
+metadata:
+  name: postgresql-data # Sets PV's name
+  labels:
+    type: local # Sets PV's type to local
+spec:
+  storageClassName: manual
+  capacity:
+    storage: 10Gi # Sets PV Volume
+  accessModes:
+    - ReadWriteOnce
+  hostPath:
+    path: "/data/volume" # Sets the volume's path
+---
+apiVersion: v1
+kind: PersistentVolumeClaim # Create PVC
+metadata:
+  name: postgresql-data-claim # Sets name of PV
+spec:
+  storageClassName: manual
+  accessModes:
+    - ReadWriteOnce # Sets read and write access
+  resources:
+    requests:
+      storage: 2Gi # Sets volume size
+
+```
 
 ### Helper et secrets dans helm
 
@@ -193,11 +231,14 @@ env:
 Puis on configure le chart postgres pour qu'il utilise les secrets définis dans le chart microservice.
 
 ```yaml linenums="25" title="charts/microservice/values.yaml"
-auth:
-  database: db
-  username: ekommerce
-  password: password
-
+postgresql:
+  auth:
+    existingSecret: all-secrets
+    secretKeys:
+      userPasswordKey: PG_PASSWORD
+    enablePostgresUser: false
+    database: db
+    username: ekommerce
 ```
 
 Nous pouvons vérifier avec `helm lint charts/microservice` si il n'y a pas d'erreurs puis aussi voir le résultat de notre chart avec `helm template charts/microservice`

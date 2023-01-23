@@ -22,11 +22,16 @@ env:
     PG_CONNECTION: jdbc:postgresql://client-postgresql.default.svc.cluster.local:5432/db
     PG_PASSWORD: password
 
-auth:
-  enablePostgresUser: false
-  database: db
-  username: ekommerce
-  password: password
+postgresql:
+  auth:
+    password: password
+    enablePostgresUser: false
+    database: db
+    username: ekommerce
+  primary:
+    persistence:
+      enabled: true
+      existingClaim: "postgresql-data-claim"
 
 serviceAccount:
   # Specifies whether a service account should be created
@@ -51,7 +56,7 @@ securityContext: {}
   # runAsUser: 1000
 
 container:
-  port: 80
+  port: 8080
 
 service:
   type: ClusterIP
@@ -64,14 +69,14 @@ ingress:
     kubernetes.io/ingress.class: traefik
     cert-manager.io/cluster-issuer: letsencrypt-acme-issuer
   hosts:
-    - host: chart-example.local
+    - host: client.k3s.local
       paths:
         - path: /
           pathType: ImplementationSpecific
   tls: []
-  #  - secretName: chart-example-tls
+  #  - secretName: client.k3s.local-tls
   #    hosts:
-  #      - chart-example.local
+  #      - client.k3s.local
 
 resources: {}
   # We usually recommend not to specify default resources and to leave this as a conscious
