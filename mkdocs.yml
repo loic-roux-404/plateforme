@@ -6,14 +6,18 @@ theme:
     - content.code.copy
     - content.action.edit
 plugins:
-  - print-site
+  - print-site:
+      enumerate_headings: false
+      add_to_navigation: true
 
 repo_url: https://github.com/esgi-lyon/paas-tutorial
 markdown_extensions:
   - markdown.extensions.extra
+  - toc:
+      permalink: true
   - pymdownx.highlight:
       anchor_linenums: true
   - pymdownx.inlinehilite
   - pymdownx.snippets
   - pymdownx.superfences
-edit_uri: ./edit/main
+edit_uri: ./edit/main/docs

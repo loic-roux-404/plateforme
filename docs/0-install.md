@@ -22,6 +22,8 @@ Pour rappel l'architecture de base de docker :
 
 ![docker architecture](https://docs.docker.com/engine/images/architecture.svg)
 
+> Source documentation docker
+
 et les couches des systèmes de conteneurisation docker et kubernetes :
 
 ![docker k8s architecture](images/kube-archi.png)
