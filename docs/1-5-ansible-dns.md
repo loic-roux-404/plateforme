@@ -8,11 +8,11 @@ Dans notre stack on a besoin de deux serveurs de nom, soit un interne **coredns*
 
 ### Dnsmasq pour résoudre les noms de domaines en local
 
-L'objectif va être de pouvoir utiliser des domaines de test en local. Par exemple on veut utiliser dex.k3s.local pour accèder à l'authentifcation de notre cluster kubernetes.
+L'objectif va être de pouvoir utiliser des domaines de test en local. Par exemple on veut utiliser `dex.k3s.local` pour accéder à l'authentification de notre cluster kubernetes.
 
 L'installation sur **mac** est un peu différente de celle de Linux là voici pour commencer :
 
-- `brew install dnsmasq` (si vous n'avez pas encore homberew c'est [ici pour l'installer](https://brew.sh/index_fr))
+- `brew install dnsmasq` (si vous n'avez pas encore Homebrew c'est [ici pour l'installer](https://brew.sh/index_fr))
 
 - Créer le répertoire des configurations `mkdir -pv $(brew --prefix)/etc/`
 
@@ -24,20 +24,20 @@ export DNSMASQ_CNF_DIR="$(brew --prefix)/etc/dnsmasq.conf"
 
 Pour **Linux** :
 
-- Commencer par désactiver le resolveur par défaut qui écoute sur le port `53`
+- Commencer par désactiver le résolveur par défaut qui écoute sur le port `53`
 ```sh
 sudo systemctl disable systemd-resolved
 sudo systemctl stop systemd-resolved
 ```
 
-- Surpprimer la configuration du résolveur par défaut
+- Supprimer la configuration du résolveur par défaut
 
 ```sh
 ls -lh /etc/resolv.conf
 sudo rm /etc/resolv.conf
 ```
 
-- Installer le package: `sudo apt install -y dnsmasq`
+- Installer le package : `sudo apt install -y dnsmasq`
 
 - Préparer une variable pointant vers la config dnsmasq pour l'étape suivante :
 
@@ -47,7 +47,7 @@ export DNSMASQ_CNF_DIR="/etc/dnsmasq.conf"
 
 Pour **Linux** et **Mac** mettons ainsi tout en place :
 
-- On précise bien que l'on veut résoudre toute les requète vers le domaine `.dev` avec l'adresse IP 127.0.0.1 : 
+- On précise bien que l'on veut résoudre toute les requètes vers le domaine `.dev` avec l'adresse IP 127.0.0.1 : 
 
 ```sh
 echo 'port=53' >> $DNSMASQ_CNF_DIR
@@ -76,11 +76,11 @@ resolver ...
 
 ### Edition de coredns pour utiliser les url externes
 
-Par défaut notre réseau est privée dans kubernetes, on ne peux accèder que aux serveurs de nom les plus répandus comme google (8.8.8.8) ou cloudflare (1.1.1.1) et celui de `coredns`. Cela veut dire que l'on accède seulement à internet et à nos pods mais nous avons ici besoin d'accèder à pebble situé sur le réseau local.
+Par défaut notre réseau est privée dans kubernetes, on ne peut accéder qu'aux serveurs de nom les plus répandus comme google (8.8.8.8) ou cloudflare (1.1.1.1) et celui de `coredns`. Cela veut dire que l'on accède seulement à internet et à nos pods mais nous avons ici besoin d'accéder à pebble situé sur le réseau local.
 
-> **Note** : **Coredns** est l'outil qui fait office d'un des services coeur de kubernetes au même titre que ke kube-controller-manager par exemple. Ici il va donc s'agir du composant kube-dns.
+> **Note** : **Coredns** est l'outil qui fait office d'un des services coeurs de kubernetes au même titre que kube-controller-manager par exemple. Ici il va donc s'agir du composant kube-dns.
 
-On va donc se préparer à surcharger la configuration par défaut de coredns en appliquant un simple manifest de type `ConfigMap`. Ce type permet de simplement définir des variables ou le contenu d'un fichier. Ici on va décrire le contenu d'un fichier Corefile qui va être monté au travers d'un volume au container coredns.
+On va donc se préparer à surcharger la configuration par défaut de coredns en appliquant un simple manifest de type `ConfigMap`. Ce type permet de simplement définir des variables ou le contenu d'un fichier. Ici on va décrire le contenu d'un fichier `Corefile` qui va être monté au travers d'un volume au container coredns.
 
 Voici la configuration par défaut :
 
@@ -115,11 +115,11 @@ data:
     }
 ```
 
-Le ingress **en local** n'est pas accessible depuis nos pods, nous allons donc avoir besoin de son ip pour l'associer au différents noms de domaines que l'on va utiliser. (dex.k3s.local / kubeapps.k3s.local).
+Le ingress **en local** n'est pas accessible depuis nos pods, nous allons donc avoir besoin de son ip pour l'associer aux différents noms de domaines que l'on va utiliser. (`dex.k3s.local` / `kubeapps.k3s.local`).
 
-Nous allons ainsi créer une nouvelles suite de tâche pour déduire les addresses réseau requises pour coredns.
+Nous allons ainsi créer une nouvelle suite de tâche pour déduire les adresses réseau requises pour coredns.
 
-On créer un fichier `tasks/internal-acme.yml` présentant ce code pour récupérer l'addresse ip de l'ingress à l'aide du module k8s_info d'ansible :
+On crée un fichier `tasks/internal-acme.yml` présentant ce code pour récupérer l'addresse ip de l'ingress à l'aide du module `k8s_info` d'ansible :
 
 ```yaml linenums="1" title="playbook/roles/kubeapps/tasks/internal-acme.yml"
 ---
@@ -145,15 +145,15 @@ On créer un fichier `tasks/internal-acme.yml` présentant ce code pour récupé
 
 ```
 
-Maintenant la variable `kubeapps_ingress_controller_ip` est disponible et prête à être associé à une entrée dns. Cette variable nous sert à détécté que nous sommes bien en local
+Maintenant la variable `kubeapps_ingress_controller_ip` est disponible et prête à être associé à une entrée dns. Cette variable nous sert à détecter que nous sommes bien en local
 
-Venons en donc à la définitions des nom d'hôte des applications 
+Venons en donc à la définition des noms d'hôte des applications 
 
-> Ils seront déployés dans les étapes suivantes donc n'essayer pas d'y accèder pour l'instant.
+> Ils seront déployés dans les étapes suivantes donc n'essayer pas d'y accéder pour l'instant.
 
-En sachant que le principe de base d'un dns est d'associé une adresse ip à un nom de domaine nous allons simplement associés les deux addresses `k3s.local` hériteé de notre dns local (dnsmasq) vers le ingress. Ainsi le traffic interne comme externe en direction de ces adresses arrivera bien au même endroit.
+En sachant que le principe de base d'un dns est d'associé une adresse ip à un nom de domaine, nous allons simplement associés les deux addresses `k3s.local` hériteé de notre dns local (dnsmasq) vers le ingress. Ainsi le trafic interne comme externe en direction de ces adresses arrivera bien au même endroit.
 
-> **WARN** Nous faisons cela en réseau local mais si notre serveur est en ligne nous ne serons pas obligé de le faire car on passera par des dns (typoquement google, cloudflare...) capable de résoudre notre nom de domaines public et ses sous domaines.
+> **WARN** Nous faisons cela en réseau local, mais si notre serveur est en ligne nous ne serons pas obligé de le faire car on passera par des dns (typoquement google, cloudflare...) capable de résoudre notre nom de domaines public et ses sous domaines.
 
 [playbook/roles/kubeapps/templates/core-dns-config-crd.yml.j2](playbook/roles/kubeapps/templates/core-dns-config-crd.yml.j2#L28)
 

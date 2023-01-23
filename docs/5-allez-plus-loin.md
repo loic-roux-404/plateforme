@@ -2,12 +2,12 @@
 
 ### FAQ
 
-J'ai essayé plusieurs fois le provision de la vm avec des configurations différentes me forçant ainsi à apply / destroy la stack plusieurs fois. Cependant, maintenant je n'arrive plus à accèder à l'url avec une **erreur dns** ?
+J'ai essayé plusieurs fois le provision de la vm avec des configurations différentes me forçant ainsi à apply / destroy la stack plusieurs fois. Cependant, maintenant je n'arrive plus à accéder à l'url avec une **erreur dns** ?
 
 Il s'agit probablement du cache dns qui vous renvoi l'entrée ip d'une ancienne vm car le time to live n'a pas encore expiré. Pour cela dans chrome nous devons nettoyer ce cache pour faire comme si nous n'étions jamais aller sur le site.
-Dans votre navigateur chrome [chrome://net-internals/#dns]() faites un clear host cache et réessayez.
+Dans votre navigateur chrome [chrome://net-internals/#dns]() faites "un clear host cache" et réessayez.
 
-> Pour faire des tests en cas réel, il est préférable d'utiliser des entrées `dex_hostname` et `kubeapps_hostname` différentes que vous n'utlisez pas pour un environement (staging ou production).
+> Pour faire des tests en cas réel, il est préférable d'utiliser des entrées `dex_hostname` et `kubeapps_hostname` différentes que vous n'utilisez pas pour un environnement (staging ou production).
 
 ### Exercice
 
@@ -17,7 +17,7 @@ Il faudra bien veillez à créer les variables manquantes dans packer (nom image
 
 ### Kubernetes sur Vscode
 
-Pour consolider le debuggage de notre environnement de dev ops nous pouvons intégré notre cluster kubernetes dans l'IDE vscode.
+Pour consolider le deboggage de notre environnement de dev ops nous pouvons intégrer notre cluster kubernetes dans l'IDE vscode.
 
 Nous allons chercher la kubeconfig dans notre container qui embarque K3s et le cluster.
 Récupérez l'identifiant du container avec :
@@ -53,7 +53,7 @@ On check ensuite avec `kubectl cluster-info` qui devrait nous donner les informa
     }
 ```
 
-Et voilà vous avez accès à une interface pour controller votre cluster directement depuis vscode. Utiliser cette configuration `json` autant que vous voulez dans les repository de vos applications pour avoir une expérience au plus proche de la production.
+Et voilà vous avez accès à une interface pour contrôler votre cluster directement depuis vscode. Utiliser cette configuration `json` autant que vous voulez dans les repository de vos applications pour avoir une expérience au plus proche de la production.
 
 # Sources
 

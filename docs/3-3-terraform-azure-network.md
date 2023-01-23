@@ -2,7 +2,7 @@
 
 #### Création de l'environnement réseau
 
-Ces directives sont essentiellement tirées de la documentation officielle de terraform pour azure. Il faut savoir que l'usage d'azure pour créer une machine nous indique l'utilisation d'un réseau virtuel (DHCP) et d'un sous-réseau afin de la rendre accessible avec une addresse IP privée.
+Ces directives sont essentiellement tirées de la documentation officielle de terraform pour azure. Il faut savoir que l'usage d'azure pour créer une machine nous indique l'utilisation d'un réseau virtuel (DHCP) et d'un sous-réseau afin de la rendre accessible avec une adresse IP privée.
 
 `azurerm_virtual_network` et `azurerm_subnet` nous permettent de faire ça facilement dans notre groupe de ressources.
 
@@ -89,7 +89,7 @@ resource "azurerm_network_interface" "paas" {
 
 #### Configuration de la zone dns
 
-Azure a de très bon outils pour la gestion des zones dns. On va donc utiliser le provider `azurerm` pour créer une zone et récupérer les serveurs dns associés.
+Azure a de très bons outils pour la gestion des zones dns. On va donc utiliser le provider `azurerm` pour créer une zone et récupérer les serveurs dns associés.
 
 ```tf linenums="171" title="infra/main.tf"
 ############

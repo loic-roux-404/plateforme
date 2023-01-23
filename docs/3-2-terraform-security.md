@@ -53,7 +53,7 @@ resource "github_team_membership" "opsteam_members" {
 
 #### Création du key vault et des secrets
 
-Pour des raisons essentitelles de sécurité nous mettons à disposition de la machine virtuelle un stockage de secrets sécurisé grâce à la ressource terraform `azurerm_key_vault`
+Pour des raisons essentielles de sécurité nous mettons à disposition de la machine virtuelle un stockage de secrets sécurisé grâce à la ressource terraform `azurerm_key_vault`
 
 ```tf linenums="17" title="infra/main.tf"
 ############
@@ -96,11 +96,11 @@ resource "azurerm_key_vault" "paas" {
 
 On nomme donc ce keyvault avec une ressource de nom aléatoire `random_id` puis on lui associe les informations habituelles du groupe de ressource.
 
-`soft_delete_retention_days` permet de définir le nombre de jours pendant lesquels des secrets supprimés pourront être réstaurés.
+`soft_delete_retention_days` permet de définir le nombre de jours pendant lesquels des secrets supprimés pourront être restaurés.
 
 `tenant_id` permet de définir le propriétaire du keyvault.
 
-Ensuite nous utilisons des propriétés de base pour rendre les secrets accessibes pour différents type d'utilisation, définir le type de keyvault et son cycle de vie.
+Ensuite nous utilisons des propriétés de base pour rendre les secrets accessibles pour différents types d'utilisations, définir le type de keyvault et son cycle de vie.
 
 Le block `lifecycle` est une fonctionnalité de terraform qui change la façon dont est recréer la ressource avant une modification.
 
@@ -108,7 +108,7 @@ Enfin le plus important est le block `access_policy` qui permet de définir les 
 
 ##### Utilisons maintenant le keyvault pour stocker nos secrets
 
-Pour stocker nos secrets nous utilisons la ressource `azurerm_key_vault_secret` qui permet de stocker des secrets dans le keyvault créé précédemment. Nous allons utiliser les secrets créer dans `variables.tf` ainsi que des mots de passes générés aléatoirement pour certaines configurations de `dex` et `kubeapps`.
+Pour stocker nos secrets, nous utilisons la ressource `azurerm_key_vault_secret` qui permet de stocker des secrets dans le keyvault créé précédemment. Nous allons utiliser les secrets créer dans `variables.tf` ainsi que des mots de passes générés aléatoirement pour certaines configurations de `dex` et `kubeapps`.
 
 ```tf linenums="53" title="infra/main.tf"
 # Kubeapps OAuth Proxy

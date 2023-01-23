@@ -22,18 +22,18 @@ Après nous allons utiliser des noms de domaines offert par **name.com** :
 
 - Dans **domains** chercher un domaine en `.live` de votre choix (par exemple `paas-tutorial-lesgi.live`)
 
-- Ensuite ajoutez le au panier et aller à checkout en cliquant à nouveau. [`Panier > Checkout`](https://www.name.com/account/checkout) Le code promo est censé être appliqué automatiquement grâce à la connection à Github.
+- Ensuite ajoutez le au panier et aller à checkout en cliquant à nouveau. [`Panier > Checkout`](https://www.name.com/account/checkout) Le code promo est censé être appliqué automatiquement grâce à la connexion à Github.
 
 - Ensuite poursuivez en vous inscrivant à name.com et validez votre email puis valider l'achat qui ne doit rien vous couter si la manipulation à a été faite correctement.
 
-## Lancement de la vm avec Terraform
+## Lancement de la VM avec Terraform
 
 Introduction sur terraform [doc](https://www.terraform.io/intro/index.html)
 
-Cet Outil de codage déclaratif ou d'**IaC** (infrastructure as code), Terraform permet d'utiliser un langage de configuration appelé HCL (HashiCorp Configuration Language) à la place de l'API d'un fournisseur de cloud. On peu ainsi décrire l'infrastructure cloud de manière déclarative et automatisée avec une seule simple ligne de commande. Terraform génère ensuite un plan permettant d'atteindre un état final de l'infrastructure et exécute le plan pour mettre à disposition l'infrastructure.
+Cet Outil de codage déclaratif ou d'**IaC** (infrastructure as code), Terraform permet d'utiliser un langage de configuration appelé HCL (HashiCorp Configuration Langage) à la place de l'API d'un fournisseur de cloud. On peut ainsi décrire l'infrastructure cloud de manière déclarative et automatisée avec une seule simple ligne de commande. Terraform génère ensuite un plan permettant d'atteindre un état final de l'infrastructure et exécute le plan pour mettre à disposition l'infrastructure.
 
 Terraform permet de faire des infrastructures immuables que l'on peut versionner, partager, installer et détruire à la demande.
-Il ne se limite pas seulement à ça mais à toutes les automatisation mise à disposition par des produits souvent autour du cloud.
+Il ne se limite pas seulement à ça, mais à toutes les automatisations mises à disposition par des produits autour du cloud.
 
 https://learn.microsoft.com/en-us/azure/virtual-machines/custom-data
 
@@ -49,7 +49,7 @@ curl -L https://github.com/github/gitignore/raw/main/Terraform.gitignore | tee -
 
 ### Nomenclature de terraform :
 
-Un block `data` dans un fichier de configuration terraform `tf` sert à importer des données existante sur la plateforme.
+Un block `data` dans un fichier de configuration terraform `tf` sert à importer des données existantes sur la plateforme.
 
 Un block `resource` dans un fichier de configuration terraform `tf` sert à créer des ressources sur la plateforme.
 
@@ -64,11 +64,11 @@ Il existe aussi `variable` et `output` qui servent à définir des variables d'e
 
 1. Les providers
 
-Premièrement, nous allons créer un fichier `terraform.tf` qui va se charger de définir les ressources terraform de notre infrastructure. On va passer par plusieurs plateforme différentes :
+Premièrement, nous allons créer un fichier `terraform.tf` qui va se charger de définir les ressources terraform de notre infrastructure. On va passer par plusieurs plateformes différentes :
 
 - **`github`** pour définir les équipes accèdant à kubeapps en controlant une organisation github.
 
-- **`azurerm`** pour controler l'intégralité des ressources azure que l'on peut consulter dans le portail.
+- **`azurerm`** pour contrôler l'intégralité des ressources azure que l'on peut consulter dans le portail.
 
 - **`namedotcom`** pour contrôler les zones du domaine que l'on a obtenu précédemment.
 
@@ -118,7 +118,7 @@ provider "azurerm" {
 
 ```
 
-> Comme nous nous sommes connecté avec `az login` auparavent, aucun identifiants n'est requis pour faire fonctionner le provider azurerm.
+> Comme nous nous sommes connecté avec `az login` auparavant, aucuns identifiants n'est requis pour faire fonctionner le provider azurerm.
 > **Warning** Vérifiez bien toutefois que votre tenant par défaut soit bien celui de votre abonnement avec du crédit. Pour vérifier :
 
 ```bash
@@ -127,7 +127,7 @@ az account list -o table --all --query "[].{TenantID: tenantId, Subscription: na
 
 Si ce n'est pas le bon vous pouvez le changer avec `az login --tenant $ID` ou utilisez une variable terraform `tenant_id` à ajouter au provider `azurerm`
 
-Nous voici prêt pour créer les datasources et les ressources de nos cloud sans emcombres.
+Nous voici prêt pour créer les datasources et les ressources de notre cloud sans encombres.
 
 ---
 
@@ -152,7 +152,7 @@ data "azurerm_subscription" "primary" {}
 
 - `azurerm_resource_group` nous permet de récupérer le groupe de ressource créé précédemment avec la ligne de commande azure.
 
-- `azurerm_client_config` permet de récupérer les information de connexion de l'utilisateur courant que l'on a lancer avec `az login`.
+- `azurerm_client_config` permet de récupérer les informations de connexion de l'utilisateur courant que l'on a lancé avec `az login`.
 
 - `azurerm_subscription` récupère l'identifiant de votre abonnement en cour.
 
@@ -160,9 +160,9 @@ data "azurerm_subscription" "primary" {}
 
 3. Les variables d'entrée
 
-Pour éviter de commit des secrets sur un git distant et centralisé les configuration importantes, nous allons recourir à des variables terraform.
+Pour éviter de commit des secrets sur un git distant et centralisé les configurations importantes, nous allons recourir à des variables terraform.
 
-> `sensitive` permet de cacher la valeur de la variable dans le terminal lors de l'execution de terraform.
+> `sensitive` permet de cacher la valeur de la variable dans le terminal lors de l'exécution de terraform.
 
 ```tf linenums="1" title="infra/variables.tf"
 
@@ -211,7 +211,7 @@ variable "secrets" {
 
 ```
 
-Pour remplir ces variables dans un fichier nommé `votre-env.tfvars` (ex prod.tfvars) il nous reste à obtenir certains token d'accès aux api (github et namedotcom).
+Pour remplir ces variables dans un fichier nommé `votre-env.tfvars` (ex prod.tfvars) il nous reste à obtenir certains tokens d'accès aux api (github et namedotcom).
 
 **L'application github oauth pour la production** :
 
@@ -225,11 +225,11 @@ Dans `exemple.tfvars`, on assignera **Client Id** à `dex_github_client_id` puis
 
 **Identifiants api à name.com** :
 
-Allez [https://www.name.com/account/settings/api](https://www.name.com/account/settings/api) et crééer un token avec le nom de votre choix.
+Allez [https://www.name.com/account/settings/api](https://www.name.com/account/settings/api) et créer un token avec le nom de votre choix.
 
-L'objectif sera de faire pointé notre nom de domaine vers les serveurs de nom de azure (enregistrement NS) grâce à un module terraform qui utilisera l'api de name.com.
+L'objectif sera de faire pointer notre nom de domaine vers les serveurs de nom de Azure (enregistrement NS) grâce à un module terraform qui utilisera l'api de name.com.
 
-Enfin, voici un exemple du fichier final à réutiliser et remplir avec les vrais valeurs :
+Enfin, voici un exemple du fichier final à réutiliser et remplir avec les vraies valeurs :
 
 ```tf linenums="1" title="infra/exemple.tfvars.dist"
 tenant_id="00000000-0000-0000-0000-000000000000"
@@ -252,13 +252,13 @@ Ces variables seront utilisées dans le fichier `main.tf` pour créer les ressou
 
 4. Le fichier principal `main.tf`
 
-Ici nous allons définir les ressources de nos plusieurs plateform afin de faire fonctionner un PaaS kubeapps complet et accessible depuis internet.
+Ici nous allons définir les ressources de nos plusieurs plateformes afin de faire fonctionner un PaaS kubeapps complet et accessible depuis internet.
 
-La première partie va concerné github et les équipes ayant accès au PaaS.
+La première partie va concerner github et les équipes ayant accès au PaaS.
 
-Ensuire dans une seconde dédié aux ressources Azure, nous allons définir :
+Ensuite dans une seconde dédié aux ressources Azure, nous allons définir :
 
-- La création de la vm
+- La création de la VM
 - Création de l'environnement réseau et de sa sécurisation (ports ouverts)
 - Attribution d'une ip publique pour l'interface réseau de la machine
 - Créer un stockage de secrets sécurisé pour l'application kubeapps (feature `key_vault`)

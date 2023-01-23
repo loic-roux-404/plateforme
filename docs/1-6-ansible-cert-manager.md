@@ -2,18 +2,18 @@
 
 ---
 
-Venons en à l'élement central de notre stack, cert-manager. Il va nous permettre de créer des certificats pour nos services kubernetes.
+Venons en à l'élement central de notre stack, `cert-manager`. Il va nous permettre de créer des certificats pour nos services kubernetes.
 
-Cert-manager permet d'utiliser le protocoles acme embarqué dans des outils comme pebble. Il permet de créer des certificats pour des services http, dns et mTLS.
-On l'utilisera avec pebble pour distribuer les certificats vers les **ingress** avec des ressources secrets contenant respectivement le certificat et la clé de déchiffrage. 
+Cert-manager permet d'utiliser les protocoles acme embarqué dans des outils comme Pebble. Il permet de créer des certificats pour des services http, dns et mTLS.
+On l'utilisera avec Pebble pour distribuer les certificats vers les **ingress** avec des ressources secrets contenant respectivement le certificat et la clé de déchiffrage. 
 
 Pour résumer en schéma :
 
 ![stack](./images/ingress-cert-manager.jpg)
 
-Tout d'abord on ajoute les variables et puis des constantes dans le fichier vars.yml que l'on utilise dans un souci de clarté :
+Tout d'abord on ajoute les variables et puis des constantes dans le fichier `vars.yml` que l'on utilise dans un souci de clarté :
 
-Voici donc des constantes que l'on ne pas probablement jamais avoir besoin de changer (toutefois on pourrait le faire si besoin avec un `set_fact` mais ce n'est pas très propre)
+Voici donc des constantes que l'on n'a probablement jamais avoir besoin de changer (toutefois on pourrait le faire si besoin avec un `set_fact`, mais ce n'est pas très propre)
 
 ```yaml linenums="1" title="playbook/roles/kubeapps/vars/main.yml"
 # vars file for role-kubeapps
@@ -50,7 +50,7 @@ cert_manager_email: ""
 cert_manager_private_key_secret: test_secret
 ```
 
-Que l'on surcharge tout de suite dans le playbool **converge.yml** :
+Que l'on surcharge tout de suite dans le playbook **converge.yml** :
 
 ```yaml linenums="10" title="playbook/roles/kubeapps/molecule/default/converge.yml"
     cert_manager_acme_url: https://{{ kubeapps_internal_acme_host }}:14000/dir
@@ -60,14 +60,14 @@ Que l'on surcharge tout de suite dans le playbool **converge.yml** :
 
 > `cert_manager_acme_url` doit toujours utilisé l'entrée dns que l'on a choisie juste avant et qui est par défaut `acme.k3s.local`. un nom d'hôte que l'on a choisi pour l'usage local de cert-manager.
 
-> **WARN** Attention en production ou recette l'addresse email `cert_manager_email` doit appartenir à un domaine valide (gmail, hotmail, etc...)
+> **WARN** Attention en production ou recette l'adresse email `cert_manager_email` doit appartenir à un domaine valide (gmail, hotmail, etc...)
 
 #### Mettons en place une bonne pratique
 
-L'objectif est d'éviter des comportement non souhaité lors de l'utilisation de cert-manager et donc de ne pas lancer l'installation de la suite des tâches si il manque certaines configuration. Cert-manager est un composant coeur dans notre stack car il distribue les certificats pour certains service embarquant des protocoles d'authentification. Nous ne pourrons pas utiliser ces services si il n'y a pas de certificats et d'encryption des échanges en TLS (v1.2+).
+L'objectif est d'éviter du comportement non souhaité lors de l'utilisation de cert-manager et donc de ne pas lancer l'installation de la suite des tâches s'il manque certaine configuration. Cert-manager est un composant cœur dans notre stack car il distribue les certificats pour certain service embarquant des protocoles d'authentification. Nous ne pourrons pas utiliser ces services s'il n'y a pas de certificats et de cryptage des échanges en TLS (v1.2+).
 
-On créer donc un fichier `check.yml` dans le dossier `tasks/` de notre rôle pour vérifier les configurations.
-Ici on veut être sur que l'email est renseigné sinon letsencrypt ne donnera pas de certificat. Enfin on veut dans le cas d'un acme de recette / test que un fichier de certificat d'autorité (CA) soit présent dans le système.
+On crée donc un fichier `check.yml` dans le dossier `tasks/` de notre rôle pour vérifier les configurations.
+Ici on veut être sûr que l'email est renseigné sinon lets-encrypt ne donnera pas de certificat. Enfin on veut dans le cas d'un Acme de recette / test qu'un fichier de certificat d'autorité (CA) soit présent dans le système.
 
 ```yaml linenums="1" title="playbook/roles/kubeapps/tasks/checks.yml"
 - name: check email when cert-manager
@@ -141,7 +141,7 @@ Ensuite créeons notre **issuer** qui va s'occuper de tout le cycle de vie d'un 
 
 Voici le manifest de l'issuer de type acme 
 
-> **Note** il existe d'autre types d'issuer pour d'autre protocoles come vault pki, ca, etc...
+> **Note** il existe d'autres types d'issuer pour d'autres protocoles comme vault pki, ca, etc...
 
 ```yaml linenums="19" title="playbook/roles/kubeapps/templates/cert-manager-chart-crd.yml.j2"
 ---
@@ -164,7 +164,7 @@ spec:
 
 ```
 
-> **Note** Vu que l'on passe par l'ingress pour injecter les point d'accès des challenge acme, il faut bien configuré l'issuer avec la bonne classe d'ingress.
+> **Note** Vu que l'on passe par l'ingress pour injecter les point d'accès du challenge acme, il faut bien configuré l'issuer avec la bonne classe d'ingress.
 
 > **Note** kind: `ClusterIssuer` permet de créer un issuer qui sera disponible dans tout le cluster. À l'inverse un `Issuer` est disponible dans un seul namespace.
 

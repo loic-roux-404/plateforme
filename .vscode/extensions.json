@@ -6,6 +6,7 @@
         "mindaro.mindaro",
         "szTheory.vscode-packer-powertools",
         "ms-azuretools.vscode-azureterraform",
-        "HashiCorp.terraform"
+        "HashiCorp.terraform",
+        "valentjn.vscode-ltex"
     ]
 }

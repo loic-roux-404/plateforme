@@ -2,7 +2,7 @@
 
 Pour rappel helm est le gestionnaire de packages pour Kubernetes. Il vous aide à piloter Kubernetes à l’aide de cartes de navigation, appelés Charts en anglais. Nous allons donc en créer une pour le microservice que nous avons créé.
 
-Une chart est une collection de fichiers organisés dans une structure de répertoire spécifique. Ces fichiers décrivent un ensemble de ressources Kubernetes et leur configuration de manière dynamique.
+Un "chart" est une collection de fichiers organisés dans une structure de répertoire spécifique. Ces fichiers décrivent un ensemble de ressources Kubernetes et leur configuration de manière dynamique.
 
 Une instance exécutée d'une chart avec une configuration spécifique est appelée une release.
 
@@ -29,7 +29,7 @@ Nous allons utiliser docker hub pour déployer nos containers de manière publiq
 
 Tout d'abord rancher (docker) doit être lancé avant de déployer les containers et vous devez vous placer dans votre projet maven / spring boot.
 
-Enuite connectez vous à votre docker hub avec `docker login` et créez un repository pour chaque microservice. Voici un exemple pour le microservice `client`.
+Ensuite, connectez-vous à votre docker hub avec `docker login` et créez un repository pour chaque microservice. Voici un exemple pour le microservice `client`.
 
 ![docker hub repository](images/docker-hub.png)
 
@@ -59,9 +59,9 @@ Dans le répertoire `charts/microservice` nous avons :
 - un fichier `values.yaml` qui contient les valeurs par défaut du chart
 
 Nous allons donc modifier notre `values.yaml` pour mettre en place plusieurs microservices et les déployer avec un seul chart.
-Tou d'abord il va falloir que nos containers soit déployer sur un registre, nous allons utilisé docker hub pour placer des containers générés construit automatiquement par le module `buildImage` de spring.
+Tout d'abord il va falloir que nos containers soit déployer sur un registre, nous allons utiliser docker hub pour placer des containers générés construit automatiquement par le module `buildImage` de spring.
 
-Dans ce chart nous allons mettre en places des défaut pour faire fonctionner directement les microservices sur la paas sans configurations supplémentaires.
+Dans ce chart nous allons mettre en places des défauts pour faire fonctionner directement les microservices sur la paas sans configurations supplémentaires.
 
 On change donc seulement les valeurs par défaut du ingress pour qu'il utilise traefik et le cert-manager de notre paas.
 
@@ -73,7 +73,7 @@ On change donc seulement les valeurs par défaut du ingress pour qu'il utilise t
 
 ### Mise en place de la dépendance du micro service : postgres
 
-Avant de déployer notre microservice on sait que l'on a besoin d'une base de données postgres. On va donc ajouter comme [dépendance](https://bitnami.com/stack/postgresql/helm) le chart bitnami de postgres au notre.
+Avant de déployer notre microservice on sait que l'on a besoin d'une base de données postgres. On va donc ajouter comme [dépendance](https://bitnami.com/stack/postgresql/helm) le chart bitnami de postgres au nôtre.
 
 On va donc modifier le fichier `Chart.yaml` pour ajouter la dépendance.
 
@@ -84,7 +84,7 @@ dependencies:
     repository: https://charts.bitnami.com/bitnami
 ```
 
-> `~` Signifie que on garde les version de patch sans passer à la majeure ou mineure suivante.
+> `~` Signifie qu'on garde les versions de patch sans passer à la majeure ou mineure suivante.
 
 Puis on met à jour les dépendances avec la commande `helm dependency update charts/microservice`.
 
@@ -92,7 +92,7 @@ Puis on met à jour les dépendances avec la commande `helm dependency update ch
 
 ### Helper et secrets dans helm
 
-Nous avons besoin de pouvoir configurer nos microservices facilement avec des variables et des identifiants divers comme la connection à la base de données. Pour cela nous allons créer notre propre helper et des manifests kubernetes pour utiliser des secrets.
+Nous avons besoin de pouvoir configurer nos microservices facilement avec des variables et des identifiants divers comme la connexion à la base de données. Pour cela nous allons créer notre propre helper et des manifests kubernetes pour utiliser des secrets.
 
 On va donc remplir un fichier de secret comme ceci :
 
@@ -127,7 +127,7 @@ Create the secrets required for our app as environment var
 
 ```
 
-Puis, il esr utiliser dans le fichier de deployment avec la clé `containers`:
+Puis, il est utilisé dans le fichier de deployment avec la clé `containers`:
 
 ```yaml linenums="36" title="charts/microservice/templates/deployment.yaml"
           env:
@@ -137,7 +137,7 @@ Puis, il esr utiliser dans le fichier de deployment avec la clé `containers`:
 
 Enfin on ne doit pas oublier de définir les valeurs par défaut dans le fichier `values.yaml`:
 
-> On prépare d'avance les variable de connection au serveur de base de données que l'on test en local (role kubeapps, `molecule test --destroy never`)
+> On prépare d'avance les variables de connection au serveur de base de données que l'on teste en local (rôle kubeapps, `molecule test --destroy never`)
 
 ```yaml linenums="17" title="charts/microservice/values.yaml"
 secret:
@@ -254,7 +254,7 @@ git push
 
 Notre chart va donc se déployer sur github pages et être disponible à l'adresse suivante : `https://my-org.github.io/my-repo`. N'hésitez pas à consulter l'avancement du job [ici](https://github.com/esgi-lyon/paas-tutorial/actions/runs/) et à suivre le déploiement sur [l'onglet deployments](https://github.com/esgi-lyon/paas-tutorial/deployments)
 
-Enfin vous pouvez ajouter le repo à helm pour tester que la publication a bien fonctionnée :
+Enfin vous pouvez ajouter le repo à helm pour tester que la publication a bien fonctionner :
 
 ```bash
 helm repo add paas https://esgi-lyon.github.io/paas-tutorial
@@ -301,7 +301,7 @@ image:
       secretName: fraud.k3s.local-tls
 ```
 
-Attention cela ne risque de ne pas fonctionner correctement car les microservices ont une dépendence à postgresql. Il faudra donc bien configurer le helm chart de posgres en dépendance comme cela :
+Attention cela ne risque de ne pas fonctionner correctement, car les microservices ont une dépendance à postgresql. Il faudra donc bien configurer le helm chart de postgres en dépendance comme cela :
 
 ```yaml
 auth.username: ekommerce
