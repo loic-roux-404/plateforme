@@ -12,4 +12,9 @@ pip install -r requirements.txt
 
 ```bash
 mkdocs gh-deploy
+# Revert helm chart index file
+git checkout gh-pages
+curl https://raw.githubusercontent.com/esgi-lyon/paas-tutorial/gh-pages/index.yaml > index.yaml
+git add . && git commit -m "Revert helm chart index file" && git push
+git checkout -
 ```
