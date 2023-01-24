@@ -225,10 +225,14 @@ env:
     PG_USER: ekommerce
     PG_PASSWORD: password
     PG_CONNECTION: jdbc:postgresql://client-postgresql.default.svc.cluster.local:5432/db
+  primary:
+    persistence:
+      enabled: true
+      existingClaim: "postgresql-data-claim"
 
 ```
 
-Puis on configure le chart postgres pour qu'il utilise les secrets définis dans le chart microservice.
+Puis on configure le chart postgres pour qu'il utilise les secrets et le "persistence volume" définis dans le chart microservice.
 
 ```yaml linenums="25" title="charts/microservice/values.yaml"
 postgresql:

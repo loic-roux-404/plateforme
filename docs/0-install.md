@@ -10,8 +10,9 @@ L'optique de cet outillage suivra :
 - Le principe **d'infrastructure as code** (IaC) en gardant toutes la spécification de notre infrastructure dans des configurations et scripts. On utilisera également des tests basiques de nos configurations.
 
 Pour cela nous ferons appel à un socle technique composé de :
+
 - l'outil [`k3s`](https://k3s.io/) qui simplifie l'installation de kubernetes sur des machines ARM tout en restant compatible avec les architectures classiques X64. Il fourni par défaut des pods (containers en execution) pour inclure des fonctionnalités souvent recherchés sur ce type de configuration edge computing. (reverse proxy, configuration DNS...)
-- [¨Packer](https://www.packer.io/) pour créer des images iso de machine linux
+- [Packer](https://www.packer.io/) pour créer des images iso de machine linux
 - [Ansible](https://www.ansible.com/) pour provisioner cette image
 - [Azure](https://azure.microsoft.com/fr-fr/) pour nous founir des serveurs accessible en ssh sur lequels nous pourrons mettre en ligne
 - [Terraform](https://www.terraform.io/) pour contrôler azure de manière IaC et de déclencher toute la mise en place du PaaS dessus.
