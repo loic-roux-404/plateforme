@@ -39,7 +39,7 @@ pip install ansible==6.5.0 molecule[docker]
 
 ```zsh 
 # ~/.bashrc si vous utiliser bash 
-echo "export PATH=\"${HOME}/.local/bin:$PATH\"" >> ~/.zshrc
+echo "export PATH=\"$PATH:${HOME}/.local/bin\"" >> ~/.zshrc
 ```
 
 Vérifier que tous fonctionne avec `ansible --version`.
