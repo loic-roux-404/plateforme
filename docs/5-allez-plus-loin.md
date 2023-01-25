@@ -34,6 +34,7 @@ docker cp 61a74719f7c4:/etc/rancher/k3s/k3s.yaml ~/.kube/config
 ```
 
 Si vous n'avez pas kubectl en local :
+
 - [Pour mac](https://kubernetes.io/docs/tasks/tools/install-kubectl-macos/)
 - [Pour Wsl / Linux](https://kubernetes.io/docs/tasks/tools/install-kubectl-linux/)
 
