@@ -117,3 +117,8 @@ Puis lancer `conda init zsh` (ou `bash` si vous préférez)
 
 **Relancer votre shell pour appliquer** (commande `exec $SHELL`)
 
+## Installation de vscode
+
+- [Avec installer toutes plateformes](https://code.visualstudio.com/download)
+- Homebrew sur mac `brew install --cask visual-studio-code`
+- [Avec snap pour linux](https://snapcraft.io/code) sur linux
