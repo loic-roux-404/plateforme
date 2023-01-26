@@ -84,8 +84,6 @@ On va donc se préparer à surcharger la configuration par défaut de coredns en
 
 Voici la configuration par défaut :
 
-[playbook/roles/kubeapps/templates/core-dns-config-crd.yml.j2](../playbook/roles/kubeapps/templates/core-dns-config-crd.yml.j2)
-
 ```yaml linenums="1" title="playbook/roles/kubeapps/templates/core-dns-config-crd.yml.j2"
 
 apiVersion: v1
@@ -145,6 +143,15 @@ On crée un fichier `tasks/internal-acme.yml` présentant ce code pour récupér
 
 ```
 
+Puis on l'utilise dans nos tâches seulement quand on précise que l'on utilise un acme interne ou spécifique (par exemple on peut utiliser un acme staging externe) :
+
+```yaml linenums="1" title="playbook/roles/kubeapps/tasks/main.yml"
+- import_tasks: internal-acme.yml
+  when: kubeapps_internal_acme_network_ip is not none
+  tags: [kubeapps]
+
+```
+
 Maintenant la variable `kubeapps_ingress_controller_ip` est disponible et prête à être associé à une entrée dns. Cette variable nous sert à détecter que nous sommes bien en local
 
 Venons en donc à la définition des noms d'hôte des applications 
@@ -153,7 +160,18 @@ Venons en donc à la définition des noms d'hôte des applications
 
 En sachant que le principe de base d'un dns est d'associé une adresse ip à un nom de domaine, nous allons simplement associés les deux addresses `k3s.local` hériteé de notre dns local (dnsmasq) vers le ingress. Ainsi le trafic interne comme externe en direction de ces adresses arrivera bien au même endroit.
 
-> **WARN** Nous faisons cela en réseau local, mais si notre serveur est en ligne nous ne serons pas obligé de le faire car on passera par des dns (typoquement google, cloudflare...) capable de résoudre notre nom de domaines public et ses sous domaines.
+> **WARN** Nous faisons cela en réseau local, mais si notre serveur est en ligne nous ne serons pas obligé de le faire car on passera par des dns centraux (typiquement google, cloudflare...) capable de résoudre notre nom de domaines public et ses sous domaines.
+
+Avant de surcharger la configuration de coredns on va juste définir les variables avec les noms de domaines que l'on va utiliser.
+
+> **Note**: Il n'est pas obligé de faire cela tout de suite en sachant que le fichier sera redonné en entier dans une prochaine partie.
+
+```yaml linenums="1" title="playbook/roles/kubeapps/defaults/main.yml"
+kubeapps_internal_acme_host: acme-internal.k3s.local
+dex_hostname: dex.k3s.local
+kubeapps_hostname: kubeapps.k3s.local
+
+```
 
 [playbook/roles/kubeapps/templates/core-dns-config-crd.yml.j2](playbook/roles/kubeapps/templates/core-dns-config-crd.yml.j2#L28)
 

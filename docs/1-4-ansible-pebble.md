@@ -59,7 +59,7 @@ Ensuite nous avons besoin de deux certificats racines pour initialiser notre aut
 ```bash
 mkdir -p playbook/roles/kubeapps/molecule/default/pebble
 curl -L https://raw.githubusercontent.com/letsencrypt/pebble/main/test/certs/localhost/cert.pem > playbook/roles/kubeapps/molecule/default/pebble/cert.pem
-curl -L https://raw.githubusercontent.com/letsencrypt/pebble/main/test/certs/localhost/cert.pem > playbook/roles/kubeapps/molecule/default/pebble/key.pem
+curl -L https://raw.githubusercontent.com/letsencrypt/pebble/main/test/certs/localhost/key.pem > playbook/roles/kubeapps/molecule/default/pebble/key.pem
 ```
 
 Puis on crée le fichier de configuration de notre serveur Acme :
