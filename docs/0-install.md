@@ -85,6 +85,12 @@ Dans les choix proposés dans la mise en place :
 - **Décocher kubernetes**
 - Choisissez **dockerd** comme moteur de conteneurisation
 
+Vérifier que vous avez bien la commande `docker` disponible sinon ajouter `~/.rd/bin` à votre `PATH` :
+
+```bash
+echo 'export PATH="$PATH:$HOME/.rd/bin"' >> ~/.zshrc
+```
+
 Puis dans wsl : 
 
 ```sh
