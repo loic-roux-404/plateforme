@@ -32,7 +32,7 @@ conda activate playbook-paas
 
 Installer ansible et molecule préconfiguré pour utiliser docker (rancher desktop).
 ```bash
-pip install ansible==6.5.0 molecule[docker]
+pip install 'ansible==6.5.0' 'molecule[docker]'
 ```
 
 **Sur windows** lancez cette commande pour avoir accès aux dépendances python directement.
@@ -72,10 +72,14 @@ On va créer un dossier playbook pour mettre tout ce qui concerne ansible
 Aussi, on va geler les versions des dépendances dans un fichier requirements pour qu'un autre environnement puisse facilement retrouver l'état de votre installation sans problèmes de compatibilités.
 
 ```sh
-# ~/Home est un dossier de votre hôte (windows / mac)
 mkdir -p paas-tutorial/playbook
 cd paas-tutorial/playbook
-# Freeze deps
+
+```
+
+Geler les dépendances pour éviter des soucis de compatibilité plus tard.
+
+```bash
 pip freeze | grep -E "ansible|molecule" > requirements.txt
 ```
 
