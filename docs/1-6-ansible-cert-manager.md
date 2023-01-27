@@ -181,3 +181,6 @@ Nous voilà prêt il ne reste que à appeler la création du manifest dans notre
 ```
 
 Tout cela ne va cependant pas être suffisant dans le cas du mTLS car on va avoir besoin de faire confiance à notre autorité de certification.
+
+On peut maintenant tester le bon fonctionnement de cert-manager et aussi la partie précédente sur coredns avec `molecule test`
+
