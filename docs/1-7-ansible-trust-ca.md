@@ -31,7 +31,23 @@ On utilise l'url du serveur staging `cert_manager_staging_ca_cert_url` qui est i
 
 ```
 
-Ensuite, il nous faut stocker dans des facts ansible le contenu du certificat et des définitions de volumes que l'on va injecter dans nos containers.
+Une fois cette configuration stocké nous allons pouvoir l'injecter dans les pods avec des `volumes`.
+
+Ces volumes sont des espaces de stockage qui seront monté dans les pods et qui seront accessible par les containers.
+
+Voici les objets volumes définis dans le fichier **vars.yml** de notre role kubeapps afin d'éviter qu'ils soient vide. Ils seront override si un `cert_manager_staging_ca_cert_url` est présent, car on injectera l'autorité dans les pods.
+
+```yaml linenums="7" title="playbook/roles/kubeapps/vars/main.yml"
+# Mounted in acme internal
+kubeapps_internal_acme_ca_file: /etc/ssl/certs/acmeca.crt
+kubeapps_internal_acme_ca_in_volume_crt: /etc/ssl/certs/acmeca.crtkubeapps_internal_acme_ca_extra_volumes: []
+kubeapps_internal_acme_ca_extra_volumes_mounts: []
+
+```
+
+> **Note** `/etc/ssl/certs/` est le répertoire par défaut des certificats sur les images linux, ils sont très souvent supportés par les frameworks et langages de programmation. Ainsi on fera confiance à n'importe quelle requête https vers un serveur configurés avec le certificat signé par celle-ci.
+
+Ensuite, il nous faut stocker dans des facts ansible le contenu du certificat et des définitions de volumes que l'on va injecter dans nos containers dans le contexte du local.
 
 ```yaml linenums="13" title="playbook/roles/kubeapps/tasks/pre-import-cert.yml"
 - set_fact:
@@ -53,15 +69,6 @@ Il faut ensuite absolument utiliser cette tâche avant le rôle sinon k3s va s'i
     - name: Import acme certificates
       include_tasks: "../../tasks/pre-import-cert.yml"
 ```
-
-Nous introduisons ensuite la variable `cert_manager_is_internal` qui nous permet de savoir si nous utilisons un Acme spécial autre celui que le Lets-encrypt de production. Effectivement les acme locaux et staging ne sont pas référencés comme digne de confiance sur l'internet global.
-
-```yaml linenums="14" title="playbook/roles/kubeapps/defaults/main.yml"
-cert_manager_is_internal: "{{ (cert_manager_staging_ca_cert_url | d('')) != '' }}"
-
-```
-
-> L'idée est que si un url fournissant un certificat est donné avec `cert_manager_staging_ca_cert_url` alors on considère que l'on est dans un environnement utilisant un Lets-encrypt de test ou recette.
 
 Nous avons alors besoin de plusieurs choses pour importer notre certificat racine dans le "trust-store" de nos serveurs.
 
@@ -135,22 +142,6 @@ Ensuite, **il est essentiel** d'appeler dans l'ordre tous ces manifests que l'on
       condition: "{{ cert_manager_is_internal }}"
 ```
 
-Une fois cette configuration stocké nous allons pouvoir l'injecter dans les pods avec des `volumes`.
-
-Ces volumes sont des espaces de stockage qui seront monté dans les pods et qui seront accessible par les containers.
-
-Voici les objets volumes définis dans le fichier **vars.yml** de notre role kubeapps afin d'éviter qu'ils soient vide. Ils seront override si un `cert_manager_staging_ca_cert_url` est présent, car on injectera l'autorité dans les pods.
-
-```yaml linenums="7" title="playbook/roles/kubeapps/vars/main.yml"
-# Mounted in acme internal
-kubeapps_internal_acme_ca_in_volume_crt: /etc/ssl/certs/acmeca.crt
-kubeapps_internal_acme_ca_extra_volumes: []
-kubeapps_internal_acme_ca_extra_volumes_mounts: []
-
-```
-
-> **Note** `/etc/ssl/certs/` est le répertoire par défaut des certificats sur les images linux, ils sont très souvent supportés par les frameworks et langages de programmation. Ainsi on fera confiance à n'importe quelle requête https vers un serveur configurés avec le certificat signé par celle-ci.
-
 Voici un exemple d'utilisation des volumes dans kubernetes :
 
 Import du volume pour le rendre disponible au montage :
@@ -170,7 +161,7 @@ podsubcontainerexample:
     {{ kubeapps_internal_acme_ca_extra_volumes_mounts | to_nice_yaml | indent(4) }}
 ```
 
-Les volumes sont **vide par défaut**, on les renseigne seulement à la fin de la tâche internal-acme lancée en mode cert-manager interne. Voici la suite du `set_fact` (l.25) dans cette tâche :
+Les volumes sont **vide par défaut**, on les renseigne seulement à la fin de la tâche **pre-import-cert** lancée en mode cert-manager interne. Voici un rappel du `set_fact` pour définir ces volumes :
 
 ```yaml linenums="18" title="playbook/roles/kubeapps/tasks/pre-import-cert.yml"
     kubeapps_internal_acme_ca_extra_volumes:

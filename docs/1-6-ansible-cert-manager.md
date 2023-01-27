@@ -62,6 +62,15 @@ Que l'on surcharge tout de suite dans le playbook **converge.yml** :
 
 > **WARN** Attention en production ou recette l'adresse email `cert_manager_email` doit appartenir à un domaine valide (gmail, hotmail, etc...)
 
+Nous introduisons enfin la variable `cert_manager_is_internal` qui nous permet de savoir si nous utilisons un Acme spécial autre celui que le Lets-encrypt de production. Effectivement les acme locaux et staging ne sont pas référencés comme digne de confiance sur l'internet global.
+
+```yaml linenums="14" title="playbook/roles/kubeapps/defaults/main.yml"
+cert_manager_is_internal: "{{ (cert_manager_staging_ca_cert_url | d('')) != '' }}"
+
+```
+
+> L'idée est que si un url fournissant un certificat est donné avec `cert_manager_staging_ca_cert_url` alors on considère que l'on est dans un environnement utilisant un Lets-encrypt de test ou recette.
+
 #### Mettons en place une bonne pratique
 
 L'objectif est d'éviter du comportement non souhaité lors de l'utilisation de cert-manager et donc de ne pas lancer l'installation de la suite des tâches s'il manque certaine configuration. Cert-manager est un composant cœur dans notre stack car il distribue les certificats pour certain service embarquant des protocoles d'authentification. Nous ne pourrons pas utiliser ces services s'il n'y a pas de certificats et de cryptage des échanges en TLS (v1.2+).
@@ -87,14 +96,22 @@ Ici on veut être sûr que l'email est renseigné sinon lets-encrypt ne donnera 
       - acmeca_result.stat.exists
   when: cert_manager_is_internal
 
-
 ```
+
+> Les checks du fichier de certificat prendrons plus sens à la prochaine étape quand on mettra en place trust-manager dans le cluster.
 
 Puis on active ceci en premier dans le fichier wrapper `main.yml` :
 
 ```yaml linenums="3" title="playbook/roles/kubeapps/tasks/main.yml"
 - import_tasks: checks.yml
   tags: [kubeapps]
+
+```
+
+Et maintenant qu'on a un check sur l'email on l'ajoute dans le converge :
+
+```yaml linenums="10" title="playbook/roles/kubeapps/molecule/default/converge.yml"
+    cert_manager_email: "test@k3s.local"
 
 ```
 
