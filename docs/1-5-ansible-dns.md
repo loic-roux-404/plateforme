@@ -167,6 +167,7 @@ Avant de surcharger la configuration de coredns on va juste définir les variabl
 > **Note**: Il n'est pas obligé de faire cela tout de suite en sachant que le fichier sera redonné en entier dans une prochaine partie.
 
 ```yaml linenums="1" title="playbook/roles/kubeapps/defaults/main.yml"
+kubeapps_user: "{{ ansible_user | d('root') }}"
 kubeapps_internal_acme_host: acme-internal.k3s.local
 dex_hostname: dex.k3s.local
 kubeapps_hostname: kubeapps.k3s.local
