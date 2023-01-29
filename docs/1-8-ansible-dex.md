@@ -46,11 +46,19 @@ Nous allons crypter les Informations dangereuses dans un vault ansible que l'on 
 
 Dans votre rôle `playbook/roles/kubeapps`
 
+D'abord, il faut renseigner un mot de passe dans un fichier `$HOME/.ansible/.vault`.
+
+```bash
+echo 'your-pass' > $HOME/.ansible/.vault
+```
+
+> Warning : en bash `>` écrase le fichier et `>>` ajoute à la fin du fichier. L'idéal est d'utiliser la commande `tee` à la place de ces opérandes.
+
+Puis ensuite on peut initier les secrets dans les `group_vars` pour qu'il soit possible de les identifié comme facts ansible et puis les utiliser au cours de l'éxécution du playbook :
+
 ```bash
 ansible-vault create --vault-password-file $HOME/.ansible/.vault molecule/default/group_vars/molecule/secrets.yml
 ```
-
-Renseigner un mot de passe dans le fichier `$HOME/.ansible/.vault`.
 
 > **Warning** : Ce mot de passe est utilisé pour décrypter les secrets de votre playbook de test. Il est donc important de le garder secret d'où une localisation à l'extérieur du repo.
 
@@ -71,16 +79,6 @@ Si besoin vous pouvez éditer le fichier avec la commande suivante :
 ```bash
 ansible-vault edit molecule/default/group_vars/molecule/secrets.yml --vault-password-file $HOME/.ansible/.vault
 ```
-
-> Note : les **github secrets** de la CI/CD de github [https://github.com/domaine/repo/settings/secrets/actions](#) peuvent être une localisation idéale.
-
-Vous aviez créé un mot de passe, mais ce n'est pas très pratique de devoir le retenir. Déplacez-le dans un fichier `${HOME}/.ansible/.vault` pour pouvoir ouvrir les fichiers de secrets cryptés plus facilement les prochaines fois. (argument de ligne de commande `--vault-password-file`)
-
-```bash
-echo 'my-pass' > $HOME/.ansible/.vault
-```
-
-> Warning : en bash `>` écrase le fichier et `>>` ajoute à la fin du fichier. L'idéal est d'utiliser la commande `tee` à la place de ces opérandes.
 
 Puis on configure molecule pour utiliser le fichier de mot de passe et le groupe de variable **`molecule`** qui contient nos secrets. Il est implicitement défini quand on crée le dossier `group_vars/molecule`:
 
@@ -121,7 +119,7 @@ Ensuite on précise les informations de connexion à github ainsi que les celles
 
 ```yaml
 dex_client_id: kubeapps
-dex_client_secret: ~
+dex_client_secret: ZXhhbXBsZS1hcHAtc2VjcmV0
 dex_github_client_id: ~
 dex_github_client_secret: ~
 dex_github_client_org: ~
@@ -210,65 +208,15 @@ Voici la configuration qui réutilise les variables de notre application oauth g
         secret: "{{ dex_client_secret }}"
 ```
 
-Ensuite on configure le ingress pour que dex soit accessible depuis l'extérieur du cluster. 
+On n'oublie pas d'ajouter le chart à notre algorithme d'installation des manifests : 
 
-Pour cela on renseigne des d'hôtes pour lesquels les requêtes amènerons bien au **service** dex (port 5556).
-
-Un **servive** kubernetes est toujours créer en accompagnement d'un **déploiement** et se voit automatiquement attribué une addresse ip interne. Ici le service sera de type `clusterIp`.
-
-Voici la commande pour consulter le service et son adresse ip :
-
-```bash
-kubectl get svc -n dex -o yaml
+```yaml linenums="24" title="playbook/roles/kubeapps/tasks/main.yml"
+    - { src: dex-chart-crd.yml , deploy: "{{ dex_namespace }}" }
 ```
 
-qui nous donne le manifest complet avec tous les labels et annotations générés par helm et kubernetes :
+Pour rappel il sera créer après ces étapes un deployment pour mettre le pod en place et un service pour l'exposer, celui ci est sur le port 5556 du container.
 
-```yaml
-kind: Service
-  metadata:
-    annotations:
-      meta.helm.sh/release-name: dex
-      meta.helm.sh/release-namespace: dex
-    creationTimestamp: "2022-12-10T17:12:50Z"
-    labels:
-      app.kubernetes.io/instance: dex
-      app.kubernetes.io/managed-by: Helm
-      app.kubernetes.io/name: dex
-      app.kubernetes.io/version: 2.35.3
-      helm.sh/chart: dex-0.12.1
-    name: dex
-    namespace: dex
-    resourceVersion: "1159"
-    uid: c88f2dcb-85d0-4f74-bdeb-4e53b964d5b5
-  spec:
-    clusterIP: 10.43.12.126
-    clusterIPs:
-    - 10.43.12.126
-    ipFamilies:
-    - IPv4
-    ipFamilyPolicy: SingleStack
-    ports:
-    - appProtocol: http
-      name: http
-      port: 5556
-      protocol: TCP
-      targetPort: http
-    - appProtocol: http
-      name: telemetry
-      port: 5558
-      protocol: TCP
-      targetPort: telemetry
-    selector:
-      app.kubernetes.io/instance: dex
-      app.kubernetes.io/name: dex
-    sessionAffinity: None
-    type: ClusterIP
-  status:
-    loadBalancer: {}
-```
-
-Ensuite on met en place le ingress pour associer les noms d'hôtes à ce service pour le trafic externe. (reverse proxy)
+Ensuite on met en place le ingress pour associer les noms d'hôtes à ce service (port 5556) afin que le trafic externe y soit conduit (reverse proxy).
 
 On utilise ici le certificat délivré par cert-manager au travers d'un secret `{{ dex_hostname }}-tls` automatiquement créer par l'issuer cert-manager activé avec : `cert-manager.io/cluster-issuer: letsencrypt-acme-issuer`.
 
@@ -309,6 +257,8 @@ On ajoute donc les variables dans le fichier meta du rôle pour influencer l'ins
 
 ```
 
-Open id configuré sur kubernetes nous sommes prêt à faire fonctionner kubeapps avec dex car ils peuvent maintenant communiquer en Tls entre eux et dex peut autoriser des connexion open id valides à contrôler k3s.
+On lance notre `molecule test` pour voir si tous ce déploie bien et si l'url [https://dex.k3s.local/.well-known/openid-configuration](https://dex.k3s.local/.well-known/openid-configuration) retourne bien un contenu. 
+
+Cela indique que Open id est configuré sur kubernetes et que nous sommes fin prêt à faire fonctionner kubeapps avec dex. Ils peuvent maintenant communiquer en Https et dex peut autoriser des connexion associé au "cluster role" permettant de contrôler kubernetes.
 
 ---
