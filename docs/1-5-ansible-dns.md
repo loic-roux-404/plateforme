@@ -174,6 +174,8 @@ kubeapps_hostname: kubeapps.k3s.local
 
 ```
 
+> `kubeapps_user` est définit à `ansible_user` une variable selon les conventions précisée dans un playbook de production dans le fichier host. Par défaut on le met à `root` si la variable n'existe pas.
+
 [playbook/roles/kubeapps/templates/core-dns-config-crd.yml.j2](playbook/roles/kubeapps/templates/core-dns-config-crd.yml.j2#L28)
 
 ```conf linenums="28" title="playbook/roles/kubeapps/templates/core-dns-config-crd.yml.j2"

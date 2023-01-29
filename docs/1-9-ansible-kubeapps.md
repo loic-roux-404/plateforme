@@ -8,8 +8,6 @@ Dans [playbook/roles/kubeapps/defaults/main.yml](playbook/roles/kubeapps/default
 
 - `kubeapps_namespace` pour définir le namespace à créer et sur lequel on déploie kubeapps
 
-- `kubeapps_user` définit à `ansible_user` une variable censé être définie dans un playbook de production dans le fichier host. Par défaut on le met à `root` si la variable n'existe pas.
-
 - `kubeapps_hostname` pour choisir à quel url sera disponible kubeapps.
 
 > Par défaut kubeapps sera disponible sur `kubeapps.k3s.local`
@@ -18,7 +16,6 @@ Dans [playbook/roles/kubeapps/defaults/main.yml](playbook/roles/kubeapps/default
 ---
 # HelmChart Custom Resource Definition for kubeapps variables
 kubeapps_namespace: kubeapps
-kubeapps_user: "{{ ansible_user | default('root') }}"
 kubeapps_hostname: kubeapps.k3s.local
 ```
 
