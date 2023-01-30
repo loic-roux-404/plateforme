@@ -262,3 +262,4 @@ On lance notre `molecule test` pour voir si tous ce déploie bien et si l'url [h
 Cela indique que Open id est configuré sur kubernetes et que nous sommes fin prêt à faire fonctionner kubeapps avec dex. Ils peuvent maintenant communiquer en Https et dex peut autoriser des connexion associé au "cluster role" permettant de contrôler kubernetes.
 
 ---
+
