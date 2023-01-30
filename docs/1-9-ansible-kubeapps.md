@@ -104,6 +104,13 @@ Ensuite on réutilise nos secrets de **dex idp** pour créer et configurer l'acc
       cookieRefresh: 5m
       extraFlags:
         - --oidc-issuer-url=https://{{ dex_hostname }}
+      extraVolumeMounts:
+        {{ kubeapps_internal_acme_ca_extra_volumes_mounts | to_nice_yaml | indent(8) }}
+
+    frontend:
+      extraVolumes:
+        {{ kubeapps_internal_acme_ca_extra_volumes | to_nice_yaml | indent(8) }}
+
 ```
 
 Enfin maintenant que notre chart est déployé avec un combo **oauth-proxy** / **dex** fonctionnel nous allons configurer le contrôle d'accès à l'administration du cluster. Nous utilisons pour cela une ressource `ClusterRoleBinding` pour lier un groupe d'une organisation github à un rôle `cluster-admin` qui lui donne tous les droits sur le cluster.

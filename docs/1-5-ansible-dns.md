@@ -58,7 +58,7 @@ echo 'address=/.k3s.local/127.0.0.1' >> $DNSMASQ_CNF_DIR
 
 ```sh
 sudo mkdir -v /etc/resolver
-echo "nameserver 127.0.0.1" | sudo tee -a /etc/resolver/local
+echo "nameserver 127.0.0.1" | sudo tee -a /etc/resolver/k3s.local
 ```
 
 Redémarrer dnsmasq :
@@ -70,7 +70,7 @@ Vérifier que tout fonctionne avec `scutil --dns` qui devrait donner :
 
 ```txt
 resolver ...
-  domain   : local
+  domain   : k3s.local
   nameserver[0] : 127.0.0.1
 ```
 
