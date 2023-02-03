@@ -40,6 +40,34 @@ Configuré la comme ceci **pour l'instant** en utilisant les url en local qui ne
 
 Ensuite noté bien votre **Client Id** et générer un nouveau **Client secret** en plus.
 
+#### Configuration
+
+D'abord comme vu précédemment avec cert-manager on créer les variables par défaut requises par dex :
+
+D'abord des informations globales comme l'espace de nom kubernetes et l'url par lequel on peut accéder au service.
+
+```yaml linenums="16" title="playbook/roles/kubeapps/defaults/main.yml"
+# HelmChart Custom Resource Definition for dex oidc connector
+dex_namespace: dex
+dex_hostname: dex.k3s.local
+```
+
+Ensuite on précise les informations de connexion à github ainsi que les celles qui permettrons au client de notre openid de se connecter. On laisse ces informations à null dans un but de documentation.
+
+> On prend un raccourci avec le secret, mais dans l'inventaire ansible final on renseignera des secrets plus sécurisés.
+
+```yaml
+dex_client_id: kubeapps
+dex_client_secret: ZXhhbXBsZS1hcHAtc2VjcmV0
+dex_github_client_id: ~
+dex_github_client_secret: ~
+dex_github_client_org: ~
+dex_github_client_team: ~
+```
+> **INFO** Le client open id est ici kubeapps. Pour résumé après ce schéma, kubeapps se sert du **claim open id** `groups` (qui aura ici comme valeur `esgi-lyon:ops-team`) renvoyé par dex pour accéder aux ressources du cluster autorisées par son rôle.
+
+> **Warning** Le `dex_client_secret` par défaut n'est pas du tout sécurisé et doit être changé en production
+
 #### Encrypter les secrets de l'application github
 
 Nous allons crypter les Informations dangereuses dans un vault ansible que l'on pourra créer avec :
@@ -54,7 +82,7 @@ echo 'your-pass' > $HOME/.ansible/.vault
 
 > Warning : en bash `>` écrase le fichier et `>>` ajoute à la fin du fichier. L'idéal est d'utiliser la commande `tee` à la place de ces opérandes.
 
-Puis ensuite on peut initier les secrets dans les `group_vars` pour qu'il soit possible de les identifié comme facts ansible et puis les utiliser au cours de l'éxécution du playbook :
+Puis on peut initier les secrets dans les `group_vars` pour qu'il soit possible de les identifier comme facts ansible et puis les utiliser au cours de l'exécution du playbook :
 
 ```bash
 ansible-vault create --vault-password-file $HOME/.ansible/.vault molecule/default/group_vars/molecule/secrets.yml
@@ -101,31 +129,7 @@ provisioner:
 
 Voilà, maintenant molecule importe les secrets et les rend disponible dans les variables ansible.
 
-#### Installation et configuration
-
-D'abord comme vu précédemment avec cert-manager on créer les variables par défaut requises par dex :
-
-D'abord des informations globales comme l'espace de nom kubernetes et l'url par lequel on peut accéder au service.
-
-```yaml linenums="16" title="playbook/roles/kubeapps/defaults/main.yml"
-# HelmChart Custom Resource Definition for dex oidc connector
-dex_namespace: dex
-dex_hostname: dex.k3s.local
-```
-
-Ensuite on précise les informations de connexion à github ainsi que les celles qui permettrons au client de notre openid de se connecter. On laisse ces informations à null dans un but de documentation.
-
-> On prend un raccourci avec le secret, mais dans l'inventaire ansible final on renseignera des secrets plus sécurisés.
-
-```yaml
-dex_client_id: kubeapps
-dex_client_secret: ZXhhbXBsZS1hcHAtc2VjcmV0
-dex_github_client_id: ~
-dex_github_client_secret: ~
-dex_github_client_org: ~
-dex_github_client_team: ~
-```
-> **INFO** Le client open id est ici kubeapps. Pour résumé après ce schéma, kubeapps se sert du **claim open id** `groups` (qui aura ici comme valeur `esgi-lyon:ops-team`) renvoyé par dex pour accéder aux ressources du cluster autorisées par son rôle.
+# Installation de dex
 
 Voici un schéma pour imager comment ce claim open id va servir à sécuriser l'attribution des droits en plus de la connection au cluster.
 
@@ -137,9 +141,7 @@ k3s|<--|        |<-------| openid |                      | oauth2   |
                          
 ```
 
-> **Warning** Le `dex_client_secret` par défaut n'est pas du tout sécurisé et doit être changé en production
-
-Ensuite, définissons un manifest utilisant helm pour installer facilement dex sur le cluster kubernetes. Implicitement seront créer des fichiers d'attributions de droit au cluster, le fichier de déploiement des pod et les services exposants des noms et adresses dans le cluster.
+Définissons un manifest utilisant helm pour installer facilement dex sur le cluster kubernetes. Implicitement seront créer des fichiers d'attributions de droit au cluster, le fichier de déploiement des pod et les services exposants des noms et adresses dans le cluster.
 
 On commence par créer le namespace
 
@@ -262,4 +264,3 @@ On lance notre `molecule test` pour voir si tous ce déploie bien et si l'url [h
 Cela indique que Open id est configuré sur kubernetes et que nous sommes fin prêt à faire fonctionner kubeapps avec dex. Ils peuvent maintenant communiquer en Https et dex peut autoriser des connexion associé au "cluster role" permettant de contrôler kubernetes.
 
 ---
-
