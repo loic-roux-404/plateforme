@@ -169,7 +169,7 @@ variable "vm_size" {
 
 ```
 
-```hcl linenums="56" title="infra/ubuntu.pkr.hcl"
+```hcl linenums="16" title="infra/ubuntu.pkr.hcl"
 source "azure-arm" "vm" {
   use_azure_cli_auth = true
 
@@ -190,16 +190,11 @@ Lors du processus de build packer, **nous ne sommes pas accessible sur internet*
 
 Ensuite, on utilise le provisionner ansible qui va installer notre playbook sur la machine azure :
 
-```hcl linenums="74" title="infra/ubuntu.pkr.hcl"
+```hcl linenums="31" title="infra/ubuntu.pkr.hcl"
 
 build {
 
   sources = ["sources.azure-arm.vm"]
-
-  provisioner "file" {
-    source      = "../playbook/requirements.txt"
-    destination = "requirements.txt"
-  }
 
   provisioner "shell" {
     inline = [

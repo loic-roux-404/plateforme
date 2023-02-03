@@ -32,11 +32,6 @@ build {
 
   sources = ["sources.azure-arm.vm"]
 
-  provisioner "file" {
-    source      = "../playbook/requirements.txt"
-    destination = "requirements.txt"
-  }
-
   provisioner "shell" {
     inline = [
       "curl https://bootstrap.pypa.io/get-pip.py -o /tmp/get-pip.py",
