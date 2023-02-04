@@ -76,3 +76,6 @@ _ [cert-manager annotation](https://cert-manager.io/docs/usage/ingress/#supporte
 - [doc azure](https://learn.microsoft.com/fr-fr/azure/)
 - [helm chart releaser](https://github.com/helm/chart-releaser)
 - [Github copilot](https://github.com/features/copilot)
+- [Microservices et architecture monolithique](shorturl.at/FRTW5)
+- [Postgres with Docker](https://geshan.com.np/blog/2021/12/docker-postgres/)
+- [Communication microservices](https://blog.logrocket.com/methods-for-microservice-communication/)
