@@ -151,6 +151,8 @@ Ajouter ce gitignore recommandé dans le dossier `infra/`
 curl -L https://github.com/github/gitignore/raw/main/Packer.gitignore | tee .gitignore
 ```
 
+Les variables de configuration et leurs valeurs par défaut :
+
 ```hcl linenums="1" title="infra/ubuntu.pkr.hcl"
 variable "resource_group_name" {
   type    = string
@@ -168,6 +170,8 @@ variable "vm_size" {
 }
 
 ```
+
+> Note: le fichier `vars.json` sert à passer de nouvelles valeurs pour ces variables avec `packer build -var-file=vars.json ubuntu.pkr.hcl`
 
 ```hcl linenums="16" title="infra/ubuntu.pkr.hcl"
 source "azure-arm" "vm" {
