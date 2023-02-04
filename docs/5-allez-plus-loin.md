@@ -7,6 +7,11 @@ J'ai essayé plusieurs fois le provision de la vm avec des configurations diffé
 Il s'agit probablement du cache dns qui vous renvoi l'entrée ip d'une ancienne vm car le time to live n'a pas encore expiré. Pour cela dans chrome nous devons nettoyer ce cache pour faire comme si nous n'étions jamais aller sur le site.
 Dans votre navigateur chrome [chrome://net-internals/#dns]() faites "un clear host cache" et réessayez.
 
+Aussi on peut utiliser un flush cache global si cela ne fonctionne toujorus pas :
+ 
+- [pour le dns de google](https://developers.google.com/speed/public-dns/cache?hl=fr)
+- [pour le dns de cloudflare](https://1.1.1.1/purge-cache/)
+
 > Pour faire des tests en cas réel, il est préférable d'utiliser des entrées `dex_hostname` et `kubeapps_hostname` différentes que vous n'utilisez pas pour un environnement (staging ou production).
 
 ### Exercice

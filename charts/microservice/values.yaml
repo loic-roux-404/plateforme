@@ -28,6 +28,8 @@ postgresql:
     enablePostgresUser: false
     database: db
     username: ekommerce
+  volumePermissions: 
+    enabled: true
   primary:
     persistence:
       enabled: true

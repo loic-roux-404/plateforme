@@ -8,7 +8,7 @@ datasource:
       ephemeral0: /dev/disk/cloud/azure_resource
 
 runcmd:
-  - [sleep, 20]
+  - [sleep, 100]
 
 ansible:
   install_method: pip

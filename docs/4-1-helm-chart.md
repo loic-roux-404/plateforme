@@ -223,12 +223,8 @@ secret:
 env:
   secret:
     PG_USER: ekommerce
-    PG_PASSWORD: password
     PG_CONNECTION: jdbc:postgresql://client-postgresql.default.svc.cluster.local:5432/db
-  primary:
-    persistence:
-      enabled: true
-      existingClaim: "postgresql-data-claim"
+    PG_PASSWORD: password
 
 ```
 
@@ -237,12 +233,16 @@ Puis on configure le chart postgres pour qu'il utilise les secrets et le "persis
 ```yaml linenums="25" title="charts/microservice/values.yaml"
 postgresql:
   auth:
-    existingSecret: all-secrets
-    secretKeys:
-      userPasswordKey: PG_PASSWORD
+    password: password
     enablePostgresUser: false
     database: db
     username: ekommerce
+  volumePermissions:
+    enabled: true
+  primary:
+    persistence:
+      enabled: true
+      existingClaim: "postgresql-data-claim"
 ```
 
 Nous pouvons vérifier avec `helm lint charts/microservice` si il n'y a pas d'erreurs puis aussi voir le résultat de notre chart avec `helm template charts/microservice`
