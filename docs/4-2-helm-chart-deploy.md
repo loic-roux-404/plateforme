@@ -1,18 +1,31 @@
 # 4.2 Déploiement du chart
 
-Si vous n'avez pas suivi le tutoriel en utilisant un repository git, vous pouvez créer un repository sur github [ici](https://github.com/new) et y ajouter le chart. Ceci vous permettra de mettre à disposition un repository helm grâce github pages. Ainsi vous pourrez utiliser le chart sur votre cluster kubernetes.
+Si vous n'avez pas suivi le tutoriel en utilisant un repository git, vous pouvez créer un repository sur github pour votre organisation avec ce type d'url : [https://github.com/organizations/<votre-org>/repositories/new](https://github.com/organizations/<votre-org>/repositories/new). Ceci vous permettra de mettre à disposition un repository helm grâce github pages et ainsi d'utiliser le chart sur le cluster kubernetes.
 
 > Nous utiliserons l'outil CD [chart_releaser_action](https://helm.sh/docs/howto/chart_releaser_action/) développé pour automatisé la publication de chart avec github actions (CI/CD)
 
+On va donc initialiser un repository git et pour l'instant ne pas y ajouter le chart tout de suite :
+
 ```bash
-git clone https://github.com/my-org/my-repo
-cd my-repo
-git add .
+git init
+git remote add origin git@github.com:<my-org>/<my-repo>.git
+git add infra playbook README.md
 git commit -m "chore: Helm chart"
 git push
 ```
 
-Ensuite créer une branche vide et orpheline pour github pages :
+> Note: Par défaut lorsque l'on initialise un repository git, la branche main est créée.
+
+> Note : on ne push pas sur la branche main pour le moment car la CI github n'est pas encore mise en place
+
+Ensuite, on va placer le dossier chart dans un espace temporaire git "stash" pour le commit plus tard
+
+```bash
+git add .
+git stash
+```
+
+On créer une branche vide et orpheline pour github pages :
 
 ```bash
 git checkout --orphan gh-pages
@@ -87,6 +100,16 @@ git commit -m "chore: chart releaser action"
 git push
 ```
 
+Enfin, on enlève le dossier `charts` du stash et on le commit :
+
+```bash
+git stash pop
+git add .
+git commit -m "chore: add chart"
+```
+
+L'objectif est de modifier les fichiers du chart pour que git détecte un changement et déclenche la CD github action.
+
 Notre chart va donc se déployer sur github pages et être disponible à l'adresse suivante : `https://my-org.github.io/my-repo`. N'hésitez pas à consulter l'avancement du job [ici](https://github.com/esgi-lyon/paas-tutorial/actions/runs/) et à suivre le déploiement sur [l'onglet deployments](https://github.com/esgi-lyon/paas-tutorial/deployments)
 
 Enfin vous pouvez ajouter le repo à helm pour tester que la publication a bien fonctionner :
@@ -134,7 +157,7 @@ container:
 ```yaml
 ingress:
   # ...
-  enabled: false
+  enabled: true
   hosts:
     - host: client.k3s.local
       paths:

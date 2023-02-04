@@ -128,6 +128,7 @@ Enfin on met en place le **wildcard** pour la zone dns afin que tous les sous do
 
 ```tf linenums="187" title="infra/main.tf"
 resource "azurerm_dns_a_record" "paas" {
+  depends_on = [namedotcom_domain_nameservers.namedotcom_paas_ns]
   name                = "*"
   zone_name           = azurerm_dns_zone.paas.name
   resource_group_name = data.azurerm_resource_group.paas.name
@@ -136,6 +137,8 @@ resource "azurerm_dns_a_record" "paas" {
 }
 
 ```
+
+> Warning: N'oublions pas de relié les ressources namedotcom et azure avec `depends_on`, car ce sont deux fournisseurs de services différents. On évite ainsi des problèmes de synchronisation DNS.
 
 C'est comme cela que l'on arrive à avoir un nom de domaine comme `kubeapps.paas-exemple-tutorial.live` qui pointe vers l'ingress de k3s.
 
