@@ -14,12 +14,6 @@ Aussi on peut utiliser un flush cache global si cela ne fonctionne toujorus pas 
 
 > Pour faire des tests en cas réel, il est préférable d'utiliser des entrées `dex_hostname` et `kubeapps_hostname` différentes que vous n'utilisez pas pour un environnement (staging ou production).
 
-### Exercice
-
-Pour vérifier que vous avez bien compris, vous devez maintenant créer l'image packer d'un nouvel environnement staging. (Par défaut packer utilise le rôle configuré sur l'environnement `prod`). Utilisez cet environnement avec terraform pour provisionner une vm dans un nouveau groupe de ressource.
-
-Il faudra bien veillez à créer les variables manquantes dans packer (nom image) et terraform (data source import image) pour que on puisse encore provisionner une machine de production.
-
 ### Kubernetes sur Vscode
 
 Pour consolider le deboggage de notre environnement de dev ops nous pouvons intégrer notre cluster kubernetes dans l'IDE vscode.

@@ -15,7 +15,6 @@ Pour cela nous ferons appel à un socle technique composé de :
 - l'outil [`k3s`](https://k3s.io/) qui simplifie l'installation de kubernetes sur des machines ARM tout en restant compatible avec les architectures classiques X64. Il fourni par défaut des pods (containers en execution) pour inclure des fonctionnalités souvent recherchés sur ce type de configuration edge computing. (reverse proxy, configuration DNS...)
 - [Packer](https://www.packer.io/) pour créer des images iso de machine linux
 - [Ansible](https://www.ansible.com/) pour provisioner cette image
-- [Azure](https://azure.microsoft.com/fr-fr/) pour nous founir des serveurs accessible en ssh sur lequels nous pourrons mettre en ligne
 - [Terraform](https://www.terraform.io/) pour contrôler azure de manière IaC et de déclencher toute la mise en place du PaaS dessus.
 
 ## Installation de Docker
@@ -39,8 +38,6 @@ Vous avez activé le composant optionnel Virtual Machine Platform
 Vous pouvez le faire en exécutant : `dism.exe /online /enable-feature /featurename:VirtualMachinePlatform /all` dans une invite PowerShell élevée.
 
 Cliquez sur ce [lien] (https://aka.ms/wslstorepage) pour accéder à la page du magasin WSL et cliquez sur Installer pour installer WSL.
-
-Traduit avec www.DeepL.com/Translator (version gratuite)
 
 - Télécharger après avoir suivi cette documentation la distribution linux ``Ubuntu 20.04.5 LTS`` depuis le windows store. 
 - **+ Windows terminal bien que pas obligatoire il est très pratique pour accéder au shell**
