@@ -1,6 +1,6 @@
 galaxy_info:
   author: loic-roux-404
-  namespace: paas_tutorial
+  namespace: k3s_paas
   description: kubeapps deployment
   role_name: kubeapps
 

@@ -125,3 +125,19 @@ Puis lancer `conda init zsh` (ou `bash` si vous préférez)
 - [Avec installer toutes plateformes](https://code.visualstudio.com/download)
 - Homebrew sur mac `brew install --cask visual-studio-code`
 - [Avec snap pour linux](https://snapcraft.io/code) sur linux
+
+## Ansible playbook
+
+```bash
+cd playbook
+ansible-galaxy install -r requirements.yml
+cd -
+```
+
+Install ansible collection for contabo :
+
+```bash
+cd playbook/collections/k3s_paas/contabo
+ansible-galaxy collection build --output-path /tmp
+ansible-galaxy collection install /tmp/k3s_paas-contabo-1.0.0.tar.gz
+```

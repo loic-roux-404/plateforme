@@ -12,10 +12,10 @@ variable "github_token" {
   sensitive = true
 }
 
-# variable "cert_manager_letsencrypt_env" {
-#   type = string
-#   default = "prod"
-# }
+variable "cert_manager_letsencrypt_env" {
+  type = string
+  default = "prod"
+}
 
 variable "domain" {
   type = string
@@ -39,6 +39,6 @@ variable "namedotcom_username" {
 # TODO non prio
 variable "secrets" {
   type = map(string)
-  description = "Define Azure Contabo secrets"
+  description = "Define Contabo secrets"
   default = {}
 }

@@ -1,0 +1,31 @@
+---
+cert_manager_email: "{{ lookup(
+  'azure.azcollection.azure_keyvault_secret',
+  'cert-manager-email',
+  credentials=contabo_credentials
+  ) }}"
+dex_client_id:  "{{ lookup(
+  'k3s_paas.contabo.get_secret',
+  'dex-client-id',
+  credentials=contabo_credentials
+  ) }}"
+dex_client_secret:  "{{ lookup(
+  'k3s_paas.contabo.get_secret',
+  'dex-client-secret',
+  credentials=contabo_credentials
+  ) }}"
+dex_github_client_id: "{{ lookup(
+  'k3s_paas.contabo.get_secret',
+  'dex-github-client-id',
+  credentials=contabo_credentials
+  ) }}"
+dex_github_client_secret: "{{ lookup(
+  'k3s_paas.contabo.get_secret',
+  'dex-github-client-secret',
+  credentials=contabo_credentials
+  ) }}"
+kubeapps_oauth_proxy_cookie_secret: "{{ lookup(
+  'k3s_paas.contabo.get_secret',
+  'kubeapps-oauth-proxy-cookie-secret',
+  credentials=contabo_credentials
+  ) }}"
