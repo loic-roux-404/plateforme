@@ -1,2 +1,0 @@
-pfruck-contabo
-requests-oauthlib

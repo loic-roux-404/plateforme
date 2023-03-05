@@ -137,7 +137,7 @@ cd -
 Install ansible collection for contabo :
 
 ```bash
-cd playbook/collections/k3s_paas/contabo
+cd playbook/ansible_collections/k3s_paas/contabo
 ansible-galaxy collection build --output-path /tmp
 ansible-galaxy collection install /tmp/k3s_paas-contabo-1.0.0.tar.gz
 ```

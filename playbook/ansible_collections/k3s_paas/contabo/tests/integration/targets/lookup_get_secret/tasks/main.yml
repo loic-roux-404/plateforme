@@ -1,0 +1,22 @@
+- set_fact:
+    credentials:
+      client_id: INT-XXXXXX
+      client_secret: XXXXXX-XXXXXX-XXXXXX-XXXXXX
+      username: "email@example"
+      password: "pass"
+
+# - name: Assert create secret
+#   assert:
+#     that:
+#       - lookup('k3s_paas.contabo.create_secret', 'test-secret', value='Ab1234#@', credentials=credentials)
+
+- name: Assert get secret
+  assert:
+    that:
+      - lookup('k3s_paas.contabo.get_secret', 'test-secret', credentials=credentials) == 'Ab1234#@'
+
+- name: Assert delete secret
+  assert:
+    that:
+      - lookup('k3s_paas.contabo.delete_secret', 'test-secret', credentials=credentials)
+
