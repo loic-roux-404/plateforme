@@ -61,9 +61,16 @@ variable "oauth2_pass" {
   sensitive = true
 }
 
+variable "ssh_public_key" {
+  type = string
+  sensensitive = true
+  default = "~/.ssh/id_rsa.pub" 
+}
+
 # TODO non prio
 variable "secrets" {
   type = map(string)
-  description = "Define Contabo secrets"
+  description = "Define ansible secrets"
   default = {}
+  sensitive = true
 }

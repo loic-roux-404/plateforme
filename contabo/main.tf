@@ -42,11 +42,16 @@ resource "random_password" "vm_password" {
   override_special = "!#$%&*()-_=+[]{}<>:?"
 }
 
+resource "contabo_secret" "paas_instance_ssh_key" {
+  name  = "paas_instance_ssh_key"
+  type  = "ssh"
+  value = file(pathexpand(var.ssh_public_key))
+}
+
 locals {
   final_secrets = merge(
     var.secrets,
     {
-      vm_password                        = random_password.vm_password.result
       dex_client_id                      = random_password.dex_client_id.result
       dex_client_secret                  = random_password.dex_client_secret.result
       kubeapps_oauth_proxy_cookie_secret = random_password.kubeapps_oauth_proxy_cookie_secret.result
@@ -60,17 +65,17 @@ locals {
 
 resource "contabo_image" "ubuntu_paas" {
   name        = "ubuntu_paas"
-  image_url   = "ubuntu-url-todo" # TODO
+  image_url   = "https://github.com/loic-roux-404/k3s-paas/releases/download/ubuntu-jammy-0.1.0/ubuntu-jammy-0.1.0.qcow2"
   os_type     = "Linux"
-  version     = "v18.0.0" # TODO
+  version     = "v22.04.2"
   description = "generated PaaS vm image with packer"
 }
 
 resource "namedotcom_record" "dns_zone" {
   domain_name = var.domain
-  host = "*"
+  host        = "*"
   record_type = "A"
-  answer = data.contabo_instance.paas_instance.ip_config[0].v4[0].ip
+  answer      = data.contabo_instance.paas_instance.ip_config[0].v4[0].ip
 }
 
 locals {
@@ -86,8 +91,9 @@ locals {
   )
 }
 
-resource "contabo_instance" "database_instance" {
+resource "contabo_instance" "paas_instance" {
   image_id = contabo_image.ubuntu_paas.id
+  ssh_keys = [contabo_secret.paas_instance_ssh_key.id]
   user_data = templatefile(
     "${path.module}/cloud-init.yaml",
     {

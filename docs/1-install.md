@@ -29,51 +29,6 @@ et les couches des systèmes de conteneurisation docker et kubernetes :
 
 ![docker k8s architecture](images/kube-archi.png)
 
-Pour utilisateurs de **windows** il faut un [**WSL**](https://devblogs.microsoft.com/commandline/a-preview-of-wsl-in-the-microsoft-store-is-now-available/#how-to-install-and-use-wsl-in-the-microsoft-store). 
-
-**Pour WSL** :
-
-Vous utilisez une version de Windows 11 ou supérieure (numéro de version de Windows 22000 ou supérieur).
-Vous avez activé le composant optionnel Virtual Machine Platform
-Vous pouvez le faire en exécutant : `dism.exe /online /enable-feature /featurename:VirtualMachinePlatform /all` dans une invite PowerShell élevée.
-
-Cliquez sur ce [lien] (https://aka.ms/wslstorepage) pour accéder à la page du magasin WSL et cliquez sur Installer pour installer WSL.
-
-- Télécharger après avoir suivi cette documentation la distribution linux ``Ubuntu 20.04.5 LTS`` depuis le windows store. 
-- **+ Windows terminal bien que pas obligatoire il est très pratique pour accéder au shell**
-
-Ensuite dans vscode installer l'extension wsl `ms-vscode-remote.remote-wsl`.
-
-Laissez-le ensuite finir de s'initialiser.
-
-## Mise à jour de Linux
-
-Ensuite bonne habitude, on met à jour linux :
-
-```bash
-apt update && apt upgrade -y
-```
-
-Puis activer `systemd` en modifiant `/etc/wsl.conf` dans votre distribution linux :
-
-```sh
-echo -e '[boot]\nsystemd=true' >> /etc/wsl.conf
-```
-
-Puis redémarrer l'app Ubuntu. Si des problèmes apparaissent encore lancer la commande `wsl --shutdown` depuis un powershell en administrateur avant de lancer le shell WSL.
-
-Ensuite pour finaliser l'installation de docker pour éviter les problèmes de droit avec rancher desktop :
-
-```bash
-sudo addgroup --system docker
-sudo adduser $USER docker
-newgrp docker
-# And something needs to be done so $USER always runs in group `docker` on the `Ubuntu` WSL
-sudo chown root:docker /var/run/docker.sock
-sudo chmod g+w /var/run/docker.sock
-
-```
-
 ## Rancher comme alternative à docker desktop
 
 [**Rancher**](https://rancherdesktop.io/) l'alternative mieux configurée et sans soucis de license à docker desktop. Il est portable sur windows et mac et nous permet d'avoir une expérience docker complète et fonctionnelle sur notre machine.
@@ -88,19 +43,13 @@ Vérifier que vous avez bien la commande `docker` disponible sinon ajouter `~/.r
 echo 'export PATH="$PATH:$HOME/.rd/bin"' >> ~/.zshrc
 ```
 
-Puis dans wsl : 
-
-```sh
-sudo systemctl restart docker
-```
-
 ## Installation de l'environnement python
 
 **Maintenant tout ce que nous allons faire se trouve dans la ligne de commande sur un shell `bash` ou `zsh`**
 
 **Conda** : [docs.conda.io](https://docs.conda.io/en/latest/miniconda.html). Installer simplement avec le setup `.pkg` pour mac.
 
-> Pour Linux et Windows avec WSL utilisez la ligne de commande ci-dessous pour l'installer
+> utilisez la ligne de commande ci-dessous pour l'installer
 ```bash
 wget https://repo.anaconda.com/miniconda/Miniconda3-latest-Linux-x86_64.sh -P /tmp
 chmod +x /tmp/Miniconda3-latest-Linux-x86_64.sh
@@ -140,4 +89,10 @@ Install ansible collection for contabo :
 cd playbook/ansible_collections/k3s_paas/contabo
 ansible-galaxy collection build --output-path /tmp
 ansible-galaxy collection install /tmp/k3s_paas-contabo-1.0.0.tar.gz
+```
+
+## Packer image
+
+```bash
+PACKER_LOG=1 packer build -var-file "$(uname -ms | tr " " "-")-host.hcl" ubuntu.pkr.hcl
 ```

@@ -11,8 +11,8 @@ ansible:
       - playbook_dir: /playbook
         inventory: /playbook/inventories/contabo/hosts
         playbook_name: site.yaml
-        extra_vars: "%{ for config_key, config_value in ansible_vars }
-          ${config_key}=${config_value}
+        extra_vars: "%{~ for config_key, config_value in ansible_vars ~}
+          ${config_key}=${config_value} 
           %{ endfor ~} 
           -o 'IdentitiesOnly=yes'"
         connection: local

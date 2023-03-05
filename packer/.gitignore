@@ -14,3 +14,8 @@ crash.log
 
 # For built boxes
 *.box
+# plugins
+.packer.d/
+
+# quemu build
+*-quemu/

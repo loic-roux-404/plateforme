@@ -8,6 +8,7 @@
         "ms-azuretools.vscode-azureterraform",
         "HashiCorp.terraform",
         "valentjn.vscode-ltex",
-        "ms-python.python"
+        "ms-python.python",
+        "4ops.packer"
     ]
 }

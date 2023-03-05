@@ -1,5 +1,7 @@
 #!/usr/bin/env bash
 
+VAR_FILE=${VAR_FILE:-prod.tfvars}
+
 read_tfvar() {
     local var_name=$1
     grep "$var_name" prod.tfvars | cut -d'=' -f2 | tr -d ' ' | tr -d \"
