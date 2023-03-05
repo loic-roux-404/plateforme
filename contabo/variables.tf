@@ -36,6 +36,31 @@ variable "namedotcom_username" {
   sensitive = true
 }
 
+variable "contabo_instance" {
+  type = string
+}
+
+# Contabo vars
+variable "oauth2_client_id" {
+  type = string
+  sensitive = true
+}
+
+variable "oauth2_client_secret" {
+  type = string
+  sensitive = true
+}
+
+variable "oauth2_user" {
+  type = string
+  sensitive = true
+}
+
+variable "oauth2_pass" {
+  type = string
+  sensitive = true
+}
+
 # TODO non prio
 variable "secrets" {
   type = map(string)

@@ -54,13 +54,6 @@ locals {
   )
 }
 
-resource "contabo_secret" "paas_all_secrets" {
-  name     = each.key
-  type     = "password"
-  for_each = local.final_secrets
-  value    = each.value
-}
-
 ############
 # Vm
 ############
@@ -73,18 +66,24 @@ resource "contabo_image" "ubuntu_paas" {
   description = "generated PaaS vm image with packer"
 }
 
-resource "contabo_instance" "paas_instance" {
-  display_name = "paas"
-  product_id   = "V2"
-  region       = "EU"
-  period       = 3
-}
-
-resource "namedotcom_record" "foo" {
+resource "namedotcom_record" "dns_zone" {
   domain_name = var.domain
   host = "*"
   record_type = "A"
-  answer = "TODO"
+  answer = data.contabo_instance.paas_instance.ip_config[0].v4[0].ip
+}
+
+locals {
+  ansible_vars = merge(
+    local.final_secrets,
+    {
+      kubeapps_hostname            = "kubeapps.${var.domain}"
+      dex_hostname                 = "dex.${var.domain}"
+      dex_github_client_org        = data.github_organization.org.orgname
+      dex_github_client_team       = github_team.opsteam.name
+      cert_manager_letsencrypt_env = var.cert_manager_letsencrypt_env
+    }
+  )
 }
 
 resource "contabo_instance" "database_instance" {
@@ -92,12 +91,7 @@ resource "contabo_instance" "database_instance" {
   user_data = templatefile(
     "${path.module}/cloud-init.yaml",
     {
-      kubeapps_hostname            = "kubeapps.${azurerm_dns_zone.paas.name}"
-      dex_hostname                 = "dex.${azurerm_dns_zone.paas.name}"
-      vault_url                    = azurerm_key_vault.paas.vault_uri
-      dex_github_client_org        = data.github_organization.org.orgname
-      dex_github_client_team       = github_team.opsteam.name
-      cert_manager_letsencrypt_env = var.cert_manager_letsencrypt_env
+      ansible_vars = local.ansible_vars
     }
   )
 }

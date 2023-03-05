@@ -31,8 +31,10 @@ spec:
           redirectURI: "https://{{ dex_hostname }}/callback"
           orgs:
           - name: '{{ dex_github_client_org }}'
+            {% if dex_github_client_team | d(False) %}
             teams: 
             - '{{ dex_github_client_team }}'
+            {% endif %}
       oauth2:
         skipApprovalScreen: true
       staticClients:

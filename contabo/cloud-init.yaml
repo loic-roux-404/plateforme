@@ -1,7 +1,7 @@
 #cloud-config
 
-runcmd:
-  - [sleep, 100]
+#runcmd:
+  #- [sleep, 1]
 
 ansible:
   install_method: pip
@@ -11,10 +11,8 @@ ansible:
       - playbook_dir: /playbook
         inventory: /playbook/inventories/contabo/hosts
         playbook_name: site.yaml
-        extra_vars: "vault_url=${vault_url}
-           dex_github_client_org=${dex_github_client_org}
-           dex_github_client_team=${dex_github_client_team}
-           cert_manager_letsencrypt_env=${cert_manager_letsencrypt_env}
-           kubeapps_hostname=${kubeapps_hostname}
-           dex_hostname=${dex_hostname} -o 'IdentitiesOnly=yes'"
+        extra_vars: "%{ for config_key, config_value in ansible_vars }
+          ${config_key}=${config_value}
+          %{ endfor ~} 
+          -o 'IdentitiesOnly=yes'"
         connection: local
