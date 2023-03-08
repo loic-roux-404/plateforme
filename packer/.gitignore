@@ -18,4 +18,5 @@ crash.log
 .packer.d/
 
 # quemu build
-*-quemu/
+*-qemu/
+*-qemu.tgz

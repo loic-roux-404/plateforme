@@ -77,6 +77,7 @@ source "qemu" "k3s" {
   ssh_password     = var.ssh_password
   ssh_username     = var.ssh_username
   output_directory = "${var.name}-qemu"
+  disk_compression = true
 }
 
 build {
@@ -103,7 +104,7 @@ build {
     playbook_dir            = "../playbook/"
     extra_arguments         = ["--skip-tags kubeapps"]
     galaxy_file             = "../playbook/requirements.yaml"
-    galaxy_command          = "sudo pip3 install --ignore-installed -r requirements.txt && sudo ansible-galaxy"
+    galaxy_command          = "sudo pip3 install -r requirements.txt && sudo ansible-galaxy"
     galaxy_roles_path       = "/usr/share/ansible/roles"
     galaxy_collections_path = "/usr/share/ansible/collections"
     staging_directory       = "/playbook/"
@@ -111,10 +112,15 @@ build {
 
   # Cleanup and minimize
   provisioner "shell" {
+    script = "scripts/remove-snap.sh"
+  }
+
+  provisioner "shell" {
     inline = [
-      "sudo apt autoremove --purge",
-      "sudo apt autoclean",
+      "sudo apt autoremove -y --purge",
+      "sudo apt autoclean -y",
       "sudo journalctl --vacuum-size 10M"
     ]
   }
+
 }

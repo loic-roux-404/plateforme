@@ -24,14 +24,14 @@ autoinstall:
     - curl
     - wget
     - openssh-server
-#    - qemu-guest-agent
   package_upgrade: true
   user-data:
-    hostname: asticot.live
+    hostname: astichost
+    disable_root: false
     timezone: Europe/Paris
     users:
       - name: asticot
-        passwd: $6$DKCCvJHcIxMLYcsg$/QU61oQF9BPAYK5Ykpm83w6idqzmeKoxupzZKQOIo6P3bTiRe/ZLt.KEZDffIvRhB6ScoGkIXOQ2gQxzfGFkJ.
+        passwd: $6$zizou$jcjXJr8qC0qzVqHbDzLTdj3cUmAxaZTrfEo9N83ALgiWC.DOIGnJvWL0mih3kTjvZe.J6/cNneJ3INAABj0so/
         groups: [adm, cdrom, dip, plugdev, lxd, sudo]
         lock-passwd: false
         sudo: ALL=(ALL) NOPASSWD:ALL
@@ -39,12 +39,9 @@ autoinstall:
   early-commands:
       - systemctl stop ssh.service
   late-commands:
-    - systemctl disable --now snapd
-    - sudo apt purge -y snapd
-    - rm -rf /snap /var/snap /var/lib/snapd /var/cache/snapd /usr/lib/snapd ~/snap
-    - sed -i -e 's/^#\?PermitRootLogin.*/PermitRootLogin yes/g' /target/etc/ssh/sshd_config
+    - sed -i -e 's/^#\?PasswordAuthentication.*/PasswordAuthentication yes/g' /target/etc/ssh/sshd_config
     - sed -i 's/^#*\(send dhcp-client-identifier\).*$/\1 = hardware;/' /target/etc/dhcp/dhclient.conf
     - 'sed -i "s/dhcp4: true/&\n      dhcp-identifier: mac/" /target/etc/netplan/00-installer-config.yaml'
-    - echo 'asticot ALL=(ALL) NOPASSWD:ALL' > /target/etc/sudoers.d/ubuntu
-    - sed -ie 's/GRUB_CMDLINE_LINUX=.*/GRUB_CMDLINE_LINUX="net.ifnames=0 biosdevname=0 systemd.unified_cgroup_hierarchy=0"/' /target/etc/default/grub
+    - sed -ie 's/GRUB_CMDLINE_LINUX=.*/GRUB_CMDLINE_LINUX="net.ifnames=0 biosdevname=0 systemd.unified_cgroup_hierarchy=1"/' /target/etc/default/grub
     - curtin in-target --target /target update-grub2
+    - systemctl start ssh.service
