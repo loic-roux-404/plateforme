@@ -9,8 +9,8 @@ variable "cpus" {
 }
 
 variable "disk_size" {
-  type    = number
-  default = 51200
+  type    = string
+  default = "4096M"
 }
 
 variable "headless" {
@@ -71,11 +71,13 @@ source "qemu" "k3s" {
   cpus             = "${var.cpus}"
   disk_size        = "${var.disk_size}"
   accelerator      = "${var.accelerator}"
+  vnc_port_min     = 5990
   headless         = var.headless
   communicator     = "ssh"
   ssh_timeout      = var.packer_log == "1" ? "35m" : "20m"
   ssh_password     = var.ssh_password
   ssh_username     = var.ssh_username
+  host_port_max    = 2226
   output_directory = "${var.name}-qemu"
   disk_compression = true
 }
@@ -122,5 +124,4 @@ build {
       "sudo journalctl --vacuum-size 10M"
     ]
   }
-
 }

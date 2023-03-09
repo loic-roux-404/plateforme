@@ -9,7 +9,9 @@ autoinstall:
       update: yes
   storage:
     layout:
-      name: lvm
+      name: direct
+    swap:
+      size: 0
   network:
     ethernets:
       eth0:
