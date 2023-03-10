@@ -15,7 +15,7 @@ variable "disk_size" {
 
 variable "headless" {
   type    = bool
-  default = false
+  default = true
 }
 
 variable "memory" {
@@ -29,40 +29,82 @@ variable "format" {
 }
 
 variable "packer_log" {
-  type = string
+  type    = string
   default = env("PACKER_LOG")
 }
 
 variable "ssh_password" {
-  type = string
-  sensitive =  true
+  type      = string
+  sensitive = true
+}
+
+variable "ssh_password_hash" {
+  type      = string
+  sensitive = true
 }
 
 variable "ssh_username" {
-  type = string
-  sensitive =  true
+  type      = string
+  sensitive = true
+  default   = "admin"
 }
 
-variable "ubuntu_release_name" {
+variable "locale" {
   type    = string
-  default = "jammy"
+  default = "fr_FR.UTF-8"
 }
 
-variable "ubuntu_version" {
-  type    = string
-  default = "22.04.2"
+variable "ubuntu_release_info" {
+  type = object({
+    name  = string
+    version = string
+  })
+  default = {
+    name  = "jammy"
+    version = "22.04.2"
+  }
+}
+
+variable "keyboard" {
+  type = object({
+    layout  = string
+    variant = string
+  })
+  default = {
+    layout  = "fr"
+    variant = "fr"
+  }
+}
+
+variable "playbook" {
+  type = object({
+    dir             = string
+    file            = string
+    extra_arguments = list(string)
+  })
+  default = {
+    dir             = "../playbook"
+    file            = "site.yaml"
+    extra_arguments = ["--skip-tags waypoint"]
+  }
 }
 
 locals {
-  ubuntu_download_url = "https://releases.ubuntu.com/${var.ubuntu_release_name}"
-  ubuntu_image = "ubuntu-${var.ubuntu_version}-live-server-amd64.iso"
+  ubuntu_download_url = "https://releases.ubuntu.com/${var.ubuntu_release_info.name}"
+  ubuntu_image        = "ubuntu-${var.ubuntu_release_info.version}-live-server-amd64.iso"
 }
 
-source "qemu" "ubuntu" {
-  vm_name        = "ubuntu-${var.ubuntu_release_name}-${var.ubuntu_version}.${var.format}"
-  iso_urls       = ["${local.ubuntu_download_url}/${local.ubuntu_image}"]
-  iso_checksum   = "file:${local.ubuntu_download_url}/SHA256SUMS"
-  http_directory = "http"
+source "qemu" "vm" {
+  http_content = {
+    "/meta-data" = ""
+    "/user-data" = templatefile("${abspath(path.root)}/cloud-init.yaml.tmpl", {
+      ssh_username      = var.ssh_username
+      ssh_password_hash = var.ssh_password_hash
+      locale            = var.locale
+      keyboard          = var.keyboard
+      hostname          = var.ubuntu_release_info.name
+    })
+  }
   boot_command = [
     "c",
     "linux /casper/vmlinuz --- autoinstall ds='nocloud-net;s=http://{{ .HTTPIP }}:{{ .HTTPPort }}/' ",
@@ -70,9 +112,12 @@ source "qemu" "ubuntu" {
     "initrd /casper/initrd<enter><wait>",
     "boot<enter>"
   ]
+  iso_urls         = ["${local.ubuntu_download_url}/${local.ubuntu_image}"]
+  iso_checksum     = "file:${local.ubuntu_download_url}/SHA256SUMS"
   format           = var.format
   boot_wait        = "10s"
   shutdown_command = "echo '${var.ssh_password}' | sudo -S shutdown -P now"
+  disk_compression = true
   memory           = "${var.memory}"
   cpus             = "${var.cpus}"
   disk_size        = "${var.disk_size}"
@@ -84,17 +129,17 @@ source "qemu" "ubuntu" {
   ssh_password     = var.ssh_password
   ssh_username     = var.ssh_username
   host_port_max    = 2226
+  vm_name          = "ubuntu-${var.ubuntu_release_info.name}-${var.ubuntu_release_info.version}.${var.format}"
   output_directory = ".qemu-{{build_name}}/"
-  disk_compression = true
 }
 
 build {
-  sources = ["source.qemu.ubuntu"]
+  sources = ["source.qemu.vm"]
 
   provisioner "shell" {
     inline = [
-      "echo 'Waiting for cloud-init...'",
-      "while [ ! -f /var/lib/cloud/instance/boot-finished ]; do sleep 1; done"
+      "sudo cloud-init status --wait", 
+      "sudo cloud-init clean --logs"
     ]
   }
 
@@ -102,20 +147,21 @@ build {
     inline = [
       "curl https://bootstrap.pypa.io/get-pip.py -o /tmp/get-pip.py",
       "sudo python3 /tmp/get-pip.py",
-      "sudo mkdir /playbook && sudo chown -R ${var.ssh_username}:${var.ssh_username} /playbook"
+      "sudo mkdir /playbook && sudo chown -R ${var.ssh_username}:${var.ssh_username} /playbook",
+      "sudo pip3 install ${replace(file("${var.playbook.dir}/requirements.txt"), "\n", " ")}"
     ]
   }
 
   provisioner "ansible-local" {
     command                 = "sudo ansible-playbook"
-    playbook_file           = "../playbook/site.yaml"
-    playbook_dir            = "../playbook/"
-    extra_arguments         = ["--skip-tags kubeapps"]
-    galaxy_file             = "../playbook/requirements.yaml"
-    galaxy_command          = "sudo pip3 install -r requirements.txt && sudo ansible-galaxy"
+    galaxy_command          = "sudo ansible-galaxy"
     galaxy_roles_path       = "/usr/share/ansible/roles"
     galaxy_collections_path = "/usr/share/ansible/collections"
     staging_directory       = "/playbook/"
+    playbook_file           = "${var.playbook.dir}/${var.playbook.file}"
+    playbook_dir            = var.playbook.dir
+    extra_arguments         = var.playbook.extra_arguments
+    galaxy_file             = "${var.playbook.dir}/requirements.yaml"
   }
 
   # Cleanup and minimize
@@ -127,7 +173,13 @@ build {
     inline = [
       "sudo apt autoremove -y --purge",
       "sudo apt autoclean -y",
+      "sudo journalctl --rotate",
       "sudo journalctl --vacuum-size 10M"
     ]
+  }
+
+  post-processor "checksum" {
+    checksum_types = ["sha256"]
+    output = "SHA256SUMS"
   }
 }

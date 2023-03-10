@@ -71,14 +71,14 @@ ingress:
     kubernetes.io/ingress.class: traefik
     cert-manager.io/cluster-issuer: letsencrypt-acme-issuer
   hosts:
-    - host: client.k3s.local
+    - host: client.k3s.test
       paths:
         - path: /
           pathType: ImplementationSpecific
   tls: []
-  #  - secretName: client.k3s.local-tls
+  #  - secretName: client.k3s.test-tls
   #    hosts:
-  #      - client.k3s.local
+  #      - client.k3s.test
 
 resources: {}
   # We usually recommend not to specify default resources and to leave this as a conscious

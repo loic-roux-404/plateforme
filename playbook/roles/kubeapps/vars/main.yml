@@ -16,3 +16,5 @@ kubeapps_internal_acme_ca_file: /etc/ssl/certs/acmeca.crt
 kubeapps_internal_acme_ca_in_volume_crt: /etc/ssl/certs/acmeca.crt
 kubeapps_internal_acme_ca_extra_volumes: []
 kubeapps_internal_acme_ca_extra_volumes_mounts: []
+
+ingress_hosts_internals: [dex_hostname, epinio_hostname]

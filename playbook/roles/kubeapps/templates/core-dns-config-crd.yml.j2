@@ -25,11 +25,11 @@ data:
         loadbalance
     }
 
-    {% set ingress_hosts_internals = [dex_hostname, kubeapps_hostname] | join(" ") -%}
+    {% set ingress_hosts_internals_joined = ingress_hosts_internals | join(" ") -%}
 
-    {{ ingress_hosts_internals }} {
+    {{ ingress_hosts_internals_joined }} {
       hosts {
-        {{ kubeapps_ingress_controller_ip }} {{ ingress_hosts_internals }}
+        {{ kubeapps_ingress_controller_ip }} {{ ingress_hosts_internals_joined }}
         fallthrough
       }
       whoami

@@ -3,6 +3,6 @@
   become: True
   pre_tasks:
     - include_tasks: roles/kubeapps/tasks/pre-import-cert.yml
-      when: cert_manager_is_internal  
+      when: kube_custom_ca  
   roles:
     - role: roles/kubeapps

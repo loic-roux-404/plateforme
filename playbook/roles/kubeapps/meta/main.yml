@@ -1,8 +1,8 @@
 galaxy_info:
   author: loic-roux-404
   namespace: k3s_paas
-  description: kubeapps deployment
-  role_name: kubeapps
+  description: waypoint deployment
+  role_name: waypoint
 
   # If the issue tracker for your role is not on github, uncomment the
   # next line and provide a value
@@ -50,9 +50,9 @@ galaxy_info:
 
 dependencies:
   - src: xanmanning.k3s
-    version: v3.3.0
+    version: v3.3.1
     vars:
-      k3s_release_version: v1.21
+      k3s_release_version: v1.24.2-rc1+k3s2
       k3s_server:
         kube-apiserver-arg=authorization-mode: Node,RBAC
         kube-apiserver-arg=oidc-issuer-url: "https://{{ dex_hostname }}"

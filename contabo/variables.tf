@@ -67,10 +67,26 @@ variable "ssh_public_key" {
   default = "~/.ssh/id_rsa.pub" 
 }
 
-# TODO non prio
 variable "secrets" {
   type = map(string)
   description = "Define ansible secrets"
   default = {}
   sensitive = true
+}
+
+variable "ubuntu_release_info" {
+  type = object({
+    name  = string
+    version = string
+    iso_version_tag = string
+    url = string
+    format = string
+  })
+  default = {
+    name  = "jammy"
+    version = "22.04.2"
+    iso_version_tag = "ubuntu-jammy-563bd31"
+    url = "https://github.com/loic-roux-404/k3s-paas/releases/download"
+    format = "qcow2"
+  }
 }

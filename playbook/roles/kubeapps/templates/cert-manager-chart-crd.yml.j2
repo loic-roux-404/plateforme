@@ -32,3 +32,8 @@ spec:
       http01:
         ingress:
           class: {{ kubeapps_k8s_ingress_class }}
+          ingressTemplate:
+            metadata:
+              annotations:
+                traefik.ingress.kubernetes.io/router.entrypoints: websecure
+                traefik.ingress.kubernetes.io/router.tls: "true"

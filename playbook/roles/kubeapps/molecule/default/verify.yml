@@ -15,14 +15,14 @@
       ansible.builtin.assert:
         that: '"node-0   Ready    control-plane,master" in kubernetes_nodes.stdout'
 
-    - name: Get Kubeapps service infos
+    - name: Get kubeapps service infos
       kubernetes.core.k8s_info:
         api_version: v1
         kind: Pod
         label_selectors:
-        - app.kubernetes.io/component = frontend
+        - app.kubernetes.io/name = kubeapps
         kubeconfig: /etc/rancher/k3s/k3s.yaml
-        namespace: kubeapps
+        namespace: default
       register: kubeapps_infos
 
     - ansible.builtin.set_fact:
@@ -31,8 +31,10 @@
     - ansible.builtin.debug:
         msg: "{{ containers_statuses | map(attribute='name') }}"
 
+    - debug: msg="{{ containers_statuses }}"
+
     - name: Assertions on service kubeapps 
       assert:
         that:
           - kubeapps_infos.resources | length > 0
-          - containers_statuses | selectattr('ready', 'equalto', true) | list | count == 2
+          - containers_statuses | selectattr('ready', 'equalto', true) | list | count == 3

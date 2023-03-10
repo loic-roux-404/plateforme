@@ -54,27 +54,3 @@ On check ensuite avec `kubectl cluster-info` qui devrait nous donner les informa
 ```
 
 Et voilà vous avez accès à une interface pour contrôler votre cluster directement depuis vscode. Utiliser cette configuration `json` autant que vous voulez dans les repository de vos applications pour avoir une expérience au plus proche de la production.
-
-# Sources
-
-- [ansible docs](https://docs.ansible.com/)
-- [base kubernetes](https://blog.bytebytego.com/p/ep35-what-is-kubernetes) Alex Xu
-- [start kubeapps](https://github.com/vmware-tanzu/kubeapps/blob/main/site/content/docs/latest/tutorials/getting-started.md#step-3-start-the-kubeapps-dashboard)
-- [oauth kubeapps](https://github.com/vmware-tanzu/kubeapps/blob/main/site/content/docs/latest/howto/OIDC/OAuth2OIDC-oauth2-proxy.md#manual-deployment)
-_ [cert-manager annotation](https://cert-manager.io/docs/usage/ingress/#supported-annotations)
-- [doc lets encrypt](https://letsencrypt.org/docs/)
-- [pebble doc cert recover](https://github.com/letsencrypt/pebble#ca-root-and-intermediate-certificates)
-- [open id docs from okta](https://developer.okta.com/docs/concepts/oauth-openid/)
-- [dex k8s](https://dexidp.io/docs/kubernetes/)
-- [dex github](https://dexidp.io/docs/connectors/github/)
-- [k8s dns](https://kubernetes.io/docs/concepts/services-networking/dns-pod-service/)
-- [dns debug kubernetes](https://kubernetes.io/docs/tasks/administer-cluster/dns-debugging-resolution/)
-- [kubernetes open id doc](https://kubernetes.io/docs/reference/access-authn-authz/authentication/)
-- [terraform github](https://registry.terraform.io/providers/integrations/github/latest/docs)
-- [terrform azure](https://registry.terraform.io/providers/hashicorp/azurerm/latest)
-- [doc azure](https://learn.microsoft.com/fr-fr/azure/)
-- [helm chart releaser](https://github.com/helm/chart-releaser)
-- [Github copilot](https://github.com/features/copilot)
-- [Microservices et architecture monolithique](shorturl.at/FRTW5)
-- [Postgres with Docker](https://geshan.com.np/blog/2021/12/docker-postgres/)
-- [Communication microservices](https://blog.logrocket.com/methods-for-microservice-communication/)

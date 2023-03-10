@@ -19,3 +19,6 @@ crash.log
 
 # qemu build
 .qemu-*/
+
+# Logs
+ubuntu-*.log

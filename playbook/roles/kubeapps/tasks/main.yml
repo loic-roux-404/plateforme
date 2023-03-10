@@ -15,12 +15,13 @@
     - src: core-dns-config-crd.yml
       condition: "{{ kubeapps_internal_acme_network_ip is not none }}"
     - { src: cert-manager-chart-crd.yml, deploy: "{{ cert_manager_namespace }}" }
-    - src: trust-manager-chart-crd.yml
-      deploy: trust-manager 
+    - src: reflector-chart-crd.yml
+      deploy: reflector
       ns: "{{ cert_manager_namespace }}"
       condition: "{{ cert_manager_is_internal }}"
-    - src: trust-bundle-config-crd.yml
+    - src: reflector-shared.yml
       condition: "{{ cert_manager_is_internal }}"
     - { src: dex-chart-crd.yml , deploy: "{{ dex_namespace }}" }
-    - src: kubeapps-chart-crd.yml
-      deploy: "{{ kubeapps_namespace }}"
+    - src: epinio-chart-crd.yml
+      deploy: "{{ epinio_namespace }}"
+

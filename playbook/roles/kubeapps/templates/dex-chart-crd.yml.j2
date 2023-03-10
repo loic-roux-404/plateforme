@@ -30,19 +30,27 @@ spec:
           clientSecret: '{{ dex_github_client_secret }}'
           redirectURI: "https://{{ dex_hostname }}/callback"
           orgs:
-          - name: '{{ dex_github_client_org }}'
-            {% if dex_github_client_team | d(False) %}
-            teams: 
-            - '{{ dex_github_client_team }}'
-            {% endif %}
+            {{ dex_github_orgs | to_yaml | indent(12) }}
       oauth2:
         skipApprovalScreen: true
       staticClients:
-      - id: "{{ dex_client_id }}"
+      - id: epinio-api
+        name: 'Epinio API'
+        public: true
+        # The 'Epinio API' lets the 'Epinio cli' issue ID tokens on its behalf.
+        # https://dexidp.io/docs/custom-scopes-claims-clients/#cross-client-trust-and-authorized-party
+        trustedPeers:
+        - epinio-cli
+        - epinio-ui
+      - id: epinio-cli
+        name: 'Epinio cli'
+        public: true
+      - id: epinio-ui
+        name: 'Epinio UI'
+        secret: {{ dex_client_secret }}
+        # Shouldn't be public, https://dexidp.io/docs/custom-scopes-claims-clients/#public-clients
         redirectURIs:
-        - 'https://{{ kubeapps_hostname }}/oauth2/callback'
-        name: 'Kubeapps'
-        secret: "{{ dex_client_secret }}"
+        - {{ epinio_hostname }}/auth/verify/
     ingress:
       enabled: true
       annotations:
@@ -59,3 +67,29 @@ spec:
         - secretName: {{ dex_hostname }}-tls
           hosts:
             - {{ dex_hostname }}
+
+---
+apiVersion: v1
+kind: Secret
+type: Opaque
+metadata:
+  # annotations:
+  name: dex-config
+  namespace: {{ dex_namespace }}
+stringData:
+  issuer: https://{{ dex_hostname }}
+  endpoint: "http://dex.{{ dex_namespace }}.svc.cluster.local:5556"
+  uiClientSecret: {{ dex_client_secret }}
+
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata:
+  name: kubeapps-github-teams
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: ClusterRole
+  name: cluster-admin
+subjects:
+  - kind: Group
+    name: "{{ dex_github_client_org }}:{{ dex_github_client_team }}"

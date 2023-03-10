@@ -1,0 +1,36 @@
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: {{ epinio_namespace }}
+---
+apiVersion: helm.cattle.io/v1
+kind: HelmChart
+metadata:
+  name: epinio
+  namespace: kube-system
+spec:
+  version: 1.7.1
+  chart: epinio
+  targetNamespace: {{ epinio_namespace }}
+  repo: https://epinio.github.io/helm-charts
+  valuesContent: |-
+    global:
+      dex:
+        enabled: false
+      domain: {{ epinio_wildcard_hostname }}
+      tlsIssuer: letsencrypt-acme-issuer
+      dex:
+        enabled: true
+    epinio-ui:
+      enabled: true
+      epinioUI:
+        theme: dark
+      ingress:
+        enabled: true
+    ingress:
+      annotations:
+        cert-manager.io/cluster-issuer: letsencrypt-acme-issuer
+        kubernetes.io/ingress.class: "{{ kubeapps_k8s_ingress_class }}"
+        traefik.frontend.passHostHeader: "true"
+        traefik.ingress.kubernetes.io/router.tls: "true"
+

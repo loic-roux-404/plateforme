@@ -2,7 +2,7 @@
 
 ---
 
-L'objectif de ce tutoriel est de vous permettre de créer sur une petite machine ou sur un serveur personnel un PaaS (Platform as a service). Un PaaS permet de déployer des applications en microservices. Celui-ci sera basé sur [kubernetes](https://kubernetes.io/fr/) pour la conteneurisation et [Kubeapps](https://kubeapps.dev/) pour l'interface de déploiement.
+L'objectif de ce tutoriel est de vous permettre de créer sur une petite machine ou sur un serveur personnel un PaaS (Platform as a service). Un PaaS permet de déployer des applications en microservices. Celui-ci sera basé sur [kubernetes](https://kubernetes.io/fr/) pour la conteneurisation et [kubeapps](https://developer.hashicorp.com/kubeapps) pour l'interface de déploiement.
 
 L'optique de cet outillage suivra :
 
@@ -80,30 +80,78 @@ Puis lancer `conda init zsh` (ou `bash` si vous préférez)
 ```bash
 cd playbook
 ansible-galaxy install -r requirements.yml
+pip install -r requirements.txt
 cd -
 ```
 
-Install ansible collection for contabo :
+Test kubeapps role :
 
 ```bash
-cd playbook/ansible_collections/k3s_paas/contabo
-ansible-galaxy collection build --output-path /tmp
-ansible-galaxy collection install /tmp/k3s_paas-contabo-1.0.0.tar.gz
+cd playbook/roles/kubeapps
+./scripts/setup_dnsmasq.sh
+molecule test
 ```
+
+To open UI with https add pebbel certificate to your truststore :
+
+```bash
+curl -k https://localhost:15000/roots/0 > ~/Downloads/pebble-ca.pem
+sudo security add-trusted-cert -d -r trustRoot -k /Library/Keychains/System.keychain ~/Downloads/pebble-ca.pem
+```
+
+- [Dex](https://dex.k3s.test/.well-known/openid-configuration)
+- [Epinio](https://epinio.k3s.test/)
+
+
+## Setup Github app
+
+
+Go to your `Profile > Developer Settings > Oauth Apps > New Oauth App`
+- Name: "Whatever"
+- Homepage: "https://auth.myepiniocluster.com",
+- Authorization callback URL: "https://auth.myepiniocluster.com/callback"
+
+Then take note of the ClientID and the ClientSecret.
+
+With those you need to edit the config.yaml inside the `dex-config`.
 
 ## Packer image
 
+> In folder `packer/`
+
 ```bash
-PACKER_LOG=0 packer build -var-file "$(uname -ms | tr " " "-")-host.hcl" -var-file=secrets.pkvars.hcl ubuntu.pkr.hcl
+PACKER_LOG=0 PACKER_LOG_PATH=ubuntu-jammy.log packer build -var-file "$(uname -ms | tr " " "-")-host.hcl" -var-file=secrets.pkrvars.hcl ubuntu.pkr.hcl
 ```
 
-> use `PACKER_LOG=1` for debug
+> use `PACKER_LOG=1` for debug and `-on-error=ask`
+
+**Simplified usage with makefile** :
+
+```bash
+make ubuntu-debug
+```
+
+> In debug mode you could need to do `ssh-keygen -f ~/.ssh/known_hosts -R [127.0.0.1]:2225` to delete old ssh trusted key for host
+
+or for release :
+
+```bash
+make ubuntu
+```
 
 Release image manually :
 
 ```bash
-git tag "ubuntu-jammy-2204-$(git branch --show-current)-$(git rev-parse --short HEAD)"
+git tag "ubuntu-jammy-$(git rev-parse --short HEAD)"
 git push --tags
 ```
 
 Open release from tag on [this link](https://github.com/loic-roux-404/k3s-paas/releases/new)
+
+## Terraform
+
+```bash
+INSTANCE_ID=$(grep "contabo_instance" prod.tfvars | cut -d'=' -f2 | tr -d ' ' | tr -d \")
+terraform import -var-file=prod.tfvars contabo_instance.paas_instance $INSTANCE_ID
+terraform apply -auto-approve -var-file=prod.tfvars
+```
