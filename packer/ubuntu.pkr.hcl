@@ -28,11 +28,6 @@ variable "packer_log" {
   default = env("PACKER_LOG")
 }
 
-variable "name" {
-  type    = string
-  default = "ubuntu_paas"
-}
-
 variable "ssh_password" {
   type = string
   sensitive =  true
@@ -43,20 +38,30 @@ variable "ssh_username" {
   sensitive =  true
 }
 
-variable "ubuntu_download_url" {
+variable "name" {
   type    = string
-  default = "https://releases.ubuntu.com/jammy"
+  default = "ubuntu_paas"
 }
 
-variable "ubuntu_image" {
+variable "ubuntu_release_name" {
   type    = string
-  default = "ubuntu-22.04.2-live-server-amd64.iso"
+  default = "jammy"
+}
+
+variable "ubuntu_version" {
+  type    = string
+  default = "22.04.2"
+}
+
+locals {
+  ubuntu_download_url = "https://releases.ubuntu.com/${var.ubuntu_release_name}"
+  ubuntu_image = "ubuntu-${var.ubuntu_version}-live-server-amd64.iso"
 }
 
 source "qemu" "k3s" {
   vm_name        = "${var.name}"
-  iso_urls       = ["${var.ubuntu_download_url}/${var.ubuntu_image}"]
-  iso_checksum   = "file:${var.ubuntu_download_url}/SHA256SUMS"
+  iso_urls       = ["${local.ubuntu_download_url}/${local.ubuntu_image}"]
+  iso_checksum   = "file:${local.ubuntu_download_url}/SHA256SUMS"
   http_directory = "http"
   boot_command = [
     "c",
