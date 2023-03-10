@@ -67,10 +67,14 @@ variable "ssh_public_key" {
   default = "~/.ssh/id_rsa.pub" 
 }
 
-# TODO non prio
 variable "secrets" {
   type = map(string)
   description = "Define ansible secrets"
   default = {}
   sensitive = true
+}
+
+variable "os_image_url" {
+  type = string
+  default = "https://github.com/loic-roux-404/k3s-paas/releases/download/ubuntu-jammy-2204-boilerplate-850bf6f/ubuntu-jammy-22.04.2.qcow2"
 }

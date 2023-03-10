@@ -63,21 +63,6 @@ locals {
 # Vm
 ############
 
-resource "contabo_image" "paas_instance" {
-  name        = "ubuntu_paas"
-  image_url   = "https://github.com/loic-roux-404/k3s-paas/releases/download/ubuntu-jammy-2204-boilerplate-850bf6f/ubuntu_paas"
-  os_type     = "Linux"
-  version     = "22.04.2"
-  description = "generated PaaS vm image with packer"
-}
-
-resource "namedotcom_record" "dns_zone" {
-  domain_name = var.domain
-  host        = "*"
-  record_type = "A"
-  answer      = data.contabo_instance.paas_instance.ip_config[0].v4[0].ip
-}
-
 locals {
   ansible_vars = merge(
     local.final_secrets,
@@ -91,9 +76,28 @@ locals {
   )
 }
 
+resource "contabo_image" "paas_instance" {
+  name        = "ubuntu_paas"
+  image_url   = var.os_image_url
+  os_type     = "Linux"
+  version     = "22.04.2"
+  description = "generated PaaS vm image with packer"
+}
+
 resource "contabo_instance" "paas_instance" {
   image_id = contabo_image.paas_instance.id
   ssh_keys = [contabo_secret.paas_instance_ssh_key.id]
+}
+
+resource "namedotcom_record" "dns_zone" {
+  for_each = toset(["", "*"])
+  domain_name = var.domain
+  host        = each.key
+  record_type = "A"
+  answer      = contabo_instance.paas_instance.ip_config[0].v4[0].ip
+}
+
+resource "contabo_instance" "paas_instance" {
   user_data = templatefile(
     "${path.module}/cloud-init.yaml",
     {

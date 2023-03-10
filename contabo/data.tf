@@ -14,7 +14,3 @@ data "github_membership" "all_admin" {
   }
   username = each.value.username
 }
-
-data "contabo_instance" "paas_instance" {
-  id = var.contabo_instance
-}

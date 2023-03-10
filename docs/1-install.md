@@ -107,3 +107,11 @@ git push --tags
 ```
 
 Open release from tag on [this link](https://github.com/loic-roux-404/k3s-paas/releases/new)
+
+## Terraform
+
+```bash
+INSTANCE_ID=$(grep "contabo_instance" prod.tfvars | cut -d'=' -f2 | tr -d ' ' | tr -d \")
+terraform import -var-file=prod.tfvars contabo_instance.paas_instance $INSTANCE_ID
+terraform apply -auto-approve -var-file=prod.tfvars
+```
