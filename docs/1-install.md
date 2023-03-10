@@ -106,4 +106,4 @@ git tag "ubuntu-jammy-2204-$(git branch --show-current)-$(git rev-parse --short 
 git push --tags
 ```
 
-Open release from 
+Open release from tag on [this link](https://github.com/loic-roux-404/k3s-paas/releases/new)

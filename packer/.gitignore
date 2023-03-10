@@ -17,6 +17,5 @@ crash.log
 # plugins
 .packer.d/
 
-# quemu build
-*-qemu/
-*-qemu.tgz
+# qemu build
+.qemu-*/

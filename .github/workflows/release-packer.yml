@@ -31,6 +31,7 @@ jobs:
         id: init
         run: "packer init ubuntu.pkr.hcl"
         working-directory: packer
+
       - name: Run `packer validate`
         id: validate
         run: >- 
@@ -49,9 +50,7 @@ jobs:
       - uses: "marvinpinto/action-automatic-releases@latest"
         with:
           repo_token: "${{ secrets.GITHUB_TOKEN }}"
-          automatic_release_tag: >-
-            ubuntu-jammy-2204${{ github.ref_name }}-\
-            ${{ steps.vars.outputs.sha_short }}
+          automatic_release_tag: ubuntu-jammy-2204${{ github.ref_name }}-${{ steps.vars.outputs.sha_short }}
           prerelease: false
           files: |
-            packer/ubuntu_paas-qemu/ubuntu_paas
+            packer/.qemu/k3s_paas-ubuntu-jammy-22.04.2.qcow2

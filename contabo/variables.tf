@@ -63,7 +63,7 @@ variable "oauth2_pass" {
 
 variable "ssh_public_key" {
   type = string
-  sensensitive = true
+  sensitive = true
   default = "~/.ssh/id_rsa.pub" 
 }
 

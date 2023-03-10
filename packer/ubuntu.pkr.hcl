@@ -23,6 +23,11 @@ variable "memory" {
   default = 8192
 }
 
+variable "format" {
+  type    = string
+  default = "qcow2"
+}
+
 variable "packer_log" {
   type = string
   default = env("PACKER_LOG")
@@ -36,11 +41,6 @@ variable "ssh_password" {
 variable "ssh_username" {
   type = string
   sensitive =  true
-}
-
-variable "name" {
-  type    = string
-  default = "ubuntu_paas"
 }
 
 variable "ubuntu_release_name" {
@@ -58,8 +58,8 @@ locals {
   ubuntu_image = "ubuntu-${var.ubuntu_version}-live-server-amd64.iso"
 }
 
-source "qemu" "k3s" {
-  vm_name        = "${var.name}"
+source "qemu" "ubuntu" {
+  vm_name        = "ubuntu-${var.ubuntu_release_name}-${var.ubuntu_version}.${var.format}"
   iso_urls       = ["${local.ubuntu_download_url}/${local.ubuntu_image}"]
   iso_checksum   = "file:${local.ubuntu_download_url}/SHA256SUMS"
   http_directory = "http"
@@ -70,6 +70,7 @@ source "qemu" "k3s" {
     "initrd /casper/initrd<enter><wait>",
     "boot<enter>"
   ]
+  format           = var.format
   boot_wait        = "10s"
   shutdown_command = "echo '${var.ssh_password}' | sudo -S shutdown -P now"
   memory           = "${var.memory}"
@@ -83,12 +84,12 @@ source "qemu" "k3s" {
   ssh_password     = var.ssh_password
   ssh_username     = var.ssh_username
   host_port_max    = 2226
-  output_directory = "${var.name}-qemu"
+  output_directory = ".qemu-{{build_name}}/"
   disk_compression = true
 }
 
 build {
-  sources = ["source.qemu.k3s"]
+  sources = ["source.qemu.ubuntu"]
 
   provisioner "shell" {
     inline = [

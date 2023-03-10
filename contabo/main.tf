@@ -63,11 +63,11 @@ locals {
 # Vm
 ############
 
-resource "contabo_image" "ubuntu_paas" {
+resource "contabo_image" "paas_instance" {
   name        = "ubuntu_paas"
   image_url   = "https://github.com/loic-roux-404/k3s-paas/releases/download/ubuntu-jammy-2204-boilerplate-850bf6f/ubuntu_paas"
   os_type     = "Linux"
-  version     = "v22.04.2"
+  version     = "22.04.2"
   description = "generated PaaS vm image with packer"
 }
 
@@ -92,7 +92,7 @@ locals {
 }
 
 resource "contabo_instance" "paas_instance" {
-  image_id = contabo_image.ubuntu_paas.id
+  image_id = contabo_image.paas_instance.id
   ssh_keys = [contabo_secret.paas_instance_ssh_key.id]
   user_data = templatefile(
     "${path.module}/cloud-init.yaml",

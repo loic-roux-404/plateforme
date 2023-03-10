@@ -5,6 +5,7 @@ namedotcom_username = "username"
 namedotcom_token = "aaaaaaaaaaaaaaaaaaaaaaaaaaaa"
 github_token = "ghp_aaaaaaaaaaaaaaaaaaxxxxxxxxxxxx"
 
+contabo_instance     = "XXXXXXXXX"
 oauth2_client_id     = "INT-XXXXX"
 oauth2_client_secret = "XXXXXXX-xXXX-XXXX-XXX-XXXXXXXXX"
 oauth2_user          = "toto@example.com"
