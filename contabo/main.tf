@@ -65,7 +65,7 @@ locals {
 
 resource "contabo_image" "ubuntu_paas" {
   name        = "ubuntu_paas"
-  image_url   = "https://github.com/loic-roux-404/k3s-paas/releases/download/ubuntu-jammy-0.1.0/ubuntu-jammy-0.1.0.qcow2"
+  image_url   = "https://github.com/loic-roux-404/k3s-paas/releases/download/ubuntu-jammy-2204-boilerplate-850bf6f/ubuntu_paas"
   os_type     = "Linux"
   version     = "v22.04.2"
   description = "generated PaaS vm image with packer"

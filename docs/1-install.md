@@ -98,3 +98,12 @@ PACKER_LOG=0 packer build -var-file "$(uname -ms | tr " " "-")-host.hcl" -var-fi
 ```
 
 > use `PACKER_LOG=1` for debug
+
+Release image manually :
+
+```bash
+git tag "ubuntu-jammy-2204-$(git branch --show-current)-$(git rev-parse --short HEAD)"
+git push --tags
+```
+
+Open release from 
