@@ -11,7 +11,7 @@ resource "github_team_membership" "opsteam_members" {
   for_each = data.github_membership.all_admin
   team_id  = github_team.opsteam.id
   username = each.value.username
-  role     = "member"
+  role     = "maintainer"
 }
 
 ############
@@ -40,12 +40,21 @@ resource "random_password" "vm_password" {
   length           = 16
   special          = true
   override_special = "!#$%&*()-_=+[]{}<>:?"
+  min_upper = 1
+  min_numeric = 3
+  min_special = 1
 }
 
 resource "contabo_secret" "paas_instance_ssh_key" {
   name  = "paas_instance_ssh_key"
   type  = "ssh"
   value = file(pathexpand(var.ssh_public_key))
+}
+
+resource "contabo_secret" "paas_instance_root_password" {
+  name  = "paas_instance_root_password"
+  type  = "password"
+  value = random_password.vm_password.result
 }
 
 locals {
@@ -84,24 +93,26 @@ resource "contabo_image" "paas_instance" {
   description = "generated PaaS vm image with packer"
 }
 
-resource "contabo_instance" "paas_instance" {
-  image_id = contabo_image.paas_instance.id
-  ssh_keys = [contabo_secret.paas_instance_ssh_key.id]
-}
-
 resource "namedotcom_record" "dns_zone" {
-  for_each = toset(["", "*"])
+  for_each    = toset(["", "*"])
   domain_name = var.domain
   host        = each.key
   record_type = "A"
-  answer      = contabo_instance.paas_instance.ip_config[0].v4[0].ip
+  answer      = data.contabo_instance.paas_instance.ip_config[0].v4[0].ip
 }
 
 resource "contabo_instance" "paas_instance" {
+  image_id = contabo_image.paas_instance.id
+  ssh_keys = [contabo_secret.paas_instance_ssh_key.id]
+  root_password = contabo_secret.paas_instance_root_password.id
   user_data = templatefile(
     "${path.module}/cloud-init.yaml",
     {
       ansible_vars = local.ansible_vars
     }
   )
+  depends_on = [
+    namedotcom_record.dns_zone,
+    github_team_membership.opsteam_members,
+  ]
 }

@@ -1,7 +1,7 @@
 #cloud-config
 autoinstall:
   version: 1
-  locale: en_FR.UTF-8
+  locale: fr_FR
   keyboard:
     layout: fr
     variant: fr
@@ -24,7 +24,6 @@ autoinstall:
   packages:
     - bc
     - curl
-    - wget
     - openssh-server
   package_upgrade: true
   user-data:
