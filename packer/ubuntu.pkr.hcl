@@ -38,9 +38,15 @@ variable "ssh_password" {
   sensitive =  true
 }
 
+variable "ssh_password_hash" {
+  type = string
+  sensitive =  true
+}
+
 variable "ssh_username" {
   type = string
   sensitive =  true
+  default = "admin"
 }
 
 variable "ubuntu_release_name" {
@@ -53,16 +59,54 @@ variable "ubuntu_version" {
   default = "22.04.2"
 }
 
+variable "locale" {
+  type = string
+  default = "fr_FR.UTF8"
+}
+
+variable "keyboard" {
+  type = object({
+    layout = string
+    variant = string
+  })
+  default = {
+    layout = "fr"
+    variant = "fr"
+  }
+}
+
+variable "playbook" {
+  type = object({
+    dir = string
+    file = string
+    extra_arguments = list(string)
+  })
+  default = {
+    dir = "../playbook"
+    file = "site.yaml"
+    extra_arguments = ["--skip-tags kubeapps"]
+  }
+}
+
 locals {
   ubuntu_download_url = "https://releases.ubuntu.com/${var.ubuntu_release_name}"
   ubuntu_image = "ubuntu-${var.ubuntu_version}-live-server-amd64.iso"
+  cloud_init_params = {
+    ssh_username = var.ssh_username
+    ssh_password_hash = var.ssh_password_hash
+    locale = var.locale
+    keyboard = var.keyboard
+  }
 }
 
 source "qemu" "ubuntu" {
   vm_name        = "ubuntu-${var.ubuntu_release_name}-${var.ubuntu_version}.${var.format}"
   iso_urls       = ["${local.ubuntu_download_url}/${local.ubuntu_image}"]
   iso_checksum   = "file:${local.ubuntu_download_url}/SHA256SUMS"
-  http_directory = "http"
+  http_content = {
+    "meta-data" = file("${path.root}/http/meta-data")
+    "user-data" = templatefile("${path.root}/http/user-data.tmpl", local.cloud_init_params)
+  }
   boot_command = [
     "c",
     "linux /casper/vmlinuz --- autoinstall ds='nocloud-net;s=http://{{ .HTTPIP }}:{{ .HTTPPort }}/' ",
@@ -76,6 +120,9 @@ source "qemu" "ubuntu" {
   memory           = "${var.memory}"
   cpus             = "${var.cpus}"
   disk_size        = "${var.disk_size}"
+  qemu_img_args {
+    convert = ["-o", "preallocation=metadata"]
+  }
   accelerator      = "${var.accelerator}"
   vnc_port_min     = 5990
   headless         = var.headless
@@ -108,10 +155,10 @@ build {
 
   provisioner "ansible-local" {
     command                 = "sudo ansible-playbook"
-    playbook_file           = "../playbook/site.yaml"
-    playbook_dir            = "../playbook/"
-    extra_arguments         = ["--skip-tags kubeapps"]
-    galaxy_file             = "../playbook/requirements.yaml"
+    playbook_file           = "${var.playbook.dir}/${var.playbook.file}"
+    playbook_dir            = var.playbook.dir
+    extra_arguments         = var.playbook.extra_arguments
+    galaxy_file             = "${var.playbook.dir}/requirements.yaml"
     galaxy_command          = "sudo pip3 install -r requirements.txt && sudo ansible-galaxy"
     galaxy_roles_path       = "/usr/share/ansible/roles"
     galaxy_collections_path = "/usr/share/ansible/collections"
