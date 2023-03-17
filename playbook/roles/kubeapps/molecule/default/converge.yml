@@ -25,7 +25,7 @@
       ansible.builtin.pip:
         name:
           - openshift
-          - pyyaml
+          - PyYAML
           - kubernetes
 
     - name: dig host.docker.internal address

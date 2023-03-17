@@ -108,7 +108,9 @@ resource "contabo_instance" "paas_instance" {
   user_data = templatefile(
     "${path.module}/cloud-init.yaml",
     {
-      ansible_vars = local.ansible_vars
+      ansible_vars = [
+        for config_key, config_value in local.ansible_vars : "${config_key}=${config_value}"
+      ]
     }
   )
   depends_on = [

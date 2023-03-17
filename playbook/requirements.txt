@@ -1,4 +1,4 @@
 ansible==7.2.0
-pyyaml
+PyYAML
 openshift 
 kubernetes

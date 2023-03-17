@@ -2,16 +2,14 @@
 autoinstall:
   version: 1
   locale: ${locale}
-  keyboard: ${yamlencode(keyboard)}
+  keyboard:
+    variant: ${keyboard.variant}
+    layout: ${keyboard.layout}
   refresh-installer:
       update: yes
   storage:
     layout:
-      name: lvm
-      match:
-        size: largest
-    swap:
-      size: 0
+      name: direct
   network:
     ethernets:
       eth0:
@@ -30,6 +28,11 @@ autoinstall:
     hostname: astichost
     disable_root: false
     timezone: Europe/Paris
+    resize_rootfs: true
+    growpart:
+      mode: auto
+      devices: ["/"]
+      ignore_growroot_disabled: false
     users:
       - name: ${ssh_username}
         passwd: ${ssh_password_hash}
@@ -37,10 +40,6 @@ autoinstall:
         lock-passwd: false
         sudo: ALL=(ALL) NOPASSWD:ALL
         shell: /bin/bash
-  early-commands:
-      - systemctl stop ssh.service
   late-commands:
-    - sed -i -e 's/^#\?PasswordAuthentication.*/PasswordAuthentication yes/g' /target/etc/ssh/sshd_config
     - sed -ie 's/GRUB_CMDLINE_LINUX=.*/GRUB_CMDLINE_LINUX="net.ifnames=0 biosdevname=0 systemd.unified_cgroup_hierarchy=1"/' /target/etc/default/grub
     - curtin in-target --target /target update-grub2
-    - systemctl start ssh.service

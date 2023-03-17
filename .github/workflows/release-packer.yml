@@ -37,14 +37,14 @@ jobs:
         run: >- 
           packer validate \
             -var-file "$(uname -ms | tr ' ' '-')-host.hcl" \
-            -var-file=secrets.pkvars.hcl ubuntu.pkr.hcl
+            -var-file=secrets.pkrvars.hcl ubuntu.pkr.hcl
         working-directory: packer
 
       - name: Build Artifact
         run: >- 
           packer build \
             -var-file "$(uname -ms | tr ' ' '-')-host.hcl" \
-            -var-file=secrets.pkvars.hcl ubuntu.pkr.hcl
+            -var-file=secrets.pkrvars.hcl ubuntu.pkr.hcl
         working-directory: packer
 
       - uses: "marvinpinto/action-automatic-releases@latest"
@@ -53,4 +53,4 @@ jobs:
           automatic_release_tag: ubuntu-jammy-2204${{ github.ref_name }}-${{ steps.vars.outputs.sha_short }}
           prerelease: false
           files: |
-            packer/.qemu/k3s_paas-ubuntu-jammy-22.04.2.qcow2
+            packer-ubuntu/.qemu/ubuntu-jammy-22.04.2.qcow2

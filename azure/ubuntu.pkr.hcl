@@ -36,7 +36,7 @@ build {
     inline = [
       "curl https://bootstrap.pypa.io/get-pip.py -o /tmp/get-pip.py",
       "sudo python3 /tmp/get-pip.py",
-      "sudo pip3 install --ignore-installed ansible==6.5.0 pyyaml openshift kubernetes",
+      "sudo pip3 install --ignore-installed ansible==6.5.0 PyYAML openshift kubernetes",
       "sudo mkdir /playbook && sudo chown -R packer:packer /playbook",
     ]
   }

@@ -78,3 +78,14 @@ variable "os_image_url" {
   type = string
   default = "https://github.com/loic-roux-404/k3s-paas/releases/download/ubuntu-jammy-2204-boilerplate-850bf6f/ubuntu-jammy-22.04.2.qcow2"
 }
+
+variable "ubuntu_release_info" {
+  type = object({
+    name  = string
+    version = string
+  })
+  default = {
+    name  = "jammy"
+    version = "22.04.2"
+  }
+}

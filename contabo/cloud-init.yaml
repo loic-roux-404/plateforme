@@ -1,8 +1,5 @@
 #cloud-config
 
-#runcmd:
-  #- [sleep, 1]
-
 ansible:
   install_method: pip
   package_name: ansible
@@ -11,8 +8,5 @@ ansible:
       - playbook_dir: /playbook
         inventory: /playbook/inventories/contabo/hosts
         playbook_name: site.yaml
-        extra_vars: "%{~ for config_key, config_value in ansible_vars ~}
-          ${config_key}=${config_value} 
-          %{ endfor ~} 
-          -o 'IdentitiesOnly=yes'"
+        extra_vars: ${join(" ", ansible_vars)} -o 'IdentitiesOnly=yes'
         connection: local

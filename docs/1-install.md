@@ -93,11 +93,25 @@ ansible-galaxy collection install /tmp/k3s_paas-contabo-1.0.0.tar.gz
 
 ## Packer image
 
+> In folder `packer/`
+
 ```bash
-PACKER_LOG=0 packer build -var-file "$(uname -ms | tr " " "-")-host.hcl" -var-file=secrets.pkrvars.hcl ubuntu.pkr.hcl
+PACKER_LOG=0 PACKER_LOG_PATH=ubuntu-jammy.log packer build -var-file "$(uname -ms | tr " " "-")-host.hcl" -var-file=secrets.pkrvars.hcl ubuntu.pkr.hcl
 ```
 
-> use `PACKER_LOG=1` for debug
+> use `PACKER_LOG=1` for debug and `-on-error=ask`
+
+**Simplified usage with makefile** :
+
+```bash
+make ubuntu-debug
+```
+
+or for release :
+
+```bash
+make ubuntu
+```
 
 Release image manually :
 
