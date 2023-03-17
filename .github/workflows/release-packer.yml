@@ -50,7 +50,7 @@ jobs:
       - uses: "marvinpinto/action-automatic-releases@latest"
         with:
           repo_token: "${{ secrets.GITHUB_TOKEN }}"
-          automatic_release_tag: ubuntu-jammy-2204${{ github.ref_name }}-${{ steps.vars.outputs.sha_short }}
+          automatic_release_tag: ubuntu-jammy-2204-${{ github.ref_name }}-${{ steps.vars.outputs.sha_short }}
           prerelease: false
           files: |
-            packer-ubuntu/.qemu/ubuntu-jammy-22.04.2.qcow2
+            packer/.qemu-ubuntu/ubuntu-jammy-22.04.2.qcow2

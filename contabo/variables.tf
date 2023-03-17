@@ -76,7 +76,7 @@ variable "secrets" {
 
 variable "os_image_url" {
   type = string
-  default = "https://github.com/loic-roux-404/k3s-paas/releases/download/ubuntu-jammy-2204-boilerplate-850bf6f/ubuntu-jammy-22.04.2.qcow2"
+  default = "https://github.com/loic-roux-404/k3s-paas/releases/download/ubuntu-jammy-2204-boilerplate-86099b4/ubuntu-jammy-22.04.2.qcow2"
 }
 
 variable "ubuntu_release_info" {
