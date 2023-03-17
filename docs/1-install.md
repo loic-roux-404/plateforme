@@ -116,7 +116,7 @@ make ubuntu
 Release image manually :
 
 ```bash
-git tag "ubuntu-jammy-2204-$(git branch --show-current)-$(git rev-parse --short HEAD)"
+git tag "ubuntu-jammy-$(git rev-parse --short HEAD)"
 git push --tags
 ```
 

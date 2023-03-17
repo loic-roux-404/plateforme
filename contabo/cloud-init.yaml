@@ -1,5 +1,8 @@
 #cloud-config
 
+runcmd:
+  - [echo, "${iso_version_tag}"]
+
 ansible:
   install_method: pip
   package_name: ansible

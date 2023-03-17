@@ -74,18 +74,19 @@ variable "secrets" {
   sensitive = true
 }
 
-variable "os_image_url" {
-  type = string
-  default = "https://github.com/loic-roux-404/k3s-paas/releases/download/ubuntu-jammy-2204-boilerplate-86099b4/ubuntu-jammy-22.04.2.qcow2"
-}
-
 variable "ubuntu_release_info" {
   type = object({
     name  = string
     version = string
+    iso_version_tag = string
+    url = string
+    format = string
   })
   default = {
     name  = "jammy"
     version = "22.04.2"
+    iso_version_tag = "ubuntu-jammy-7694ac9"
+    url = "https://github.com/loic-roux-404/k3s-paas/releases/download"
+    format = "qcow2"
   }
 }

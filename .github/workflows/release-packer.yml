@@ -50,7 +50,9 @@ jobs:
       - uses: "marvinpinto/action-automatic-releases@latest"
         with:
           repo_token: "${{ secrets.GITHUB_TOKEN }}"
-          automatic_release_tag: ubuntu-jammy-2204-${{ github.ref_name }}-${{ steps.vars.outputs.sha_short }}
-          prerelease: false
+          automatic_release_tag: ubuntu-jammy-${{ steps.vars.outputs.sha_short }}
+          prerelease: true
           files: |
             packer/.qemu-ubuntu/ubuntu-jammy-22.04.2.qcow2
+
+# TODO : manual promotion to a release channel
