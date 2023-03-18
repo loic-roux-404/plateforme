@@ -106,18 +106,19 @@ locals {
 }
 
 resource "contabo_instance" "paas_instance" {
+  display_name  = "ubuntu-k3s-paas"
   image_id = contabo_image.paas_instance.id
   ssh_keys = [contabo_secret.paas_instance_ssh_key.id]
   root_password = contabo_secret.paas_instance_root_password.id
-  user_data = templatefile(
-    "${path.module}/cloud-init.yaml",
+  user_data = jsonencode(templatefile(
+    "${path.root}/user-data.yaml.tmpl",
     {
       iso_version_tag = var.ubuntu_release_info.iso_version_tag
       ansible_vars = [
-        for config_key, config_value in local.ansible_vars : "${config_key}=${config_value}"
+        for k, v in local.ansible_vars : "${k}=${v}"
       ]
     }
-  )
+  ))
   depends_on = [
     namedotcom_record.dns_zone,
     github_team_membership.opsteam_members,

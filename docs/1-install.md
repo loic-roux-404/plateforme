@@ -107,6 +107,8 @@ PACKER_LOG=0 PACKER_LOG_PATH=ubuntu-jammy.log packer build -var-file "$(uname -m
 make ubuntu-debug
 ```
 
+> In debug mode you could need to do `ssh-keygen -f ~/.ssh/known_hosts -R [127.0.0.1]:2225` to delete old ssh trusted key for host
+
 or for release :
 
 ```bash

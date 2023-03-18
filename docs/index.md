@@ -8,5 +8,5 @@
 
 ## Sommaire
 
-- [0. Installation](0-install.md)
-- [5. Help](5-allez-plus-loin.md)
+- [1. Installation](1-install.md)
+- [2. Help](2-help.md)

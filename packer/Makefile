@@ -17,3 +17,7 @@ ubuntu:
 ubuntu-console:
 	packer console -var-file "$(HOST_OS)-host.hcl" \
 		-var-file=$(SECRETS) $(UBUNTU_TPL)
+
+clean:
+	rm -rf ubuntu-$(UBUNTU_RELEASE).log
+

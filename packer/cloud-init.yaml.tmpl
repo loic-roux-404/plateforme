@@ -22,17 +22,21 @@ autoinstall:
   packages:
     - bc
     - curl
-    - openssh-server
+    - ca-certificates
   package_upgrade: true
   user-data:
-    hostname: astichost
+    hostname: ${hostname}-server
     disable_root: false
     timezone: Europe/Paris
     resize_rootfs: true
+    preserve_hostname: false
     growpart:
       mode: auto
       devices: ["/"]
       ignore_growroot_disabled: false
+    system_info:
+      default_user:
+        name: ${ssh_username}
     users:
       - name: ${ssh_username}
         passwd: ${ssh_password_hash}

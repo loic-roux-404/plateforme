@@ -1,5 +1,12 @@
 #cloud-config
 
+timezone: Europe/Paris
+resize_rootfs: true
+growpart:
+  mode: auto
+  devices: ["/"]
+  ignore_growroot_disabled: false
+
 runcmd:
   - [echo, "${iso_version_tag}"]
 

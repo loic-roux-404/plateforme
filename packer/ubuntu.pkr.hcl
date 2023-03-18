@@ -15,7 +15,7 @@ variable "disk_size" {
 
 variable "headless" {
   type    = bool
-  default = false
+  default = true
 }
 
 variable "memory" {
@@ -46,7 +46,7 @@ variable "ssh_password_hash" {
 variable "ssh_username" {
   type      = string
   sensitive = true
-  default   = "admin"
+  default   = "ubuntu"
 }
 
 variable "locale" {
@@ -94,7 +94,7 @@ locals {
   ubuntu_image        = "ubuntu-${var.ubuntu_release_info.version}-live-server-amd64.iso"
 }
 
-source "qemu" "ubuntu" {
+source "qemu" "vm" {
   http_content = {
     "/meta-data" = ""
     "/user-data" = templatefile("${abspath(path.root)}/cloud-init.yaml.tmpl", {
@@ -102,6 +102,7 @@ source "qemu" "ubuntu" {
       ssh_password_hash = var.ssh_password_hash
       locale            = var.locale
       keyboard          = var.keyboard
+      hostname          = var.ubuntu_release_info.name
     })
   }
   boot_command = [
@@ -133,10 +134,13 @@ source "qemu" "ubuntu" {
 }
 
 build {
-  sources = ["source.qemu.ubuntu"]
+  sources = ["source.qemu.vm"]
 
   provisioner "shell" {
-    inline = ["cloud-init status --wait"]
+    inline = [
+      "sudo cloud-init status --wait", 
+      "sudo cloud-init clean --logs"
+    ]
   }
 
   provisioner "shell" {
@@ -150,14 +154,14 @@ build {
 
   provisioner "ansible-local" {
     command                 = "sudo ansible-playbook"
-    playbook_file           = "${var.playbook.dir}/${var.playbook.file}"
-    playbook_dir            = var.playbook.dir
-    extra_arguments         = var.playbook.extra_arguments
-    galaxy_file             = "${var.playbook.dir}/requirements.yaml"
     galaxy_command          = "sudo ansible-galaxy"
     galaxy_roles_path       = "/usr/share/ansible/roles"
     galaxy_collections_path = "/usr/share/ansible/collections"
     staging_directory       = "/playbook/"
+    playbook_file           = "${var.playbook.dir}/${var.playbook.file}"
+    playbook_dir            = var.playbook.dir
+    extra_arguments         = var.playbook.extra_arguments
+    galaxy_file             = "${var.playbook.dir}/requirements.yaml"
   }
 
   # Cleanup and minimize
@@ -169,6 +173,7 @@ build {
     inline = [
       "sudo apt autoremove -y --purge",
       "sudo apt autoclean -y",
+      "sudo journalctl --rotate",
       "sudo journalctl --vacuum-size 10M"
     ]
   }
