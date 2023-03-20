@@ -18,13 +18,6 @@ resource "github_team_membership" "opsteam_members" {
 # Security
 ############
 
-# Kubeapps OAuth Proxy
-resource "random_password" "kubeapps_oauth_proxy_cookie_secret" {
-  length           = 16
-  special          = true
-  override_special = "!#$%&*()-_=+[]{}<>:?"
-}
-
 # Dex oidc client
 resource "random_password" "dex_client_id" {
   length  = 16
@@ -48,7 +41,7 @@ resource "random_password" "vm_password" {
 resource "contabo_secret" "paas_instance_ssh_key" {
   name  = "paas_instance_ssh_key"
   type  = "ssh"
-  value = file(pathexpand(var.ssh_public_key))
+  value = trimspace(file(pathexpand(var.ssh_public_key)))
 }
 
 resource "contabo_secret" "paas_instance_root_password" {
@@ -61,9 +54,8 @@ locals {
   final_secrets = merge(
     var.secrets,
     {
-      dex_client_id                      = random_password.dex_client_id.result
-      dex_client_secret                  = random_password.dex_client_secret.result
-      kubeapps_oauth_proxy_cookie_secret = random_password.kubeapps_oauth_proxy_cookie_secret.result
+      dex_client_id = random_password.dex_client_id.result
+      dex_client_secret = random_password.dex_client_secret.result
     }
   )
 }
@@ -96,8 +88,8 @@ locals {
   ansible_vars = merge(
     local.final_secrets,
     {
-      kubeapps_hostname            = "kubeapps.${var.domain}"
       dex_hostname                 = "dex.${var.domain}"
+      waipoint_hostname            = "waypoint.${var.domain}"
       dex_github_client_org        = data.github_organization.org.orgname
       dex_github_client_team       = github_team.opsteam.name
       cert_manager_letsencrypt_env = var.cert_manager_letsencrypt_env

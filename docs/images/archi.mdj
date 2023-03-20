@@ -422,7 +422,7 @@
 											"top": 497,
 											"width": 60.68359375,
 											"height": 13,
-											"text": "kubeapps"
+											"text": "waypoint"
 										},
 										{
 											"_type": "LabelView",
@@ -8147,7 +8147,7 @@
 					"_parent": {
 						"$ref": "AAAAAAFF+qBWK6M3Z8Y="
 					},
-					"name": "kubeapps",
+					"name": "waypoint",
 					"ownedElements": [
 						{
 							"_type": "UMLCommunicationPath",

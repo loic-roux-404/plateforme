@@ -53,6 +53,7 @@ jobs:
           automatic_release_tag: ubuntu-jammy-${{ steps.vars.outputs.sha_short }}
           prerelease: true
           files: |
-            packer/.qemu-ubuntu/ubuntu-jammy-22.04.2.qcow2
+            packer/.qemu-vm/ubuntu-jammy-22.04.2.qcow2
+            packer/.qemu-vm/SHA256SUMS
 
 # TODO : manual promotion to a release channel

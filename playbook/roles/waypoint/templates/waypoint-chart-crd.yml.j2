@@ -1,0 +1,25 @@
+apiVersion: helm.cattle.io/v1
+kind: HelmChart
+metadata:
+  name: waypoint
+  namespace: kube-system
+spec:
+  version: 0.1.18
+  chart: waypoint
+  targetNamespace: {{ waypoint_namespace }}
+  repo: https://helm.releases.hashicorp.com
+  valuesContent: |-
+    ingress:
+      enabled: true
+      annotations:
+        cert-manager.io/cluster-issuer: letsencrypt-acme-issuer
+        kubernetes.io/ingress.class: "{{ waypoint_k8s_ingress_class }}"
+      hosts:
+        - host: "{{ waypoint_hostname }}"
+          paths:
+            - path: /
+              pathType: ImplementationSpecific
+      tls:
+        - hosts:
+            - "{{ waypoint_hostname }}"
+          secretName: {{ waypoint_hostname }}-tls

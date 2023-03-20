@@ -23,6 +23,9 @@ autoinstall:
     - bc
     - curl
     - ca-certificates
+    - gpg-agent
+    - wget
+    - unzip
   package_upgrade: true
   user-data:
     hostname: ${hostname}-server

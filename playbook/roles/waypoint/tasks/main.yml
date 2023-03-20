@@ -1,0 +1,28 @@
+---
+
+- import_tasks: checks.yml
+  tags: [waypoint]
+
+- import_tasks: internal-acme.yml
+  when: waypoint_internal_acme_network_ip is not none
+  tags: [waypoint]
+
+- include_tasks: manifests.yml
+  tags: [waypoint]
+  when: item.condition | default(true)
+  args: { apply: { tags: [waypoint] } }
+  loop:
+    - src: core-dns-config-crd.yml
+      condition: "{{ waypoint_internal_acme_network_ip is not none }}"
+    - { src: cert-manager-chart-crd.yml, deploy: "{{ cert_manager_namespace }}" }
+    - src: trust-manager-chart-crd.yml
+      deploy: trust-manager 
+      ns: "{{ cert_manager_namespace }}"
+      condition: "{{ cert_manager_is_internal }}"
+    - src: trust-bundle-config-crd.yml
+      condition: "{{ cert_manager_is_internal }}"
+    - { src: dex-chart-crd.yml , deploy: "{{ dex_namespace }}" }
+    - src: waypoint-chart-crd.yml
+      deploy: "{{ waypoint_namespace }}"
+
+- import_tasks: waypoint.yml

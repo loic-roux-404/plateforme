@@ -1,0 +1,34 @@
+---
+# Waypoint internal acme server
+waypoint_internal_acme_network_ip: ~
+waypoint_internal_acme_host: acme-internal.k3s.test
+
+# HelmChart Custom Resource Definition for cert manager
+# see https://cert-manager.io/docs/configuration/acme/
+cert_manager_letsencrypt_env: prod
+cert_manager_namespace: cert-manager
+cert_manager_acme_url: "{{ letsencrypt_envs[cert_manager_letsencrypt_env] }}"
+cert_manager_staging_ca_cert_url: "{{ letsencrypt_envs_ca_certs[cert_manager_letsencrypt_env] | d(none) }}"
+cert_manager_email: ""
+cert_manager_private_key_secret: test_secret
+cert_manager_is_internal: "{{ (cert_manager_staging_ca_cert_url | d('')) != '' }}"
+
+# HelmChart Custom Resource Definition for dex oidc connector
+dex_namespace: dex
+dex_hostname: dex.k3s.test
+dex_client_id: waypoint
+dex_client_secret: ZXhhbXBsZS1hcHAtc2VjcmV0
+dex_github_client_id: ~
+dex_github_client_secret: ~
+dex_github_client_org: ~
+dex_github_client_team: ~
+
+# HelmChart Custom Resource Definition for waypoint variables
+waypoint_namespace: default
+waypoint_hostname: waypoint.k3s.test
+waypoint_version: 0.11.0
+
+dex_github_orgs:
+  - name: '{{ dex_github_client_org }}'
+    teams: 
+    - '{{ dex_github_client_team }}'

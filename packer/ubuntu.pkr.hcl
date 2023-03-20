@@ -46,7 +46,7 @@ variable "ssh_password_hash" {
 variable "ssh_username" {
   type      = string
   sensitive = true
-  default   = "ubuntu"
+  default   = "admin"
 }
 
 variable "locale" {
@@ -85,7 +85,7 @@ variable "playbook" {
   default = {
     dir             = "../playbook"
     file            = "site.yaml"
-    extra_arguments = ["--skip-tags kubeapps"]
+    extra_arguments = ["--skip-tags waypoint"]
   }
 }
 
@@ -176,5 +176,10 @@ build {
       "sudo journalctl --rotate",
       "sudo journalctl --vacuum-size 10M"
     ]
+  }
+
+  post-processor "checksum" {
+    checksum_types = ["sha256"]
+    output = "SHA256SUMS"
   }
 }

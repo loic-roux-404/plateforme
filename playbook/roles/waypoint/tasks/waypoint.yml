@@ -1,0 +1,26 @@
+---
+- set_fact:
+    waypoint_arch_lookup:
+      amd64: amd64
+      x86_64: amd64
+      arm64: arm64
+      aarch64: arm64
+
+- set_fact:
+    waypoint_arch: "{{ waypoint_arch_lookup[ansible_architecture] }}"
+
+- name: Download Waypoint binary
+  ansible.builtin.get_url:
+    url: "https://releases.hashicorp.com/waypoint/{{ waypoint_version }}/waypoint_{{ waypoint_version }}_linux_{{ waypoint_arch }}.zip"
+    dest: /tmp/waypoint.zip
+
+- name: Unzip Waypoint binary
+  ansible.builtin.unarchive:
+    src: /tmp/waypoint.zip
+    dest: /usr/local/bin/
+    remote_src: yes
+
+# - name: start
+#   command: waypoint install --platform=kubernetes
+#   environment: 
+#     KUBECONFIG: /etc/rancher/k3s/k3s.yaml
