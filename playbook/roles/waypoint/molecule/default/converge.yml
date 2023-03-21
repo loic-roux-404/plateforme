@@ -28,6 +28,7 @@
           - iptables
           - dnsutils
           - less
+          - vim
         state: present
         update_cache: yes
       when: ansible_os_family == 'Debian'
@@ -50,4 +51,5 @@
       tags: [waypoint]
 
     - name: Import acme certificates
-      include_tasks: "../../tasks/pre-import-cert.yml"
+      import_tasks: "../../tasks/pre-import-cert.yml"
+      tags: [waypoint]

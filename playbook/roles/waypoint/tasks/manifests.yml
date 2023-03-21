@@ -8,24 +8,22 @@
     group: "{{ waypoint_user | d('root') }}"
     mode: '0600'
 
-# - name: Process additional task
-#   import_tasks: "{{ item.additional_task }}"
-#   when: item.additional_task | default(false)
-
-- name: "Wait {{ item.src }} deployment complete"
+- name: "Wait {{ item.src }} available"
   kubernetes.core.k8s_info:
     api_version: v1
-    kind: Deployment
+    kind: "{{ item.kind | d('Deployment') }}"
     name: "{{ item.deploy }}"
     kubeconfig: /etc/rancher/k3s/k3s.yaml
-    wait: yes
-    wait_sleep: 10
-    wait_timeout: 600
-    wait_condition:
-      type: Progressing
-      status: "True"
-      reason: "NewReplicaSetAvailable"
     # Many times deployment name is the same that namespace
     namespace: "{{ item.ns | d(item.deploy) }}"
-  when: item.deploy | default(false) or item.ns | default(false)
+  until:
+    - deployment_infos.resources | map(attribute='status') | select() | length > 0
+    - deployment_infos.resources[0].status.readyReplicas | d(False)
+    - deployment_infos.resources[0].status.replicas | d(False)
+    - deployment_infos.resources[0].status.readyReplicas == deployment_infos.resources[0].status.replicas
+  when: 
+    - item.deploy | default(false) or item.ns | default(false)
+    - item.kind | default('Deployment') == 'StatefulSet'
+  delay: 5
+  retries: 40
   register: deployment_infos

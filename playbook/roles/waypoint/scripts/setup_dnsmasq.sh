@@ -1,6 +1,5 @@
 #!/bin/bash
 
-
 if [[ "$OSTYPE" == "linux-gnu"* ]]; then
     DNSMASQ_CNF_DIR="/etc/dnsmasq.conf"
     sudo systemctl disable systemd-resolved

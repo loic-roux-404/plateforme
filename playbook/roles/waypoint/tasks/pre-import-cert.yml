@@ -11,7 +11,8 @@
     dest: "{{ waypoint_internal_acme_ca_file }}"
     content: "{{ ca_file.content }}"
 
-- set_fact:
+- name: Create cert facts
+  set_fact:
     waypoint_internal_acme_ca_content: "{{ ca_file.content }}"
     waypoint_internal_acme_ca_extra_volumes:
     - name: acme-internal-ca-share

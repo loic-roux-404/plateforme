@@ -80,16 +80,27 @@ Puis lancer `conda init zsh` (ou `bash` si vous préférez)
 ```bash
 cd playbook
 ansible-galaxy install -r requirements.yml
+pip install -r requirements.txt
 cd -
 ```
 
-Install ansible collection for contabo :
+Test waypoint role :
 
 ```bash
-cd playbook/ansible_collections/k3s_paas/contabo
-ansible-galaxy collection build --output-path /tmp
-ansible-galaxy collection install /tmp/k3s_paas-contabo-1.0.0.tar.gz
+cd playbook/roles/waypoint
+./scripts/setup_dnsmasq.sh
+molecule test
 ```
+
+To open UI with https add pebbel certificate to your truststore :
+
+```bash
+curl -k https://localhost:15000/roots/0 > ~/Downloads/pebble-ca.pem
+sudo security add-trusted-cert -d -r trustRoot -k /Library/Keychains/System.keychain ~/Downloads/pebble-ca.pem
+```
+
+- [Dex](https://dex.k3s.test/.well-known/openid-configuration)
+- [Waypoint](https://waypoint.k3s.test/)
 
 ## Packer image
 

@@ -19,8 +19,3 @@
     src: /tmp/waypoint.zip
     dest: /usr/local/bin/
     remote_src: yes
-
-# - name: start
-#   command: waypoint install --platform=kubernetes
-#   environment: 
-#     KUBECONFIG: /etc/rancher/k3s/k3s.yaml

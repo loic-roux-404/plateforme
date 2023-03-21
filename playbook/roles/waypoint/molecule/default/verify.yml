@@ -20,21 +20,19 @@
         api_version: v1
         kind: Pod
         label_selectors:
-        - app.kubernetes.io/name = waypoint
+          - component in (runner, server)
         kubeconfig: /etc/rancher/k3s/k3s.yaml
         namespace: default
       register: waypoint_infos
 
     - ansible.builtin.set_fact:
-        containers_statuses: "{{ (waypoint_infos.resources | last).status.containerStatuses }}"
+        containers_statuses: "{{ waypoint_infos.resources | map(attribute='status') | map(attribute='containerStatuses') | flatten }}"
 
     - ansible.builtin.debug:
-        msg: "{{ containers_statuses | map(attribute='name') }}"
-
-    - debug: msg="{{ containers_statuses }}"
+        msg: "{{ containers_statuses }}"
 
     - name: Assertions on service waypoint 
       assert:
         that:
           - waypoint_infos.resources | length > 0
-          - containers_statuses | selectattr('ready', 'equalto', true) | list | count == 3
+          - containers_statuses | selectattr('ready', 'equalto', true) | list | count == 2

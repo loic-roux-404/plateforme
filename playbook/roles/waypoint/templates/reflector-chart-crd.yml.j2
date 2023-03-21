@@ -1,10 +1,10 @@
 apiVersion: helm.cattle.io/v1
 kind: HelmChart
 metadata:
-  name: trust-manager
+  name: reflector
   namespace: kube-system
 spec:
-  version: 0.3.0
-  chart: trust-manager
+  version: 7.0.151
+  chart: reflector
   targetNamespace: {{ cert_manager_namespace }}
-  repo: https://charts.jetstack.io
+  repo: https://emberstack.github.io/helm-charts

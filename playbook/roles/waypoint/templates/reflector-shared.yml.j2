@@ -1,0 +1,45 @@
+---
+apiVersion: cert-manager.io/v1
+kind: Certificate
+metadata:
+  name: traefik-default-crt
+  namespace: {{ cert_manager_namespace }}
+spec:
+  secretName: traefik-default-tls
+  dnsNames:
+    {{ traefik_default_cert_domains | to_yaml | indent(4) }}
+  issuerRef:
+    name: selfsigned-issuer
+    kind: ClusterIssuer
+  secretTemplate:
+    annotations:
+      reflector.v1.k8s.emberstack.com/reflection-allowed: "true"
+      reflector.v1.k8s.emberstack.com/reflection-allowed-namespaces: "{{ waypoint_namespace }},kube-system"
+      reflector.v1.k8s.emberstack.com/reflection-auto-enabled: "true"
+      reflector.v1.k8s.emberstack.com/reflection-auto-namespaces: "{{ waypoint_namespace }},kube-system"
+
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: acme-internal-root-ca
+  namespace: {{ cert_manager_namespace }}
+  annotations:
+    reflector.v1.k8s.emberstack.com/reflection-allowed: "true"
+    reflector.v1.k8s.emberstack.com/reflection-auto-enabled: "true"
+data:
+  ca.crt: |
+    {{ waypoint_internal_acme_ca_content | indent(4) }}
+
+---
+apiVersion: helm.cattle.io/v1
+kind: HelmChartConfig
+metadata:
+  name: traefik
+  namespace: kube-system
+spec:
+  valuesContent: |-
+    tlsStore:
+      default:
+        defaultCertificate:
+          secretName: traefik-default-tls

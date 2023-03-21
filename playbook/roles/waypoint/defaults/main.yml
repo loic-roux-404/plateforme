@@ -1,4 +1,8 @@
 ---
+# Traefik covered domains
+traefik_default_cert_domains: 
+  - k3s.test
+
 # Waypoint internal acme server
 waypoint_internal_acme_network_ip: ~
 waypoint_internal_acme_host: acme-internal.k3s.test
