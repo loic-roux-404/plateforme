@@ -1,24 +1,4 @@
 ---
-apiVersion: cert-manager.io/v1
-kind: Certificate
-metadata:
-  name: traefik-default-crt
-  namespace: {{ cert_manager_namespace }}
-spec:
-  secretName: traefik-default-tls
-  dnsNames:
-    {{ traefik_default_cert_domains | to_yaml | indent(4) }}
-  issuerRef:
-    name: selfsigned-issuer
-    kind: ClusterIssuer
-  secretTemplate:
-    annotations:
-      reflector.v1.k8s.emberstack.com/reflection-allowed: "true"
-      reflector.v1.k8s.emberstack.com/reflection-allowed-namespaces: "{{ waypoint_namespace }},kube-system"
-      reflector.v1.k8s.emberstack.com/reflection-auto-enabled: "true"
-      reflector.v1.k8s.emberstack.com/reflection-auto-namespaces: "{{ waypoint_namespace }},kube-system"
-
----
 apiVersion: v1
 kind: ConfigMap
 metadata:
@@ -39,7 +19,4 @@ metadata:
   namespace: kube-system
 spec:
   valuesContent: |-
-    tlsStore:
-      default:
-        defaultCertificate:
-          secretName: traefik-default-tls
+    additionalArguments: ['--serversTransport.insecureSkipVerify=true']

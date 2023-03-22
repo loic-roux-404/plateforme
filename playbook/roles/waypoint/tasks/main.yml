@@ -28,3 +28,4 @@
       ns: default
 
 - import_tasks: waypoint.yml
+  tags: [waypoint]
