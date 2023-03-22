@@ -26,3 +26,8 @@
   delay: 5
   retries: 40
   register: deployment_infos
+  notify: "{{ item.handler }}"
+
+- name: Process after manifest task {{ item.task }}
+  include_tasks: "{{ item.task }}"
+  when: item.task | default(false)

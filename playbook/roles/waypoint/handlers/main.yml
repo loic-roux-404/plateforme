@@ -1,2 +1,7 @@
 ---
 # handlers file for role-waypoint
+- name: Restart coredns
+  command: kubectl rollout restart -n kube-system deployment/coredns
+  environment:
+    KUBECONFIG: /etc/rancher/k3s/k3s.yaml
+  changed_when: false

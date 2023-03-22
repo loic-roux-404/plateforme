@@ -102,6 +102,23 @@ sudo security add-trusted-cert -d -r trustRoot -k /Library/Keychains/System.keyc
 - [Dex](https://dex.k3s.test/.well-known/openid-configuration)
 - [Waypoint](https://waypoint.k3s.test/)
 
+Setup waypoint inside cluster before getting token :
+
+```bash
+Run KUBECONFIG=/etc/rancher/k3s/k3s.yaml waypoint login -from-kubernetes"
+```
+
+Setup waypoint outside cluster :
+
+```bash
+waypoint context create \
+    -server-addr='waypoint.k3s.test:9701' -server-tls-skip-verify \
+    -server-auth-token="$TOKEN" \
+    -server-require-auth=true \
+    -set-default waypoint.k3s.test-ui
+
+```
+
 ## Packer image
 
 > In folder `packer/`
