@@ -23,7 +23,6 @@
     - deployment_infos.resources[0].status.readyReplicas == deployment_infos.resources[0].status.replicas
   when: 
     - item.deploy | default(false) or item.ns | default(false)
-    - item.kind | default('Deployment') == 'StatefulSet'
   delay: 5
   retries: 40
   register: deployment_infos

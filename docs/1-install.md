@@ -31,7 +31,7 @@ et les couches des systèmes de conteneurisation docker et kubernetes :
 
 ## Rancher comme alternative à docker desktop
 
-[**Rancher**](https://rancherdesktop.io/) l'alternative mieux configurée et sans soucis de license à docker desktop. Il est portable sur windows et mac et nous permet d'avoir une expérience docker complète et fonctionnelle sur notre machine.
+[**Rancher**](https://rancherdesktop.io/) Download 1.6.2 (macOS) from [github release](https://github.com/rancher-sandbox/rancher-desktop/releases/tag/v1.6.2)
 
 Dans les choix proposés dans la mise en place :
 - **Décocher kubernetes**

@@ -12,8 +12,9 @@
   when: item.condition | default(true)
   args: { apply: { tags: [waypoint] } }
   loop:
-    - src: core-dns-config-crd.yml
-      condition: "{{ waypoint_internal_acme_network_ip is not none }}"
+#    - src: core-dns-config-crd.yml
+#      condition: "{{ waypoint_internal_acme_network_ip is not none }}" 
+
     - { src: cert-manager-chart-crd.yml, deploy: "{{ cert_manager_namespace }}" }
     - src: reflector-chart-crd.yml
       deploy: reflector

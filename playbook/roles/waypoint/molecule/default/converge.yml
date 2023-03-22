@@ -23,9 +23,8 @@
         state: present
 
     - name: Ensure test dependencies are installed.
-      package: 
+      apt: 
         name:
-          - iptables
           - dnsutils
           - less
           - vim

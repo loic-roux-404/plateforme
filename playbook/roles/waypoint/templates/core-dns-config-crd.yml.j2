@@ -2,10 +2,29 @@
 apiVersion: v1
 kind: ConfigMap
 metadata:
-  name: coredns-custom
+  name: coredns
   namespace: kube-system
 data:
-  ingress-hosts.server: |
+  Corefile: |
+    .:53 {
+        errors
+        health {
+          lameduck 5s
+        }
+        ready
+        kubernetes cluster.local in-addr.arpa ip6.arpa {
+          pods insecure
+          fallthrough in-addr.arpa ip6.arpa
+          ttl 30
+        }
+        prometheus :9153
+        forward . /etc/resolv.conf
+        cache 30
+        loop
+        reload
+        loadbalance
+    }
+
     {% set ingress_hosts_internals = [dex_hostname, waypoint_hostname] | join(" ") -%}
 
     {{ ingress_hosts_internals }} {
@@ -15,7 +34,7 @@ data:
       }
       whoami
     }
-  acme-internal.server: |
+
     {{ waypoint_internal_acme_host }} {
       hosts {
         {{ waypoint_internal_acme_network_ip }} {{ waypoint_internal_acme_host }}

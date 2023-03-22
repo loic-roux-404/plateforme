@@ -11,17 +11,13 @@ platforms:
     pre_build_image: true
     groups:
       - molecule
-    capabilities:
-      - ALL
     volumes:
       - /sys/fs/cgroup:/sys/fs/cgroup:rw
-      - /lib/modules:/lib/modules
       - /var/lib/rancher/k3s
     network_mode: host
     tmpfs:
       - /var/run
       - /run
-      - /tmp
 
 provisioner:
   name: ansible
