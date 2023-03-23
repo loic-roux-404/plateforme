@@ -17,10 +17,7 @@ jobs:
         id: setup
         with:
           version: "1.8.6"
-      - name: Generate secrets file
-        env:
-          SECRETS_PKVARS: ${{ secrets.SECRETS_PKVARS }}
-        run: echo "${SECRETS_PKVARS}" > secrets.pkvars.hcl
+
       - name: Set outputs
         id: vars
         run: echo "sha_short=$(git rev-parse --short HEAD)" >> $GITHUB_OUTPUT
@@ -29,11 +26,17 @@ jobs:
         id: init
         run: "packer init ubuntu.pkr.hcl"
         working-directory: packer
+        env:
+          PKR_VAR_ssh_password: ${{ secrets.PKR_VAR_SSH_PASSWORD }}
+          PKR_VAR_ssh_password_hash: ${{ secrets.PKR_VAR_SSH_PASSWORD_HASH }}
 
       - name: Run `packer validate`
         id: validate
         run: >- 
           packer validate \
             -var-file "$(uname -ms | tr ' ' '-')-host.hcl" \
-            -var-file=secrets.pkrvars.hcl ubuntu.pkr.hcl
+            ubuntu.pkr.hcl
         working-directory: packer
+        env:
+          PKR_VAR_ssh_password: ${{ secrets.PKR_VAR_SSH_PASSWORD }}
+          PKR_VAR_ssh_password_hash: ${{ secrets.PKR_VAR_SSH_PASSWORD_HASH }}
