@@ -95,8 +95,8 @@ molecule test
 To open UI with https add pebbel certificate to your truststore :
 
 ```bash
-curl -k https://localhost:15000/roots/0 > ~/Downloads/pebble-ca.pem
-sudo security add-trusted-cert -d -r trustRoot -k /Library/Keychains/System.keychain ~/Downloads/pebble-ca.pem
+curl -k https://localhost:15000/intermediates/0 > ~/Downloads/pebble-ca.pem
+sudo security add-trusted-cert -d -r trustAsRoot -k /Library/Keychains/System.keychain ~/Downloads/pebble-ca.pem
 ```
 
 - [Dex](https://dex.k3s.test/.well-known/openid-configuration)

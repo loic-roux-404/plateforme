@@ -180,6 +180,6 @@ build {
 
   post-processor "checksum" {
     checksum_types = ["sha256"]
-    output = "SHA256SUMS"
+    output = ".qemu-{{build_name}}/SHA256SUMS"
   }
 }
