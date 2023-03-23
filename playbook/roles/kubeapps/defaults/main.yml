@@ -26,7 +26,7 @@ dex_github_client_team: ~
 
 # HelmChart Custom Resource Definition for kubeapps variables
 kubeapps_namespace: default
-kubeapps_hostname: kubeapps.k3s.test
+kubeapps_hostname: waypoint.k3s.test
 waypoint_version: 0.11.0
 
 dex_github_orgs:

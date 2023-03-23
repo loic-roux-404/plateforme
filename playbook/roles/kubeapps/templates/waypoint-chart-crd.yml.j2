@@ -2,11 +2,11 @@
 apiVersion: helm.cattle.io/v1
 kind: HelmChart
 metadata:
-  name: kubeapps
+  name: waypoint
   namespace: kube-system
 spec:
   version: 0.1.18
-  chart: kubeapps
+  chart: waypoint
   targetNamespace: {{ kubeapps_namespace }}
   repo: https://helm.releases.hashicorp.com
   valuesContent: |-

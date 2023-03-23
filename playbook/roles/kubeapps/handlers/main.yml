@@ -1,5 +1,4 @@
 ---
-# handlers file for role-kubeapps
 - name: Restart coredns
   command: kubectl rollout restart -n kube-system deployment/coredns
   environment:

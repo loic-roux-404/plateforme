@@ -16,7 +16,6 @@
       package: 
         name:
           - curl
-          - gpg-agent
           - wget
           - unzip
         update_cache: yes
