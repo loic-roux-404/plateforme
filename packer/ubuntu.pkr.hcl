@@ -85,7 +85,7 @@ variable "playbook" {
   default = {
     dir             = "../playbook"
     file            = "site.yaml"
-    extra_arguments = ["--skip-tags waypoint"]
+    extra_arguments = ["--skip-tags kubeapps"]
   }
 }
 

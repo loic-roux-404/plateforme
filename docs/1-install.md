@@ -2,11 +2,11 @@
 
 ---
 
-L'objectif de ce tutoriel est de vous permettre de créer sur une petite machine ou sur un serveur personnel un PaaS (Platform as a service). Un PaaS permet de déployer des applications en microservices. Celui-ci sera basé sur [kubernetes](https://kubernetes.io/fr/) pour la conteneurisation et [Waypoint](https://developer.hashicorp.com/waypoint) pour l'interface de déploiement.
+L'objectif de ce tutoriel est de vous permettre de créer sur une petite machine ou sur un serveur personnel un PaaS (Platform as a service). Un PaaS permet de déployer des applications en microservices. Celui-ci sera basé sur [kubernetes](https://kubernetes.io/fr/) pour la conteneurisation et [kubeapps](https://developer.hashicorp.com/kubeapps) pour l'interface de déploiement.
 
 L'optique de cet outillage suivra :
 
-- le principe **d'immutable infrastructure** avec l'idée de recréer plutôt que de mettre à jour. Ainsi nous aurons recour à des iso linux déjà prêt pour déployer la plateforme **kubernetes** / **waypoint** directement sur un serveur.
+- le principe **d'immutable infrastructure** avec l'idée de recréer plutôt que de mettre à jour. Ainsi nous aurons recour à des iso linux déjà prêt pour déployer la plateforme **kubernetes** / **kubeapps** directement sur un serveur.
 
 - Le principe **d'infrastructure as code** (IaC) en gardant toutes la spécification de notre infrastructure dans des configurations et scripts. On utilisera également des tests basiques de nos configurations.
 
@@ -84,10 +84,10 @@ pip install -r requirements.txt
 cd -
 ```
 
-Test waypoint role :
+Test kubeapps role :
 
 ```bash
-cd playbook/roles/waypoint
+cd playbook/roles/kubeapps
 ./scripts/setup_dnsmasq.sh
 molecule test
 ```
@@ -100,22 +100,22 @@ sudo security add-trusted-cert -d -r trustRoot -k /Library/Keychains/System.keyc
 ```
 
 - [Dex](https://dex.k3s.test/.well-known/openid-configuration)
-- [Waypoint](https://waypoint.k3s.test/)
+- [kubeapps](https://kubeapps.k3s.test/)
 
-Setup waypoint inside cluster before getting token :
+Setup kubeapps inside cluster before getting token :
 
 ```bash
-Run KUBECONFIG=/etc/rancher/k3s/k3s.yaml waypoint login -from-kubernetes"
+Run KUBECONFIG=/etc/rancher/k3s/k3s.yaml kubeapps login -from-kubernetes"
 ```
 
-Setup waypoint outside cluster :
+Setup kubeapps outside cluster :
 
 ```bash
-waypoint context create \
-    -server-addr='waypoint.k3s.test:9701' -server-tls-skip-verify \
+kubeapps context create \
+    -server-addr='kubeapps.k3s.test:9701' -server-tls-skip-verify \
     -server-auth-token="$TOKEN" \
     -server-require-auth=true \
-    -set-default waypoint.k3s.test-ui
+    -set-default kubeapps.k3s.test-ui
 
 ```
 

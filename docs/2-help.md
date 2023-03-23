@@ -12,7 +12,7 @@ Aussi on peut utiliser un flush cache global si cela ne fonctionne toujorus pas 
 - [pour le dns de google](https://developers.google.com/speed/public-dns/cache?hl=fr)
 - [pour le dns de cloudflare](https://1.1.1.1/purge-cache/)
 
-> Pour faire des tests en cas réel, il est préférable d'utiliser des entrées `dex_hostname` et `waypoint_hostname` différentes que vous n'utilisez pas pour un environnement (staging ou production).
+> Pour faire des tests en cas réel, il est préférable d'utiliser des entrées `dex_hostname` et `kubeapps_hostname` différentes que vous n'utilisez pas pour un environnement (staging ou production).
 
 ### Kubernetes sur Vscode
 

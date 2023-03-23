@@ -16,4 +16,4 @@
 
 - name: Set localhost ip to find local acme
   set_fact:
-    waypoint_ingress_controller_ip: "{{ ingress_infos.resources[0].spec.clusterIP }}"
+    kubeapps_ingress_controller_ip: "{{ ingress_infos.resources[0].spec.clusterIP }}"

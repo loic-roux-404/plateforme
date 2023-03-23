@@ -38,14 +38,14 @@ spec:
       - id: "{{ dex_client_id }}"
         redirectURIs:
         - http://127.0.0.1/oidc/callback
-        - 'https://{{ waypoint_hostname }}/auth/oidc-callback'
-        name: Waypoint
+        - 'https://{{ kubeapps_hostname }}/auth/oidc-callback'
+        name: kubeapps
         secret: "{{ dex_client_secret }}"
     ingress:
       enabled: true
       annotations:
         cert-manager.io/cluster-issuer: letsencrypt-acme-issuer
-        kubernetes.io/ingress.class: "{{ waypoint_k8s_ingress_class }}"
+        kubernetes.io/ingress.class: "{{ kubeapps_k8s_ingress_class }}"
         traefik.frontend.passHostHeader: "true"
         traefik.ingress.kubernetes.io/router.tls: "true"
       hosts:

@@ -4,8 +4,8 @@
   ansible.builtin.template:
     src: "{{ item.src }}.j2"
     dest: "/var/lib/rancher/k3s/server/manifests/{{ item.src }}"
-    owner: "{{ waypoint_user | d('root') }}"
-    group: "{{ waypoint_user | d('root') }}"
+    owner: "{{ kubeapps_user | d('root') }}"
+    group: "{{ kubeapps_user | d('root') }}"
     mode: '0600'
 
 - name: "Wait {{ item.src }} available"
@@ -26,8 +26,4 @@
   delay: 5
   retries: 40
   register: deployment_infos
-  notify: "{{ item.handler }}"
-
-- name: Process after manifest task {{ item.task }}
-  include_tasks: "{{ item.task }}"
-  when: item.task | default(false)
+  notify: "{{ item.handler | d([]) }}"

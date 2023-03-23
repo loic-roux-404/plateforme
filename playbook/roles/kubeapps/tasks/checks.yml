@@ -5,7 +5,7 @@
 
 - name: Stat acme ca cert path
   stat:
-    path: "{{ waypoint_internal_acme_ca_file }}"
+    path: "{{ kubeapps_internal_acme_ca_file }}"
   register: acmeca_result
   when: cert_manager_is_internal
 

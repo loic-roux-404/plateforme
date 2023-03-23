@@ -1,19 +1,22 @@
 ---
 
 - import_tasks: checks.yml
-  tags: [waypoint]
+  tags: [kubeapps]
 
 - import_tasks: internal-acme.yml
-  when: waypoint_internal_acme_network_ip is not none
-  tags: [waypoint]
+  when: kubeapps_internal_acme_network_ip is not none
+  tags: [kubeapps]
+
+- import_tasks: waypoint.yml
+  tags: [kubeapps]
 
 - include_tasks: manifests.yml
-  tags: [waypoint]
+  tags: [kubeapps]
   when: item.condition | default(true)
-  args: { apply: { tags: [waypoint] } }
+  args: { apply: { tags: [kubeapps] } }
   loop:
     - src: coredns-custom.yml
-      condition: "{{ waypoint_internal_acme_network_ip is not none }}"
+      condition: "{{ kubeapps_internal_acme_network_ip is not none }}"
       notify: ['Restart coredns']
     - { src: cert-manager-chart-crd.yml, deploy: "{{ cert_manager_namespace }}" }
     - src: reflector-chart-crd.yml
@@ -24,9 +27,6 @@
       condition: "{{ cert_manager_is_internal }}"
     - { src: dex-chart-crd.yml , deploy: "{{ dex_namespace }}" }
     - src: waypoint-chart-crd.yml
-      deploy: waypoint-runner
+      deploy: kubeapps-runner
       kind: StatefulSet
       ns: default
-
-- import_tasks: waypoint.yml
-  tags: [waypoint]

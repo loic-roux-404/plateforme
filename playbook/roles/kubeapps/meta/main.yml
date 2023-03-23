@@ -1,8 +1,8 @@
 galaxy_info:
   author: loic-roux-404
   namespace: k3s_paas
-  description: waypoint deployment
-  role_name: waypoint
+  description: kubeapps deployment
+  role_name: kubeapps
 
   # If the issue tracker for your role is not on github, uncomment the
   # next line and provide a value

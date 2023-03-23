@@ -2,12 +2,12 @@
 apiVersion: helm.cattle.io/v1
 kind: HelmChart
 metadata:
-  name: waypoint
+  name: kubeapps
   namespace: kube-system
 spec:
   version: 0.1.18
-  chart: waypoint
-  targetNamespace: {{ waypoint_namespace }}
+  chart: kubeapps
+  targetNamespace: {{ kubeapps_namespace }}
   repo: https://helm.releases.hashicorp.com
   valuesContent: |-
     ui:
@@ -17,12 +17,12 @@ spec:
         enabled: true
         annotations:
           cert-manager.io/cluster-issuer: letsencrypt-acme-issuer
-          kubernetes.io/ingress.class: "{{ waypoint_k8s_ingress_class }}"
+          kubernetes.io/ingress.class: "{{ kubeapps_k8s_ingress_class }}"
           traefik.frontend.passHostHeader: "true"
         hosts:
-          - host: "{{ waypoint_hostname }}"
+          - host: "{{ kubeapps_hostname }}"
             paths: ["/"]
         tls:
           - hosts:
-              - "{{ waypoint_hostname }}"
-            secretName: {{ waypoint_hostname }}-tls
+              - "{{ kubeapps_hostname }}"
+            secretName: {{ kubeapps_hostname }}-tls
