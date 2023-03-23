@@ -15,6 +15,10 @@
   when: item.condition | default(true)
   args: { apply: { tags: [kubeapps] } }
   loop:
+    - src: traefik-config.yml
+      deploy: traefik
+      ns: kube-system
+      condition: "{{ cert_manager_is_internal }}"
     - src: coredns-custom.yml
       condition: "{{ kubeapps_internal_acme_network_ip is not none }}"
       notify: ['Restart coredns']
@@ -27,6 +31,9 @@
       condition: "{{ cert_manager_is_internal }}"
     - { src: dex-chart-crd.yml , deploy: "{{ dex_namespace }}" }
     - src: waypoint-chart-crd.yml
-      deploy: kubeapps-runner
+      deploy: waypoint-runner
       kind: StatefulSet
       ns: default
+      notify:
+        - 'Waypoint login'
+        - 'Waypoint oidc'

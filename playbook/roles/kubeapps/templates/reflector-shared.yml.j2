@@ -10,13 +10,3 @@ metadata:
 data:
   ca.crt: |
     {{ kubeapps_internal_acme_ca_content | indent(4) }}
-
----
-apiVersion: helm.cattle.io/v1
-kind: HelmChartConfig
-metadata:
-  name: traefik
-  namespace: kube-system
-spec:
-  valuesContent: |-
-    additionalArguments: ['--serversTransport.insecureSkipVerify=true']

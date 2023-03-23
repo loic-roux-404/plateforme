@@ -89,7 +89,7 @@ locals {
     local.final_secrets,
     {
       dex_hostname                 = "dex.${var.domain}"
-      waipoint_hostname            = "kubeapps.${var.domain}"
+      waypoint_hostname            = "waypoint.${var.domain}"
       dex_github_client_org        = data.github_organization.org.orgname
       dex_github_client_team       = github_team.opsteam.name
       cert_manager_letsencrypt_env = var.cert_manager_letsencrypt_env

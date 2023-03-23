@@ -108,11 +108,11 @@ Setup kubeapps inside cluster before getting token :
 Run KUBECONFIG=/etc/rancher/k3s/k3s.yaml kubeapps login -from-kubernetes"
 ```
 
-Setup kubeapps outside cluster :
+Setup kubeapps login context outside cluster :
 
 ```bash
 kubeapps context create \
-    -server-addr='kubeapps.k3s.test:9701' -server-tls-skip-verify \
+    -server-addr='kubeapps.k3s.test' \
     -server-auth-token="$TOKEN" \
     -server-require-auth=true \
     -set-default kubeapps.k3s.test-ui

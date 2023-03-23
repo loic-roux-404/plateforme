@@ -1,12 +1,10 @@
 name: hcp-packer
 on:
-  push:
-    branches:
-      - main
+  pull_request:
     paths:
       - 'playbook/**'
       - 'packer/**'
-      - .github/workflows/release-packer.yml
+      - .github/workflows/test-packer.yml
 jobs:
   gh-release-packer:
     runs-on: ubuntu-latest
@@ -39,19 +37,3 @@ jobs:
             -var-file "$(uname -ms | tr ' ' '-')-host.hcl" \
             -var-file=secrets.pkrvars.hcl ubuntu.pkr.hcl
         working-directory: packer
-
-      - name: Build Artifact
-        run: >- 
-          packer build \
-            -var-file "$(uname -ms | tr ' ' '-')-host.hcl" \
-            -var-file=secrets.pkrvars.hcl ubuntu.pkr.hcl
-        working-directory: packer
-
-      - uses: "marvinpinto/action-automatic-releases@latest"
-        with:
-          repo_token: "${{ secrets.GITHUB_TOKEN }}"
-          automatic_release_tag: ubuntu-jammy-${{ steps.vars.outputs.sha_short }}
-          prerelease: true
-          files: |
-            packer/.qemu-vm/ubuntu-jammy-22.04.2.qcow2
-            packer/.qemu-vm/SHA256SUMS

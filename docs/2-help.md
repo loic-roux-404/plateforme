@@ -54,3 +54,7 @@ On check ensuite avec `kubectl cluster-info` qui devrait nous donner les informa
 ```
 
 Et voilà vous avez accès à une interface pour contrôler votre cluster directement depuis vscode. Utiliser cette configuration `json` autant que vous voulez dans les repository de vos applications pour avoir une expérience au plus proche de la production.
+
+## Sources
+
+- [packer-kvm](https://github.com/goffinet/packer-kvm/blob/master/http/jammy/user-data)

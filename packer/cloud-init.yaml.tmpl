@@ -24,7 +24,6 @@ autoinstall:
     - curl
     - ca-certificates
     - wget
-    - unzip
   package_upgrade: true
   user-data:
     hostname: ${hostname}-server
@@ -47,6 +46,6 @@ autoinstall:
         sudo: ALL=(ALL) NOPASSWD:ALL
         shell: /bin/bash
   late-commands:
-  # Cgroup force v1 as we are using k3s <= 1.25
+  # Cgroup ensure v1 as we are using k3s <= 1.25
     - sed -ie 's/GRUB_CMDLINE_LINUX=.*/GRUB_CMDLINE_LINUX="net.ifnames=0 biosdevname=0 systemd.unified_cgroup_hierarchy=0"/' /target/etc/default/grub
     - curtin in-target --target /target update-grub2

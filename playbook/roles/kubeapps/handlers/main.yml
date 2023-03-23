@@ -3,4 +3,22 @@
   command: kubectl rollout restart -n kube-system deployment/coredns
   environment:
     KUBECONFIG: /etc/rancher/k3s/k3s.yaml
-  changed_when: false
+  #changed_when: false
+
+- name: Waypoint login
+  command: waypoint login -server-addr=https://{{ kubeapps_hostname }} -from-kubernetes
+  environment:
+    KUBECONFIG: /etc/rancher/k3s/k3s.yaml
+  #changed_when: false
+
+- name: Waypoint oidc
+  command: |
+    waypoint auth-method set oidc \
+      -client-id="{{ dex_client_id }}" \
+      -client-secret="{{ dex_client_secret }}" \
+      -issuer=https://{{ dex_hostname }} \
+      -list-claim-mapping="groups=groups" \
+      -access-selector="{{ dex_github_client_org }}:{{ dex_github_client_team }} in list.groups" \
+      dex
+  environment:
+    KUBECONFIG: /etc/rancher/k3s/k3s.yaml
