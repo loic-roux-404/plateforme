@@ -6,20 +6,20 @@ metadata:
   namespace: kube-system
 data:
   ingress-hosts.server: |
-    {% set ingress_hosts_internals = [dex_hostname, kubeapps_hostname] | join(" ") -%}
-
-    {{ ingress_hosts_internals }} {
+    ingress-hosts {
       hosts {
-        {{ kubeapps_ingress_controller_ip }} {{ ingress_hosts_internals }}
+        {{ kubeapps_ingress_controller_ip }} {{ ingress_hosts_internals_joined }}
         fallthrough
       }
       whoami
     }
+{% if kubeapps_internal_acme_network_ip | d(False) %}
   acme-internal.server: |
-    {{ kubeapps_internal_acme_host }} {
+    acme-internal {
       hosts {
-        {{ kubeapps_internal_acme_network_ip }} {{ kubeapps_internal_acme_host }}
+        {{ kubeapps_internal_acme_network_ip }} acme-internal
         fallthrough
       }
       whoami
     }
+{% endif %}

@@ -3,10 +3,38 @@ apiVersion: v1
 kind: ConfigMap
 metadata:
   name: acme-internal-root-ca
-  namespace: {{ cert_manager_namespace }}
+  namespace: kube-system
   annotations:
     reflector.v1.k8s.emberstack.com/reflection-allowed: "true"
     reflector.v1.k8s.emberstack.com/reflection-auto-enabled: "true"
 data:
   ca.crt: |
     {{ kubeapps_internal_acme_ca_content | indent(4) }}
+
+---
+apiVersion: cert-manager.io/v1
+kind: Certificate
+metadata:
+  name: test-ca
+  namespace: kube-system
+spec:
+  isCA: true
+  commonName: test-ca
+  secretName: test-ca
+  issuerRef:
+    name: selfsigned-cluster-issuer
+    kind: ClusterIssuer
+    group: cert-manager.io
+  secretTemplate:
+    annotations:
+      reflector.v1.k8s.emberstack.com/reflection-allowed: "true"
+      reflector.v1.k8s.emberstack.com/reflection-auto-enabled: "true"
+---
+
+apiVersion: cert-manager.io/v1
+kind: ClusterIssuer
+metadata:
+  name: test-ca-cluster-issuer
+spec:
+  ca:
+    secretName: test-ca

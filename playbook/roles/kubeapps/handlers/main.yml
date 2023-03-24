@@ -3,13 +3,11 @@
   command: kubectl rollout restart -n kube-system deployment/coredns
   environment:
     KUBECONFIG: /etc/rancher/k3s/k3s.yaml
-  #changed_when: false
 
 - name: Waypoint login
-  command: waypoint login -server-addr=https://{{ kubeapps_hostname }} -from-kubernetes
+  command: waypoint login -server-addr=api.{{ kubeapps_hostname }}:443 -from-kubernetes
   environment:
     KUBECONFIG: /etc/rancher/k3s/k3s.yaml
-  #changed_when: false
 
 - name: Waypoint oidc
   command: |

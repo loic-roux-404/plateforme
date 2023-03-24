@@ -11,6 +11,9 @@ spec:
   repo: https://helm.releases.hashicorp.com
   valuesContent: |-
     ui:
+      server:
+        certs:
+          secretName: {{ kubeapps_hostname }}-tls
       service:
         type: ClusterIP
       ingress:
@@ -22,7 +25,46 @@ spec:
         hosts:
           - host: "{{ kubeapps_hostname }}"
             paths: ["/"]
+        extraPaths:
+        - path: /api
+          pathType: Prefix
+          backend:
+            service:
+              name: waypoint-server
+              port:
+                name: grpc
         tls:
           - hosts:
               - "{{ kubeapps_hostname }}"
             secretName: {{ kubeapps_hostname }}-tls
+
+---
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  annotations:
+    cert-manager.io/cluster-issuer: letsencrypt-acme-issuer
+    # traefik.frontend.passHostHeader: "true"
+    traefik.ingress.kubernetes.io/router.tls: "true"
+    traefik.ingress.kubernetes.io/service.serversscheme: h2c
+  labels:
+    app.kubernetes.io/instance: waypoint
+    app.kubernetes.io/name: waypoint
+  name: waypoint-grpc
+  namespace: {{ kubeapps_namespace }}
+spec:
+  rules:
+  - host: "{{ api_waypoint_hostname }}"
+    http:
+      paths:
+      - backend:
+          service:
+            name: waypoint-server
+            port:
+              name: grpc
+        path: /
+        pathType: Prefix
+  tls:
+  - hosts:
+    - "{{ api_waypoint_hostname }}"
+    secretName: {{ api_waypoint_hostname }}-tls

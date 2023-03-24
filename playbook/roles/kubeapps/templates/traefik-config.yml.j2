@@ -6,4 +6,13 @@ metadata:
   namespace: kube-system
 spec:
   valuesContent: |-
-    additionalArguments: ['--serversTransport.insecureSkipVerify=true']
+    additionalArguments: 
+      - '--serversTransport.insecureSkipVerify=false'
+      - '-serversTransport.rootCAs=/certs/ca.crt'
+      - '--accesslog'
+      - '--log.level=DEBUG'
+      - '--api.insecure=true'
+    volumes:
+    - name: acme-internal-root-ca
+      mountPath: "/certs"
+      type: configMap

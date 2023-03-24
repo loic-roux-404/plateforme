@@ -58,3 +58,4 @@ Et voilà vous avez accès à une interface pour contrôler votre cluster direct
 ## Sources
 
 - [packer-kvm](https://github.com/goffinet/packer-kvm/blob/master/http/jammy/user-data)
+- [coredns wildcard](https://mac-blog.org.ua/kubernetes-coredns-wildcard-ingress/)

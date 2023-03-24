@@ -2,12 +2,11 @@
 
 # kubeapps internal acme server
 kubeapps_internal_acme_network_ip: ~
-kubeapps_internal_acme_host: acme-internal.k3s.test
 
 # HelmChart Custom Resource Definition for cert manager
 # see https://cert-manager.io/docs/configuration/acme/
 cert_manager_letsencrypt_env: prod
-cert_manager_namespace: cert-manager
+cert_manager_namespace: kube-system
 cert_manager_acme_url: "{{ letsencrypt_envs[cert_manager_letsencrypt_env] }}"
 cert_manager_staging_ca_cert_url: "{{ letsencrypt_envs_ca_certs[cert_manager_letsencrypt_env] | d(none) }}"
 cert_manager_email: ""
@@ -27,6 +26,7 @@ dex_github_client_team: ~
 # HelmChart Custom Resource Definition for kubeapps variables
 kubeapps_namespace: default
 kubeapps_hostname: waypoint.k3s.test
+api_waypoint_hostname: api.waypoint.k3s.test
 waypoint_version: 0.11.0
 
 dex_github_orgs:

@@ -15,20 +15,24 @@
   when: item.condition | default(true)
   args: { apply: { tags: [kubeapps] } }
   loop:
-    - src: traefik-config.yml
-      deploy: traefik
-      ns: kube-system
-      condition: "{{ cert_manager_is_internal }}"
     - src: coredns-custom.yml
       condition: "{{ kubeapps_internal_acme_network_ip is not none }}"
+      deploy: coredns
+      ns: kube-system
       notify: ['Restart coredns']
-    - { src: cert-manager-chart-crd.yml, deploy: "{{ cert_manager_namespace }}" }
     - src: reflector-chart-crd.yml
       deploy: reflector
       ns: "{{ cert_manager_namespace }}"
       condition: "{{ cert_manager_is_internal }}"
     - src: reflector-shared.yml
       condition: "{{ cert_manager_is_internal }}"
+    - src: traefik-config.yml
+      deploy: traefik
+      ns: kube-system
+      condition: "{{ cert_manager_is_internal }}"
+    - src: cert-manager-chart-crd.yml
+      deploy: "cert-manager"
+      ns: "{{ cert_manager_namespace }}"
     - { src: dex-chart-crd.yml , deploy: "{{ dex_namespace }}" }
     - src: waypoint-chart-crd.yml
       deploy: waypoint-runner

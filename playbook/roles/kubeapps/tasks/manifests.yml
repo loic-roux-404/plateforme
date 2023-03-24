@@ -7,7 +7,11 @@
     owner: "{{ kubeapps_user | d('root') }}"
     group: "{{ kubeapps_user | d('root') }}"
     mode: '0600'
-  notify: "{{ item.handler | d([]) }}"
+  notify: "{{ item.notify | d([]) }}"
+
+- meta: flush_handlers
+  when: 
+    - item.deploy | default(false)
 
 - name: "Wait {{ item.src }} available"
   kubernetes.core.k8s_info:
@@ -23,7 +27,7 @@
     - deployment_infos.resources[0].status.replicas | d(False)
     - deployment_infos.resources[0].status.readyReplicas == deployment_infos.resources[0].status.replicas
   when: 
-    - item.deploy | default(false) or item.ns | default(false)
+    - item.deploy | default(false)
   delay: 5
   retries: 30
   register: deployment_infos
