@@ -8,11 +8,14 @@ spec:
   valuesContent: |-
     additionalArguments: 
       - '--serversTransport.insecureSkipVerify=false'
-      - '--serversTransport.rootCAs=/certs/ca.crt'
+      - '--serversTransport.rootCAs=/certs/internal/ca.crt,/certs/self/ca.crt'
       - '--accesslog'
       - '--log.level=DEBUG'
       - '--api.insecure=true'
     volumes:
     - name: acme-internal-root-ca
-      mountPath: "/certs"
+      mountPath: "/certs/internal"
       type: configMap
+    - name: self-ca
+      mountPath: "/certs/self"
+      type: secret

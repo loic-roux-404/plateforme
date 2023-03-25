@@ -7,12 +7,9 @@
     owner: "{{ kubeapps_user | d('root') }}"
     group: "{{ kubeapps_user | d('root') }}"
     mode: '0600'
-  notify: "{{ item.notify | d([]) }}"
 
-- meta: flush_handlers
-  when: 
-    - item.deploy | default(false)
-    - item.notify | default(false)
+- include_tasks: "{{ item.task }}"
+  when: item.task | d(False)
 
 - name: "Wait {{ item.src }} available"
   kubernetes.core.k8s_info:

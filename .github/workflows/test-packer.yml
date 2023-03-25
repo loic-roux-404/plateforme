@@ -1,4 +1,4 @@
-name: hcp-packer
+name: test-packer
 on:
   pull_request:
     paths:

@@ -1,0 +1,23 @@
+---
+- name: Get kubernetes default service
+  kubernetes.core.k8s_info:
+    api_version: v1
+    kind: Service
+    namespace: "{{ kubeapps_namespace }}"
+    name: kubernetes
+  register: service_list
+  environment:
+    KUBECONFIG: /etc/rancher/k3s/k3s.yaml
+
+
+- name: setting kubeapps available cidr
+  set_fact:
+    kubeapps_available_cidr: "{{ service_list.resources[0].spec.clusterIP  }}/16"
+  failed_when: 
+    - service_list.resources | length <= 0
+    - service_list.resources[0].spec.clusterIP | d(false)
+
+- set_fact:   
+    kubeapps_next_ip: "{{ kubeapps_available_cidr | ansible.utils.next_nth_usable(30) }}"
+
+- debug: msg="{{ kubeapps_next_ip }}"

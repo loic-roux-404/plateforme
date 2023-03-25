@@ -37,6 +37,7 @@
           - openshift
           - PyYAML
           - kubernetes
+          - netaddr
 
     - name: dig host.docker.internal address
       command: dig +short host.docker.internal

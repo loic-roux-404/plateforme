@@ -8,3 +8,4 @@ collections:
     - name: community.general
     - name: kubernetes.core
     - name: azure.azcollection
+    - name: ansible.utils

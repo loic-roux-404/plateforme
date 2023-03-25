@@ -13,7 +13,6 @@ data:
       }
       whoami
     }
-{% if kubeapps_internal_acme_network_ip | d(False) %}
   acme-internal.server: |
     {{ kubeapps_internal_acme_host }} {
       hosts {
@@ -22,4 +21,4 @@ data:
       }
       whoami
     }
-{% endif %}
+

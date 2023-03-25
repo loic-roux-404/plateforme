@@ -12,29 +12,19 @@ data:
     {{ kubeapps_internal_acme_ca_content | indent(4) }}
 
 ---
-apiVersion: cert-manager.io/v1
+apiVersion: certmanager.k8s.io/v1
 kind: Certificate
 metadata:
-  name: test-ca
-  namespace: kube-system
+  name: waypoint-self
+  namespace: {{ kubeapps_namespace }}
 spec:
-  isCA: true
-  commonName: test-ca
-  secretName: test-ca
+  secretName: waypoint-self-tls
   issuerRef:
-    name: selfsigned-cluster-issuer
+    name: self-ca-cluster-issuer
     kind: ClusterIssuer
-    group: cert-manager.io
-  secretTemplate:
-    annotations:
-      reflector.v1.k8s.emberstack.com/reflection-allowed: "true"
-      reflector.v1.k8s.emberstack.com/reflection-auto-enabled: "true"
----
-
-apiVersion: cert-manager.io/v1
-kind: ClusterIssuer
-metadata:
-  name: test-ca-cluster-issuer
-spec:
-  ca:
-    secretName: test-ca
+  commonName: {{ kubeapps_hostname }} 
+  dnsNames:
+  - {{ kubeapps_hostname }}
+  - {{ api_waypoint_hostname }}
+  ipNames:
+  - {{ kubeapps_next_ip }}
