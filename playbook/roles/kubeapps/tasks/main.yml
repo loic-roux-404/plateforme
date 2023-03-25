@@ -7,8 +7,7 @@
   when: kubeapps_internal_acme_network_ip is not none
   tags: [kubeapps]
 
-- import_tasks: waypoint.yml
-  tags: [kubeapps]
+
 
 - include_tasks: manifests.yml
   tags: [kubeapps]
@@ -38,6 +37,6 @@
       deploy: waypoint-runner
       kind: StatefulSet
       ns: default
-      notify:
-        - 'Waypoint login'
-        - 'Waypoint oidc'
+
+- import_tasks: waypoint.yml
+  tags: [kubeapps]

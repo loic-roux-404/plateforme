@@ -6,7 +6,7 @@ metadata:
   namespace: kube-system
 data:
   ingress-hosts.server: |
-    ingress-hosts {
+    {{ ingress_hosts_internals_joined }} {
       hosts {
         {{ kubeapps_ingress_controller_ip }} {{ ingress_hosts_internals_joined }}
         fallthrough
@@ -15,9 +15,9 @@ data:
     }
 {% if kubeapps_internal_acme_network_ip | d(False) %}
   acme-internal.server: |
-    acme-internal {
+    {{ kubeapps_internal_acme_host }} {
       hosts {
-        {{ kubeapps_internal_acme_network_ip }} acme-internal
+        {{ kubeapps_internal_acme_network_ip }} {{ kubeapps_internal_acme_host }}
         fallthrough
       }
       whoami

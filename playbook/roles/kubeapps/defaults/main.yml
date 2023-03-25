@@ -2,6 +2,7 @@
 
 # kubeapps internal acme server
 kubeapps_internal_acme_network_ip: ~
+kubeapps_internal_acme_host: acme-internal.k3s.test
 
 # HelmChart Custom Resource Definition for cert manager
 # see https://cert-manager.io/docs/configuration/acme/

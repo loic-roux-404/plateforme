@@ -4,7 +4,7 @@
   become: true
   vars:
     molecule_is_test: true
-    cert_manager_acme_url: https://acme-internal:14000/dir
+    cert_manager_acme_url: https://{{ kubeapps_internal_acme_host }}:14000/dir
     cert_manager_staging_ca_cert_url: https://localhost:15000/roots/0
 
   roles:

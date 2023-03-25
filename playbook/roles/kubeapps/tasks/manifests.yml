@@ -12,6 +12,7 @@
 - meta: flush_handlers
   when: 
     - item.deploy | default(false)
+    - item.notify | default(false)
 
 - name: "Wait {{ item.src }} available"
   kubernetes.core.k8s_info:

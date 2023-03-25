@@ -14,3 +14,20 @@
     src: "https://releases.hashicorp.com/waypoint/{{ waypoint_version }}/waypoint_{{ waypoint_version }}_linux_{{ waypoint_arch }}.zip"
     dest: /usr/local/bin/
     remote_src: yes
+
+- name: Waypoint login
+  command: waypoint login -server-addr=api.{{ kubeapps_hostname }}:443 -from-kubernetes
+  environment:
+    KUBECONFIG: /etc/rancher/k3s/k3s.yaml
+
+- name: Waypoint oidc
+  command: |
+    waypoint auth-method set oidc \
+      -client-id="{{ dex_client_id }}" \
+      -client-secret="{{ dex_client_secret }}" \
+      -issuer=https://{{ dex_hostname }} \
+      -list-claim-mapping="groups=groups" \
+      -access-selector="{{ dex_github_client_org }}:{{ dex_github_client_team }} in list.groups" \
+      dex
+  environment:
+    KUBECONFIG: /etc/rancher/k3s/k3s.yaml
