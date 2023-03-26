@@ -16,8 +16,6 @@ spec:
           secretName: waypoint-self-tls
       service:
         type: ClusterIP
-        additionalSpec: |
-          clusterIP: {{ kubeapps_next_ip }}
       ingress:
         enabled: false
         annotations:

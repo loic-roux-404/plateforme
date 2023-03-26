@@ -12,7 +12,7 @@ data:
     {{ kubeapps_internal_acme_ca_content | indent(4) }}
 
 ---
-apiVersion: certmanager.k8s.io/v1
+apiVersion: cert-manager.io/v1
 kind: Certificate
 metadata:
   name: waypoint-self
@@ -26,5 +26,5 @@ spec:
   dnsNames:
   - {{ kubeapps_hostname }}
   - {{ api_waypoint_hostname }}
-  ipNames:
-  - {{ kubeapps_next_ip }}
+  ipAddresses: 
+    {{ pods_ip_usable | list | to_nice_yaml | indent(4) }}

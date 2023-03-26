@@ -9,6 +9,7 @@ spec:
     additionalArguments: 
       - '--serversTransport.insecureSkipVerify=false'
       - '--serversTransport.rootCAs=/certs/internal/ca.crt,/certs/self/ca.crt'
+      - '--serversTransport.serverName=backend.local'
       - '--accesslog'
       - '--log.level=DEBUG'
       - '--api.insecure=true'

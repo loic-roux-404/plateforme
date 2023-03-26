@@ -1,0 +1,22 @@
+---
+- name: Get kubernetes node infos
+  kubernetes.core.k8s_info:
+    api_version: v1
+    kind: Node
+  register: server_node
+  environment:
+    KUBECONFIG: /etc/rancher/k3s/k3s.yaml
+
+- name: Setting available pods IP range
+  set_fact:
+    pods_cidr: "{{ server_node.resources[0].spec.podCIDR   }}"
+  failed_when: 
+    - server_node.resources | length <= 0
+    - server_node.resources[0].spec.podCIDR | d(false)
+
+- ansible.builtin.set_fact:
+    pods_ip_usable_tmp: "{{ (pods_cidr | ansible.utils.usable_range) }}"
+
+- name: Expand and produce list of potential pod IPs
+  ansible.builtin.set_fact:
+    pods_ip_usable: "{{ pods_ip_usable_tmp.usable_ips[2:-1] }}"
