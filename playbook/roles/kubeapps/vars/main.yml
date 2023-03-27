@@ -20,6 +20,5 @@ kubeapps_internal_acme_ca_extra_volumes_mounts: []
 ingress_hosts_internals: 
   - "{{ dex_hostname }}"
   - "{{ kubeapps_hostname }}"
-  - "{{ api_waypoint_hostname }}"
 
 ingress_hosts_internals_joined: "{{ ingress_hosts_internals | join(' ') }}"

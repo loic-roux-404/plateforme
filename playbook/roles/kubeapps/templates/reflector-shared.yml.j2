@@ -10,21 +10,3 @@ metadata:
 data:
   ca.crt: |
     {{ kubeapps_internal_acme_ca_content | indent(4) }}
-
----
-apiVersion: cert-manager.io/v1
-kind: Certificate
-metadata:
-  name: waypoint-self
-  namespace: {{ kubeapps_namespace }}
-spec:
-  secretName: waypoint-self-tls
-  issuerRef:
-    name: self-ca-cluster-issuer
-    kind: ClusterIssuer
-  commonName: {{ kubeapps_hostname }} 
-  dnsNames:
-  - {{ kubeapps_hostname }}
-  - {{ api_waypoint_hostname }}
-  ipAddresses: 
-    {{ pods_ip_usable | list | to_nice_yaml | indent(4) }}

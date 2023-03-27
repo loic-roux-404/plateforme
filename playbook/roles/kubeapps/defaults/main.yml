@@ -1,8 +1,10 @@
 ---
 
+kubeapps_domain: "k3s.test"
+
 # kubeapps internal acme server
 kubeapps_internal_acme_network_ip: ~
-kubeapps_internal_acme_host: acme-internal.k3s.test
+kubeapps_internal_acme_host: "acme-internal.{{ kubeapps_domain }}"
 
 # HelmChart Custom Resource Definition for cert manager
 # see https://cert-manager.io/docs/configuration/acme/
@@ -16,7 +18,7 @@ cert_manager_is_internal: "{{ (cert_manager_staging_ca_cert_url | d('')) != '' }
 
 # HelmChart Custom Resource Definition for dex oidc connector
 dex_namespace: dex
-dex_hostname: dex.k3s.test
+dex_hostname: "dex.{{ kubeapps_domain }}"
 dex_client_id: kubeapps
 dex_client_secret: ZXhhbXBsZS1hcHAtc2VjcmV0
 dex_github_client_id: ~
@@ -26,8 +28,7 @@ dex_github_client_team: ~
 
 # HelmChart Custom Resource Definition for kubeapps variables
 kubeapps_namespace: default
-kubeapps_hostname: waypoint.k3s.test
-api_waypoint_hostname: api.waypoint.k3s.test
+kubeapps_hostname: "waypoint.{{ kubeapps_domain }}"
 waypoint_version: 0.11.0
 
 dex_github_orgs:

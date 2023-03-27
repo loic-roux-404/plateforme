@@ -7,9 +7,6 @@
   when: kubeapps_internal_acme_network_ip is not none
   tags: [kubeapps]
 
-- import_tasks: recover-pods-ip.yml
-  tags: [kubeapps]
-
 - include_tasks: manifests.yml
   tags: [kubeapps]
   when: item.condition | default(true)
@@ -24,7 +21,6 @@
       deploy: reflector
       ns: "{{ cert_manager_namespace }}"
       condition: "{{ cert_manager_is_internal }}"
-    - src: self-signed-ca.yml
     - src: reflector-shared.yml
       condition: "{{ cert_manager_is_internal }}"
     - src: traefik-config.yml

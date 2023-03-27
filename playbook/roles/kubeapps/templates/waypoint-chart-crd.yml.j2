@@ -13,11 +13,11 @@ spec:
     ui:
       server:
         certs:
-          secretName: waypoint-self-tls
+          secretName: {{ kubeapps_hostname }}-tls
       service:
-        type: ClusterIP
+        type: NodePort
       ingress:
-        enabled: false
+        enabled: true
         annotations:
           cert-manager.io/cluster-issuer: letsencrypt-acme-issuer
           kubernetes.io/ingress.class: "{{ kubeapps_k8s_ingress_class }}"
@@ -29,46 +29,3 @@ spec:
           - hosts:
               - "{{ kubeapps_hostname }}"
             secretName: {{ kubeapps_hostname }}-tls
-
----
-apiVersion: networking.k8s.io/v1
-kind: Ingress
-metadata:
-  annotations:
-    cert-manager.io/cluster-issuer: letsencrypt-acme-issuer
-    traefik.ingress.kubernetes.io/router.tls: "true"
-    traefik.ingress.kubernetes.io/service.serversscheme: https
-    kubernetes.io/ingress.class: "{{ kubeapps_k8s_ingress_class }}"
-  labels:
-    app.kubernetes.io/instance: waypoint
-    app.kubernetes.io/name: waypoint
-  name: waypoint-grpc
-  namespace: {{ kubeapps_namespace }}
-spec:
-  rules:
-  - host: "{{ api_waypoint_hostname }}"
-    http:
-      paths:
-      - backend:
-          service:
-            name: waypoint-ui
-            port:
-              name: grpc
-        path: /
-        pathType: Prefix
-# If it workd try using /grpc instead of sub domain
-  - host: "{{ kubeapps_hostname }}"
-    http:
-      paths:
-      - backend:
-          service:
-            name: waypoint-ui
-            port:
-              name: https
-        path: /
-        pathType: Prefix
-  tls:
-  - hosts:
-    - "{{ kubeapps_hostname }}"
-    - "{{ api_waypoint_hostname }}"
-    secretName: {{ kubeapps_hostname }}-tls
