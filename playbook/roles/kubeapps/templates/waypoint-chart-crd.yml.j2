@@ -11,6 +11,8 @@ spec:
   repo: https://helm.releases.hashicorp.com
   valuesContent: |-
     ui:
+      server:
+        runArgs: ["-vv", "-url-enabled=false"]
       service:
         type: NodePort
       ingress:
@@ -34,6 +36,7 @@ metadata:
     kubernetes.io/ingress.class: "{{ kubeapps_k8s_ingress_class }}"
     nginx.ingress.kubernetes.io/backend-protocol: GRPCS
     nginx.ingress.kubernetes.io/ssl-redirect: "true"
+    nginx.ingress.kubernetes.io/ssl-passthrough: "true"
     nginx.ingress.kubernetes.io/grpc-backend: "true"
     cert-manager.io/cluster-issuer: letsencrypt-acme-issuer
   name: waypoint-grpc

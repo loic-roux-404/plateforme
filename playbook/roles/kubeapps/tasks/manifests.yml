@@ -27,5 +27,5 @@
   when: 
     - item.deploy | default(false)
   delay: 5
-  retries: 30
+  retries: 40
   register: deployment_infos

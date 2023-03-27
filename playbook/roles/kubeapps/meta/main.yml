@@ -62,4 +62,3 @@ dependencies:
         kube-apiserver-arg=oidc-username-claim: email
         kube-apiserver-arg=oidc-groups-claim: groups
         disable: [traefik]
-

@@ -28,7 +28,7 @@
       -client-secret="{{ dex_client_secret }}" \
       -issuer=https://{{ dex_hostname }} \
       -list-claim-mapping="groups=groups" \
-      -access-selector="{{ dex_github_client_org }}:{{ dex_github_client_team }} in list.groups" \
+      -access-selector="'{{ dex_github_client_org }}:{{ dex_github_client_team }}' in list.groups" \
       dex
   environment:
     KUBECONFIG: /etc/rancher/k3s/k3s.yaml

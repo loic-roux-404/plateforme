@@ -92,7 +92,7 @@ cd playbook/roles/kubeapps
 molecule test
 ```
 
-To open UI with https add pebbel certificate to your truststore :
+To open UI with https add pebble certificate to your truststore :
 
 ```bash
 curl -k https://localhost:15000/intermediates/0 > ~/Downloads/pebble-ca.pem
@@ -102,20 +102,23 @@ sudo security add-trusted-cert -d -r trustAsRoot -k /Library/Keychains/System.ke
 - [Dex](https://dex.k3s.test/.well-known/openid-configuration)
 - [kubeapps](https://kubeapps.k3s.test/)
 
-Setup kubeapps inside cluster before getting token :
+Get waypoint docker inside docker container :
 
 ```bash
-Run KUBECONFIG=/etc/rancher/k3s/k3s.yaml kubeapps login -from-kubernetes"
+waypoint user token
 ```
 
-Setup kubeapps login context outside cluster :
+Setup waypoint login context outside cluster :
 
 ```bash
-kubeapps context create \
-    -server-addr='kubeapps.k3s.test' \
+TOKEN='token'
+waypoint context create \
+    -server-addr='waypoint.k3s.test:443' \
     -server-auth-token="$TOKEN" \
     -server-require-auth=true \
-    -set-default kubeapps.k3s.test-ui
+    -server-tls-skip-verify \
+    -server-platform=kubernetes \
+    -set-default waypoint.k3s.test-ui
 
 ```
 

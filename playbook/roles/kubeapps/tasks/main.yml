@@ -33,4 +33,4 @@
       ns: default
 
 - import_tasks: waypoint.yml
-  tags: [kubeapps]
+  tags: [kubeapps, finalize]
