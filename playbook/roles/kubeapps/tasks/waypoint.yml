@@ -1,5 +1,34 @@
 ---
 
+- name: Map ports
+  kubernetes.core.k8s:
+    api_version: v1
+    kind: Service
+    name: waypoint-ui
+    namespace: "{{ kubeapps_namespace }}"
+    kubeconfig: /etc/rancher/k3s/k3s.yaml
+    apply: yes
+    force: yes
+    definition:
+      spec:
+        ports:
+        - name: http
+          port: 80
+          targetPort: http
+          nodePort: 30080
+        - name: https
+          port: 443
+          targetPort: https
+          nodePort: 30443
+        - name: grpc
+          port: 9701
+          targetPort: grpc
+          nodePort: 32701
+        - name: https-2
+          port: 9702
+          targetPort: https
+          nodePort: 32702
+
 - set_fact:
     waypoint_arch_lookup:
       amd64: amd64
@@ -17,7 +46,7 @@
     remote_src: yes
 
 - name: Waypoint login
-  command: waypoint login -server-addr={{ kubeapps_hostname }}:443 -from-kubernetes
+  command: waypoint login -server-addr={{ kubeapps_hostname }}:32701 -from-kubernetes
   environment:
     KUBECONFIG: /etc/rancher/k3s/k3s.yaml
 
@@ -28,7 +57,7 @@
       -client-secret="{{ dex_client_secret }}" \
       -issuer=https://{{ dex_hostname }} \
       -list-claim-mapping="groups=groups" \
-      -access-selector="'{{ dex_github_client_org }}:{{ dex_github_client_team }}' in list.groups" \
+      -access-selector="{{ dex_github_client_org }}:{{ dex_github_client_team }} in list.groups" \
       dex
   environment:
     KUBECONFIG: /etc/rancher/k3s/k3s.yaml

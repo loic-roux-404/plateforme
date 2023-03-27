@@ -11,10 +11,16 @@ platforms:
     pre_build_image: true
     groups:
       - molecule
+    published_ports:
+      - 6443:6443
+      - 80:80
+      - 443:443
+      - 32701:32701
     volumes:
       - /sys/fs/cgroup:/sys/fs/cgroup:rw
       - /var/lib/rancher/k3s
-    network_mode: host
+    networks:
+      - name: k3snet
     tmpfs:
       - /var/run
       - /run

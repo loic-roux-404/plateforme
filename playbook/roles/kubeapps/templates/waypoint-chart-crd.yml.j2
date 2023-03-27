@@ -1,4 +1,18 @@
 ---
+apiVersion: cert-manager.io/v1
+kind: Certificate
+metadata:
+  name: {{ kubeapps_hostname }}-tls
+  namespace: {{ kubeapps_namespace }}
+spec:
+  dnsNames:
+  - {{ kubeapps_hostname }}
+  issuerRef:
+    kind: ClusterIssuer
+    name: letsencrypt-acme-issuer
+  secretName: {{ kubeapps_hostname }}-tls
+
+---
 apiVersion: helm.cattle.io/v1
 kind: HelmChart
 metadata:
@@ -10,9 +24,11 @@ spec:
   targetNamespace: {{ kubeapps_namespace }}
   repo: https://helm.releases.hashicorp.com
   valuesContent: |-
+    server:
+      runArgs: ["-vvv"]
+      cert:
+        secretName: {{ kubeapps_hostname }}-tls
     ui:
-      server:
-        runArgs: ["-vv", "-url-enabled=false"]
       service:
         type: NodePort
       ingress:
@@ -36,7 +52,6 @@ metadata:
     kubernetes.io/ingress.class: "{{ kubeapps_k8s_ingress_class }}"
     nginx.ingress.kubernetes.io/backend-protocol: GRPCS
     nginx.ingress.kubernetes.io/ssl-redirect: "true"
-    nginx.ingress.kubernetes.io/ssl-passthrough: "true"
     nginx.ingress.kubernetes.io/grpc-backend: "true"
     cert-manager.io/cluster-issuer: letsencrypt-acme-issuer
   name: waypoint-grpc
