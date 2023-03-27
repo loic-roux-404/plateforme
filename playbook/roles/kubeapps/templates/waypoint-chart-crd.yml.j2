@@ -11,9 +11,6 @@ spec:
   repo: https://helm.releases.hashicorp.com
   valuesContent: |-
     ui:
-      server:
-        certs:
-          secretName: {{ kubeapps_hostname }}-tls
       service:
         type: NodePort
       ingress:
@@ -21,7 +18,6 @@ spec:
         annotations:
           cert-manager.io/cluster-issuer: letsencrypt-acme-issuer
           kubernetes.io/ingress.class: "{{ kubeapps_k8s_ingress_class }}"
-          traefik.frontend.passHostHeader: "true"
         hosts:
           - host: "{{ kubeapps_hostname }}"
             paths: ["/"]
@@ -29,3 +25,40 @@ spec:
           - hosts:
               - "{{ kubeapps_hostname }}"
             secretName: {{ kubeapps_hostname }}-tls
+
+---
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  annotations:
+    kubernetes.io/ingress.class: "{{ kubeapps_k8s_ingress_class }}"
+    nginx.ingress.kubernetes.io/backend-protocol: GRPCS
+    nginx.ingress.kubernetes.io/ssl-redirect: "true"
+    nginx.ingress.kubernetes.io/grpc-backend: "true"
+    cert-manager.io/cluster-issuer: letsencrypt-acme-issuer
+  name: waypoint-grpc
+  namespace: {{ kubeapps_namespace }}
+spec:
+  rules:
+    - host: {{ kubeapps_hostname }}
+      http:
+        paths:
+          - backend:
+              service:
+                name: waypoint-server
+                port:
+                  name: grpc
+            path: /hashicorp.waypoint.Waypoint/
+            pathType: ImplementationSpecific
+
+          - backend:
+              service:
+                name: waypoint-server
+                port:
+                  name: grpc
+            path: /grpc.reflection.v1alpha.ServerReflection/ServerReflectionInfo
+            pathType: ImplementationSpecific
+  tls:
+  - hosts:
+    - "{{ kubeapps_hostname }}"
+    secretName: {{ kubeapps_hostname }}-tls

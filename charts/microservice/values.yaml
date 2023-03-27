@@ -68,7 +68,7 @@ ingress:
   enabled: false
   className: ""
   annotations:
-    kubernetes.io/ingress.class: traefik
+    kubernetes.io/ingress.class: nginx
     cert-manager.io/cluster-issuer: letsencrypt-acme-issuer
   hosts:
     - host: client.k3s.test

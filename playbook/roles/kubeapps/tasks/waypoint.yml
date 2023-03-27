@@ -1,37 +1,5 @@
 ---
 
-- name: Recover NodePort infos
-  kubernetes.core.k8s:
-    api_version: v1
-    kind: Service
-    name: waypoint-ui
-    namespace: "{{ kubeapps_namespace }}"
-    kubeconfig: /etc/rancher/k3s/k3s.yaml
-    spec:
-      ports:
-      - name: http
-        port: 80
-        targetPort: http
-        nodePort: 30080
-      - name: https
-        port: 443
-        targetPort: https
-        nodePort: 30443
-      - name: grpc
-        port: 9701
-        targetPort: grpc
-        nodePort: 39701
-      - name: https-2
-        port: 9702
-        targetPort: https
-        nodePort: 39702
-
-  register: waypoint_service
-
-- name: Set waypoint service port
-  set_fact:
-    waypoint_service_port: "{{ waypoint_service.resources[0].spec.ports[2].nodePort }}"
-
 - set_fact:
     waypoint_arch_lookup:
       amd64: amd64
@@ -49,7 +17,7 @@
     remote_src: yes
 
 - name: Waypoint login
-  command: waypoint login -server-addr={{ kubeapps_hostname }}:{{ waypoint_service_port }} -from-kubernetes
+  command: waypoint login -server-addr={{ kubeapps_hostname }}:443 -from-kubernetes
   environment:
     KUBECONFIG: /etc/rancher/k3s/k3s.yaml
 

@@ -3,7 +3,7 @@
   kubernetes.core.k8s_info:
     api_version: v1
     kind: Service
-    name: traefik
+    name: ingress-nginx-controller
     kubeconfig: /etc/rancher/k3s/k3s.yaml
     wait: yes
     namespace: kube-system

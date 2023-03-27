@@ -1,6 +1,6 @@
 ---
 # vars file for role-kubeapps
-kubeapps_k8s_ingress_class: traefik
+kubeapps_k8s_ingress_class: nginx
 letsencrypt_staging: https://acme-staging-v02.api.letsencrypt.org/directory
 letsencrypt_prod: https://acme-v02.api.letsencrypt.org/directory
 

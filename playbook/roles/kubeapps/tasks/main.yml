@@ -23,10 +23,6 @@
       condition: "{{ cert_manager_is_internal }}"
     - src: reflector-shared.yml
       condition: "{{ cert_manager_is_internal }}"
-    - src: traefik-config.yml
-      deploy: traefik
-      ns: kube-system
-      condition: "{{ cert_manager_is_internal }}"
     - src: cert-manager-chart-crd.yml
       deploy: "cert-manager"
       ns: "{{ cert_manager_namespace }}"

@@ -46,8 +46,8 @@ spec:
       annotations:
         cert-manager.io/cluster-issuer: letsencrypt-acme-issuer
         kubernetes.io/ingress.class: "{{ kubeapps_k8s_ingress_class }}"
-        traefik.frontend.passHostHeader: "true"
-        traefik.ingress.kubernetes.io/router.tls: "true"
+        nginx.ingress.kubernetes.io/ssl-redirect: "true"
+        nginx.ingress.kubernetes.io/rewrite-target: /
       hosts:
       - host: {{ dex_hostname }}
         paths:
