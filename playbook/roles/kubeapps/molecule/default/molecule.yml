@@ -16,11 +16,16 @@ platforms:
       - 80:80
       - 443:443
       - 32701:32701
+      - 15000:15000
+      - 14000:14000
     volumes:
       - /sys/fs/cgroup:/sys/fs/cgroup:rw
       - /var/lib/rancher/k3s
     networks:
       - name: k3snet
+        ipam_config:
+          - subnet: "172.29.0.0/16"
+            gateway: "172.29.0.1"
     tmpfs:
       - /var/run
       - /run

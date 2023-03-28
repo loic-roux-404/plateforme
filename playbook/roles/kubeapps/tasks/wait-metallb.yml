@@ -1,0 +1,21 @@
+---
+- name: "Wait {{ item.src }} available"
+  kubernetes.core.k8s_info:
+    api_version: v1
+    kind: "{{ item.kind | d('Deployment') }}"
+    name: "{{ item.deploy }}"
+    kubeconfig: /etc/rancher/k3s/k3s.yaml
+    namespace: metallb-system
+  until:
+    - deployment_infos.resources | map(attribute='status') | select() | length > 0
+    - deployment_infos.resources[0].status.readyReplicas | d(False)
+    - deployment_infos.resources[0].status.replicas | d(False)
+    - deployment_infos.resources[0].status.readyReplicas == deployment_infos.resources[0].status.replicas
+  when: 
+    - item.deploy | default(false)
+  delay: 5
+  retries: 30
+  register: deployment_infos
+  loop:
+    - { deploy: controller }
+    - { kind: apiservice, name: v1beta1.metallb.io }

@@ -1,8 +1,13 @@
 ---
 
+# Metallb
+metallb_ip_default_mask: "{{ (ansible_default_ipv4.address + '/' + ansible_default_ipv4.netmask) }}"
+metallb_ip_range: "{{ (metallb_ip_default_mask | ansible.utils.ipaddr('range_usable')) }}"
+
+# Base domain
 kubeapps_base_domain: "k3s.test"
 
-# kubeapps internal acme server
+# kubeapps internal networking
 kubeapps_internal_acme_network_ip: ~
 kubeapps_internal_acme_host: "acme-internal.{{ kubeapps_base_domain }}"
 

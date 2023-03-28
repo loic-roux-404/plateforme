@@ -3,8 +3,10 @@
 - import_tasks: checks.yml
   tags: [kubeapps]
 
-- import_tasks: internal-acme.yml
-  when: kubeapps_internal_acme_network_ip is not none
+- import_tasks: wait-metallb.yml
+  tags: [kubeapps]
+
+- import_tasks: nginx-ingress.yml
   tags: [kubeapps]
 
 - include_tasks: manifests.yml

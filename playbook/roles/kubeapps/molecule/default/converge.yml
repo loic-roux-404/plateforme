@@ -5,13 +5,13 @@
   vars:
     molecule_is_test: true
     cert_manager_acme_url: https://{{ kubeapps_internal_acme_host }}:14000/dir
-    cert_manager_staging_ca_cert_url: https://host.docker.internal:15000/roots/0
-
+    cert_manager_staging_ca_cert_url: https://localhost:15000/roots/0
+    metallb_ip_range: 172.29.0.20-172.29.0.50
   roles:
     - role: "{{ lookup('env', 'MOLECULE_PROJECT_DIRECTORY') | basename }}"
 
   pre_tasks:
-
+    - debug: msg="{{ metallb_ip_range}}"
     - name: Ensure required dependencies are installed.
       package: 
         name:
@@ -27,6 +27,8 @@
           - dnsutils
           - less
           - vim
+          - golang
+          - iputils-ping
         state: present
         update_cache: yes
       when: ansible_os_family == 'Debian'
@@ -38,14 +40,23 @@
           - PyYAML
           - kubernetes
 
-    - name: dig pebble address
-      command: dig +short pebble
-      register: dig_pebble
-      changed_when: false
-      tags: [kubeapps]
+    - name: Copy pebble config and certs
+      ansible.builtin.copy:
+        src: "{{ playbook_dir }}/pebble"
+        dest: "/"
+        directory_mode: 0755
+        remote_src: false
+
+    - name: Install pebble
+      ansible.builtin.command: go install github.com/letsencrypt/pebble/...@HEAD 
+
+    - name: Run pebble
+      command: ~/go/bin/pebble -config /pebble/pebble-config.json
+      async: 2592000 # 60*60*24*30 – 1 month
+      poll: 0
 
     - ansible.builtin.set_fact:
-        kubeapps_internal_acme_network_ip: "{{ dig_pebble.stdout }}"
+        kubeapps_internal_acme_network_ip: "{{ ansible_default_ipv4.address }}"
       tags: [kubeapps]
 
     - name: Import acme certificates

@@ -29,8 +29,6 @@ spec:
       cert:
         secretName: {{ kubeapps_hostname }}-tls
     ui:
-      service:
-        type: NodePort
       ingress:
         enabled: true
         annotations:
