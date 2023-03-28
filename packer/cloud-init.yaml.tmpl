@@ -20,7 +20,6 @@ autoinstall:
     install-server: true
     allow-pw: true
   packages:
-    - bc
     - curl
     - ca-certificates
     - wget
@@ -47,5 +46,6 @@ autoinstall:
         shell: /bin/bash
   late-commands:
   # Cgroup ensure v1 as we are using k3s <= 1.25
+    - sed -i -e 's/^#\?PermitRootLogin.*/PermitRootLogin false/g' /target/etc/ssh/sshd_config
     - sed -ie 's/GRUB_CMDLINE_LINUX=.*/GRUB_CMDLINE_LINUX="net.ifnames=0 biosdevname=0 systemd.unified_cgroup_hierarchy=0"/' /target/etc/default/grub
     - curtin in-target --target /target update-grub2

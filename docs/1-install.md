@@ -84,15 +84,34 @@ pip install -r requirements.txt
 cd -
 ```
 
-Test kubeapps role :
+### Test kubeapps role with molecule :
+
+
+Setup mac os networking with rancher :
+
+```bash
+cd playbook/roles/kubeapps
+./scripts/setup_macos.sh
+```
+
+Recover ip subnet if needed (ex: 172.29.0.20) and edit `metallb_ip_range` accordingly :
+
+```bash
+docker network inspect k3snet | jq -r '.[0].IPAM.Config[0].Subnet' | awk -F. '{print $1"."$2}'
+```
+
+Setup dnsmasq to wildcard domain to localhost :
 
 ```bash
 cd playbook/roles/kubeapps
 ./scripts/setup_dnsmasq.sh
+```
+
+```bash
 molecule test
 ```
 
-To open UI with https add pebbel certificate to your truststore :
+To open UI with https add pebble certificate to your truststore :
 
 ```bash
 curl -k https://localhost:15000/intermediates/0 > ~/Downloads/pebble-ca.pem
@@ -102,6 +121,8 @@ sudo security add-trusted-cert -d -r trustAsRoot -k /Library/Keychains/System.ke
 - [Dex](https://dex.k3s.test/.well-known/openid-configuration)
 - [kubeapps](https://kubeapps.k3s.test/)
 
+> Authentication with dex is not working over waypoint UI in localhost because of non trusted certificate.
+
 Setup kubeapps inside cluster before getting token :
 
 ```bash
@@ -110,13 +131,30 @@ Run KUBECONFIG=/etc/rancher/k3s/k3s.yaml kubeapps login -from-kubernetes"
 
 Setup kubeapps login context outside cluster :
 
-```bash
-kubeapps context create \
-    -server-addr='kubeapps.k3s.test' \
-    -server-auth-token="$TOKEN" \
-    -server-require-auth=true \
-    -set-default kubeapps.k3s.test-ui
+> You can use `waypoint.k3s.test:443` in a simple network network (VPN, Firewall, DnsMasq are probably going to gives you trouble)
 
+```bash
+export WAYPOINT_SERVER_TOKEN=token
+waypoint context create \
+    -server-addr='localhost:443' \
+    -server-auth-token="$WAYPOINT_SERVER_TOKEN" \
+    -server-require-auth=true \
+    -server-tls-skip-verify=true \
+    -set-default waypoint.k3s.test-ui
+
+```
+
+### Debug on rancher vm with a better network
+
+```bash
+rdctl shell
+```
+
+```bash
+wget https://releases.hashicorp.com/waypoint/0.11.0/waypoint_0.11.0_linux_arm64.zip -O /tmp/waypoint.zip
+sudo unzip /tmp/waypoint.zip -d /usr/local/bin/
+rm /tmp/waypoint.zip
+sudo chmod +x /usr/local/bin/waypoint
 ```
 
 ## Packer image

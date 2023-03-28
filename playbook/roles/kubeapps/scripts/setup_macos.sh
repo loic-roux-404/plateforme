@@ -14,10 +14,10 @@ ifconfig bridge100
 
 # get IP addr on the lima0 interface
 RD_IP=$(rdctl shell -- ip -o -4 a s | grep rd0 | grep -E -o 'inet [0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}' | cut -d' ' -f2)
-echo $RD_IP
+echo "Rancker desktop ip : $RD_IP"
 
 # add route to the Rancher desktop Lima VM
-sudo route -nv add -net 172.18 ${RD_IP}
+sudo route -nv add -net 172.18 "${RD_IP}"
 
 # check route
 route get 172.18.1.1

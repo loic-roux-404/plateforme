@@ -1,0 +1,26 @@
+---
+- name: Prepare
+  hosts: localhost
+  connection: local
+  gather_facts: false
+  no_log: "{{ molecule_no_log }}"
+  collections:
+    - community.docker
+  tasks:
+  - name: Create a network with custom IPAM config
+    docker_network:
+      name: k3snet
+      driver: bridge
+      attachable: false
+      scope: local
+      internal: false
+      ipam_config:
+        - subnet: "172.29.0.0/16"
+          gateway: "172.29.0.1"
+      labels:
+        owner: molecule
+      driver_options:
+        com.docker.network.bridge.name: k3snet
+        com.docker.network.bridge.enable_ip_masquerade: "true"
+        com.docker.network.bridge.enable_icc: "true"
+        com.docker.network.driver.mtu: "1500"

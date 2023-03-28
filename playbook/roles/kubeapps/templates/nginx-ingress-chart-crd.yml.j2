@@ -5,13 +5,15 @@ metadata:
   name: ingress-nginx
   namespace: kube-system
 spec:
-  chart: ingress-nginx
-  repo: https://kubernetes.github.io/ingress-nginx
+  chart: nginx-ingress-controller
+  repo: https://charts.bitnami.com/bitnami
   targetNamespace: kube-system
-  version: 4.6.0
+  version: 9.3.33
   valuesContent: |
-    controller:
-      extraArgs:
-        v: 4
-      hostPort:
-        enabled: true
+    fullnameOverride: ingress-nginx
+    extraArgs:
+      v: 4
+    kind: DaemonSet
+    hostNetwork: true
+    hostPort:
+      enabled: true

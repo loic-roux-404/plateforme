@@ -2,10 +2,13 @@
 
 # Metallb
 metallb_ip_default_mask: "{{ (ansible_default_ipv4.address + '/' + ansible_default_ipv4.netmask) }}"
-metallb_ip_range: "{{ (metallb_ip_default_mask | ansible.utils.ipaddr('range_usable')) }}"
+metallb_ip_default_range: "{{ (metallb_ip_default_mask | ansible.utils.ipaddr('range_usable')) }}"
+metallb_ip_range: ~
 
-# Base domain
+# Kubeapps external networking
 kubeapps_base_domain: "k3s.test"
+# Use nginx ingress controller by default
+k3s_disable_services: [traefik]
 
 # kubeapps internal networking
 kubeapps_internal_acme_network_ip: ~

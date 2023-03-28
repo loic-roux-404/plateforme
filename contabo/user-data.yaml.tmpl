@@ -1,7 +1,12 @@
 #cloud-config
 
-timezone: Europe/Paris
 ssh_deletekeys: false
+users:
+  - name: ${ssh_username}
+    passwd: ${ssh_password_hash}
+    ssh_authorized_keys:
+      - ssh-rsa ${jsonencode(ssh_public_key)}
+
 resize_rootfs: true
 growpart:
   mode: auto
@@ -10,6 +15,7 @@ growpart:
 
 runcmd:
   - [echo, "${iso_version_tag}"]
+  - [sed, -i, -e, 's/^#\?PasswordAuthentication.*/PasswordAuthentication false/g', /etc/ssh/sshd_config.d/50-cloud-init.conf]
 
 ansible:
   install_method: pip

@@ -17,6 +17,20 @@ kubeapps_internal_acme_ca_in_volume_crt: /etc/ssl/certs/acmeca.crt
 kubeapps_internal_acme_ca_extra_volumes: []
 kubeapps_internal_acme_ca_extra_volumes_mounts: []
 
+# Metallb
+metallb_manifests:
+  - url_manifest:
+      url: https://raw.githubusercontent.com/metallb/metallb/v0.13.5/config/manifests/metallb-native.yaml
+      filename: metallb-native.yaml
+    deploy: controller
+    ns: metallb-system
+  - url_manifest:
+      url: https://raw.githubusercontent.com/metallb/metallb/v0.13.5/config/manifests/metallb-frr.yaml
+      filename: metallb-frr.yaml
+
+# Ingress facts
+ingress_expected_svc: "{{'ingress-nginx' 
+  if 'traefik' in k3s_disable_services else 'traefik' }}"
 ingress_hosts_internals: 
   - "{{ dex_hostname }}"
   - "{{ kubeapps_hostname }}"

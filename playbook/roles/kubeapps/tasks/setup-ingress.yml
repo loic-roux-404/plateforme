@@ -1,18 +1,15 @@
 ---
-- name: Install ingress
+- name: Install nginx ingress
   include_tasks: manifests.yml
-  tags: [kubeapps]
-  args: { apply: { tags: [kubeapps] } }
   loop:
     - src: nginx-ingress-chart-crd.yml
-      deploy: ingress-nginx-controller
-      ns: kube-system
+  when: '"traefik" in k3s_disable_services'
 
 - name: Get Ingress service infos
   kubernetes.core.k8s_info:
     api_version: v1
     kind: Service
-    name: ingress-nginx-controller
+    name: "{{ ingress_expected_svc }}"
     kubeconfig: /etc/rancher/k3s/k3s.yaml
     wait: yes
     namespace: kube-system
@@ -25,4 +22,4 @@
 
 - name: Set ingress ip fact
   set_fact:
-    kubeapps_ingress_controller_ip: "{{ ingress_infos.resources[0].spec.clusterIP|d(none) }}"
+    kubeapps_ingress_controller_ip: "{{ ingress_infos.resources[0].spec.clusterIP | d(none) }}"

@@ -29,28 +29,8 @@ resource "random_password" "dex_client_secret" {
   special = false
 }
 
-resource "random_password" "vm_password" {
-  length           = 16
-  special          = true
-  override_special = "!#$%&*()-_=+[]{}<>:?"
-  min_upper = 1
-  min_numeric = 3
-  min_special = 1
-}
-
-resource "contabo_secret" "paas_instance_ssh_key" {
-  name  = "paas_instance_ssh_key"
-  type  = "ssh"
-  value = trimspace(file(pathexpand(var.ssh_public_key)))
-}
-
-resource "contabo_secret" "paas_instance_root_password" {
-  name  = "paas_instance_root_password"
-  type  = "password"
-  value = random_password.vm_password.result
-}
-
 locals {
+  ssh_public_key = trimspace(file(pathexpand(var.ssh_public_key)))
   final_secrets = merge(
     var.secrets,
     {
@@ -58,6 +38,18 @@ locals {
       dex_client_secret = random_password.dex_client_secret.result
     }
   )
+}
+
+resource "contabo_secret" "paas_instance_ssh_key" {
+  name  = "paas_instance_ssh_key"
+  type  = "ssh"
+  value = local.ssh_public_key
+}
+
+resource "contabo_secret" "paas_instance_password" {
+  name  = "paas_instance_password"
+  type  = "password"
+  value = var.ssh_password
 }
 
 ############
@@ -101,11 +93,14 @@ resource "contabo_instance" "paas_instance" {
   display_name  = "ubuntu-k3s-paas"
   image_id = contabo_image.paas_instance.id
   ssh_keys = [contabo_secret.paas_instance_ssh_key.id]
-  root_password = contabo_secret.paas_instance_root_password.id
   user_data = jsonencode(templatefile(
     "${path.root}/user-data.yaml.tmpl",
     {
       iso_version_tag = var.ubuntu_release_info.iso_version_tag
+      ssh_username = var.ssh_username
+      ssh_password = var.ssh_password
+      ssh_password_hash = var.ssh_password_hash
+      ssh_public_key = local.ssh_public_key
       ansible_vars = [
         for k, v in local.ansible_vars : "${k}=${v}"
       ]

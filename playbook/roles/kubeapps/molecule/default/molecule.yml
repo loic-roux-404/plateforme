@@ -9,6 +9,8 @@ platforms:
     command: ${MOLECULE_DOCKER_COMMAND:-""}
     privileged: true
     pre_build_image: true
+    capabilities:
+      - ALL
     groups:
       - molecule
     published_ports:
@@ -23,9 +25,6 @@ platforms:
       - /var/lib/rancher/k3s
     networks:
       - name: k3snet
-        ipam_config:
-          - subnet: "172.29.0.0/16"
-            gateway: "172.29.0.1"
     tmpfs:
       - /var/run
       - /run

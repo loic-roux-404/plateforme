@@ -3,11 +3,14 @@
 - import_tasks: checks.yml
   tags: [kubeapps]
 
-- import_tasks: wait-metallb.yml
-  tags: [kubeapps]
+- import_tasks: setup-metallb.yml
+  tags: [kubeapps, metallb]
+  when: 
+    - metallb_ip_range | d(False)
+    - '"servicelb" in k3s_disable_services'
 
-- import_tasks: nginx-ingress.yml
-  tags: [kubeapps]
+- import_tasks: setup-ingress.yml
+  tags: [kubeapps, ingress-nginx]
 
 - include_tasks: manifests.yml
   tags: [kubeapps]
@@ -34,5 +37,5 @@
       kind: StatefulSet
       ns: default
 
-- import_tasks: waypoint.yml
-  tags: [kubeapps]
+- import_tasks: setup-waypoint.yml
+  tags: [kubeapps, finalize]
