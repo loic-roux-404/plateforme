@@ -10,6 +10,6 @@ spec:
   targetNamespace: kube-system
   version: 4.6.0
   valuesContent: |
-    controller:
-      extraArgs:
-        v: 4
+    hostNetwork: true
+    hostPort:
+      enabled: true
