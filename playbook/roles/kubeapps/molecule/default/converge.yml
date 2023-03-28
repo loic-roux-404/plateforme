@@ -37,15 +37,16 @@
           - openshift
           - PyYAML
           - kubernetes
+          - netaddr
 
-    - name: dig pebble address
-      command: dig +short pebble
-      register: dig_pebble
+    - name: dig host.docker.internal address
+      command: dig +short host.docker.internal
+      register: dig_host_docker_internal
       changed_when: false
       tags: [kubeapps]
 
     - ansible.builtin.set_fact:
-        kubeapps_internal_acme_network_ip: "{{ dig_pebble.stdout }}"
+        kubeapps_internal_acme_network_ip: "{{ dig_host_docker_internal.stdout }}"
       tags: [kubeapps]
 
     - name: Import acme certificates
