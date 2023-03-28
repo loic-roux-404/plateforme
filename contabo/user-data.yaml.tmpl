@@ -15,7 +15,7 @@ growpart:
 
 runcmd:
   - [echo, "${iso_version_tag}"]
-  - [sed, -i, -e, 's/^#\?PasswordAuthentication.*/PasswordAuthentication false/g', /etc/ssh/sshd_config.d/50-cloud-init.conf]
+  - [sed, -ie, 's/^#\?PasswordAuthentication.*/PasswordAuthentication false/g', /etc/ssh/sshd_config.d/50-cloud-init.conf]
 
 ansible:
   install_method: pip
