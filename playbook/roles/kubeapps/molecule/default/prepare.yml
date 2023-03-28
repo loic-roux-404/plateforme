@@ -13,16 +13,46 @@
         command: pebble -config /pebble/pebble-config.json
         state: started
         restart: True
-        network_mode: host
+        published_ports:
+          - "15000:15000"
+          - "14000:14000"
+        networks:
+          - name: k3snet
         volumes:
           - "{{ playbook_dir }}/pebble:/pebble:ro"
       register: result
-      until: result is not failed
+      until: pebble_container is not failed
       retries: 3
       delay: 10
+      register: pebble_container
 
     - name: Wait for pebble to start
       ansible.builtin.wait_for:
         host: localhost
         port: 15000
         delay: 5
+
+    - name: install dig
+      community.docker.docker_container_exec:
+        container: pebble
+        argv:
+          - /bin/sh
+          - "-c"
+          - "apk add bind-tools"
+
+    - name: Get node host ip
+      community.docker.docker_container_exec:
+        container: pebble
+        argv:
+          - /bin/sh
+          - "-c"
+          - "dig +short node-0"
+      register: result
+
+    - name: Add ingress to /etc/hosts
+      community.docker.docker_container_exec:
+        container: pebble
+        argv:
+          - /bin/sh
+          - "-c"
+          - "echo '{{ result.stdout }} waypoint.k3s.test dex.k3s.test' >> /etc/hosts"
