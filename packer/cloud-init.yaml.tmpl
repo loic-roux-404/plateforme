@@ -28,15 +28,7 @@ autoinstall:
     hostname: ${hostname}-server
     disable_root: false
     timezone: Europe/Paris
-    resize_rootfs: true
     preserve_hostname: false
-    growpart:
-      mode: auto
-      devices: ["/"]
-      ignore_growroot_disabled: false
-    system_info:
-      default_user:
-        name: ${ssh_username}
     users:
       - name: ${ssh_username}
         passwd: ${ssh_password_hash}
@@ -45,7 +37,7 @@ autoinstall:
         sudo: ALL=(ALL) NOPASSWD:ALL
         shell: /bin/bash
   late-commands:
-  # Cgroup ensure v1 as we are using k3s <= 1.25
-    - sed -i -e 's/^#\?PermitRootLogin.*/PermitRootLogin false/g' /target/etc/ssh/sshd_config
+  # Cgroup ensure v1 as v2 is not supported by some tooling (k8s,...)
+    - sed -i -e 's/^#\?PermitRootLogin.*/PermitRootLogin false/g' /etc/ssh/sshd_config
     - sed -ie 's/GRUB_CMDLINE_LINUX=.*/GRUB_CMDLINE_LINUX="net.ifnames=0 biosdevname=0 systemd.unified_cgroup_hierarchy=0"/' /target/etc/default/grub
     - curtin in-target --target /target update-grub2

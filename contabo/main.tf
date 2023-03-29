@@ -31,8 +31,8 @@ resource "random_password" "dex_client_secret" {
 
 locals {
   ssh_public_key = trimspace(file(pathexpand(var.ssh_public_key)))
-  final_secrets = merge(
-    var.secrets,
+  final_ansible_secrets = merge(
+    var.ansible_secrets,
     {
       dex_client_id = random_password.dex_client_id.result
       dex_client_secret = random_password.dex_client_secret.result
@@ -78,7 +78,7 @@ resource "namedotcom_record" "dns_zone" {
 
 locals {
   ansible_vars = merge(
-    local.final_secrets,
+    local.final_ansible_secrets,
     {
       dex_hostname                 = "dex.${var.domain}"
       waypoint_hostname            = "waypoint.${var.domain}"

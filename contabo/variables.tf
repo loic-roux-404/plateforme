@@ -83,7 +83,7 @@ variable "ssh_public_key" {
   default   = "~/.ssh/id_rsa.pub"
 }
 
-variable "secrets" {
+variable "ansible_secrets" {
   type        = map(string)
   description = "Define ansible secrets"
   default     = {}

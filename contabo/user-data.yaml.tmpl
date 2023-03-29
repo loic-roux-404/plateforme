@@ -1,5 +1,9 @@
 #cloud-config
 
+system_info:
+  default_user:
+    name: ${ssh_username}
+
 ssh_deletekeys: false
 users:
   - name: ${ssh_username}
