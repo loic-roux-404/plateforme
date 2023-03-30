@@ -1,4 +1,4 @@
-site_name: PaaS Tutorial
+site_name: K3s PaaS
 theme:
   name: material
   font: false
@@ -10,7 +10,7 @@ plugins:
       enumerate_headings: false
       add_to_navigation: true
 
-repo_url: https://github.com/esgi-lyon/paas-tutorial
+repo_url: https://github.com/loic-roux-404/k3s-paas
 markdown_extensions:
   - markdown.extensions.extra
   - toc:

@@ -1,0 +1,2 @@
+molecule==4.0.4
+molecule-plugins[docker]

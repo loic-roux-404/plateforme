@@ -1,27 +1,38 @@
 ---
 
+- name: Download file to k3s manifest folder
+  ansible.builtin.get_url:
+    url: "{{ item.url_manifest.url }}"
+    dest: /var/lib/rancher/k3s/server/manifests/{{ item.url_manifest.filename }}
+  when: item.url_manifest | d(False)
+
 - name: "Deploy {{ item.src }} to k3s crd processor"
   ansible.builtin.template:
     src: "{{ item.src }}.j2"
     dest: "/var/lib/rancher/k3s/server/manifests/{{ item.src }}"
-    owner: "{{ kubeapps_user }}"
-    group: "{{ kubeapps_user }}"
+    owner: "{{ kubeapps_user | d('root') }}"
+    group: "{{ kubeapps_user | d('root') }}"
     mode: '0600'
+  when: item.src | d(False)
 
-- name: "Wait {{ item.src }} deployment complete"
+- include_tasks: "{{ item.task }}"
+  when: item.task | d(False)
+
+- name: "Wait {{ item.deploy }} available"
   kubernetes.core.k8s_info:
     api_version: v1
-    kind: Deployment
+    kind: "{{ item.kind | d('Deployment') }}"
     name: "{{ item.deploy }}"
     kubeconfig: /etc/rancher/k3s/k3s.yaml
-    wait: yes
-    wait_sleep: 10
-    wait_timeout: 600
-    wait_condition:
-      type: Progressing
-      status: "True"
-      reason: "NewReplicaSetAvailable"
     # Many times deployment name is the same that namespace
     namespace: "{{ item.ns | d(item.deploy) }}"
-  when: item.deploy | default(false) or item.ns | default(false)
+  until:
+    - deployment_infos.resources | map(attribute='status') | select() | length > 0
+    - deployment_infos.resources[0].status.readyReplicas | d(False)
+    - deployment_infos.resources[0].status.replicas | d(False)
+    - deployment_infos.resources[0].status.readyReplicas == deployment_infos.resources[0].status.replicas
+  when: 
+    - item.deploy | default(false)
+  delay: 5
+  retries: 30
   register: deployment_infos

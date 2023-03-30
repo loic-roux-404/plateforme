@@ -1,0 +1,23 @@
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: coredns-custom
+  namespace: kube-system
+data:
+  ingress-hosts.server: |
+    {{ ingress_hosts_internals_joined }} {
+      hosts {
+        {{ kubeapps_ingress_controller_ip }} {{ ingress_hosts_internals_joined }}
+        fallthrough
+      }
+      whoami
+    }
+  acme-internal.server: |
+    {{ kubeapps_internal_acme_host }} {
+      hosts {
+        {{ kubeapps_internal_acme_network_ip }} {{ kubeapps_internal_acme_host }}
+        fallthrough
+      }
+      whoami
+    }

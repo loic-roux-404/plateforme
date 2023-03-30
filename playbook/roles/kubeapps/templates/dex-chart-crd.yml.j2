@@ -2,6 +2,7 @@ apiVersion: v1
 kind: Namespace
 metadata:
   name: {{ dex_namespace }}
+
 ---
 apiVersion: helm.cattle.io/v1
 kind: HelmChart
@@ -30,24 +31,23 @@ spec:
           clientSecret: '{{ dex_github_client_secret }}'
           redirectURI: "https://{{ dex_hostname }}/callback"
           orgs:
-          - name: '{{ dex_github_client_org }}'
-            teams: 
-            - '{{ dex_github_client_team }}'
+            {{ dex_github_orgs | to_yaml | indent(12) }}
       oauth2:
         skipApprovalScreen: true
       staticClients:
       - id: "{{ dex_client_id }}"
         redirectURIs:
-        - 'https://{{ kubeapps_hostname }}/oauth2/callback'
-        name: 'Kubeapps'
+        - http://127.0.0.1/oidc/callback
+        - 'https://{{ kubeapps_hostname }}/auth/oidc-callback'
+        name: kubeapps
         secret: "{{ dex_client_secret }}"
     ingress:
       enabled: true
       annotations:
         cert-manager.io/cluster-issuer: letsencrypt-acme-issuer
         kubernetes.io/ingress.class: "{{ kubeapps_k8s_ingress_class }}"
-        traefik.frontend.passHostHeader: "true"
-        traefik.ingress.kubernetes.io/router.tls: "true"
+        nginx.ingress.kubernetes.io/ssl-redirect: "true"
+        nginx.ingress.kubernetes.io/rewrite-target: /
       hosts:
       - host: {{ dex_hostname }}
         paths:
