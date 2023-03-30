@@ -1,0 +1,20 @@
+---
+- name: Install metallb servicelb
+  include_tasks: manifests.yml
+  loop: "{{ metallb_manifests }}"
+
+- name: Wait crd available
+  kubernetes.core.k8s_info:
+    api_version: v1
+    label_selectors:
+      component in (speaker)
+    kind: Pod
+    kubeconfig: /etc/rancher/k3s/k3s.yaml
+    namespace: metallb-system
+    wait: yes
+
+- name: Install metallb config
+  include_tasks: manifests.yml
+  loop:
+  - src: metallb-config.yml
+    ns: metallb-system

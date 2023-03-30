@@ -1,3 +1,5 @@
-# Paas Tutorial
+# K3s PaaS
 
-[Documentation](https://esgi-lyon.github.io/paas-tutorial)
+> Taken From [original tutorial](https://esgi-lyon.github.io/paas-tutorial/)
+
+[Documentation](docs/index.md)

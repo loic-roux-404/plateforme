@@ -1,0 +1,2 @@
+accelerator = "tcg"
+headless = true

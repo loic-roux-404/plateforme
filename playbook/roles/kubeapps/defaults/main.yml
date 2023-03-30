@@ -1,12 +1,23 @@
 ---
-# Kubeapps internal acme server
+
+# Metallb
+metallb_ip_default_mask: "{{ (ansible_default_ipv4.address + '/' + ansible_default_ipv4.netmask) }}"
+metallb_ip_default_range: "{{ (metallb_ip_default_mask | ansible.utils.ipaddr('range_usable')) }}"
+metallb_ip_range: ~
+
+# Kubeapps external networking
+kubeapps_base_domain: "k3s.test"
+# Use nginx ingress controller by default
+k3s_disable_services: [traefik]
+
+# kubeapps internal networking
 kubeapps_internal_acme_network_ip: ~
-kubeapps_internal_acme_host: acme-internal.k3s.local
+kubeapps_internal_acme_host: "acme-internal.{{ kubeapps_base_domain }}"
 
 # HelmChart Custom Resource Definition for cert manager
 # see https://cert-manager.io/docs/configuration/acme/
 cert_manager_letsencrypt_env: prod
-cert_manager_namespace: cert-manager
+cert_manager_namespace: kube-system
 cert_manager_acme_url: "{{ letsencrypt_envs[cert_manager_letsencrypt_env] }}"
 cert_manager_staging_ca_cert_url: "{{ letsencrypt_envs_ca_certs[cert_manager_letsencrypt_env] | d(none) }}"
 cert_manager_email: ""
@@ -15,7 +26,7 @@ cert_manager_is_internal: "{{ (cert_manager_staging_ca_cert_url | d('')) != '' }
 
 # HelmChart Custom Resource Definition for dex oidc connector
 dex_namespace: dex
-dex_hostname: dex.k3s.local
+dex_hostname: "dex.{{ kubeapps_base_domain }}"
 dex_client_id: kubeapps
 dex_client_secret: ZXhhbXBsZS1hcHAtc2VjcmV0
 dex_github_client_id: ~
@@ -24,8 +35,12 @@ dex_github_client_org: ~
 dex_github_client_team: ~
 
 # HelmChart Custom Resource Definition for kubeapps variables
-kubeapps_namespace: kubeapps
-kubeapps_user: "{{ ansible_user | default('root') }}"
-kubeapps_hostname: kubeapps.k3s.local
-# default to result of echo "not-good-secret" | base64
-kubeapps_oauth_proxy_cookie_secret: bm90LWdvb2Qtc2VjcmV0Cg==
+kubeapps_namespace: default
+kubeapps_hostname: "waypoint.{{ kubeapps_base_domain }}"
+api_waypoint_hostname: api.{{ kubeapps_hostname }}
+waypoint_version: 0.11.0
+
+dex_github_orgs:
+  - name: '{{ dex_github_client_org }}'
+    teams: 
+    - '{{ dex_github_client_team }}'

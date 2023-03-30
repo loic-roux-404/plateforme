@@ -1,0 +1,19 @@
+---
+apiVersion: helm.cattle.io/v1
+kind: HelmChart
+metadata:
+  name: ingress-nginx
+  namespace: kube-system
+spec:
+  chart: nginx-ingress-controller
+  repo: https://charts.bitnami.com/bitnami
+  targetNamespace: kube-system
+  version: 9.3.33
+  valuesContent: |
+    fullnameOverride: ingress-nginx
+    extraArgs:
+      v: 4
+    kind: DaemonSet
+    hostNetwork: true
+    hostPort:
+      enabled: true
