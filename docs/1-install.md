@@ -198,3 +198,5 @@ terraform import -var-file=prod.tfvars contabo_instance.paas_instance $INSTANCE_
 terraform apply -auto-approve -var-file=prod.tfvars
 
 ```
+
+Or maintained make command `make apply`

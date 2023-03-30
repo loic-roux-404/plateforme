@@ -19,11 +19,12 @@ autoinstall:
   ssh:
     install-server: true
     allow-pw: true
+  package_upgrade: true
   packages:
+    - unzip
     - curl
     - ca-certificates
     - wget
-  package_upgrade: true
   user-data:
     hostname: ${hostname}-server
     disable_root: false
@@ -31,7 +32,7 @@ autoinstall:
     preserve_hostname: false
     users:
       - name: ${ssh_username}
-        passwd: ${ssh_password_hash}
+        passwd: "${ssh_password_hash}"
         groups: [adm, cdrom, dip, plugdev, sudo]
         lock-passwd: false
         sudo: ALL=(ALL) NOPASSWD:ALL

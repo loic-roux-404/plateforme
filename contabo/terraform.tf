@@ -1,6 +1,6 @@
 terraform {
 
-  required_version = ">=0.12"
+  required_version = ">=1.4"
 
   required_providers {
      contabo = {
@@ -33,8 +33,8 @@ provider "namedotcom" {
 }
 
 provider "contabo" {
-  oauth2_client_id     = var.oauth2_client_id
-  oauth2_client_secret = var.oauth2_client_secret
-  oauth2_user          = var.oauth2_user
-  oauth2_pass          = var.oauth2_pass
+  oauth2_client_id     = var.contabo_credentials.oauth2_client_id
+  oauth2_client_secret = var.contabo_credentials.oauth2_client_secret
+  oauth2_user          = var.contabo_credentials.oauth2_user
+  oauth2_pass          = var.contabo_credentials.oauth2_pass
 }

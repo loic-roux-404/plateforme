@@ -40,47 +40,32 @@ variable "contabo_instance" {
   type = string
 }
 
-# Contabo vars
-variable "oauth2_client_id" {
-  type      = string
+variable "contabo_credentials" {
+  type = object({
+    oauth2_client_id     = string
+    oauth2_client_secret = string
+    oauth2_user          = string
+    oauth2_pass          = string
+  })
   sensitive = true
 }
 
-variable "oauth2_client_secret" {
-  type      = string
+variable "ssh_connection" {
+  type = object({
+    user          = string
+    password      = string
+    password_hash = string
+    public_key    = string
+    private_key   = string
+  })
+  default = {
+    password      = "badSecret12!"
+    password_hash = "$6$zizou$5kLDHHKr97WNOkvnTzpnqIQ/z.n.rJmV0YFdUiy1cwxxdz/wIgnI8Rd7lnO8Ry6t01KT3OLMhrFgOZiR7cMLb1"
+    private_key   = "~/.ssh/id_rsa"
+    public_key    = "~/.ssh/id_rsa.pub"
+    user          = "admin"
+  }
   sensitive = true
-}
-
-variable "oauth2_user" {
-  type      = string
-  sensitive = true
-}
-
-variable "oauth2_pass" {
-  type      = string
-  sensitive = true
-}
-
-variable "ssh_username" {
-  type      = string
-  sensitive = true
-  default = "admin"
-}
-
-variable "ssh_password" {
-  type      = string
-  sensitive = true
-}
-
-variable "ssh_password_hash" {
-  type      = string
-  sensitive = true
-}
-
-variable "ssh_public_key" {
-  type      = string
-  sensitive = true
-  default   = "~/.ssh/id_rsa.pub"
 }
 
 variable "ansible_secrets" {
@@ -101,8 +86,8 @@ variable "ubuntu_release_info" {
   default = {
     name            = "jammy"
     version         = "22.04.2"
-    iso_version_tag = "ubuntu-jammy-563bd31"
-    url             = "https://github.com/loic-roux-404/k3s-paas/releases/download"
+    iso_version_tag = "ubuntu-jammy-fb3e35e"
+    url             = "https://github.com:443/loic-roux-404/k3s-paas/releases/download"
     format          = "qcow2"
   }
 }
