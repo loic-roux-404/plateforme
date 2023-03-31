@@ -1,4 +1,4 @@
-name: Release Charts
+name: Test Charts
 
 on:
   pull_request:
@@ -6,7 +6,7 @@ on:
       - main
     paths:
       - 'charts/**'
-      - .github/workflows/release-helm.yml
+      - .github/workflows/test-helm.yml
 
 permissions:
   contents: write
