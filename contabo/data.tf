@@ -9,7 +9,7 @@ data "github_membership" "all" {
 
 data "github_membership" "all_admin" {
   for_each = {
-    for _, member in data.github_membership.all:
+    for _, member in data.github_membership.all :
     _ => member if member.role == "admin"
   }
   username = each.value.username

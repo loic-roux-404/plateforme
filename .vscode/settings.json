@@ -6,9 +6,9 @@
         ],
         "vs-kubernetes.kubeconfig": "/Users/loic/.kube/config"
     },
-    "ltex.language": "fr",
+    "ltex.language": "en",
     "ltex.dictionary": {
-        "fr": [
+        "en": [
             "adaptivity",
             "precomputed",
             "subproblem"

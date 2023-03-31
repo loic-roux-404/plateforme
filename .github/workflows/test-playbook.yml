@@ -1,0 +1,67 @@
+
+name: Molecule Test
+on:
+  pull_request:
+    branches:
+      - main
+    paths:
+      - 'playbook/**'
+      - .github/workflows/test-playbook.yml
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    strategy:
+      max-parallel: 4
+
+    steps:
+      - uses: actions/checkout@v1
+
+      - uses: actions/cache@v2
+        with:
+          path: /usr/local/bin/yq
+          key: ${{ runner.os }}-bin-yq
+          restore-keys: |
+            ${{ runner.os }}-bin-
+
+      - name: Set up Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: 3.10
+
+      - uses: actions/cache@v3
+        with:
+          path: ~/.cache/pip
+          key: ${{ runner.os }}-pip-${{ hashFiles('requirements.txt') }}-${{ hashFiles('*.ext_roles/role*/requirements.txt') }}
+          restore-keys: |
+            ${{ runner.os }}-pip-
+
+      - name: Install python dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt
+        working-directory: playbook
+
+      - uses: actions/cache@v3
+        with:
+          path: |
+            ~/.ansible/collections/ansible_collections
+            ~/.ansible/roles
+          key: ${{ runner.os }}-pip-${{ hashFiles('requirements.txt') }}-${{ hashFiles('*.ext_roles/role*/requirements.txt') }}
+          restore-keys: |
+            ${{ runner.os }}-pip-
+
+      - name: Install python dependencies
+        run: |
+          ansiblke-galaxy collection install -r requirements.yml
+          ansiblke-galaxy role install -r requirements.yml
+        working-directory: playbook
+
+      - name: Setup vault secret
+        run: printf "${{ secrets.ANSIBLE_VAULT_PASSWORD }}" > ~/.ansible/.vault        
+        env:
+          ANSIBLE_VAULT_PASSWORD: ${{ secrets.ANSIBLE_VAULT_PASSWORD }}
+
+      - name: Test Role with molecule
+        run: |
+          molecule test
+        working-directory: playbook/roles/kubeapps

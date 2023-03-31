@@ -77,6 +77,14 @@ Puis lancer `conda init zsh` (ou `bash` si vous préférez)
 
 ## Ansible playbook
 
+Setup vault password in a file :
+
+```bash
+echo 'pass' > ~/.ansible/.vault
+```
+
+Then install requirements :
+
 ```bash
 cd playbook
 ansible-galaxy install -r requirements.yml

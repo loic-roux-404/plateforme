@@ -95,7 +95,7 @@ resource "contabo_instance" "paas_instance" {
     "${path.root}/user-data.yaml.tmpl",
     {
       iso_version_tag = var.ubuntu_release_info.iso_version_tag
-      ssh_connection = local.ssh_connection
+      ssh_connection  = local.ssh_connection
       ansible_vars = [
         for k, v in local.ansible_vars : "${k}=${v}"
       ]
@@ -105,13 +105,13 @@ resource "contabo_instance" "paas_instance" {
 
 resource "terraform_data" "paas_instance_wait_bootstrap" {
   triggers_replace = [
-    sensitive(contabo_instance.paas_instance.user_data),
-    contabo_instance.paas_instance.image_id
+    contabo_instance.paas_instance.last_updated,
+    contabo_instance.paas_instance.last_updated
   ]
 
   connection {
     type        = "ssh"
-    user        = var.ssh_connection.user
+    user        = local.ssh_connection.user
     private_key = local.ssh_connection.private_key
     host        = contabo_instance.paas_instance.ip_config[0].v4[0].ip
   }
@@ -119,7 +119,7 @@ resource "terraform_data" "paas_instance_wait_bootstrap" {
   provisioner "remote-exec" {
     on_failure = fail
     inline = [
-        "sudo cloud-init status --wait && sudo cloud-init clean"
+      "sudo cloud-init status --wait && sudo cloud-init clean"
     ]
   }
 }
