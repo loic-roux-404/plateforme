@@ -1,61 +1,64 @@
-# 5. Allez plus loin
+# Help
 
 ### FAQ
 
-J'ai essayé plusieurs fois le provision de la vm avec des configurations différentes me forçant ainsi à apply / destroy la stack plusieurs fois. Cependant, maintenant je n'arrive plus à accéder à l'url avec une **erreur dns** ?
+I tried several times the vm provision with different configurations forcing me to apply / destroy the stack several times. However, now I can't access the url with a **dns error** ?
 
-Il s'agit probablement du cache dns qui vous renvoi l'entrée ip d'une ancienne vm car le time to live n'a pas encore expiré. Pour cela dans chrome nous devons nettoyer ce cache pour faire comme si nous n'étions jamais aller sur le site.
-Dans votre navigateur chrome [chrome://net-internals/#dns]() faites "un clear host cache" et réessayez.
+It is probably the dns cache that returns the ip entry of an old vm because the time to live has not yet expired. For that in chrome we must clean this cache to make as if we had never been on the site.
+In your chrome browser [chrome://net-internals/#dns]() do a "clear host cache" and try again.
 
-Aussi on peut utiliser un flush cache global si cela ne fonctionne toujorus pas :
+Also you can use a global flush cache if it still doesn't work:
  
-- [pour le dns de google](https://developers.google.com/speed/public-dns/cache?hl=fr)
-- [pour le dns de cloudflare](https://1.1.1.1/purge-cache/)
+- [for google dns](https://developers.google.com/speed/public-dns/cache?hl=fr)
+- for cloudflare dns](https://1.1.1.1/purge-cache/)
 
-> Pour faire des tests en cas réel, il est préférable d'utiliser des entrées `dex_hostname` et `kubeapps_hostname` différentes que vous n'utilisez pas pour un environnement (staging ou production).
+> For real world testing, it's best to use different `dex_hostname` and `kubeapps_hostname` entries that you don't use for one environment (staging or production).
 
-### Kubernetes sur Vscode
+### Kubernetes on Vscode
 
-Pour consolider le deboggage de notre environnement de dev ops nous pouvons intégrer notre cluster kubernetes dans l'IDE vscode.
+To consolidate the debugging of our dev ops environment we can integrate our kubernetes cluster into the vscode IDE.
 
-Nous allons chercher la kubeconfig dans notre container qui embarque K3s et le cluster.
-Récupérez l'identifiant du container avec :
+We will fetch the kubeconfig in our container that embeds K3s and the cluster.
+Retrieve the container id with :
 
-```sh
+``sh
 docker ps | grep node-0 | awk '{print $1}'
-# ex de retour 61a74719f7c4
+# return ex 61a74719f7c4
 ```
 
-Copier la kube config k3s avec :
+Copy the kube config k3s with:
 
 ```sh
 docker cp 61a74719f7c4:/etc/rancher/k3s/k3s.yaml ~/.kube/config
 ```
 
-Si vous n'avez pas kubectl en local :
+If you don't have kubectl locally:
 
-- [Pour mac](https://kubernetes.io/docs/tasks/tools/install-kubectl-macos/)
-- [Pour Wsl / Linux](https://kubernetes.io/docs/tasks/tools/install-kubectl-linux/)
+- [For mac](https://kubernetes.io/docs/tasks/tools/install-kubectl-macos/)
+- For Wsl / Linux](https://kubernetes.io/docs/tasks/tools/install-kubectl-linux/)
 
-On check ensuite avec `kubectl cluster-info` qui devrait nous donner les informations du node k3s.
+Then we check with `kubectl cluster-info` which should give us the information of the k3s node.
 
-##### Ensuite sur `vscode` utilisez ces paramètres utilisateur pour voir et utiliser le cluster
+##### Then on `vscode` use these user parameters to see and use the cluster
 
-> Pour afficher le chemin vers home `cd ~ && pwd && cd -`
+> To show the path to home `cd ~ && pwd && cd -`
 
 > [.vscode/settings.json](.vscode/settings.json)
 ```json
     "vs-kubernetes": {
         "vs-kubernetes.knownKubeconfigs": [
-            "<Chemin-vers-home>/.kube/config"
+            "<path-to-home>/.kube/config"
         ],
-        "vs-kubernetes.kubeconfig": "<Chemin-vers-home>/.kube/config"
+        "vs-kubernetes.kubeconfig": [ "<Path-to-home>/.kube/config"
     }
 ```
 
-Et voilà vous avez accès à une interface pour contrôler votre cluster directement depuis vscode. Utiliser cette configuration `json` autant que vous voulez dans les repository de vos applications pour avoir une expérience au plus proche de la production.
+And there you have access to an interface to control your cluster directly from vscode. Use this `json` configuration as much as you want in your application repositories to have a production-like experience.
 
 ## Sources
 
 - [packer-kvm](https://github.com/goffinet/packer-kvm/blob/master/http/jammy/user-data)
 - [coredns wildcard](https://mac-blog.org.ua/kubernetes-coredns-wildcard-ingress/)
+
+
+Translated with www.DeepL.com/Translator (free version)

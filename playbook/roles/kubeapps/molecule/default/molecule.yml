@@ -28,6 +28,7 @@ platforms:
     tmpfs:
       - /var/run
       - /run
+      - /tmp
 
 provisioner:
   name: ansible

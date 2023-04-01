@@ -1,0 +1,60 @@
+
+name: Molecule Test
+on:
+  pull_request:
+    branches:
+      - main
+    paths:
+      - 'playbook/**'
+      - .github/workflows/test-playbook.yml
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    strategy:
+      max-parallel: 4
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v3
+        with:
+          fetch-depth: 0
+
+      - name: Set up Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: 3.9.16
+
+      - name: Install python dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt
+          pip install -r requirements.test.txt
+        working-directory: playbook
+
+      - uses: actions/cache@v3
+        with:
+          path: |
+            ~/.ansible/collections/ansible_collections
+            ~/.ansible/roles
+          key: ${{ runner.os }}-pip-${{ hashFiles('playbook/requirements.yaml') }}
+          restore-keys: |
+            ${{ runner.os }}-pip-
+
+      - name: Install python dependencies
+        run: |
+          ansible-galaxy collection install -r requirements.yaml
+          ansible-galaxy role install -r requirements.yaml
+        working-directory: playbook
+
+      - name: Setup vault secret
+        run: printf "$ANSIBLE_VAULT_PASSWORD" > ~/.ansible/.vault        
+        env:
+          ANSIBLE_VAULT_PASSWORD: ${{ secrets.ANSIBLE_VAULT_PASSWORD }}
+
+      - name: Wait for docker ready
+        run: echo 'Disabled waiting for external fix'
+        working-directory: playbook/roles/kubeapps
+
+      # - name: Test Role with molecule
+      #   run: molecule test
+      #   working-directory: playbook/roles/kubeapps

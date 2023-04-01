@@ -1,4 +1,4 @@
-name: hcp-packer
+name: Release Packer image
 on:
   push:
     branches:
@@ -11,14 +11,32 @@ jobs:
   gh-release-packer:
     runs-on: ubuntu-latest
     name: Run Packer
+    env:
+      PKR_VAR_ssh_password: ${{ secrets.PKR_VAR_SSH_PASSWORD }}
+      PKR_VAR_ssh_password_hash: ${{ secrets.PKR_VAR_SSH_PASSWORD_HASH }}
     steps:
       - name: Checkout
         uses: actions/checkout@v3
+        with:
+          fetch-depth: 0
       - name: Setup `packer`
         uses: hashicorp/setup-packer@main
         id: setup
         with:
           version: "1.8.6"
+
+      - name: cache apt packages
+        uses: actions/cache@v2
+        with:
+          path: /var/cache/apt/archives
+          key: ${{ runner.os }}-apt-qemu
+          restore-keys: |
+            ${{ runner.os }}-apt-
+
+      - uses: awalsh128/cache-apt-pkgs-action@latest
+        with:
+          packages: qemu bridge-utils virtinst
+          version: 1.0
 
       - name: Set outputs
         id: vars
@@ -28,30 +46,21 @@ jobs:
         id: init
         run: "packer init ubuntu.pkr.hcl"
         working-directory: packer
-        env:
-          PKR_VAR_ssh_password: ${{ secrets.PKR_VAR_SSH_PASSWORD }}
-          PKR_VAR_ssh_password_hash: ${{ secrets.PKR_VAR_SSH_PASSWORD_HASH }}
 
-      - name: Run `packer validate`
-        id: validate
-        run: >- 
-          packer validate \
-            -var-file "$(uname -ms | tr ' ' '-')-host.hcl" \
-            -var-file=secrets.pkrvars.hcl ubuntu.pkr.hcl
+      - name: Run `packer build`
+        run: packer build -var accelerator=tcg ubuntu.pkr.hcl
         working-directory: packer
         env:
-          PKR_VAR_ssh_password: ${{ secrets.PKR_VAR_SSH_PASSWORD }}
-          PKR_VAR_ssh_password_hash: ${{ secrets.PKR_VAR_SSH_PASSWORD_HASH }}
+          PACKER_LOG: 1
+          PACKER_LOG_PATH: packer.log
 
-      - name: Build Artifact
-        run: >- 
-          packer build \
-            -var-file "$(uname -ms | tr ' ' '-')-host.hcl" \
-            ubuntu.pkr.hcl
-        working-directory: packer
-        env:
-          PKR_VAR_ssh_password: ${{ secrets.PKR_VAR_SSH_PASSWORD }}
-          PKR_VAR_ssh_password_hash: ${{ secrets.PKR_VAR_SSH_PASSWORD_HASH }}
+      - name: Upload packer.log on failure
+        if: failure()
+        uses: actions/upload-artifact@v3
+        with:
+          name: packer.log
+          path: packer/packer.log
+          retention-days: 14
 
       - uses: "marvinpinto/action-automatic-releases@latest"
         with:
