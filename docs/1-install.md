@@ -2,24 +2,26 @@
 
 ---
 
-L'objectif de ce tutoriel est de vous permettre de créer sur une petite machine ou sur un serveur personnel un PaaS (Platform as a service). Un PaaS permet de déployer des applications en microservices. Celui-ci sera basé sur [kubernetes](https://kubernetes.io/fr/) pour la conteneurisation et [kubeapps](https://developer.hashicorp.com/kubeapps) pour l'interface de déploiement.
+The objective of this tutorial is to allow you to create a PaaS (Platform as a service) on a small machine or on a personal server. A PaaS allows to deploy applications in microservices. This one will be based on [kubernetes](https://kubernetes.io/fr/) for the containerization and [kubeapps](https://developer.hashicorp.com/kubeapps) for the deployment interface.
 
-L'optique de cet outillage suivra :
+The optics of this tooling will follow :
 
-- le principe **d'immutable infrastructure** avec l'idée de recréer plutôt que de mettre à jour. Ainsi nous aurons recour à des iso linux déjà prêt pour déployer la plateforme **kubernetes** / **kubeapps** directement sur un serveur.
+- the principle **of immutable infrastructure** with the idea of recreating rather than updating. Thus we will use ready linux iso to deploy the **kubernetes** / **kubeapps** platform directly on a server.
 
-- Le principe **d'infrastructure as code** (IaC) en gardant toutes la spécification de notre infrastructure dans des configurations et scripts. On utilisera également des tests basiques de nos configurations.
+- The principle **infrastructure as code** (IaC) by keeping all the specification of our infrastructure in configurations and scripts. We will also use basic tests of our configurations.
 
-Pour cela nous ferons appel à un socle technique composé de :
+For this we will use a technical base composed of :
 
-- l'outil [`k3s`](https://k3s.io/) qui simplifie l'installation de kubernetes sur des machines ARM tout en restant compatible avec les architectures classiques X64. Il fourni par défaut des pods (containers en execution) pour inclure des fonctionnalités souvent recherchés sur ce type de configuration edge computing. (reverse proxy, configuration DNS...)
-- [Packer](https://www.packer.io/) pour créer des images iso de machine linux
-- [Ansible](https://www.ansible.com/) pour provisioner cette image
-- [Terraform](https://www.terraform.io/) pour contrôler azure de manière IaC et de déclencher toute la mise en place du PaaS dessus.
+- the [`k3s`](https://k3s.io/) tool which simplifies the installation of kubernetes on ARM machines while remaining compatible with classic X64 architectures. It provides by default pods (containers in execution) to include features often sought on this type of edge computing configuration (reverse proxy, DNS configuration ...)
+- [Packer](https://www.packer.io/) to create iso images of linux machines
+- [Ansible](https://www.ansible.com/) to provision this image
+- [Terraform](https://www.terraform.io/) to control azure in an IaC way and to trigger all the PaaS implementation on it.
+
+Translated with www.DeepL.com/Translator (free version)
 
 ## Installation de Docker
 
-Pour rappel l'architecture de base de docker :
+Docker architecture :
 
 ![docker architecture](https://docs.docker.com/engine/images/architecture.svg)
 
@@ -29,25 +31,31 @@ et les couches des systèmes de conteneurisation docker et kubernetes :
 
 ![docker k8s architecture](images/kube-archi.png)
 
-## Rancher comme alternative à docker desktop
+## Rancher as docker desktop replacement
 
 [**Rancher**](https://rancherdesktop.io/) Download 1.6.2 (macOS) from [github release](https://github.com/rancher-sandbox/rancher-desktop/releases/tag/v1.6.2)
 
-Dans les choix proposés dans la mise en place :
-- **Décocher kubernetes**
-- Choisissez **dockerd** comme moteur de conteneurisation
+At first start configure rancher as follow :
+- **Disable kubernetes**
+-  **dockerd** as engine
 
-Vérifier que vous avez bien la commande `docker` disponible sinon ajouter `~/.rd/bin` à votre `PATH` :
+Check command `docker` is available. If not add `~/.rd/bin` to `PATH` :
 
 ```bash
 echo 'export PATH="$PATH:$HOME/.rd/bin"' >> ~/.zshrc
 ```
 
-## Installation de l'environnement python
+## Installation de vscode
 
-**Maintenant tout ce que nous allons faire se trouve dans la ligne de commande sur un shell `bash` ou `zsh`**
+- [Avec installer toutes plateformes](https://code.visualstudio.com/download)
+- Homebrew sur mac `brew install --cask visual-studio-code`
+- [Avec snap pour linux](https://snapcraft.io/code) sur linux
 
-**Conda** : [docs.conda.io](https://docs.conda.io/en/latest/miniconda.html). Installer simplement avec le setup `.pkg` pour mac.
+## Python environment
+
+**Everything here is done with a `bash` or `zsh shell`**
+
+**Conda** : [docs.conda.io](https://docs.conda.io/en/latest/miniconda.html). Run `.pkg` for mac.
 
 > utilisez la ligne de commande ci-dessous pour l'installer
 ```bash
@@ -63,19 +71,21 @@ chmod +x /tmp/Miniconda3-py39_4.12.0-Linux-aarch64.sh
 /tmp/Miniconda3-py39_4.12.0-Linux-aarch64.sh -p $HOME/miniconda
 ```
 
-Veillez à bien accepter toutes les propositions (licence terms, initialize Miniconda3).
+Consent to agreements and licences in next prompts.
 
-Puis lancer `conda init zsh` (ou `bash` si vous préférez)
+Then run `conda init zsh` (or `bash` if you prefer)
 
 **Relancer votre shell pour appliquer** (commande `exec $SHELL`)
 
-## Installation de vscode
-
-- [Avec installer toutes plateformes](https://code.visualstudio.com/download)
-- Homebrew sur mac `brew install --cask visual-studio-code`
-- [Avec snap pour linux](https://snapcraft.io/code) sur linux
-
 ## Ansible playbook
+
+Setup vault password in a file :
+
+```bash
+echo 'pass' > ~/.ansible/.vault
+```
+
+Then install requirements :
 
 ```bash
 cd playbook

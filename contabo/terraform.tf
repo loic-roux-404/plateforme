@@ -3,9 +3,9 @@ terraform {
   required_version = ">=1.4"
 
   required_providers {
-     contabo = {
-       source = "contabo/contabo"
-       version = ">= 0.1.17"
+    contabo = {
+      source  = "contabo/contabo"
+      version = ">= 0.1.17"
     }
     github = {
       source  = "integrations/github"

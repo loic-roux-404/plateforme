@@ -5,6 +5,9 @@ system_info:
     name: ${ssh_connection.user}
 
 ssh_deletekeys: false
+disable_root: 1
+ssh_pwauth:   0
+
 users:
   - name: ${ssh_connection.user}
     passwd: "${ssh_connection.password_hash}"
@@ -13,7 +16,7 @@ users:
     sudo: ALL=(ALL) NOPASSWD:ALL
     shell: /bin/bash
     ssh_authorized_keys:
-      - "${trim(jsonencode(ssh_connection.public_key), "\"")}"
+      - '${trim(jsonencode(ssh_connection.public_key), "\"")}'
 
 resize_rootfs: true
 growpart:
@@ -23,8 +26,7 @@ growpart:
 
 runcmd:
   - [echo, "${iso_version_tag}"]
-  - [sed, -ie, 's/^#\?PasswordAuthentication.*/PasswordAuthentication false/g', /etc/ssh/sshd_config.d/50-cloud-init.conf]
-  - [echo, "z"]
+
 ansible:
   install_method: pip
   package_name: ansible
