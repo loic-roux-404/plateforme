@@ -8,12 +8,14 @@ spec:
   chart: nginx-ingress-controller
   repo: https://charts.bitnami.com/bitnami
   targetNamespace: kube-system
-  version: 9.3.33
+  version: 9.5.1
   valuesContent: |
-    fullnameOverride: ingress-nginx
+    fullnameOverride: nginx-ingress-controller
     extraArgs:
-      v: 4
+      v: 3
     kind: DaemonSet
-    hostNetwork: true
-    hostPort:
-      enabled: true
+    useHostPort: true
+    defaultBackend:
+      service:
+        ports:
+          http: 8080
