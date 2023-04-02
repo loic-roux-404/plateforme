@@ -22,7 +22,7 @@ jobs:
       - name: Set up Python
         uses: actions/setup-python@v4
         with:
-          python-version: 3.9.16
+          python-version: 3.11.2
 
       - name: Install python dependencies
         run: |
@@ -55,6 +55,6 @@ jobs:
         run: echo 'Disabled waiting for external fix'
         working-directory: playbook/roles/waypoint
 
-      # - name: Test Role with molecule
-      #   run: molecule test
-      #   working-directory: playbook/roles/waypoint
+      - name: Test Role with molecule
+        run: molecule test
+        working-directory: playbook/roles/waypoint
