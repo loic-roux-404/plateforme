@@ -146,7 +146,7 @@ Setup waypoint login context outside cluster :
 ```bash
 export WAYPOINT_SERVER_TOKEN=token
 waypoint context create \
-    -server-addr='localhost:443' \
+    -server-addr='localhost:32701' \
     -server-auth-token="$WAYPOINT_SERVER_TOKEN" \
     -server-require-auth=true \
     -server-tls-skip-verify=true \
@@ -221,3 +221,30 @@ sudo brew services start tailscale
 ```
 
 Then : `tailscale login`
+
+## Create git ops waypoint project
+
+> `waypoint init` seems to be unsufficient to create a gitops project
+
+Using ssh :
+
+```bash
+waypoint project apply \
+   -data-source=git \
+   -git-auth-type=ssh \
+   -git-private-key-path=$HOME/.ssh/id_rsa \
+   -git-url=git@github.com:hashicorp/waypoint-examples.git \
+   example-project
+```
+
+Using password :
+
+```bash
+waypoint project apply \
+   -data-source=git \
+   -git-auth-type=basic \
+    -git-username=<string> \
+    -git-password=<string> \
+   -git-url=https://github.com:hashicorp/waypoint-examples.git \
+   example-project
+```
