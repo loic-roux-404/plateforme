@@ -2,15 +2,15 @@
 apiVersion: cert-manager.io/v1
 kind: Certificate
 metadata:
-  name: {{ kubeapps_hostname }}-tls
-  namespace: {{ kubeapps_namespace }}
+  name: {{ waypoint_hostname }}-tls
+  namespace: {{ waypoint_namespace }}
 spec:
   dnsNames:
-  - {{ kubeapps_hostname }}
+  - {{ waypoint_hostname }}
   issuerRef:
     kind: ClusterIssuer
     name: letsencrypt-acme-issuer
-  secretName: {{ kubeapps_hostname }}-tls
+  secretName: {{ waypoint_hostname }}-tls
 
 ---
 apiVersion: helm.cattle.io/v1
@@ -21,7 +21,7 @@ metadata:
 spec:
   version: 0.1.18
   chart: waypoint
-  targetNamespace: {{ kubeapps_namespace }}
+  targetNamespace: {{ waypoint_namespace }}
   repo: https://helm.releases.hashicorp.com
   valuesContent: |-
     odr:
@@ -34,7 +34,7 @@ spec:
         tag: "c0f0e03b1"
       runArgs: ["-vvv"]
       cert:
-        secretName: {{ kubeapps_hostname }}-tls
+        secretName: {{ waypoint_hostname }}-tls
     ui:
       service:
         type: NodePort
@@ -42,30 +42,30 @@ spec:
         enabled: true
         annotations:
           cert-manager.io/cluster-issuer: letsencrypt-acme-issuer
-          kubernetes.io/ingress.class: "{{ kubeapps_k8s_ingress_class }}"
+          kubernetes.io/ingress.class: "{{ waypoint_k8s_ingress_class }}"
         hosts:
-          - host: "{{ kubeapps_hostname }}"
+          - host: "{{ waypoint_hostname }}"
             paths: ["/"]
         tls:
           - hosts:
-              - "{{ kubeapps_hostname }}"
-            secretName: {{ kubeapps_hostname }}-tls
+              - "{{ waypoint_hostname }}"
+            secretName: {{ waypoint_hostname }}-tls
 
 ---
 apiVersion: networking.k8s.io/v1
 kind: Ingress
 metadata:
   annotations:
-    kubernetes.io/ingress.class: "{{ kubeapps_k8s_ingress_class }}"
+    kubernetes.io/ingress.class: "{{ waypoint_k8s_ingress_class }}"
     nginx.ingress.kubernetes.io/backend-protocol: GRPCS
     nginx.ingress.kubernetes.io/ssl-redirect: "true"
     nginx.ingress.kubernetes.io/grpc-backend: "true"
     cert-manager.io/cluster-issuer: letsencrypt-acme-issuer
   name: waypoint-grpc
-  namespace: {{ kubeapps_namespace }}
+  namespace: {{ waypoint_namespace }}
 spec:
   rules:
-    - host: {{ kubeapps_hostname }}
+    - host: {{ waypoint_hostname }}
       http:
         paths:
           - backend:
@@ -85,5 +85,5 @@ spec:
             pathType: ImplementationSpecific
   tls:
   - hosts:
-    - "{{ kubeapps_hostname }}"
-    secretName: {{ kubeapps_hostname }}-tls
+    - "{{ waypoint_hostname }}"
+    secretName: {{ waypoint_hostname }}-tls

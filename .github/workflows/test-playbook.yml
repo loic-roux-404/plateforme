@@ -53,8 +53,8 @@ jobs:
 
       - name: Wait for docker ready
         run: echo 'Disabled waiting for external fix'
-        working-directory: playbook/roles/kubeapps
+        working-directory: playbook/roles/waypoint
 
       # - name: Test Role with molecule
       #   run: molecule test
-      #   working-directory: playbook/roles/kubeapps
+      #   working-directory: playbook/roles/waypoint

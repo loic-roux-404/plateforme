@@ -5,7 +5,7 @@
     api_version: v1
     kind: Service
     name: waypoint-ui
-    namespace: "{{ kubeapps_namespace }}"
+    namespace: "{{ waypoint_namespace }}"
     kubeconfig: /etc/rancher/k3s/k3s.yaml
     apply: yes
     force: yes
@@ -39,14 +39,14 @@
 - set_fact:
     waypoint_arch: "{{ waypoint_arch_lookup[ansible_architecture] }}"
 
-- name: Unzip kubeapps binary
+- name: Unzip waypoint binary
   ansible.builtin.unarchive:
     src: "https://releases.hashicorp.com/waypoint/{{ waypoint_version }}/waypoint_{{ waypoint_version }}_linux_{{ waypoint_arch }}.zip"
     dest: /usr/local/bin/
     remote_src: yes
 
 - name: Waypoint login
-  command: waypoint login -server-addr={{ kubeapps_hostname }}:443 -from-kubernetes
+  command: waypoint login -server-addr={{ waypoint_hostname }}:443 -from-kubernetes
   environment:
     KUBECONFIG: /etc/rancher/k3s/k3s.yaml
   changed_when: false

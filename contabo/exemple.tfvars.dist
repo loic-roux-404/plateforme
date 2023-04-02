@@ -7,6 +7,9 @@ namedotcom_token = "aaaaaaaaaaaaaaaaaaaaaaaaaaaa"
 # https://github.com/settings/tokens
 github_token = "ghp_aaaaaaaaaaaaaaaaaaxxxxxxxxxxxx"
 
+# https://login.tailscale.com/admin/settings/keys
+tailscale_key = ""
+
 # https://api.contabo.com/#section/Authentication
 contabo_credentials = {
   oauth2_client_id     = "INT-XXXXX"

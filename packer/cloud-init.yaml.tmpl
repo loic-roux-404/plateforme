@@ -17,23 +17,25 @@ autoinstall:
         dhcp-identifier: mac
         nameservers:
           search: ['.']
-          addresses: [8.8.8.8, 1.1.1.1, 0.8.4.4, 1.0.0.1]
+          addresses: 
+            - 8.8.8.8
+            - 1.1.1.1
+            - 2001:4860:4860::8888
+            - 2606:4700:4700::1111
+            - 0.8.4.4
+            - 1.0.0.1
+            - 2606:4700:4700::1001
+            - 4860:4860::8844
     version: 2
   ssh:
     install-server: true
     allow-pw: true
-  package_update: true
-  package_upgrade: true
-  packages:
-    - unzip
-    - curl
-    - ca-certificates
-    - wget
   user-data:
     hostname: ${hostname}-server
     disable_root: false
     timezone: Europe/Paris
     preserve_hostname: false
+    resize_rootfs: true
     users:
       - name: ${ssh_username}
         passwd: "${ssh_password_hash}"
@@ -41,6 +43,13 @@ autoinstall:
         lock-passwd: false
         sudo: ALL=(ALL) NOPASSWD:ALL
         shell: /bin/bash
+    package_update: true
+    package_upgrade: true
+    packages:
+      - curl
+      - ca-certificates
+      - wget
+      - unzip
   late-commands:
   # Cgroup ensure v1 as v2 is not supported by some tooling (k8s,...)
     - sed -ie 's/GRUB_CMDLINE_LINUX=.*/GRUB_CMDLINE_LINUX="net.ifnames=0 biosdevname=0 systemd.unified_cgroup_hierarchy=0"/' /target/etc/default/grub
