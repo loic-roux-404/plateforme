@@ -10,7 +10,7 @@ variable "cpus" {
 
 variable "disk_size" {
   type    = string
-  default = "6144M"
+  default = "4096M"
 }
 
 variable "qemu_binary" {
