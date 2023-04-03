@@ -18,12 +18,6 @@ users:
     ssh_authorized_keys:
       - '${trim(jsonencode(ssh_connection.public_key), "\"")}'
 
-resize_rootfs: true
-growpart:
-  mode: auto
-  devices: ["/"]
-  ignore_growroot_disabled: false
-
 apt:
   sources:
     tailscale.list:

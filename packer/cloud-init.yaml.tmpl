@@ -21,7 +21,7 @@ autoinstall:
     allow-pw: true
   user-data:
     hostname: ${hostname}-server
-    disable_root: false
+    disable_root: 0
     timezone: Europe/Paris
     preserve_hostname: false
     resize_rootfs: true
@@ -29,13 +29,6 @@ autoinstall:
       mode: auto
       devices: ["/"]
       ignore_growroot_disabled: false
-    users:
-      - name: ${ssh_username}
-        passwd: "${ssh_password_hash}"
-        groups: [adm, cdrom, dip, plugdev, sudo]
-        lock-passwd: false
-        sudo: ALL=(ALL) NOPASSWD:ALL
-        shell: /bin/bash
     package_update: true
     package_upgrade: true
     packages:
@@ -43,7 +36,17 @@ autoinstall:
       - ca-certificates
       - wget
       - unzip
-      - git
+    users:
+      - name: ${ssh_username}
+        passwd: "${ssh_password_hash}"
+        groups: [adm, cdrom, dip, plugdev, sudo]
+        lock-passwd: false
+        sudo: ALL=(ALL) NOPASSWD:ALL
+        shell: /bin/bash
+    system_info:
+      default_user:
+        name: ${ssh_username}
+
   late-commands:
   # Cgroup ensure v1 as v2 is not supported by some tooling (k8s,...)
     - sed -ie 's/GRUB_CMDLINE_LINUX=.*/GRUB_CMDLINE_LINUX="net.ifnames=0 biosdevname=0 systemd.unified_cgroup_hierarchy=0"/' /target/etc/default/grub

@@ -25,23 +25,6 @@ jobs:
         with:
           version: "1.8.6"
 
-      - name: Update Homebrew
-        run: |
-          brew update --preinstall
-          cat "$(brew --repository)/Library/Taps/homebrew/homebrew-core/Formula/qemu.rb" > .github/brew-formulae
-      
-      - name: Configure Homebrew cache
-        uses: actions/cache@v2
-        with:
-          path: |
-            ~/Library/Caches/Homebrew/qemu--*
-            ~/Library/Caches/Homebrew/downloads/*--qemu-*
-          key: brew-${{ hashFiles('.github/brew-formulae') }}
-          restore-keys: brew-
-      - name: Install Homebrew dependencies
-        run: |
-          env HOMEBREW_NO_AUTO_UPDATE=1 brew install qemu
-
       - name: Set outputs
         id: vars
         run: echo "sha_short=$(git rev-parse --short HEAD)" >> $GITHUB_OUTPUT
@@ -55,7 +38,6 @@ jobs:
         run: packer build -var accelerator=hvf ubuntu.pkr.hcl
         working-directory: packer
         env:
-          PACKER_LOG: 1
           PACKER_LOG_PATH: packer.log
 
       - name: Upload packer.log on failure

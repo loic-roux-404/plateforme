@@ -1,6 +1,6 @@
 # Tutoriel PaaS
 
-![résultat](images/result.gif)
+![result](images/result.png)
 
 ### Architecture
 
@@ -8,5 +8,5 @@
 
 ## Sommaire
 
-- [1. Installation](1-install.md)
+- [1. Install](1-install.md)
 - [2. Help](2-help.md)
