@@ -24,6 +24,11 @@ autoinstall:
     disable_root: false
     timezone: Europe/Paris
     preserve_hostname: false
+    resize_rootfs: true
+    growpart:
+      mode: auto
+      devices: ["/"]
+      ignore_growroot_disabled: false
     users:
       - name: ${ssh_username}
         passwd: "${ssh_password_hash}"
