@@ -18,11 +18,6 @@ variable "qemu_binary" {
   default = "qemu-system-x86_64"
 }
 
-variable "qemu_machine_type" {
-  type    = string
-  default = "pc"
-}
-
 variable "headless" {
   type    = bool
   default = true
@@ -132,11 +127,10 @@ source "qemu" "vm" {
   cpus             = "${var.cpus}"
   disk_size        = "${var.disk_size}"
   accelerator      = "${var.accelerator}"
-  machine_type     = var.qemu_machine_type
-  vnc_port_min     = 5990
+  vnc_port_max     = 5904
   headless         = var.headless
   communicator     = "ssh"
-  ssh_timeout      = var.packer_log == "1" ? "35m" : "20m"
+  ssh_timeout      = var.packer_log == "1" ? "50m" : "35m"
   ssh_password     = var.ssh_password
   ssh_username     = var.ssh_username
   qemu_binary      = var.qemu_binary
@@ -182,12 +176,7 @@ build {
   }
 
   provisioner "shell" {
-    inline = [
-      "sudo apt autoremove -y --purge",
-      "sudo apt autoclean -y",
-      "sudo journalctl --rotate",
-      "sudo journalctl --vacuum-size 10M"
-    ]
+    script = "scripts/cleanup.sh"
   }
 
   post-processor "checksum" {

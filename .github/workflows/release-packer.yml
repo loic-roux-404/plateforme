@@ -7,6 +7,11 @@ on:
       - 'playbook/**'
       - 'packer/**'
       - .github/workflows/release-packer.yml
+
+permissions:
+  contents: write
+  discussions: write
+
 jobs:
   gh-release-packer:
     runs-on: macos-latest
@@ -35,7 +40,9 @@ jobs:
         working-directory: packer
 
       - name: Run `packer build`
-        run: packer build -var accelerator=tcg ubuntu.pkr.hcl
+        run: >-
+          packer build -var-file "$(uname -ms | tr ' ' '-')-host.hcl" \
+            ubuntu.pkr.hcl
         working-directory: packer
         env:
           PACKER_LOG: 1
@@ -48,12 +55,13 @@ jobs:
           name: packer.log
           path: packer/packer.log
           retention-days: 14
-
-      - uses: "marvinpinto/action-automatic-releases@latest"
+          
+      - name: Release
+        uses: softprops/action-gh-release@v1
         with:
-          repo_token: "${{ secrets.GITHUB_TOKEN }}"
-          automatic_release_tag: ubuntu-jammy-${{ steps.vars.outputs.sha_short }}
-          prerelease: true
+          tag_name: ubuntu-jammy-${{ steps.vars.outputs.sha_short }}
+          token: "${{ secrets.GITHUB_TOKEN }}"
+          generate_release_notes: true
           files: |
             packer/.qemu-vm/ubuntu-jammy-22.04.2.qcow2
             packer/.qemu-vm/SHA256SUMS
