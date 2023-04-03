@@ -22,7 +22,7 @@ jobs:
       - name: Set up Python
         uses: actions/setup-python@v4
         with:
-          python-version: 3.9.16
+          python-version: 3.11.2
 
       - name: Install python dependencies
         run: |
@@ -53,8 +53,9 @@ jobs:
 
       - name: Wait for docker ready
         run: echo 'Disabled waiting for external fix'
-        working-directory: playbook/roles/kubeapps
+        working-directory: playbook/roles/waypoint
 
+      # https://github.com/ansible-community/molecule/issues/3818
       # - name: Test Role with molecule
       #   run: molecule test
-      #   working-directory: playbook/roles/kubeapps
+      #   working-directory: playbook/roles/waypoint

@@ -10,7 +10,17 @@ variable "cpus" {
 
 variable "disk_size" {
   type    = string
-  default = "4096M"
+  default = "5120M"
+}
+
+variable "qemu_binary" {
+  type    = string
+  default = "qemu-system-x86_64"
+}
+
+variable "qemu_machine_type" {
+  type    = string
+  default = "pc"
 }
 
 variable "headless" {
@@ -56,11 +66,11 @@ variable "locale" {
 
 variable "ubuntu_release_info" {
   type = object({
-    name  = string
+    name    = string
     version = string
   })
   default = {
-    name  = "jammy"
+    name    = "jammy"
     version = "22.04.2"
   }
 }
@@ -85,7 +95,7 @@ variable "playbook" {
   default = {
     dir             = "../playbook"
     file            = "site.yaml"
-    extra_arguments = ["--skip-tags kubeapps"]
+    extra_arguments = ["--skip-tags waypoint"]
   }
 }
 
@@ -122,12 +132,14 @@ source "qemu" "vm" {
   cpus             = "${var.cpus}"
   disk_size        = "${var.disk_size}"
   accelerator      = "${var.accelerator}"
+  machine_type     = var.qemu_machine_type
   vnc_port_min     = 5990
   headless         = var.headless
   communicator     = "ssh"
   ssh_timeout      = var.packer_log == "1" ? "35m" : "20m"
   ssh_password     = var.ssh_password
   ssh_username     = var.ssh_username
+  qemu_binary      = var.qemu_binary
   host_port_max    = 2226
   vm_name          = "ubuntu-${var.ubuntu_release_info.name}-${var.ubuntu_release_info.version}.${var.format}"
   output_directory = ".qemu-{{build_name}}/"
@@ -138,7 +150,7 @@ build {
 
   provisioner "shell" {
     inline = [
-      "sudo cloud-init status --wait", 
+      "sudo cloud-init status --wait",
       "sudo cloud-init clean --logs"
     ]
   }
@@ -180,6 +192,6 @@ build {
 
   post-processor "checksum" {
     checksum_types = ["sha256"]
-    output = ".qemu-{{build_name}}/SHA256SUMS"
+    output         = ".qemu-{{build_name}}/SHA256SUMS"
   }
 }

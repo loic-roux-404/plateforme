@@ -1,24 +1,24 @@
 ---
 
 - import_tasks: checks.yml
-  tags: [kubeapps]
+  tags: [waypoint]
 
 - import_tasks: setup-metallb.yml
-  tags: [kubeapps, metallb]
+  tags: [waypoint, metallb]
   when: 
     - metallb_ip_range | d(False)
     - '"servicelb" in k3s_disable_services'
 
 - import_tasks: setup-ingress.yml
-  tags: [kubeapps, ingress-nginx]
+  tags: [waypoint, ingress-nginx]
 
 - include_tasks: manifests.yml
-  tags: [kubeapps]
+  tags: [waypoint]
   when: item.condition | default(true)
-  args: { apply: { tags: [kubeapps] } }
+  args: { apply: { tags: [waypoint] } }
   loop:
     - src: coredns-custom.yml
-      condition: "{{ kubeapps_internal_acme_network_ip is not none }}"
+      condition: "{{ waypoint_internal_acme_network_ip is not none }}"
       deploy: coredns
       ns: kube-system
       tasks: restart-coredns.yml
@@ -38,4 +38,4 @@
       ns: default
 
 - import_tasks: setup-waypoint.yml
-  tags: [kubeapps, finalize]
+  tags: [waypoint, finalize]

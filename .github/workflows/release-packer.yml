@@ -9,7 +9,7 @@ on:
       - .github/workflows/release-packer.yml
 jobs:
   gh-release-packer:
-    runs-on: ubuntu-latest
+    runs-on: macos-latest
     name: Run Packer
     env:
       PKR_VAR_ssh_password: ${{ secrets.PKR_VAR_SSH_PASSWORD }}
@@ -25,18 +25,22 @@ jobs:
         with:
           version: "1.8.6"
 
-      - name: cache apt packages
+      - name: Update Homebrew
+        run: |
+          brew update --preinstall
+          cat "$(brew --repository)/Library/Taps/homebrew/homebrew-core/Formula/qemu.rb" > .github/brew-formulae
+      
+      - name: Configure Homebrew cache
         uses: actions/cache@v2
         with:
-          path: /var/cache/apt/archives
-          key: ${{ runner.os }}-apt-qemu
-          restore-keys: |
-            ${{ runner.os }}-apt-
-
-      - uses: awalsh128/cache-apt-pkgs-action@latest
-        with:
-          packages: qemu bridge-utils virtinst
-          version: 1.0
+          path: |
+            ~/Library/Caches/Homebrew/qemu--*
+            ~/Library/Caches/Homebrew/downloads/*--qemu-*
+          key: brew-${{ hashFiles('.github/brew-formulae') }}
+          restore-keys: brew-
+      - name: Install Homebrew dependencies
+        run: |
+          env HOMEBREW_NO_AUTO_UPDATE=1 brew install qemu
 
       - name: Set outputs
         id: vars
@@ -48,7 +52,7 @@ jobs:
         working-directory: packer
 
       - name: Run `packer build`
-        run: packer build -var accelerator=tcg ubuntu.pkr.hcl
+        run: packer build -var accelerator=hvf ubuntu.pkr.hcl
         working-directory: packer
         env:
           PACKER_LOG: 1

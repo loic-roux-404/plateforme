@@ -22,7 +22,7 @@ metadata:
   name: letsencrypt-acme-issuer
 spec:
   acme:
-    skipTLSVerify: {{ kubeapps_internal_acme_network_ip is not none }}
+    skipTLSVerify: {{ waypoint_internal_acme_network_ip is not none }}
     email: {{ cert_manager_email }}
     server: {{ cert_manager_acme_url }}
     privateKeySecretRef:
@@ -31,5 +31,5 @@ spec:
     - selector: {}
       http01:
         ingress:
-          class: {{ kubeapps_k8s_ingress_class }}
+          class: {{ waypoint_k8s_ingress_class }}
 

@@ -1,6 +1,6 @@
 ---
-# vars file for role-kubeapps
-kubeapps_k8s_ingress_class: nginx
+# vars file for role-waypoint
+waypoint_k8s_ingress_class: nginx
 letsencrypt_staging: https://acme-staging-v02.api.letsencrypt.org/directory
 letsencrypt_prod: https://acme-v02.api.letsencrypt.org/directory
 
@@ -12,10 +12,10 @@ letsencrypt_envs_ca_certs:
   staging: https://letsencrypt.org/certs/staging/letsencrypt-stg-root-x1.pem
 
 # Mounted in acme internal
-kubeapps_internal_acme_ca_file: /etc/ssl/certs/acmeca.crt
-kubeapps_internal_acme_ca_in_volume_crt: /etc/ssl/certs/acmeca.crt
-kubeapps_internal_acme_ca_extra_volumes: []
-kubeapps_internal_acme_ca_extra_volumes_mounts: []
+waypoint_internal_acme_ca_file: /etc/ssl/certs/acmeca.crt
+waypoint_internal_acme_ca_in_volume_crt: /etc/ssl/certs/acmeca.crt
+waypoint_internal_acme_ca_extra_volumes: []
+waypoint_internal_acme_ca_extra_volumes_mounts: []
 
 # Metallb
 metallb_manifests:
@@ -33,6 +33,6 @@ ingress_expected_svc: "{{'ingress-nginx'
   if 'traefik' in k3s_disable_services else 'traefik' }}"
 ingress_hosts_internals: 
   - "{{ dex_hostname }}"
-  - "{{ kubeapps_hostname }}"
+  - "{{ waypoint_hostname }}"
 
 ingress_hosts_internals_joined: "{{ ingress_hosts_internals | join(' ') }}"

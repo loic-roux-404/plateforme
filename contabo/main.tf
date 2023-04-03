@@ -44,7 +44,7 @@ locals {
     {
       dex_client_id                   = random_password.dex_client_id.result
       dex_client_secret               = random_password.dex_client_secret.result
-      kubeapps_base_domain            = var.domain
+      waypoint_base_domain            = var.domain
       dex_github_client_org           = data.github_organization.org.orgname
       dex_github_client_team          = github_team.opsteam.name
       cert_manager_private_key_secret = random_password.cert_manager_private_key_secret.result
@@ -94,6 +94,7 @@ resource "contabo_instance" "paas_instance" {
   user_data = sensitive(templatefile(
     "${path.root}/user-data.yaml.tmpl",
     {
+      tailscale_key = var.tailscale_key
       iso_version_tag = var.ubuntu_release_info.iso_version_tag
       ssh_connection  = local.ssh_connection
       ansible_vars = [
