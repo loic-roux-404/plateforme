@@ -20,6 +20,13 @@ jobs:
         with:
           version: "1.8.6"
 
+      - name: Cache packer Iso's
+        id: cache-primes
+        uses: actions/cache@v3
+        with:
+          path: ~/.cache/packer/
+          key: ${{ runner.os }}-ubuntu-22.04
+
       - name: Set outputs
         id: vars
         run: echo "sha_short=$(git rev-parse --short HEAD)" >> $GITHUB_OUTPUT

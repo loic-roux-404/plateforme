@@ -25,9 +25,7 @@ Docker architecture :
 
 ![docker architecture](https://docs.docker.com/engine/images/architecture.svg)
 
-> Source documentation docker
-
-et les couches des systèmes de conteneurisation docker et kubernetes :
+K3s Architecture :
 
 ![docker k8s architecture](https://docs.k3s.io/assets/images/how-it-works-k3s-revised-9c025ef482404bca2e53a89a0ba7a3c5.svg)
 

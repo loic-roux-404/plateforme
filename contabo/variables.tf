@@ -91,7 +91,7 @@ variable "ubuntu_release_info" {
   default = {
     name            = "jammy"
     version         = "22.04.2"
-    iso_version_tag = "ubuntu-jammy-fb3e35e"
+    iso_version_tag = "ubuntu-jammy-1fe6929"
     url             = "https://github.com:443/loic-roux-404/k3s-paas/releases/download"
     format          = "qcow2"
   }

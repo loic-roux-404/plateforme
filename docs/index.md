@@ -1,4 +1,4 @@
-# Tutoriel PaaS
+# K3s PaaS
 
 ![result](images/result.png)
 
@@ -6,7 +6,7 @@
 
 ![archi](images/archi.jpg)
 
-## Sommaire
+## Index
 
 - [1. Install](1-install.md)
 - [2. Help](2-help.md)
