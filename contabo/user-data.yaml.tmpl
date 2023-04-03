@@ -27,11 +27,11 @@ growpart:
 apt:
   sources:
     tailscale.list:
-      source: deb https://pkgs.tailscale.com/stable/ubuntu focal main
+      source: deb https://pkgs.tailscale.com/stable/ubuntu ${ubuntu_release_info.name} main
       keyid: 2596A99EAAB33821893C0A79458CA832957F5868
 
 runcmd:
-  - [echo, "${iso_version_tag}"]
+  - [echo, "${ubuntu_release_info.iso_version_tag}"]
   - [tailscale, up, -authkey, '${tailscale_key}']
 
 ansible:
