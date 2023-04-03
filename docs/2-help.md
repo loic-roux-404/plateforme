@@ -10,7 +10,7 @@ In your chrome browser [chrome://net-internals/#dns]() do a "clear host cache" a
 Also you can use a global flush cache if it still doesn't work:
  
 - [for google dns](https://developers.google.com/speed/public-dns/cache?hl=fr)
-- for cloudflare dns](https://1.1.1.1/purge-cache/)
+- [for cloudflare dns](https://1.1.1.1/purge-cache/)
 
 > For real world testing, it's best to use different `dex_hostname` and `waypoint_hostname` entries that you don't use for one environment (staging or production).
 
@@ -19,23 +19,17 @@ Also you can use a global flush cache if it still doesn't work:
 To consolidate the debugging of our dev ops environment we can integrate our kubernetes cluster into the vscode IDE.
 
 We will fetch the kubeconfig in our container that embeds K3s and the cluster.
-Retrieve the container id with :
 
-``sh
-docker ps | grep node-0 | awk '{print $1}'
-# return ex 61a74719f7c4
-```
-
-Copy the kube config k3s with:
+Copy the kube config k3s with :
 
 ```sh
-docker cp 61a74719f7c4:/etc/rancher/k3s/k3s.yaml ~/.kube/config
+docker cp node-0:/etc/rancher/k3s/k3s.yaml ~/.kube/config
 ```
 
 If you don't have kubectl locally:
 
 - [For mac](https://kubernetes.io/docs/tasks/tools/install-kubectl-macos/)
-- For Wsl / Linux](https://kubernetes.io/docs/tasks/tools/install-kubectl-linux/)
+- [For Wsl / Linux](https://kubernetes.io/docs/tasks/tools/install-kubectl-linux/)
 
 Then we check with `kubectl cluster-info` which should give us the information of the k3s node.
 
