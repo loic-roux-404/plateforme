@@ -2,11 +2,11 @@
 
 ---
 
-The objective of this tutorial is to allow you to create a PaaS (Platform as a service) on a small machine or on a personal server. A PaaS allows to deploy applications in microservices. This one will be based on [kubernetes](https://kubernetes.io/fr/) for the containerization and [kubeapps](https://developer.hashicorp.com/kubeapps) for the deployment interface.
+The objective of this tutorial is to allow you to create a PaaS (Platform as a service) on a small machine or on a personal server. A PaaS allows to deploy applications in microservices. This one will be based on [kubernetes](https://kubernetes.io/fr/) for the containerization and [waypoint](https://developer.hashicorp.com/waypoint) for the deployment interface.
 
 The optics of this tooling will follow :
 
-- the principle **of immutable infrastructure** with the idea of recreating rather than updating. Thus we will use ready linux iso to deploy the **kubernetes** / **kubeapps** platform directly on a server.
+- the principle **of immutable infrastructure** with the idea of recreating rather than updating. Thus we will use ready linux iso to deploy the **kubernetes** / **waypoint** platform directly on a server.
 
 - The principle **infrastructure as code** (IaC) by keeping all the specification of our infrastructure in configurations and scripts. We will also use basic tests of our configurations.
 
@@ -94,13 +94,13 @@ pip install -r requirements.txt
 cd -
 ```
 
-### Test kubeapps role with molecule :
+### Test waypoint role with molecule :
 
 
 Setup mac os networking with rancher :
 
 ```bash
-cd playbook/roles/kubeapps
+cd playbook/roles/waypoint
 ./scripts/setup_macos.sh
 ```
 
@@ -113,7 +113,7 @@ docker network inspect k3snet | jq -r '.[0].IPAM.Config[0].Subnet' | awk -F. '{p
 Setup dnsmasq to wildcard domain to localhost :
 
 ```bash
-cd playbook/roles/kubeapps
+cd playbook/roles/waypoint
 ./scripts/setup_dnsmasq.sh
 ```
 
@@ -129,24 +129,24 @@ sudo security add-trusted-cert -d -r trustAsRoot -k /Library/Keychains/System.ke
 ```
 
 - [Dex](https://dex.k3s.test/.well-known/openid-configuration)
-- [kubeapps](https://kubeapps.k3s.test/)
+- [waypoint](https://waypoint.k3s.test/)
 
 > Authentication with dex is not working over waypoint UI in localhost because of non trusted certificate.
 
-Setup kubeapps inside cluster before getting token :
+Setup waypoint inside cluster before getting token :
 
 ```bash
-Run KUBECONFIG=/etc/rancher/k3s/k3s.yaml kubeapps login -from-kubernetes"
+Run KUBECONFIG=/etc/rancher/k3s/k3s.yaml waypoint login -from-kubernetes"
 ```
 
-Setup kubeapps login context outside cluster :
+Setup waypoint login context outside cluster :
 
 > You can use `waypoint.k3s.test:443` in a simple network network (VPN, Firewall, DnsMasq are probably going to gives you trouble)
 
 ```bash
 export WAYPOINT_SERVER_TOKEN=token
 waypoint context create \
-    -server-addr='localhost:443' \
+    -server-addr='localhost:32701' \
     -server-auth-token="$WAYPOINT_SERVER_TOKEN" \
     -server-require-auth=true \
     -server-tls-skip-verify=true \
@@ -210,3 +210,41 @@ terraform apply -auto-approve -var-file=prod.tfvars
 ```
 
 Or maintained make command `make apply`
+
+## Secure ssh connections
+
+Mac os :
+
+```bash
+brew install tailscale
+sudo brew services start tailscale
+```
+
+Then : `tailscale login`
+
+## Create git ops waypoint project
+
+> `waypoint init` seems to be unsufficient to create a gitops project
+
+Using ssh :
+
+```bash
+waypoint project apply \
+   -data-source=git \
+   -git-auth-type=ssh \
+   -git-private-key-path=$HOME/.ssh/id_rsa \
+   -git-url=git@github.com:hashicorp/waypoint-examples.git \
+   example-project
+```
+
+Using password :
+
+```bash
+waypoint project apply \
+   -data-source=git \
+   -git-auth-type=basic \
+    -git-username=<string> \
+    -git-password=<string> \
+   -git-url=https://github.com:hashicorp/waypoint-examples.git \
+   example-project
+```

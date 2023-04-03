@@ -22,4 +22,4 @@
 
 - name: Set ingress ip fact
   set_fact:
-    kubeapps_ingress_controller_ip: "{{ ingress_infos.resources[0].spec.clusterIP | d(none) }}"
+    waypoint_ingress_controller_ip: "{{ ingress_infos.resources[0].spec.clusterIP | d(none) }}"

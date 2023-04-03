@@ -5,14 +5,14 @@ metallb_ip_default_mask: "{{ (ansible_default_ipv4.address + '/' + ansible_defau
 metallb_ip_default_range: "{{ (metallb_ip_default_mask | ansible.utils.ipaddr('range_usable')) }}"
 metallb_ip_range: ~
 
-# Kubeapps external networking
-kubeapps_base_domain: "k3s.test"
+# waypoint external networking
+waypoint_base_domain: "k3s.test"
 # Use nginx ingress controller by default
 k3s_disable_services: [traefik]
 
-# kubeapps internal networking
-kubeapps_internal_acme_network_ip: ~
-kubeapps_internal_acme_host: "acme-internal.{{ kubeapps_base_domain }}"
+# waypoint internal networking
+waypoint_internal_acme_network_ip: ~
+waypoint_internal_acme_host: "acme-internal.{{ waypoint_base_domain }}"
 
 # HelmChart Custom Resource Definition for cert manager
 # see https://cert-manager.io/docs/configuration/acme/
@@ -26,18 +26,18 @@ cert_manager_is_internal: "{{ (cert_manager_staging_ca_cert_url | d('')) != '' }
 
 # HelmChart Custom Resource Definition for dex oidc connector
 dex_namespace: dex
-dex_hostname: "dex.{{ kubeapps_base_domain }}"
-dex_client_id: kubeapps
+dex_hostname: "dex.{{ waypoint_base_domain }}"
+dex_client_id: waypoint
 dex_client_secret: ZXhhbXBsZS1hcHAtc2VjcmV0
 dex_github_client_id: ~
 dex_github_client_secret: ~
 dex_github_client_org: ~
 dex_github_client_team: ~
 
-# HelmChart Custom Resource Definition for kubeapps variables
-kubeapps_namespace: default
-kubeapps_hostname: "waypoint.{{ kubeapps_base_domain }}"
-api_waypoint_hostname: api.{{ kubeapps_hostname }}
+# HelmChart Custom Resource Definition for waypoint variables
+waypoint_namespace: default
+waypoint_hostname: "waypoint.{{ waypoint_base_domain }}"
+api_waypoint_hostname: api.{{ waypoint_hostname }}
 waypoint_version: 0.11.0
 
 dex_github_orgs:

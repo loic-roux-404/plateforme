@@ -15,7 +15,7 @@
       ansible.builtin.assert:
         that: '"node-0   Ready    control-plane,master" in kubernetes_nodes.stdout'
 
-    - name: Get kubeapps service infos
+    - name: Get waypoint service infos
       kubernetes.core.k8s_info:
         api_version: v1
         kind: Pod
@@ -23,16 +23,16 @@
           - component in (runner, server)
         kubeconfig: /etc/rancher/k3s/k3s.yaml
         namespace: default
-      register: kubeapps_infos
+      register: waypoint_infos
 
     - ansible.builtin.set_fact:
-        containers_statuses: "{{ kubeapps_infos.resources | map(attribute='status') | map(attribute='containerStatuses') | flatten }}"
+        containers_statuses: "{{ waypoint_infos.resources | map(attribute='status') | map(attribute='containerStatuses') | flatten }}"
 
     - ansible.builtin.debug:
         msg: "{{ containers_statuses }}"
 
-    - name: Assertions on service kubeapps 
+    - name: Assertions on service waypoint 
       assert:
         that:
-          - kubeapps_infos.resources | length > 0
+          - waypoint_infos.resources | length > 0
           - containers_statuses | selectattr('ready', 'equalto', true) | list | count == 2

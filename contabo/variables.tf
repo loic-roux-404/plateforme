@@ -36,6 +36,11 @@ variable "namedotcom_username" {
   sensitive = true
 }
 
+variable "tailscale_key" {
+  type      = string
+  sensitive = true
+}
+
 variable "contabo_instance" {
   type = string
 }

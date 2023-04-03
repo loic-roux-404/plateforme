@@ -4,7 +4,7 @@
   become: true
   vars:
     molecule_is_test: true
-    cert_manager_acme_url: https://{{ kubeapps_internal_acme_host }}:14000/dir
+    cert_manager_acme_url: https://{{ waypoint_internal_acme_host }}:14000/dir
     cert_manager_staging_ca_cert_url: https://localhost:15000/roots/0
     k3s_disable_services: [traefik, servicelb]
     metallb_ip_range: 172.29.0.20-172.29.0.50
@@ -55,9 +55,9 @@
       changed_when: false
 
     - ansible.builtin.set_fact:
-        kubeapps_internal_acme_network_ip: "{{ ansible_default_ipv4.address }}"
-      tags: [kubeapps]
+        waypoint_internal_acme_network_ip: "{{ ansible_default_ipv4.address }}"
+      tags: [waypoint]
 
     - name: Import acme certificates
       import_tasks: "../../tasks/pre-import-cert.yml"
-      tags: [kubeapps]
+      tags: [waypoint]

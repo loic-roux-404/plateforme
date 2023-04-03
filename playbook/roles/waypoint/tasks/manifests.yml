@@ -10,8 +10,8 @@
   ansible.builtin.template:
     src: "{{ item.src }}.j2"
     dest: "/var/lib/rancher/k3s/server/manifests/{{ item.src }}"
-    owner: "{{ kubeapps_user | d('root') }}"
-    group: "{{ kubeapps_user | d('root') }}"
+    owner: "{{ waypoint_user | d('root') }}"
+    group: "{{ waypoint_user | d('root') }}"
     mode: '0600'
   when: item.src | d(False)
 
