@@ -95,7 +95,7 @@ resource "contabo_instance" "paas_instance" {
     "${path.root}/user-data.yaml.tmpl",
     {
       tailscale_key = var.tailscale_key
-      iso_version_tag = var.ubuntu_release_info.iso_version_tag
+      ubuntu_release_info = var.ubuntu_release_info
       ssh_connection  = local.ssh_connection
       ansible_vars = [
         for k, v in local.ansible_vars : "${k}=${v}"
