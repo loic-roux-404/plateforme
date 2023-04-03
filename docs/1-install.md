@@ -1,4 +1,4 @@
-# Introduction et installation
+# Introduction and installation
 
 ---
 
@@ -19,7 +19,7 @@ For this we will use a technical base composed of :
 
 Translated with www.DeepL.com/Translator (free version)
 
-## Installation de Docker
+## Docker installation
 
 Docker architecture :
 
@@ -29,7 +29,9 @@ Docker architecture :
 
 et les couches des systèmes de conteneurisation docker et kubernetes :
 
-![docker k8s architecture](images/kube-archi.png)
+![docker k8s architecture](https://docs.k3s.io/assets/images/how-it-works-k3s-revised-9c025ef482404bca2e53a89a0ba7a3c5.svg)
+
+> Note : Here we are only using single node mode
 
 ## Rancher as docker desktop replacement
 
