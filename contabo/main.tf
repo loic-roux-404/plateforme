@@ -83,26 +83,14 @@ resource "contabo_image" "paas_instance_qcow2" {
   description = "generated PaaS vm image with packer"
 }
 
-resource "terraform_data" "wait_image" {
-  triggers_replace = [
-    contabo_image.paas_instance_qcow2
-  ]
- provisioner "local-exec" {
-    command = <<EOF
-      while [ "$(cntb get images | grep ubuntu-jammy- | awk '{print $7}')" == "downloading" ]; do
-        echo "Waiting for image to be uploaded"
-        sleep 5
-      done
-    EOF
-  }
-}
+resource "time_sleep" "wait_image" {
+  depends_on = [contabo_image.paas_instance_qcow2]
+  create_duration = "4m"
 
-resource "namedotcom_record" "dns_zone" {
-  for_each    = toset(["", "*"])
-  domain_name = var.domain
-  host        = each.key
-  record_type = "A"
-  answer      = data.contabo_instance.paas_instance.ip_config[0].v4[0].ip
+  triggers = {
+    status = contabo_image.paas_instance_qcow2.status
+    id = contabo_image.paas_instance_qcow2.id
+  }
 }
 
 resource "contabo_instance" "paas_instance" {
@@ -113,7 +101,7 @@ resource "contabo_instance" "paas_instance" {
   ]
 
   display_name = "ubuntu-k3s-paas"
-  image_id     = contabo_image.paas_instance_qcow2.id
+  image_id     = time_sleep.wait_image.triggers["id"]
   ssh_keys     = [contabo_secret.paas_instance_ssh_key.id]
   user_data = sensitive(templatefile(
     "${path.root}/user-data.yaml.tmpl",
