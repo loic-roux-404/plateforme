@@ -82,6 +82,16 @@ resource "contabo_image" "paas_instance_qcow2" {
   description = "generated PaaS vm image with packer"
 }
 
+resource "time_sleep" "wait_image" {
+  depends_on = [contabo_image.paas_instance_qcow2]
+  create_duration = "4m"
+
+  triggers = {
+    status = contabo_image.paas_instance_qcow2.status
+    id = contabo_image.paas_instance_qcow2.id
+  }
+}
+
 resource "contabo_instance" "paas_instance" {
 
   depends_on = [
@@ -89,14 +99,14 @@ resource "contabo_instance" "paas_instance" {
   ]
 
   display_name = "ubuntu-k3s-paas"
-  image_id     = contabo_image.paas_instance_qcow2.id
+  image_id     = time_sleep.wait_image.triggers["id"]
   ssh_keys     = [contabo_secret.paas_instance_ssh_key.id]
   user_data = sensitive(templatefile(
     "${path.root}/user-data.yaml.tmpl",
     {
-      tailscale_key = var.tailscale_key
+      tailscale_key       = var.tailscale_key
       ubuntu_release_info = var.ubuntu_release_info
-      ssh_connection  = local.ssh_connection
+      ssh_connection      = local.ssh_connection
       ansible_vars = [
         for k, v in local.ansible_vars : "${k}=${v}"
       ]
@@ -106,8 +116,7 @@ resource "contabo_instance" "paas_instance" {
 
 resource "terraform_data" "paas_instance_wait_bootstrap" {
   triggers_replace = [
-    contabo_instance.paas_instance.last_updated,
-    contabo_instance.paas_instance.last_updated
+    contabo_instance.paas_instance.id
   ]
 
   connection {

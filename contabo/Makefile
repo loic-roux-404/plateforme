@@ -28,5 +28,12 @@ apply:
 	terraform import -var-file=$(VAR_FILE) contabo_instance.paas_instance $(INSTANCE_ID)
 	terraform apply -var-file=$(VAR_FILE) -auto-approve
 
+# Destroy and recreate contabo image and instance
+update-force:
+	terraform destroy -var-file=$(VAR_FILE) \
+		-target=contabo_image.paas_instance_qcow2 -auto-approve
+	terraform import -var-file=$(VAR_FILE) contabo_instance.paas_instance $(INSTANCE_ID)
+	terraform apply -var-file=$(VAR_FILE) -auto-approve
+
 read_tfvar:
 	$(call read_tfvar contabo_instance)

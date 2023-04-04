@@ -21,7 +21,7 @@ jobs:
           version: "1.8.6"
 
       - name: Cache packer Iso's
-        id: cache-primes
+        id: cache-packer-iso
         uses: actions/cache@v3
         with:
           path: ~/.cache/packer/
