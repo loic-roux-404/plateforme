@@ -83,7 +83,12 @@ resource "contabo_image" "paas_instance_qcow2" {
   description = "generated PaaS vm image with packer"
 }
 
+locals {
+  contabo_image_uploading = contabo_image.paas_instance_qcow2.status == "download"
+}
+
 resource "time_sleep" "wait_image" {
+  count = local.contabo_image_uploading ? 1 : 0
   depends_on = [contabo_image.paas_instance_qcow2]
   create_duration = "4m"
 
@@ -91,6 +96,14 @@ resource "time_sleep" "wait_image" {
     status = contabo_image.paas_instance_qcow2.status
     id = contabo_image.paas_instance_qcow2.id
   }
+}
+
+resource "namedotcom_record" "dns_zone" {
+  for_each    = toset(["", "*"])
+  domain_name = var.domain
+  host        = each.key
+  record_type = "A"
+  answer      = data.contabo_instance.paas_instance.ip_config[0].v4[0].ip
 }
 
 resource "contabo_instance" "paas_instance" {
@@ -101,7 +114,7 @@ resource "contabo_instance" "paas_instance" {
   ]
 
   display_name = "ubuntu-k3s-paas"
-  image_id     = time_sleep.wait_image.triggers["id"]
+  image_id     = length(time_sleep.wait_image) > 0 ? time_sleep.wait_image[0].triggers["id"] : contabo_image.paas_instance_qcow2.id
   ssh_keys     = [contabo_secret.paas_instance_ssh_key.id]
   user_data = sensitive(templatefile(
     "${path.root}/user-data.yaml.tmpl",
