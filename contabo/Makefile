@@ -25,15 +25,16 @@ destroy:
 
 # Run it if starting from empty infra
 apply:
+	$(MAKE) setup_cntb
 	terraform import -var-file=$(VAR_FILE) contabo_instance.paas_instance $(INSTANCE_ID)
 	terraform apply -var-file=$(VAR_FILE) -auto-approve
 
 # Destroy and recreate contabo image and instance
 update-force:
-	terraform destroy -var-file=$(VAR_FILE) \
-		-target=contabo_image.paas_instance_qcow2 -auto-approve
-	terraform import -var-file=$(VAR_FILE) contabo_instance.paas_instance $(INSTANCE_ID)
-	terraform apply -var-file=$(VAR_FILE) -auto-approve
+	$(MAKE) setup_cntb
+	terraform apply -var-file=$(VAR_FILE) \
+		-replace=contabo_image.paas_instance_qcow2 \
+		-auto-approve
 
 read_tfvar:
 	$(call read_tfvar contabo_instance)

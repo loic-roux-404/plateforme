@@ -72,28 +72,28 @@ resource "contabo_secret" "paas_instance_password" {
 
 locals {
   iso_version_file = "ubuntu-${var.ubuntu_release_info.name}-${var.ubuntu_release_info.version}.${var.ubuntu_release_info.format}"
+  image_url = "${var.ubuntu_release_info.url}/${var.ubuntu_release_info.iso_version_tag}/${local.iso_version_file}"
 }
 
 resource "contabo_image" "paas_instance_qcow2" {
   name        = var.ubuntu_release_info.name
-  image_url   = "${var.ubuntu_release_info.url}/${var.ubuntu_release_info.iso_version_tag}/${local.iso_version_file}"
+  image_url   = local.image_url
   os_type     = "Linux"
   version     = var.ubuntu_release_info.iso_version_tag
   description = "generated PaaS vm image with packer"
 }
 
-locals {
-  contabo_image_uploading = contabo_image.paas_instance_qcow2.status == "download"
-}
-
-resource "time_sleep" "wait_image" {
-  count = local.contabo_image_uploading ? 1 : 0
-  depends_on = [contabo_image.paas_instance_qcow2]
-  create_duration = "4m"
-
-  triggers = {
-    status = contabo_image.paas_instance_qcow2.status
-    id = contabo_image.paas_instance_qcow2.id
+resource "terraform_data" "wait_image" {
+  triggers_replace = [
+    contabo_image.paas_instance_qcow2
+  ]
+ provisioner "local-exec" {
+    command = <<EOF
+      while [ "$(cntb get images | grep ubuntu-jammy- | awk '{print $7}')" == "downloading" ]; do
+        echo "Waiting for image to be uploaded"
+        sleep 5
+      done
+    EOF
   }
 }
 
@@ -109,10 +109,11 @@ resource "contabo_instance" "paas_instance" {
 
   depends_on = [
     github_team_membership.opsteam_members,
+    terraform_data.wait_image
   ]
 
   display_name = "ubuntu-k3s-paas"
-  image_id     = length(time_sleep.wait_image) > 0 ? time_sleep.wait_image[0].triggers["id"] : contabo_image.paas_instance_qcow2.id
+  image_id     = contabo_image.paas_instance_qcow2.id
   ssh_keys     = [contabo_secret.paas_instance_ssh_key.id]
   user_data = sensitive(templatefile(
     "${path.root}/user-data.yaml.tmpl",
