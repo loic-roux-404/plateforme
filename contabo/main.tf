@@ -72,20 +72,44 @@ resource "contabo_secret" "paas_instance_password" {
 
 locals {
   iso_version_file = "ubuntu-${var.ubuntu_release_info.name}-${var.ubuntu_release_info.version}.${var.ubuntu_release_info.format}"
+  image_url = "${var.ubuntu_release_info.url}/${var.ubuntu_release_info.iso_version_tag}/${local.iso_version_file}"
 }
 
 resource "contabo_image" "paas_instance_qcow2" {
   name        = var.ubuntu_release_info.name
-  image_url   = "${var.ubuntu_release_info.url}/${var.ubuntu_release_info.iso_version_tag}/${local.iso_version_file}"
+  image_url   = local.image_url
   os_type     = "Linux"
   version     = var.ubuntu_release_info.iso_version_tag
   description = "generated PaaS vm image with packer"
+}
+
+resource "terraform_data" "wait_image" {
+  triggers_replace = [
+    contabo_image.paas_instance_qcow2
+  ]
+ provisioner "local-exec" {
+    command = <<EOF
+      while [ "$(cntb get images | grep ubuntu-jammy- | awk '{print $7}')" == "downloading" ]; do
+        echo "Waiting for image to be uploaded"
+        sleep 5
+      done
+    EOF
+  }
+}
+
+resource "namedotcom_record" "dns_zone" {
+  for_each    = toset(["", "*"])
+  domain_name = var.domain
+  host        = each.key
+  record_type = "A"
+  answer      = data.contabo_instance.paas_instance.ip_config[0].v4[0].ip
 }
 
 resource "contabo_instance" "paas_instance" {
 
   depends_on = [
     github_team_membership.opsteam_members,
+    terraform_data.wait_image
   ]
 
   display_name = "ubuntu-k3s-paas"
@@ -94,9 +118,9 @@ resource "contabo_instance" "paas_instance" {
   user_data = sensitive(templatefile(
     "${path.root}/user-data.yaml.tmpl",
     {
-      tailscale_key = var.tailscale_key
+      tailscale_key       = var.tailscale_key
       ubuntu_release_info = var.ubuntu_release_info
-      ssh_connection  = local.ssh_connection
+      ssh_connection      = local.ssh_connection
       ansible_vars = [
         for k, v in local.ansible_vars : "${k}=${v}"
       ]
@@ -106,8 +130,7 @@ resource "contabo_instance" "paas_instance" {
 
 resource "terraform_data" "paas_instance_wait_bootstrap" {
   triggers_replace = [
-    contabo_instance.paas_instance.last_updated,
-    contabo_instance.paas_instance.last_updated
+    contabo_instance.paas_instance.id
   ]
 
   connection {
@@ -123,15 +146,4 @@ resource "terraform_data" "paas_instance_wait_bootstrap" {
       "sudo cloud-init status --wait && sudo cloud-init clean"
     ]
   }
-}
-
-resource "namedotcom_record" "dns_zone" {
-  depends_on = [
-    terraform_data.paas_instance_wait_bootstrap
-  ]
-  for_each    = toset(["", "*"])
-  domain_name = var.domain
-  host        = each.key
-  record_type = "A"
-  answer      = contabo_instance.paas_instance.ip_config[0].v4[0].ip
 }

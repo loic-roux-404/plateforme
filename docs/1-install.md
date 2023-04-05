@@ -1,18 +1,18 @@
-# Introduction and installation
+# Install PaaS for debug on a single machine
 
 ---
 
-The objective of this tutorial is to allow you to create a PaaS (Platform as a service) on a small machine or on a personal server. A PaaS allows to deploy applications in microservices. This one will be based on [kubernetes](https://kubernetes.io/fr/) for the containerization and [waypoint](https://developer.hashicorp.com/waypoint) for the deployment interface.
+This PaaS solution targets small machine or on personal server. This one will be based on [kubernetes](https://kubernetes.io/fr/) for the containerization and [waypoint](https://developer.hashicorp.com/waypoint) for the deployment interface and automations.
 
 The optics of this tooling will follow :
 
-- the principle **of immutable infrastructure** with the idea of recreating rather than updating. Thus we will use ready linux iso to deploy the **kubernetes** / **waypoint** platform directly on a server.
+- tThe principle **of immutable infrastructure** with the idea of recreating rather than updating. Thus we will use ready linux iso to deploy the **kubernetes** / **waypoint** platform directly on a server.
 
 - The principle **infrastructure as code** (IaC) by keeping all the specification of our infrastructure in configurations and scripts. We will also use basic tests of our configurations.
 
 For this we will use a technical base composed of :
 
-- the [`k3s`](https://k3s.io/) tool which simplifies the installation of kubernetes on ARM machines while remaining compatible with classic X64 architectures. It provides by default pods (containers in execution) to include features often sought on this type of edge computing configuration (reverse proxy, DNS configuration ...)
+- [`k3s`](https://k3s.io/) tool which simplifies the installation of kubernetes on ARM machines while remaining compatible with classic X64 architectures. It provides by default pods (containers in execution) to include features often sought on this type of edge computing configuration (reverse proxy, DNS configuration ...)
 - [Packer](https://www.packer.io/) to create iso images of linux machines
 - [Ansible](https://www.ansible.com/) to provision this image
 - [Terraform](https://www.terraform.io/) to control azure in an IaC way and to trigger all the PaaS implementation on it.
@@ -201,6 +201,8 @@ git push --tags
 Open release from tag on [this link](https://github.com/loic-roux-404/k3s-paas/releases/new)
 
 ## Terraform
+
+> Define your vars and secrets in a `prod.tfvars` file before. Consult the file to see where to get/generate them.
 
 ```bash
 INSTANCE_ID=$(grep "contabo_instance" prod.tfvars | cut -d'=' -f2 | tr -d ' ' | tr -d \")
