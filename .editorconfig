@@ -14,7 +14,7 @@ insert_final_newline = false
 [*.{yml,yaml,yml.*,yaml.*}]
 indent_size = 2
 
-[*.{hcl,tfvars,tfvars.*}]
+[*.{hcl,tf,tfvars,tfvars.*}]
 indent_size = 2
 
 [*.sh]
