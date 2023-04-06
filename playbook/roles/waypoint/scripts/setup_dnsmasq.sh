@@ -32,5 +32,5 @@ elif [[ "$OSTYPE" == "darwin"* ]]; then
     sudo mkdir -v /etc/resolver
     echo "nameserver $TARGET_IP" | sudo tee "/etc/resolver/$WILDCARD_DOMAIN"
 
-    sudo brew services restart dnsmasq
+    brew services restart dnsmasq
 fi
