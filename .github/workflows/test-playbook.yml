@@ -54,7 +54,11 @@ jobs:
       - uses: docker-practice/actions-setup-docker@master
         timeout-minutes: 12
 
+      - name: Setup dnsmasq
+        run: ./scripts/setup_dnsmasq.sh
+        working-directory: playbook/roles/waypoint
+
       # https://github.com/ansible-community/molecule/issues/3818
-      - name: Test Role with molecule
-        run: molecule test
+      - name: Test Role with molecule (without metallb)
+        run: molecule test -- --skip-tags=metallb --extra-vars="k3s_disable_services=[traefik]"
         working-directory: playbook/roles/waypoint
