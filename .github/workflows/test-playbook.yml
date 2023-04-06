@@ -23,6 +23,8 @@ jobs:
         uses: actions/setup-python@v4
         with:
           python-version: 3.11.2
+          cache: 'pip'
+          cache-dependency-path: 'playbook/requirements-test.txt'
 
       - name: Install python dependencies
         run: |
@@ -40,7 +42,7 @@ jobs:
           restore-keys: |
             ${{ runner.os }}-pip-
 
-      - name: Install python dependencies
+      - name: Install ansible dependencies
         run: |
           ansible-galaxy collection install -r requirements.yaml
           ansible-galaxy role install -r requirements.yaml
@@ -51,14 +53,22 @@ jobs:
         env:
           ANSIBLE_VAULT_PASSWORD: ${{ secrets.ANSIBLE_VAULT_PASSWORD }}
 
-      - uses: docker-practice/actions-setup-docker@master
-        timeout-minutes: 12
+      - name: Cache Homebrew Packages
+        id: cache-homebrew-packages
+        uses: actions/cache@v3
+        env:
+          cache-name: homebrew-packages
+        with:
+          path: $(brew --prefix)
+          key: ${{ matrix.os }}-${{ env.cache-name }}-docker-dnsmasq
+
+      - run: brew install docker && colima start
 
       - name: Setup dnsmasq
         run: ./scripts/setup_dnsmasq.sh
         working-directory: playbook/roles/waypoint
 
-      # https://github.com/ansible-community/molecule/issues/3818
-      - name: Test Role with molecule (without metallb)
-        run: molecule test -- --skip-tags=metallb --extra-vars="k3s_disable_services=[traefik]"
-        working-directory: playbook/roles/waypoint
+      # Linux : https://github.com/ansible-community/molecule/issues/3818
+      # - name: Test Role with molecule (without metallb)
+      #   run: molecule test -- --skip-tags=metallb --extra-vars="k3s_disable_services=[traefik]"
+      #   working-directory: playbook/roles/waypoint
