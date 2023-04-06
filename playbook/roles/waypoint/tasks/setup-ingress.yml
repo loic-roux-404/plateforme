@@ -5,6 +5,8 @@
     - src: nginx-ingress-chart-crd.yml
   when: '"traefik" in k3s_disable_services'
 
+- debug: msg="{{ingress_expected_svc}}"
+
 - name: Get Ingress service infos
   kubernetes.core.k8s_info:
     api_version: v1

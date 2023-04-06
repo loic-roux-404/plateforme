@@ -9,7 +9,7 @@ on:
       - .github/workflows/test-playbook.yml
 jobs:
   build:
-    runs-on: ubuntu-latest
+    runs-on: macos-latest
     strategy:
       max-parallel: 4
 
@@ -56,6 +56,6 @@ jobs:
         working-directory: playbook/roles/waypoint
 
       # https://github.com/ansible-community/molecule/issues/3818
-      # - name: Test Role with molecule
-      #   run: molecule test
-      #   working-directory: playbook/roles/waypoint
+      - name: Test Role with molecule
+        run: molecule test
+        working-directory: playbook/roles/waypoint
