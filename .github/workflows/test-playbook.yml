@@ -51,9 +51,8 @@ jobs:
         env:
           ANSIBLE_VAULT_PASSWORD: ${{ secrets.ANSIBLE_VAULT_PASSWORD }}
 
-      - name: Wait for docker ready
-        run: echo 'Disabled waiting for external fix'
-        working-directory: playbook/roles/waypoint
+      - uses: docker-practice/actions-setup-docker@master
+        timeout-minutes: 12
 
       # https://github.com/ansible-community/molecule/issues/3818
       - name: Test Role with molecule
