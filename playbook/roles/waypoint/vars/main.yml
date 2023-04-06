@@ -29,7 +29,7 @@ metallb_manifests:
       filename: metallb-frr.yaml
 
 # Ingress facts
-ingress_expected_svc: "{{'ingress-nginx-controller' 
+ingress_expected_svc: "{{'nginx-ingress-controller' 
   if 'traefik' in k3s_disable_services else 'traefik' }}"
 ingress_hosts_internals: 
   - "{{ dex_hostname }}"
