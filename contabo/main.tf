@@ -87,13 +87,23 @@ resource "terraform_data" "wait_image" {
   triggers_replace = [
     contabo_image.paas_instance_qcow2
   ]
- provisioner "local-exec" {
+  provisioner "local-exec" {
     command = <<EOF
       while [ "$(cntb get images | grep ubuntu-jammy- | awk '{print $7}')" == "downloading" ]; do
         echo "Waiting for image to be uploaded"
         sleep 5
       done
     EOF
+  }
+}
+
+resource "terraform_data" "import_existing_instance" {
+  triggers_replace = [
+    contabo_image.paas_instance_qcow2,
+    data.contabo_instance.paas_instance
+  ]
+  provisioner "local-exec" {
+    command = "terrraform import ${data.contabo_instance.paas_instance.id}"
   }
 }
 
@@ -109,7 +119,8 @@ resource "contabo_instance" "paas_instance" {
 
   depends_on = [
     github_team_membership.opsteam_members,
-    terraform_data.wait_image
+    terraform_data.wait_image,
+    terraform_data.import_existing_instance
   ]
 
   display_name = "ubuntu-k3s-paas"
