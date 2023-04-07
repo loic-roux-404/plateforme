@@ -64,6 +64,8 @@ jobs:
 
       - run: brew install docker && colima start
 
+      - run: docker version
+
       - name: Setup dnsmasq
         run: ./scripts/setup_dnsmasq.sh
         working-directory: playbook/roles/waypoint
