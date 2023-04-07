@@ -57,6 +57,8 @@
       -client-id="{{ dex_client_id }}" \
       -client-secret="{{ dex_client_secret }}" \
       -issuer=https://{{ dex_hostname }} \
+      -allowed-redirect-uri="https://{{ waypoint_hostname }}/auth/oidc-callback" \
+      -claim-scope="groups" \
       -list-claim-mapping="groups=groups" \
       -access-selector="\"{{ dex_github_client_org }}:{{ dex_github_client_team }}\" in list.groups" dex
   changed_when: false

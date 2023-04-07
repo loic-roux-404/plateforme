@@ -223,7 +223,7 @@ sudo brew services start tailscale
 
 Then : `tailscale login`
 
-## Connect to instance :
+### Connect to instance :
 
 Setup with `make setup_ssh`
 

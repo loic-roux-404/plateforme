@@ -53,20 +53,8 @@ jobs:
         env:
           ANSIBLE_VAULT_PASSWORD: ${{ secrets.ANSIBLE_VAULT_PASSWORD }}
 
-      - name: Cache Homebrew Packages
-        id: cache-homebrew-packages
-        uses: actions/cache@v3
-        env:
-          cache-name: homebrew-packages
-        with:
-          path: $(brew --prefix)
-          key: ${{ runner.os }}-${{ env.cache-name }}-docker-dnsmasq
-
       - name: Install and start docker
         run: brew install docker && colima start --runtime docker --layer
-
-      - name: Create colima docker alias
-        run: echo "alias docker='colima docker'" >> ~/.bash_profile
 
       - name: Setup dnsmasq
         run: ./scripts/setup_dnsmasq.sh
