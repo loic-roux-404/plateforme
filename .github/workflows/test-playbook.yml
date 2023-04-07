@@ -71,6 +71,6 @@ jobs:
         working-directory: playbook/roles/waypoint
 
       # Linux : https://github.com/ansible-community/molecule/issues/3818
-      # - name: Test Role with molecule (without metallb)
-      #   run: molecule test -- --skip-tags=metallb --extra-vars="k3s_disable_services=[traefik]"
-      #   working-directory: playbook/roles/waypoint
+      - name: Test Role with molecule (without metallb)
+        run: molecule test -- --skip-tags=metallb --extra-vars="k3s_disable_services=[traefik]"
+        working-directory: playbook/roles/waypoint
