@@ -60,11 +60,13 @@ jobs:
           cache-name: homebrew-packages
         with:
           path: $(brew --prefix)
-          key: ${{ matrix.os }}-${{ env.cache-name }}-docker-dnsmasq
+          key: ${{ runner.os }}-${{ env.cache-name }}-docker-dnsmasq
 
-      - run: brew install docker && colima start
+      - name: Install and start docker
+        run: brew install docker && colima start --runtime docker --layer
 
-      - run: docker version
+      - name: Create colima docker alias
+        run: echo "alias docker='colima docker'" >> ~/.bash_profile
 
       - name: Setup dnsmasq
         run: ./scripts/setup_dnsmasq.sh
