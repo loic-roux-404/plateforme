@@ -89,6 +89,7 @@ Then install requirements :
 
 ```bash
 cd playbook
+pip install -r requirements-test.txt
 ansible-galaxy install -r requirements.yml
 pip install -r requirements.txt
 cd -

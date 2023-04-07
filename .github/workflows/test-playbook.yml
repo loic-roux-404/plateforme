@@ -24,15 +24,13 @@ jobs:
         with:
           python-version: 3.11.2
           cache: 'pip'
-          cache-dependency-path: |
-            'playbook/requirements.test.txt'
-            'playbook/requirements.txt'
+          cache-dependency-path: '**/requirements*.txt'
 
       - name: Install python dependencies
         run: |
           python -m pip install --upgrade pip
           pip install -r requirements.txt
-          pip install -r requirements.test.txt
+          pip install -r requirements-test.txt
         working-directory: playbook
 
       - uses: actions/cache@v3
