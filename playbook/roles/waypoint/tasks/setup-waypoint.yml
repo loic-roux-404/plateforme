@@ -55,6 +55,8 @@
   command: |
     waypoint auth-method set oidc \
       -client-id="{{ dex_client_id }}" \
+      -display-name="GitHub" \
+      -description="GitHub Oauth2 over Dex Idp open id connect adapter" \
       -client-secret="{{ dex_client_secret }}" \
       -issuer=https://{{ dex_hostname }} \
       -allowed-redirect-uri="https://{{ waypoint_hostname }}/auth/oidc-callback" \

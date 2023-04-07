@@ -10,9 +10,7 @@ on:
 jobs:
   build:
     runs-on: macos-latest
-    strategy:
-      max-parallel: 4
-
+    if: contains(github.event.pull_request.title, 'enable-molecule')
     steps:
       - name: Checkout
         uses: actions/checkout@v3
@@ -38,9 +36,9 @@ jobs:
           path: |
             ~/.ansible/collections/ansible_collections
             ~/.ansible/roles
-          key: ${{ runner.os }}-pip-${{ hashFiles('playbook/requirements.yaml') }}
+          key: ${{ runner.os }}-ansible-${{ hashFiles('playbook/requirements.yaml') }}
           restore-keys: |
-            ${{ runner.os }}-pip-
+            ${{ runner.os }}-ansible-
 
       - name: Install ansible dependencies
         run: |
@@ -48,19 +46,40 @@ jobs:
           ansible-galaxy role install -r requirements.yaml
         working-directory: playbook
 
-      - name: Setup vault secret
-        run: printf "$ANSIBLE_VAULT_PASSWORD" > ~/.ansible/.vault        
-        env:
-          ANSIBLE_VAULT_PASSWORD: ${{ secrets.ANSIBLE_VAULT_PASSWORD }}
+      - name: Set outputs
+        id: vars
+        run: echo "brew_prefix=$(brew --prefix)" >> $GITHUB_OUTPUT
 
-      - name: Install and start docker
-        run: brew install docker && colima start --runtime docker --layer
+      - name: brew update
+        run: brew update && brew upgrade || true
+
+      - name: Configure Homebrew cache
+        uses: actions/cache@v3
+        with:
+          path: "${{ steps.vars.outputs.brew_prefix }}/Library/Caches/Homebrew/"
+          key: brew-dnsmasq-docker
+          restore-keys: brew-
+
+      - name: Install Homebrew dependencies
+        run: |
+          env HOMEBREW_NO_AUTO_UPDATE=1 brew install dnsmasq
 
       - name: Setup dnsmasq
         run: ./scripts/setup_dnsmasq.sh
         working-directory: playbook/roles/waypoint
 
-      # Linux : https://github.com/ansible-community/molecule/issues/3818
-      - name: Test Role with molecule (without metallb)
+      - run: dig +short k3s.test
+
+      - run: ping -c 1 k3s.test
+
+      - name: Setup vault secret
+        run: echo "$ANSIBLE_VAULT_PASSWORD" > ~/.ansible/.vault      
+        env:
+          ANSIBLE_VAULT_PASSWORD: ${{ secrets.ANSIBLE_VAULT_PASSWORD }}
+
+      - uses: docker-practice/actions-setup-docker@master
+        timeout-minutes: 12
+
+      - name: Molecule
         run: molecule test -- --skip-tags=metallb --extra-vars="k3s_disable_services=[traefik]"
         working-directory: playbook/roles/waypoint

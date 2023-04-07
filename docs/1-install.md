@@ -119,7 +119,7 @@ cd playbook/roles/waypoint
 ```
 
 ```bash
-molecule test
+molecule test --destroy never
 ```
 
 To open UI with https add pebble certificate to your truststore :
@@ -230,12 +230,12 @@ Setup with `make setup_ssh`
 Then :
 
 ```bash
-tailscale ssh user@device-name
+ssh user@device-name
 ```
 
 ## Create git ops waypoint project
 
-> `waypoint init` seems to be unsufficient to create a gitops project
+> Only `waypoint init` will not configure git repo for you. You need to use customised `waypoint project apply` to do it.
 
 Using ssh :
 
@@ -343,6 +343,10 @@ app "default-app" {
         path      = "/"
         host = "go-multiapp.${var.k8s_ingress_domain}"
         annotations = var.k8s_ingress_annotations
+        tls {
+            hosts = ["go-multiapp.${var.k8s_ingress_domain}"]
+            secret_name = "go-multiapp.${var.k8s_ingress_domain}-tls"
+        }
       }
     }
   }
