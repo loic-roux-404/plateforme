@@ -89,6 +89,7 @@ Then install requirements :
 
 ```bash
 cd playbook
+pip install -r requirements-test.txt
 ansible-galaxy install -r requirements.yml
 pip install -r requirements.txt
 cd -
@@ -118,7 +119,7 @@ cd playbook/roles/waypoint
 ```
 
 ```bash
-molecule test
+molecule test --destroy never
 ```
 
 To open UI with https add pebble certificate to your truststore :
@@ -205,13 +206,11 @@ Open release from tag on [this link](https://github.com/loic-roux-404/k3s-paas/r
 > Define your vars and secrets in a `prod.tfvars` file before. Consult the file to see where to get/generate them.
 
 ```bash
-INSTANCE_ID=$(grep "contabo_instance" prod.tfvars | cut -d'=' -f2 | tr -d ' ' | tr -d \")
-terraform import -var-file=prod.tfvars contabo_instance.paas_instance $INSTANCE_ID
 terraform apply -auto-approve -var-file=prod.tfvars
 
 ```
 
-Or maintained make command `make apply`
+For contabo cli usage from your tfvar file : `make setup_cntb`
 
 ## Secure ssh connections
 
@@ -224,9 +223,19 @@ sudo brew services start tailscale
 
 Then : `tailscale login`
 
+### Connect to instance :
+
+Setup with `make setup_ssh`
+
+Then :
+
+```bash
+ssh user@device-name
+```
+
 ## Create git ops waypoint project
 
-> `waypoint init` seems to be unsufficient to create a gitops project
+> Only `waypoint init` will not configure git repo for you. You need to use customised `waypoint project apply` to do it.
 
 Using ssh :
 
@@ -334,6 +343,10 @@ app "default-app" {
         path      = "/"
         host = "go-multiapp.${var.k8s_ingress_domain}"
         annotations = var.k8s_ingress_annotations
+        tls {
+            hosts = ["go-multiapp.${var.k8s_ingress_domain}"]
+            secret_name = "go-multiapp.${var.k8s_ingress_domain}-tls"
+        }
       }
     }
   }
