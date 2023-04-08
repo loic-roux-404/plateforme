@@ -1,7 +1,8 @@
 ---
 - name: Converge
-  hosts: node-0
+  hosts: "{{ _hosts | default('node-0') }}"
   become: true
+  gather_facts: True
   vars:
     molecule_is_test: true
     cert_manager_acme_url: https://{{ waypoint_internal_acme_host }}:14000/dir
@@ -20,6 +21,10 @@
           - unzip
         update_cache: yes
         state: present
+
+    - name: Check dns connectivity
+      ansible.builtin.command: ping -c 1 k3s.test
+      changed_when: false
 
     - name: Ensure test dependencies are installed.
       apt: 
@@ -47,12 +52,22 @@
     - name: Install pebble
       ansible.builtin.command: go install github.com/letsencrypt/pebble/...@HEAD 
       changed_when: false
+      register: pebble_install
+      retries: 5
+      until: 
+        - '"downloading" not in pebble_install.stderr'
+        - '"downloading" not in pebble_install.stdout'
 
     - name: Run pebble
       command: ~/go/bin/pebble -config /pebble/pebble-config.json
-      async: 2592000 # 60*60*24*30 – 1 month
+      async: 2592000 # 60*60*24*30 - 1 month
       poll: 0
       changed_when: false
+
+    - name: Wait for pebble port
+      ansible.builtin.wait_for:
+        port: 15000
+        delay: 25
 
     - ansible.builtin.set_fact:
         waypoint_internal_acme_network_ip: "{{ ansible_default_ipv4.address }}"
