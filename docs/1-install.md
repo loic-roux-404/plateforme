@@ -115,7 +115,7 @@ Setup dnsmasq to wildcard domain to localhost :
 
 ```bash
 cd playbook/roles/waypoint
-./scripts/setup_dnsmasq.sh
+./molecule/default/scripts/setup_dnsmasq.sh
 ```
 
 ```bash

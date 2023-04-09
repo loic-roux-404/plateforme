@@ -5,7 +5,10 @@ on:
     branches:
       - main
     paths:
-      - 'contabo/**'
+      - 'contabo/**.hcl'
+      - 'contabo/**.tf'
+      - 'contabo/**.tfvars'
+      - 'contabo/**.tmpl'
       - .github/workflows/test-terraform.yml
 
 permissions:

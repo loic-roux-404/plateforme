@@ -5,12 +5,14 @@ on:
     branches:
       - main
     paths:
-      - 'playbook/**'
+      - 'playbook/**.yaml'
+      - 'playbook/**.yml'
+      - 'playbook/**.txt'
+      - 'playbook/**.j2'
       - .github/workflows/test-playbook.yml
 jobs:
   build:
-    runs-on: macos-latest
-    if: contains(github.event.pull_request.title, 'enable-molecule')
+    runs-on: ubuntu-latest
     steps:
       - name: Checkout
         uses: actions/checkout@v3
@@ -26,60 +28,53 @@ jobs:
 
       - name: Install python dependencies
         run: |
-          python -m pip install --upgrade pip
-          pip install -r requirements.txt
-          pip install -r requirements-test.txt
+          sudo python -m pip install --upgrade pip
+          sudo pip install -r requirements.txt
+          sudo pip install -r requirements-test.txt
         working-directory: playbook
 
       - uses: actions/cache@v3
         with:
           path: |
-            ~/.ansible/collections/ansible_collections
-            ~/.ansible/roles
+            /root/.ansible/collections/ansible_collections
+            /root/.ansible/roles
           key: ${{ runner.os }}-ansible-${{ hashFiles('playbook/requirements.yaml') }}
           restore-keys: |
             ${{ runner.os }}-ansible-
 
       - name: Install ansible dependencies
         run: |
-          ansible-galaxy collection install -r requirements.yaml
-          ansible-galaxy role install -r requirements.yaml
+          sudo ansible-galaxy collection install -r requirements.yaml
+          sudo ansible-galaxy role install -r requirements.yaml
         working-directory: playbook
 
-      - name: Set outputs
-        id: vars
-        run: echo "brew_prefix=$(brew --prefix)" >> $GITHUB_OUTPUT
+      - name: Update apt cache
+        run: sudo apt update
 
-      - name: brew update
-        run: brew update && brew upgrade || true
-
-      - name: Configure Homebrew cache
-        uses: actions/cache@v3
+      - uses: awalsh128/cache-apt-pkgs-action@latest
         with:
-          path: "${{ steps.vars.outputs.brew_prefix }}/Library/Caches/Homebrew/"
-          key: brew-dnsmasq-docker
-          restore-keys: brew-
-
-      - name: Install Homebrew dependencies
-        run: |
-          env HOMEBREW_NO_AUTO_UPDATE=1 brew install dnsmasq
-
+          packages: dnsmasq
+          version: 1.0
       - name: Setup dnsmasq
         run: ./scripts/setup_dnsmasq.sh
         working-directory: playbook/roles/waypoint
 
-      - run: dig +short k3s.test
-
-      - run: ping -c 1 k3s.test
-
       - name: Setup vault secret
-        run: echo "$ANSIBLE_VAULT_PASSWORD" > ~/.ansible/.vault      
+        run: echo "$ANSIBLE_VAULT_PASSWORD" | sudo tee /root/.ansible/.vault      
         env:
           ANSIBLE_VAULT_PASSWORD: ${{ secrets.ANSIBLE_VAULT_PASSWORD }}
 
-      - uses: docker-practice/actions-setup-docker@master
-        timeout-minutes: 12
-
-      - name: Molecule
-        run: molecule test -- --skip-tags=metallb --extra-vars="k3s_disable_services=[traefik]"
+      - name: Enable molecule delegated driver for CI
+        run: mv -f molecule/default/molecule.ci.yml molecule/default/molecule.yml
         working-directory: playbook/roles/waypoint
+
+      - name: Remove kubectl
+        run: sudo rm -rf /usr/local/bin/kubectl
+
+      - name: Molecule test
+        run: >-
+          sudo molecule test -d delegated -- \
+            --extra-vars='_hosts=127.0.0.1 k3s_disable_services=[traefik]'
+        working-directory: playbook/roles/waypoint
+        env:
+          ANSIBLE_FORCE_COLOR: 1

@@ -2,8 +2,9 @@ name: test-packer
 on:
   pull_request:
     paths:
-      - 'playbook/**'
-      - 'packer/**'
+      - 'packer/**.hcl'
+      - 'packer/**.sh'
+      - 'packer/**.tmpl'
       - .github/workflows/test-packer.yml
 jobs:
   gh-release-packer:
