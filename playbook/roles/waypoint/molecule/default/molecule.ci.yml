@@ -1,0 +1,22 @@
+dependency:
+  name: galaxy
+
+driver:
+  name: delegated
+  options:
+    managed: False
+    ansible_connection_options:
+      ansible_connection: local
+
+platforms:
+  - name: 127.0.0.1
+    groups:
+      - molecule
+
+provisioner:
+  name: ansible
+  config_options:
+    defaults:
+      vault_password_file: ${HOME}/.ansible/.vault
+verifier:
+  name: ansible

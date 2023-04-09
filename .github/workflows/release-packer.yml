@@ -4,7 +4,9 @@ on:
     branches:
       - main
     paths:
-      - 'playbook/**'
+      - 'playbook/**.yml'
+      - '!**.md'
+      - '!playbook/roles/waypoint/molecule/**'
       - 'packer/**'
       - .github/workflows/release-packer.yml
 
