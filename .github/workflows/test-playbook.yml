@@ -9,6 +9,7 @@ on:
       - 'playbook/**.yml'
       - 'playbook/**.txt'
       - 'playbook/**.j2'
+      - 'playbook/roles/waypoint/molecule/**'
       - .github/workflows/test-playbook.yml
 jobs:
   build:
