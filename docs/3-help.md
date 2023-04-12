@@ -53,6 +53,3 @@ And there you have access to an interface to control your cluster directly from 
 
 - [packer-kvm](https://github.com/goffinet/packer-kvm/blob/master/http/jammy/user-data)
 - [coredns wildcard](https://mac-blog.org.ua/kubernetes-coredns-wildcard-ingress/)
-
-
-Translated with www.DeepL.com/Translator (free version)

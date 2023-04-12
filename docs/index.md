@@ -26,4 +26,5 @@ Then run `make apply`
 ## Index
 
 - [1. Install](1-install.md)
-- [2. Help](2-help.md)
+- [2. Waypoint usage](1-install.md)
+- [3. Help and more](3-help.md)
