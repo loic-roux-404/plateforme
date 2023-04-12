@@ -75,7 +75,7 @@ jobs:
       - name: Molecule test
         run: >-
           sudo molecule test -d delegated -- \
-            --extra-vars='_hosts=127.0.0.1 k3s_disable_services=[traefik]'
+            --extra-vars='_hosts=127.0.0.1 k3s_disable_services=\[traefik\]'
         working-directory: playbook/roles/waypoint
         env:
           ANSIBLE_FORCE_COLOR: 1
