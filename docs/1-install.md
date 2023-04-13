@@ -43,9 +43,9 @@ Check command `docker` is available. If not add `~/.rd/bin` to `PATH` :
 echo 'export PATH="$PATH:$HOME/.rd/bin"' >> ~/.zshrc
 ```
 
-## Installation de vscode
+## VsCode Installation
 
-- [Avec installer toutes plateformes](https://code.visualstudio.com/download)
+- [Multi-platform installer](https://code.visualstudio.com/download)
 - Homebrew sur mac `brew install --cask visual-studio-code`
 - [Avec snap pour linux](https://snapcraft.io/code) sur linux
 
@@ -100,7 +100,7 @@ Setup mac os networking with rancher :
 
 ```bash
 cd playbook/roles/waypoint
-./scripts/setup_macos.sh
+./molecule/default/scripts/setup_macos.sh
 ```
 
 Recover ip subnet if needed (ex: 172.29.0.20) and edit `metallb_ip_range` accordingly :

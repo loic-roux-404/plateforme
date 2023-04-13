@@ -1,8 +1,8 @@
-# Result
+# Waypoint on k3s
 
 ![result](images/result.png)
 
-### Architecture
+### Deployment diagram
 
 ![archi](images/archi.jpg)
 
@@ -11,9 +11,11 @@
 - A Contabo subscription [contabo](https://contabo.com)
 - An account of the Dns provider [namedotcom](https://name.com)
 
-> Note: You could easily adapt terraform to use another provider, it just needs to support `user_data` with a cloud-init compatible syntax.
+> **Note :** You could easily adapt terraform to use another provider:
+> - it needs to support `user_data` with a cloud-init compatible syntax.
+> - **And as bonus** it could support qemu qcow2 image format (for faster k3s paas provisioning)
 
-> Note: For dns provider, it could be more complex but good terraform provider exists for namecheap, cloudflare, etc.
+> **Note :** For dns provider, it could be more complex but good terraform provider exists for namecheap, cloudflare, etc.
 
 ### Quick deploy with terraform
 
@@ -26,5 +28,5 @@ Then run `make apply`
 ## Index
 
 - [1. Install](1-install.md)
-- [2. Waypoint usage](1-install.md)
+- [2. Waypoint usage](2-waypoint.md)
 - [3. Help and more](3-help.md)

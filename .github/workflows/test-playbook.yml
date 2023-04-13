@@ -57,7 +57,7 @@ jobs:
           packages: dnsmasq
           version: 1.0
       - name: Setup dnsmasq
-        run: ./scripts/setup_dnsmasq.sh
+        run: ./molecule/default/scripts/setup_dnsmasq.sh
         working-directory: playbook/roles/waypoint
 
       - name: Setup vault secret

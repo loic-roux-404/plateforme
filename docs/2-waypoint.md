@@ -33,6 +33,20 @@ waypoint init
 
 > Only `waypoint init` will not configure git repo for you. You need to use customised `waypoint project apply` to do it.
 
+**Prefered way**, Using password :
+
+```bash
+waypoint project apply \
+   -data-source=git \
+   -git-auth-type=basic \
+    -git-username=$GITHUB_USER \
+    -git-password=$GITHUB_TOKEN \
+   -git-url=$REPO_HTTP_URL \
+    -poll \
+   -poll-interval="2h" \
+   $PROJECT_NAME
+```
+
 Using ssh :
 
 ```bash
@@ -40,32 +54,20 @@ waypoint project apply \
    -data-source=git \
    -git-auth-type=ssh \
    -git-private-key-path=$HOME/.ssh/id_rsa \
-   -git-url=git@github.com:hashicorp/waypoint-examples.git \
-   example-project
+   -git-url=$REPO_SSH_URL \
+   -poll \
+   -poll-interval="2h" \
+   $PROJECT_NAME
 ```
-
-Using password :
-
-```bash
-waypoint project apply \
-   -data-source=git \
-   -git-auth-type=basic \
-    -git-username=<string> \
-    -git-password=<string> \
-   -git-url=https://github.com:hashicorp/waypoint-examples.git \
-   example-project
-```
-
 
 ### Setup waypoint hcl
 
-Adapted example from Hashicorp
+Adapted example from Hashicorp :
 
+> [waypoint.hcl]
 ```hcl
-# Copyright (c) HashiCorp, Inc.
-# SPDX-License-Identifier: MPL-2.0
 
-project = "kubernetes-go-multiapp-k8s-ingress"
+project = "kubernetes-app-k8s-ingress"
 
 variable "namespace" {
   default     = "default"
@@ -83,6 +85,11 @@ variable "registery_token" {
   description = "Token to login to container registry"
 }
 
+variable "k8s_ingress_domain" {
+  type    = string
+  description = "Kubernetes domain to use"
+}
+
 variable "k8s_ingress_annotations" {
   type    = map(string)
   description = "Kubernetes annotation to make ingress working"
@@ -91,13 +98,6 @@ variable "k8s_ingress_annotations" {
     "kubernetes.io/ingress.class" = "nginx"
   }
 }
-
-variable "k8s_ingress_domain" {
-  type    = string
-  description = "Kubernetes domain to use"
-  default  = "waypoint.k3s.test"
-}
-
 
 app "default-app" {
   labels = {
@@ -137,15 +137,36 @@ app "default-app" {
         default   = true
         path_type = "Prefix"
         path      = "/"
-        host = "go-multiapp.${var.k8s_ingress_domain}"
+        host = "app.${var.k8s_ingress_domain}"
         annotations = var.k8s_ingress_annotations
         tls {
-            hosts = ["go-multiapp.${var.k8s_ingress_domain}"]
-            secret_name = "go-multiapp.${var.k8s_ingress_domain}-tls"
+            hosts = ["app.${var.k8s_ingress_domain}"]
+            secret_name = "app.${var.k8s_ingress_domain}-tls"
         }
       }
     }
   }
 }
 
+```
+
+**Then** up project using valid variables :
+
+```hcl
+waypoint up -var registery_user="$REGISTERY_USER" \
+    -var registery_token="$REGISTERY_TOKEN" \
+    -var k8s_ingress_domain="$K8S_INGRESS_DOMAIN" 
+```
+
+Or as a var file
+
+> variables.hcl
+```hcl
+registery_user = ""
+registery_token = ""
+k8s_ingress_domain = "k3s.test"
+```
+
+```bash
+waypoint up -var-file=variables.hcl
 ```
