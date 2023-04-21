@@ -19,6 +19,7 @@
           - curl
           - wget
           - unzip
+          - iputils-ping
         update_cache: yes
         state: present
 
