@@ -26,12 +26,16 @@ spec:
   valuesContent: |-
     odr:
       image:
-        repository: "ghcr.io/hashicorp/waypoint/alpha"
-        tag: "c0f0e03b1"
+        repository: "{{ waypoint_docker_repository }}"
+        tag: "{{ waypoint_version }}"
+    runner:
+      image:
+        repository: "{{ waypoint_docker_repository }}"
+        tag: "{{ waypoint_version }}"
     server:
       image:
-        repository: "ghcr.io/hashicorp/waypoint/alpha-odr"
-        tag: "c0f0e03b1"
+        repository: "{{ waypoint_docker_repository }}"
+        tag: "{{ waypoint_version }}"
       runArgs: ["-vvv"]
       cert:
         secretName: {{ waypoint_hostname }}-tls

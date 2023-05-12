@@ -38,7 +38,8 @@ dex_github_client_team: ~
 waypoint_namespace: default
 waypoint_hostname: "waypoint.{{ waypoint_base_domain }}"
 api_waypoint_hostname: api.{{ waypoint_hostname }}
-waypoint_version: 0.11.0
+waypoint_docker_repository: docker.io/hashicorp/waypoint
+waypoint_version: 0.11.1
 
 dex_github_orgs:
   - name: '{{ dex_github_client_org }}'

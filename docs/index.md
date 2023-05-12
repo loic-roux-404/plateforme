@@ -21,6 +21,11 @@
 
 Rename `prod.tfvars.dist` to `prod.tfvars` and fill variables (precision to find them are in file comments).
 
+> You can generate a password with 
+> ```bash 
+> openssl passwd -6 -salt xyz password
+> ```
+
 Then run `make apply`
 
 ## Index

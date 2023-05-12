@@ -292,6 +292,7 @@ variable "k8s_ingress_annotations" {
   description = "Kubernetes annotation to make ingress working"
   default  = {
     "nginx.ingress.kubernetes.io/rewrite-target" = "/"
+    "cert-manager.io/cluster-issuer" = "letsencrypt-acme-issuer"
     "kubernetes.io/ingress.class" = "nginx"
   }
 }
