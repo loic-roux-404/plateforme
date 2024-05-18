@@ -4,9 +4,9 @@
   options.k3s-paas = {
 
     letsencrypt.crt = lib.mkOption {
-      default = ./certs/local.pem;
-      type = lib.types.path;
-      description = "Lets encrypt root ca";
+      default = ["https://localhost:15000/intermediates/0"] ;
+      type = lib.types.list (lib.types.str);
+      description = "Ca url to fetch and trust";
     };
 
     dns.name = lib.mkOption {
@@ -51,17 +51,10 @@
       description = "K3s token";
     };
 
-    dex.http_scheme = lib.mkOption {
-      default = "https";
-      type = lib.types.str;
-      description = "Http protocol for Dex in k3s-paas.";
-    };
-
     dex.dex_client_id = lib.mkOption {
       default = "client-id";
       type = lib.types.str;
       description = "Client ID for Dex";
     };
-
   };
 }

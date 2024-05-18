@@ -4,7 +4,7 @@ on:
     branches:
       - main
     paths:
-      - 'playbook/**.yml'
+      - 'nixos/**.yml'
       - '!**.md'
       - '!playbook/roles/paas/molecule/**'
       - 'packer/**'

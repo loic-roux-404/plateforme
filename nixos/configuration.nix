@@ -6,17 +6,15 @@
 }: 
 
 let
-  dex_hostname = "${config.k3s-paas.dex.http_scheme}://dex.${config.k3s-paas.dns.name}";
+  dex_hostname = "https://dex.${config.k3s-paas.dns.name}";
   k3sTokenFile = pkgs.writeText "token" config.k3s-paas.k3s.token;
-  letsEncryptCa = with config.k3s-paas.letsencrypt; if crt != "" then [crt] else [];
+  certs =  builtins.map (url: builtins.fetchurl { url = url; }) config.k3s-paas.certs;
   certManagerCrds = builtins.fetchurl {
     url = "https://github.com/cert-manager/cert-manager/releases/download/v1.14.4/cert-manager.crds.yaml";
     sha256 = "060bn3gvrr5jphaig1g195prip5rn0x1s7qrp09q47719fgc6636";
   };
   manifests = builtins.filter (d: d != "") [certManagerCrds];
 in {
-  imports = [ ./k3s-paas.nix ];
-
   console = {
     earlySetup = true;
     keyMap = "fr";
@@ -77,8 +75,6 @@ in {
   home-manager.users.${config.k3s-paas.user.name} = {
     xdg.enable = true;
     home.stateVersion = "23.05";
-    home.file.".bashrc".source = lib.mkForce ./bashrc;
-    home.file.".inputrc".source = ./inputrc;
     home.sessionVariables = {
       EDITOR = "vim";
       PAGER = "less -FirSwX";
@@ -86,7 +82,6 @@ in {
     programs.bash = {
       enable = true;
       historyControl = [ "ignoredups" "ignorespace" ];
-      initExtra = "/home/${config.k3s-paas.user.name}/bashrc";
     };
   };
 
@@ -145,7 +140,7 @@ in {
     useDHCP = false;
     firewall = {
       enable = true;
-      allowedTCPPorts = lib.mkForce [80 443 22 6443 32701 9701];
+      allowedTCPPorts = lib.mkForce [80 443 22 6443];
     };
     nftables.enable = true;
     networkmanager.enable = true;
@@ -157,7 +152,7 @@ in {
     wait-online.anyInterface = true;
   };
 
-  security.pki.certificateFiles = letsEncryptCa;
+  security.pki.certificateFiles = certs;
 
   nixpkgs = {
     config = {

@@ -102,4 +102,3 @@ output "token" {
   sensitive = true
   value     = data.kubernetes_secret.waypoint_token.data.token
 }
-

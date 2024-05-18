@@ -1,8 +1,5 @@
 { pkgs, lib, config, ... }:
 {
-  imports = [ 
-    "${builtins.toString ./.}/k3s-paas.nix"
-  ];
   programs.fish.enable = true;
   programs.bash.enable = true;
   environment.systemPackages = [ pkgs.bashInteractive ];
@@ -70,8 +67,8 @@
     pebble = {
       listenAddress = "0.0.0.0:14000";
       managementListenAddress = "0.0.0.0:15000";
-      certificate = pkgs.writeText "pebble-cert" (builtins.readFile ./certs/local.pem);
-      privateKey = pkgs.writeText "pebble-key" (builtins.readFile ./certs/local-key.pem);
+      certificate = pkgs.writeText "pebble-cert" (builtins.readFile ./certs/cert.pem);
+      privateKey = pkgs.writeText "pebble-key" (builtins.readFile ./certs/key.pem);
       httpPort = 80;
       tlsPort = 443;
       ocspResponderURL = "";
@@ -98,7 +95,7 @@
   {
     virtualisation.docker.enable = true;
     virtualisation.docker.daemon.settings = {
-      hosts = [ "tcp://127.0.0.1:2375" ];
+      hosts = [ "tcp://0.0.0.0:2375" ];
     };
     networking.firewall.enable = lib.mkForce false;
     virtualisation.forwardPorts = lib.mkForce [
