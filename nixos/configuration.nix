@@ -2,13 +2,14 @@
   config,
   lib,
   pkgs,
+  stableLegacyPackages,
   ...
 }: 
 
 let
   dex_hostname = "https://dex.${config.k3s-paas.dns.name}";
   k3sTokenFile = pkgs.writeText "token" config.k3s-paas.k3s.token;
-  certs =  builtins.map (url: builtins.fetchurl { url = url; }) config.k3s-paas.certs;
+  certs =  builtins.map (url: builtins.fetchurl { inherit url; }) config.k3s-paas.certs;
   certManagerCrds = builtins.fetchurl {
     url = "https://github.com/cert-manager/cert-manager/releases/download/v1.14.4/cert-manager.crds.yaml";
     sha256 = "060bn3gvrr5jphaig1g195prip5rn0x1s7qrp09q47719fgc6636";
@@ -108,7 +109,7 @@ in {
       wget
       k3s
       kubectl
-      waypoint
+      stableLegacyPackages.waypoint
       tailscale
     ];
   };

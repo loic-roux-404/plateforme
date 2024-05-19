@@ -4,7 +4,6 @@ locals {
   ingress_hosts_internals       = [var.paas_base_domain, local.dex_hostname, var.paas_hostname]
   dex_hostname                  = "dex.${var.paas_base_domain}"
   paas_hostname                 = "paas.${var.paas_base_domain}"
-  api_paas_hostname             = "api.${local.paas_hostname}"
   internal_acme_hostname        = "acme-internal.${var.paas_base_domain}"
 }
 
@@ -15,28 +14,28 @@ data "http" "paas_internal_acme_ca" {
 }
 
 module "metallb" {
-  source           = "./k8s/metallb"
+  source           = "./tf-modules-k8s/metallb"
   metallb_ip_range = var.metallb_ip_range
   for_each         = var.metallb_ip_range != null ? toset(["metallb"]) : toset([])
 }
 
 module "cert_manager" {
   depends_on               = [module.metallb[0]]
-  source                   = "./k8s/cert-manager"
+  source                   = "./tf-modules-k8s/cert-manager"
   internal_acme_ca_content = length(data.http.paas_internal_acme_ca) > 0 ? data.http.paas_internal_acme_ca[0].response_body : null
   cert_manager_acme_url    = replace(local.cert_manager_acme_url, "localhost", local.internal_acme_hostname)
   letsencrypt_env          = var.cert_manager_letsencrypt_env
 }
 
 module "ingress-nginx" {
-  source                      = "./k8s/nginx-ingress-controller"
+  source                      = "./tf-modules-k8s/nginx-ingress-controller"
   cert_manager_cluster_issuer = module.cert_manager.issuer
   paas_base_domain            = var.paas_base_domain
   default_ssl_certificate     = true
 }
 
 module "internal_ca" {
-  source                   = "./k8s/internal-ca"
+  source                   = "./tf-modules-k8s/internal-ca"
   for_each                 = var.cert_manager_letsencrypt_env == "local" ? toset(["internal-ca"]) : toset([])
   internal_acme_hostname   = local.internal_acme_hostname
   internal_acme_network_ip = var.internal_network_ip
@@ -48,7 +47,7 @@ module "dex" {
   depends_on = [
     module.cert_manager.reflector_metadata_name
   ]
-  source                   = "./k8s/dex"
+  source                   = "./tf-modules-k8s/dex"
   dex_namespace            = var.dex_namespace
   dex_hostname             = local.dex_hostname
   dex_client_id            = var.dex_client_id
@@ -66,12 +65,24 @@ module "dex" {
 
 module "paas" {
   depends_on                   = [module.dex.dex_ingress]
-  source                       = "./k8s/waypoint"
+  source                       = "./tf-modules-k8s/waypoint"
   paas_hostname                = local.paas_hostname
   k8s_ingress_class            = var.k8s_ingress_class
   waypoint_extra_volume_mounts = [module.cert_manager.root_ca_config_map_volume_mounts]
   waypoint_extra_volumes       = [module.cert_manager.root_ca_config_map_volume]
   cert_manager_cluster_issuer  = module.cert_manager.issuer
+}
+
+module "paas_config" {
+  source                   = "./tf-modules-k8s/waypoint-config"
+  paas_hostname            = local.paas_hostname
+  paas_token               = module.paas.token
+  dex_hostname             = local.dex_hostname
+  dex_client_id            = var.dex_client_id
+  dex_client_secret        = var.dex_client_secret
+  dex_github_client_team   = var.dex_github_client_team
+  tls_skip_verify          = var.cert_manager_letsencrypt_env == "local"
+  internal_acme_ca_content = length(data.http.paas_internal_acme_ca) > 0 ? data.http.paas_internal_acme_ca[0].response_body : null
 }
 
 output "paas_token" {

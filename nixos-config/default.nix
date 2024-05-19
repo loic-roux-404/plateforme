@@ -3,10 +3,10 @@
 {
   options.k3s-paas = {
 
-    letsencrypt.crt = lib.mkOption {
+    certs = lib.mkOption {
       default = ["https://localhost:15000/intermediates/0"] ;
-      type = lib.types.list (lib.types.str);
-      description = "Ca url to fetch and trust";
+      type = lib.types.listOf (lib.types.str);
+      description = "Ca url to fetch and trust (need to be impure)";
     };
 
     dns.name = lib.mkOption {

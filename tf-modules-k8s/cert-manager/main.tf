@@ -106,7 +106,7 @@ output "root_ca_config_map_volume" {
 output "root_ca_config_map_volume_mounts" {
   value = {
     name      = local.root_ca_config_map
-    mountPath = "/usr/local/share/ca-certificates/ca.crt"
+    mountPath = "/etc/ssl/certs/ca.crt"
     subPath   = "ca.crt"
     readOnly  = true
   }

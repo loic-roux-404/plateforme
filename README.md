@@ -3,6 +3,13 @@
 - [Documentation](https://loic-roux-404.github.io/k3s-paas/)
 - [Original tutorial (FR)](https://github.com/esgi-lyon/paas-tutorial/blob/main/docs/index.md)
 
+Compatibility Matrix :
+
+| OS | Status |
+| --- | --- |
+| Darwin | OK |
+| Linux | missing builder tooling |
+
 ## New Nix system (beta)
 
 ### Setup (Darwin)
@@ -26,6 +33,8 @@ nix develop .#builder --extra-experimental-features flakes \
 
 > For next builds you can discard any `--extra-experimental-features` flags.
 > --refresh is optional, it will force a rebuild of the system.
+
+> **Note:** For local and staging env use --impure flag and NIX_SSL_CERT_FILE=nixos-darwin/certs/cert.pem to fetch urls.
 
 For native linux simply run :
     

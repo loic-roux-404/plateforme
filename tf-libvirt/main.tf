@@ -105,3 +105,25 @@ resource "null_resource" "ensure_started" {
     inline = ["echo 'Vm ${libvirt_domain.machine.id} started'"]
   }
 }
+
+data "healthcheck_http" "k3s" {
+    path = "livez?verbose"
+    status_codes = [200]
+    endpoints = [
+        {
+            name = "k3s-1"
+            address = "127.0.0.1"
+            port = 6443
+        },
+    ]
+}
+
+
+data "healthcheck_filter" "k3s" {
+    up = data.healthcheck_http.k3s.up
+    down = data.healthcheck_http.k3s.down
+}
+
+output "up_k3s_endpoint" {
+  value = data.healthcheck_filter.k3s.up
+}

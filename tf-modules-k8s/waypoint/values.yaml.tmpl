@@ -1,8 +1,16 @@
 server:
+  image:
+    tag: 0.11.4
   cert:
     secretName: ${paas_hostname}-tls
   extraVolumeMounts: ${jsonencode(waypoint_extra_volume_mounts)}
   extraVolumes: ${jsonencode(waypoint_extra_volumes)}
+runner:
+  image:
+    tag: 0.11.4
+odr:
+  image:
+    tag: 0.11.4
 ui:
   service:
     type: NodePort
@@ -17,4 +25,4 @@ ui:
     tls:
       - hosts:
           - "${paas_hostname}"
-        secretName: api.${paas_hostname}-tls
+        secretName: ${paas_hostname}-tls

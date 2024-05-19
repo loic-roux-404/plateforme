@@ -40,7 +40,7 @@
     in
     {
       lib = inputs.nixpkgs-srvos.lib.extend (_: _: {
-        mkDarwinSystem = import ./lib/mkDarwinSystem.nix inputs;
+        mkDarwinSystem = import ./nix-lib/mkDarwinSystem.nix inputs;
       });
 
       overlays = {
@@ -133,23 +133,15 @@
           system = linux;
           modules = attrValues self.nixosModules;
           format = "qcow";
+          specialArgs = {
+            inherit stableLegacyPackages;
+          };
         };
 
         contabo = self.nixosConfigurations.${system}.qcow.override {
           modules = attrValues self.nixosModules ++ [
             ./nixos/contabo.nix
           ];
-        };
-
-        vm-nogui = self.nixosConfigurations.${system}.qcow.override {
-          modules = attrValues self.nixosModules ++ [
-            ./nixos/qemu.nix
-            {
-              virtualisation.host.pkgs = self.legacyPackages.${system};
-              virtualisation.vlans = [ 1 ];
-            }
-          ];
-          format = "vm-nogui";
         };
 
         docker = self.nixosConfigurations.${system}.qcow.override {

@@ -22,6 +22,28 @@ provider "registry.terraform.io/dmacvicar/libvirt" {
   ]
 }
 
+provider "registry.terraform.io/ferlab-ste-justine/healthcheck" {
+  version     = "0.2.0"
+  constraints = "0.2.0"
+  hashes = [
+    "h1:OSknP/lF1OzWBb53Iz8NHw7LoGmppGoIQk2vm97aCfE=",
+    "zh:0007d9c7c9f8a60313352cebc0b8a74bcd1f6d398b7a2868ef5e247293dcbde0",
+    "zh:136a690ca5384128f8849c86f081c7047a85f46ef013b3c103dff60b9736ddcc",
+    "zh:1b087be2c5f35db385260c142321a49f41c7ac8716d5b6d7aea64f0cd7181951",
+    "zh:2a5ee0e17ece8befe15e2c7f18d5d85f9957685a52281cc98d42ac1f45137792",
+    "zh:34b3ba5eef88edd86557654cbda279050d992f38ef67641faac7c735b09bf796",
+    "zh:4210cedcb1d3c443e0079542e8e594e25e718540a0c29bdbe10856e139bb6088",
+    "zh:58f5319f35745d6c59c258baf483c502544993157947f98bac7b7e598156cad2",
+    "zh:5b2bd3740a11e4ce6f8c0a7816fb40dbb997aa92c5c86c047e83dff9115f11e5",
+    "zh:7b1f1fd35278b860572d287ab901c5db7b42209c49410cb861ae0983b7bd00c7",
+    "zh:a0cac8e2256be8f10d9f4e32cf2cc339f40a1cc4727a8627426eff057e46b0f5",
+    "zh:b80e14f05155151565f0fd518acf67fa9f01680c3a02bebe038266759a807912",
+    "zh:ce85acdf165d1788beec47822399db905a98cb050b5df027b72238f913543ad0",
+    "zh:d9ea796153b1a313277e2da8835256d372cecd17b2cae0d657432ba796c6248c",
+    "zh:fedc4074779dbd352d4f1df2f71527dfa66c453e3b16ff84fc95614a81c60bbc",
+  ]
+}
+
 provider "registry.terraform.io/hashicorp/null" {
   version     = "3.2.2"
   constraints = "3.2.2"

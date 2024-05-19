@@ -63,10 +63,6 @@ variable "paas_hostname" {
   default = "paas.k3s.test"
 }
 
-variable "api_paas_hostname" {
-  default = "api.k3s.test"
-}
-
 variable "k8s_ingress_class" {
   default     = "nginx"
   description = "ingress class"
@@ -98,10 +94,6 @@ variable "letsencrypt_envs_ca_certs" {
     staging = "https://letsencrypt.org/certs/staging/letsencrypt-stg-root-x1.pem"
     prod    = null
   }
-}
-
-variable "paas_internal_acme_ca_file" {
-  default = "/etc/ssl/certs/acmeca.crt"
 }
 
 variable "metallb_ip_range" {
