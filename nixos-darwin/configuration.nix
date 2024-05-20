@@ -97,8 +97,7 @@
     maxJobs = 8;
     package = pkgs.darwin.linux-builder-x86_64;
     ephemeral = true;
-    config = ({ pkgs, ... }:
-    {
+    config = ({ pkgs, ... }: {
       virtualisation.docker.enable = true;
       virtualisation.docker.daemon.settings = {
         hosts = [ "tcp://0.0.0.0:2375" ];

@@ -120,6 +120,12 @@ cntb get instances
 
 ## Apply
 
+Init all terraform providers and modules.
+
+```bash
+make init
+```
+
 ### Cloud (contabo)
 
 ```bash

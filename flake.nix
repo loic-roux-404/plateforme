@@ -83,17 +83,8 @@
       };
 
       darwinConfigurations = {
-        # Minimal macOS configurations to bootstrap systems
-        bootstrap-x86 = makeOverridable darwin.lib.darwinSystem {
-          system = "x86_64-darwin";
-          modules = [ ./nixos/darwin.nix { nixpkgs = nixpkgsDefaults; } ];
-        };
-        bootstrap-arm = self.darwinConfigurations.bootstrap-x86.override {
-          system = "aarch64-darwin";
-        };
-
-        # My Apple Silicon macOS laptop config
-        k3s-paas-host = makeOverridable self.lib.mkDarwinSystem ({
+        default = self.darwinConfigurations.builder;
+        builder = makeOverridable self.lib.mkDarwinSystem ({
           modules = attrValues self.darwinModules ++ singleton {
             nixpkgs = nixpkgsDefaults;
             nix.registry.my.flake = inputs.self;
@@ -173,15 +164,15 @@
             '';
           };
 
-          builder = pkgs.mkShell {
+          builder = makeOverridable pkgs.mkShell {
             name = "builder";
             packages = attrValues {
               inherit (pkgs) nil bashInteractive;
-            };  
+            };
             shellHook = (if pkgs.system == "aarch64-darwin" then ''
-              nix build .#darwinConfigurations.k3s-paas-host.system
-              ./result/sw/bin/darwin-rebuild switch --flake .#k3s-paas-host
-            '' else "");
+              nix build .#darwinConfigurations.builder.system
+              ./result/sw/bin/darwin-rebuild switch --flake .#builder
+              '' else "echo 'Linux not implemented'");
           };
         };
     });

@@ -12,7 +12,7 @@ bootstrap:
 	@$(BUILDER_EXEC) echo "Started build environment"
 
 build:
-	@$(BUILDER_EXEC) nix build .#nixosConfigurations.aarch64-darwin.default --system x86_64-linux $(ARGS)
+	@$(BUILDER_EXEC) nix build .#nixosConfigurations.x86_64-darwin.default --system x86_64-linux $(ARGS)
 
 #### Terraform
 
@@ -33,4 +33,4 @@ $(TF_ROOT_DIRS_DESTROY):
 	@$(eval DIR:=$(subst -destroy,,$@))
 	@terraform -chdir=$(DIR) destroy -auto-approve $(ARGS)
 
-.PHONY: build bootstrap init $(TF_ROOT_DIRS) $(TF_ROOT_DIRS_DESTROY) $(TF_ROOT_DIRS_INIT) trust-ca
+.PHONY: build bootstrap init $(TF_ROOT_DIRS) $(TF_ROOT_DIRS_DESTROY) $(TF_ROOT_DIRS_INIT)
