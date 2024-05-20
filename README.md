@@ -17,7 +17,9 @@ Compatibility Matrix :
 Nix installation :
 
 ```bash
-sh <(curl -L https://nixos.org/nix/install)
+curl --proto '=https' --tlsv1.2 -sSf -L https://install.determinate.systems/nix | sh -s -- install
+
+echo '. /nix/var/nix/profiles/default/etc/profile.d/nix-daemon.fish' >> ~/.config/fish/config.fish
 ```
 
 ### Build

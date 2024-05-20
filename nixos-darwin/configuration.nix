@@ -1,17 +1,13 @@
-{ pkgs, lib, config, ... }:
+{ pkgs,
+  lib,
+  config, 
+  linux-builder-config ? ({ pkgs, ... }: {}),
+  ... }:
 {
-  imports = [
-    ./linux-builder.nix
-  ];
   programs.fish.enable = true;
   programs.bash.enable = true;
   environment.systemPackages = [ pkgs.bashInteractive ];
-  launchd.daemons.linux-builder = {
-    serviceConfig = {
-      StandardOutPath = "/var/log/darwin-builder.log";
-      StandardErrorPath = "/var/log/darwin-builder.log";
-    };
-  };
+
   services.dnsmasq = {
     enable = true;
     addresses = {
@@ -69,7 +65,7 @@
   security.pki.certificateFiles = [
     "${pkgs.cacert}/etc/ssl/certs/ca-bundle.crt"
     ./pebble/cert.pem
-  ] ++ builtins.map (cert: builtins.fetchurl { inherit (cert) url sha256; }) config.k3s-paas.certs;
+  ];
   environment.etc."pebble/config.json".text = builtins.toJSON {
     pebble = {
       listenAddress = "0.0.0.0:14000";
@@ -84,37 +80,29 @@
   };
   environment.etc."resolver/${config.k3s-paas.dns.name}".text = "nameserver ${config.k3s-paas.dns.dest-ip}";
   nix.settings = {
-    trusted-users = [ "staff" "admin" "nixbld"];
+    trusted-users = [ "staff" "admin" "nixbld" "loic"];
     keep-derivations = true;
     keep-outputs = false;
     # https://github.com/NixOS/nix/issues/7273
     auto-optimise-store = false;
+    system-features = [
+      "nixos-test"
+      "apple-virt"
+    ];
   };
   nix.gc = {
     automatic = true;
     interval = { Weekday = 0; Hour = 0; Minute = 0; };
     options = "--delete-older-than 30d";
   };
-  nix.linux-builder-custom = {
+  nix.linux-builder = {
     enable = true;
     maxJobs = 8;
+    package = pkgs.darwin.linux-builder-x86_64;
     ephemeral = true;
-    config = ({ pkgs, ... }: {
-      virtualisation.docker.enable = true;
-      virtualisation.docker.daemon.settings = {
-        hosts = [ "tcp://0.0.0.0:2375" ];
-      };
-      networking.firewall.enable = lib.mkForce false;
-      virtualisation.forwardPorts = lib.mkForce [
-        { from = "host"; guest.port = 22; host.port = 31022; }
-        { from = "host"; guest.port = 2375; host.port = 2375; }
-      ];
-      security.sudo.wheelNeedsPassword = false;
-      users.users.builder.extraGroups = lib.mkForce [ "docker" "wheel" ];
-    });
+    config = linux-builder-config;
   };
   nix.configureBuildUsers = true;
-  nix.distributedBuilds = true;
   services.nix-daemon.enable = true;
   nix.settings.experimental-features = "nix-command flakes";
 }

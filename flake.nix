@@ -39,7 +39,7 @@
       };
     in
     {
-      lib = inputs.nixpkgs-srvos.lib.extend (_: _: {
+      lib = inputs.nixpkgs-stable-darwin.lib.extend (_: _: {
         mkDarwinSystem = import ./nix-lib/mkDarwinSystem.nix inputs;
       });
 
@@ -91,6 +91,13 @@
           };
           extraModules = singleton {};
         });
+
+        # Need a bare darwinConfigurations.builder started before building this one.
+        builder-docker = self.darwinConfigurations.builder.override {
+          specialArgs = {
+            linux-builder-config = ./nixos-darwin/linux-builder-docker.nix;
+          };
+        };
 
         # Config with small modifications needed/desired for CI with GitHub workflow
         githubCI = self.darwinConfigurations.k3s-paas-host.override {
@@ -155,21 +162,35 @@
           default = pkgs.mkShell {
             name = "default";
             packages = attrValues {
-              inherit (pkgs) bashInteractive kubectl nil pebble jq grpcurl
-              e2fsprogs coreutils libvirt qemu tailscale kubernetes-helm docker-client cntb;
+              inherit (pkgs) bashInteractive docker-client kubectl nil pebble jq grpcurl
+              e2fsprogs coreutils libvirt qemu tailscale kubernetes-helm cntb;
               inherit (stablePkgs) terraform nix-tree waypoint;
             };
             shellHook = ''
+            export DOCKER_HOST=tcp://127.0.0.1:2375
+            '';
+          };
+
+          builder-docker = pkgs.mkShell {
+            name = "docker";
+            packages = attrValues {
+              inherit (pkgs) bashInteractive docker-client;
+            };
+            shellHook = ''
+              set -e
+              nix build .#darwinConfigurations.builder-docker.system
+              ./result/sw/bin/darwin-rebuild switch --flake .#builder-docker
               export DOCKER_HOST=tcp://127.0.0.1:2375
             '';
           };
 
-          builder = makeOverridable pkgs.mkShell {
+          builder = pkgs.mkShell {
             name = "builder";
             packages = attrValues {
               inherit (pkgs) nil bashInteractive;
             };
             shellHook = (if pkgs.system == "aarch64-darwin" then ''
+              set -e
               nix build .#darwinConfigurations.builder.system
               ./result/sw/bin/darwin-rebuild switch --flake .#builder
               '' else "echo 'Linux not implemented'");

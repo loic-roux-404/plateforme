@@ -2,17 +2,16 @@ SHELL:=/usr/bin/env bash
 MAKEFLAGS += --no-builtin-rules --no-builtin-variables
 
 BUILDER_EXEC:=
-ADD_CERT_CMD:=cp /tmp/pebble-ca.pem /etc/ssl/certs/pebble-ca.pem
+
 ifeq ($(shell uname -s),Darwin)
-   # set variable for Darwin
-   BUILDER_EXEC:=nix develop .\#builder --extra-experimental-features flakes --extra-experimental-features nix-command --command
+   BUILDER_EXEC:=NIX_CONF_DIR=$(PWD)/bootstrap nix develop .\#builder --command
 endif
 
 bootstrap:
 	@$(BUILDER_EXEC) echo "Started build environment"
 
 build:
-	@$(BUILDER_EXEC) nix build .#nixosConfigurations.x86_64-darwin.default --system x86_64-linux $(ARGS)
+	@$(BUILDER_EXEC) nix build .#nixosConfigurations.aarch64-darwin.default --system aarch64-linux $(ARGS)
 
 #### Terraform
 
