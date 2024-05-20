@@ -95,19 +95,19 @@ output "reflector_metadata_name" {
 }
 
 output "root_ca_config_map_volume" {
-  value = {
+  value = local.root_ca_config_map != null ? [{
     name = local.root_ca_config_map
     configMap = {
       name = local.root_ca_config_map
     }
-  }
+  }] : []
 }
 
 output "root_ca_config_map_volume_mounts" {
-  value = {
+  value = local.root_ca_config_map != null ? [{
     name      = local.root_ca_config_map
     mountPath = "/etc/ssl/certs/ca.crt"
     subPath   = "ca.crt"
     readOnly  = true
-  }
+  }] : []
 }

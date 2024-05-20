@@ -43,20 +43,25 @@ module "internal_ca" {
   ingress_controller_ip    = module.ingress-nginx.ingress_controller_ip
 }
 
+module "github" {
+  source = "./tf-modules-k8s/github"
+  github_token = var.github_token
+  github_organization = var.github_organization
+  github_team = var.github_team
+}
+
 module "dex" {
   depends_on = [
     module.cert_manager.reflector_metadata_name
   ]
-  source                   = "./tf-modules-k8s/dex"
-  dex_namespace            = var.dex_namespace
-  dex_hostname             = local.dex_hostname
-  dex_client_id            = var.dex_client_id
-  dex_client_secret        = var.dex_client_secret
-  dex_github_client_id     = var.dex_github_client_id
-  dex_github_client_secret = var.dex_github_client_secret
+  source               = "./tf-modules-k8s/dex"
+  dex_namespace        = var.dex_namespace
+  dex_hostname         = local.dex_hostname
+  github_client_id     = var.github_client_id
+  github_client_secret = var.github_client_secret
   dex_github_orgs = [{
-    name  = var.dex_github_client_org
-    teams = [var.dex_github_client_team]
+    name  = var.github_organization
+    teams = [module.github.team_name]
   }]
   k8s_ingress_class           = var.k8s_ingress_class
   paas_hostname               = local.paas_hostname
@@ -68,8 +73,8 @@ module "paas" {
   source                       = "./tf-modules-k8s/waypoint"
   paas_hostname                = local.paas_hostname
   k8s_ingress_class            = var.k8s_ingress_class
-  waypoint_extra_volume_mounts = [module.cert_manager.root_ca_config_map_volume_mounts]
-  waypoint_extra_volumes       = [module.cert_manager.root_ca_config_map_volume]
+  waypoint_extra_volume_mounts = module.cert_manager.root_ca_config_map_volume_mounts
+  waypoint_extra_volumes       = module.cert_manager.root_ca_config_map_volume
   cert_manager_cluster_issuer  = module.cert_manager.issuer
 }
 
@@ -78,9 +83,9 @@ module "paas_config" {
   paas_hostname            = local.paas_hostname
   paas_token               = module.paas.token
   dex_hostname             = local.dex_hostname
-  dex_client_id            = var.dex_client_id
-  dex_client_secret        = var.dex_client_secret
-  dex_github_client_team   = var.dex_github_client_team
+  dex_client_id            = module.dex.dex_client_id
+  dex_client_secret        = module.dex.dex_client_secret
+  github_team              = var.github_team
   tls_skip_verify          = var.cert_manager_letsencrypt_env == "local"
   internal_acme_ca_content = length(data.http.paas_internal_acme_ca) > 0 ? data.http.paas_internal_acme_ca[0].response_body : null
 }

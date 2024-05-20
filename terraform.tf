@@ -12,10 +12,10 @@ terraform {
       source  = "hashicorp/random"
       version = "3.6.1"
     }
-    # contabo = {
-    #   source = "contabo/contabo"
-    #   version = ">= 0.1.23"
-    # }
+    github = {
+      source  = "integrations/github"
+      version = "~> 6.0"
+    }
   }
 }
 

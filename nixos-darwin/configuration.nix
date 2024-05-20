@@ -63,12 +63,15 @@
     dynamic_ownership = 0
     remember_owner = 0
   '';
+  security.pki.certificateFiles = [
+    ./pebble/cert.pem
+  ] ++ builtins.map (cert: builtins.fetchurl { inherit (cert) url sha256; }) config.k3s-paas.certs;
   environment.etc."pebble/config.json".text = builtins.toJSON {
     pebble = {
       listenAddress = "0.0.0.0:14000";
       managementListenAddress = "0.0.0.0:15000";
-      certificate = pkgs.writeText "pebble-cert" (builtins.readFile ./certs/cert.pem);
-      privateKey = pkgs.writeText "pebble-key" (builtins.readFile ./certs/key.pem);
+      certificate = pkgs.writeText "pebble-cert" (builtins.readFile ./pebble/cert.pem);
+      privateKey = pkgs.writeText "pebble-key" (builtins.readFile ./pebble/key.pem);
       httpPort = 80;
       tlsPort = 443;
       ocspResponderURL = "";

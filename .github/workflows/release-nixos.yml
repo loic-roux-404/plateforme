@@ -26,6 +26,8 @@ jobs:
 
       - uses: cachix/install-nix-action@v25
         with:
+          extra_nix_config: |
+            experimental-features = nix-command flakes
           github_access_token: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Set outputs
@@ -34,7 +36,7 @@ jobs:
 
       - name: Build
         id: build
-        run: nix build .#nixosConfigurations.aarch64-darwin.default
+        run: .#nixosConfigurations.x86_64-linux.contabo
           
       - name: Release
         uses: softprops/action-gh-release@v1

@@ -34,7 +34,8 @@ nix develop .#builder --extra-experimental-features flakes \
 > For next builds you can discard any `--extra-experimental-features` flags.
 > --refresh is optional, it will force a rebuild of the system.
 
-> **Note:** For local and staging env use --impure flag and NIX_SSL_CERT_FILE=nixos-darwin/certs/cert.pem to fetch urls.
+> **Note:** For local and staging env use --impure flag and NIX_SSL_CERT_FILE=nixos-darwin/pebble/cert.pem to fetch urls.
+> A shortcut is `make build ARGS=--impure`
 
 For native linux simply run :
     
@@ -63,8 +64,8 @@ sudo dscacheutil -flushcache; sudo killall -HUP mDNSResponder
 Bootrap local vm :
 
 ```bash
-terraform -chdir=libvirt init
-terraform -chdir=libvirt apply -auto-approve
+terraform -chdir=tf-root-libvirt init
+terraform -chdir=tf-root-libvirt apply -auto-approve
 ```
 
 Setup k8s modules :
@@ -72,6 +73,58 @@ Setup k8s modules :
 ```bash
 terraform init
 terraform apply -auto-approve
+```
+
+## Terraform variables
+
+### 1. Contabo (VPS)
+
+**contabo_credentials** :
+
+```hcl
+contabo_credentials = {
+  oauth2_client_id     = "client-id"
+  oauth2_client_secret = "secret"
+  oauth2_pass          = "password!"
+  oauth2_user = "mail@mail"
+}
+```
+
+Seek for credentials in [API](https://my.contabo.com/api/details) 
+
+**`contabo_instance` :**
+
+```bash
+cntb config set-credentials --oauth2-clientid id --oauth2-client-secret secret --oauth2-password "contabo-dashboard-pass"
+cntb get instances
+```
+
+### 2. Gandi (domain)
+
+- **`paas_base_domain`** : Order a domain on [gandi](https://www.gandi.net)
+- **`gandi_token`** : Generate a Personal Access Token on [gandi organisation](https://admin.gandi.net/organizations/)
+
+> **Warn :** Delete `@` record for your domain on [gandi](https://admin.gandi.net/domain/)
+
+### 3. Tailscale (SSH VPN)
+
+**`tailscale_api_key`** : Register on tailscale and get key on [admin console](https://login.tailscale.com/admin/settings/keys)
+**`tailscale_trusted_device`** : Approve your device on tailscale with **`tailscale login`** and recover its tailscale hostname.
+
+### 4. Github (Authentication & users)
+
+**`github_token`** : https://github.com/settings/tokens and create a token with scopes `repo`, `user` and `admin`.
+**`github_client_id`** : Create a new OAuth App.
+**`github_client_secret`** : On new OAuth App ask for a new client secret.
+
+### 5. Cert-manager (TLS)
+
+**`cert_manager_email`** : a valid email to register on letsencrypt.
+
+### Apply
+
+```bash
+make . ARGS='-var-file=.prod.tfvars'
 ```
 
 ## Quick links
@@ -151,8 +204,7 @@ openssl passwd -salt zizou -6 zizou420!
 ### Trust pebble cert
 
 ```bash
-curl -k https://localhost:15000/intermediates/0 > /tmp/pebble-ca.pem
-sudo security add-trusted-cert -d -r trustAsRoot -k /Library/Keychains/System.keychain /tmp/pebble-ca.pem
+make trust-ca
 ```
 
 ### SSH

@@ -6,7 +6,6 @@ MAKEFLAGS += --no-builtin-rules --no-builtin-variables
 TF_VAR_cert_manager_email?=test@k3s.test
 export TF_VAR_cert_manager_email
 # Validate nix localhost non secure connection
-export NIX_SSL_CERT_FILE=nixos-darwin/certs/cert.pem
 
 BUILDER_EXEC:=
 ADD_CERT_CMD:=cp /tmp/pebble-ca.pem /etc/ssl/certs/pebble-ca.pem
@@ -16,31 +15,33 @@ ifeq ($(shell uname -s),Darwin)
    ADD_CERT_CMD:=sudo security add-trusted-cert -d -r trustAsRoot -k /Library/Keychains/System.keychain /tmp/pebble-ca.pem
 endif
 
-init:
-	@terraform init -upgrade
-	@terraform -chdir=tf-libvirt init -upgrade
-
 bootstrap:
 	@$(BUILDER_EXEC) echo "Started build environment"
 
 build:
 	@$(BUILDER_EXEC) nix build .#nixosConfigurations.aarch64-darwin.default --system aarch64-linux $(ARGS)
 
-vm:
-	@terraform -chdir=tf-libvirt apply -auto-approve
-	@ssh zizou@localhost -p 2222 'sudo cat /etc/rancher/k3s/k3s.yaml' > ~/.kube/config
+#### Terraform
 
-vm-destroy:
-	@terraform -chdir=tf-libvirt destroy -auto-approve
+TF_ROOT_DIRS := $(wildcard tf-root-*) .
+TF_ROOT_DIRS_DESTROY:=$(addsuffix -destroy, $(TF_ROOT_DIRS))
+TF_ROOT_DIRS_INIT:=$(addsuffix -init, $(TF_ROOT_DIRS))
 
-infra:
-	@terraform apply -auto-approve $(ARGS)
+init: $(TF_ROOT_DIRS_INIT)
 
-infra-destroy:
-	@terraform destroy -auto-approve $(ARGS)
+$(TF_ROOT_DIRS_INIT):
+	@$(eval DIR:=$(subst -init,,$@))
+	terraform -chdir=$(DIR) init -upgrade $(ARGS)
+
+$(TF_ROOT_DIRS):
+	@terraform -chdir=$@ apply -compact-warnings -auto-approve $(ARGS)
+
+$(TF_ROOT_DIRS_DESTROY):
+	@$(eval DIR:=$(subst -destroy,,$@))
+	@terraform -chdir=$(DIR) destroy -auto-approve $(ARGS)
 
 trust-ca:
 	@curl -k https://localhost:15000/intermediates/0 > /tmp/pebble-ca.pem
 	@$(ADD_CERT_CMD)
 
-.PHONY: init build vm vm-destroy infra oidc oidc-destroy infra-destroy trust-ca
+.PHONY: build bootstrap init $(TF_ROOT_DIRS) $(TF_ROOT_DIRS_DESTROY) $(TF_ROOT_DIRS_INIT) trust-ca

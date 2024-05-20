@@ -70,7 +70,7 @@
       };
 
       darwinModules = {
-        config = ./nixos-config/default.nix;
+        config = ./nixos-options/default.nix;
         os = ./nixos-darwin/configuration.nix;
       };
 
@@ -79,7 +79,7 @@
         server = srvos.nixosModules.server;
         home-manager = inputs.home-manager.nixosModules.home-manager;
         os = ./nixos/configuration.nix;
-        config = ./nixos-config/default.nix;
+        config = ./nixos-options/default.nix;
       };
 
       darwinConfigurations = {
@@ -165,8 +165,8 @@
             name = "default";
             packages = attrValues {
               inherit (pkgs) bashInteractive kubectl nil pebble jq grpcurl
-              e2fsprogs coreutils libvirt qemu tailscale kubernetes-helm docker-client;
-              inherit (stablePkgs) terraform nix-tree waypoint mitmproxy;
+              e2fsprogs coreutils libvirt qemu tailscale kubernetes-helm docker-client cntb;
+              inherit (stablePkgs) terraform nix-tree waypoint;
             };
             shellHook = ''
               export DOCKER_HOST=tcp://127.0.0.1:2375

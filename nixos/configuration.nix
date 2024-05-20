@@ -8,8 +8,7 @@
 
 let
   dex_hostname = "https://dex.${config.k3s-paas.dns.name}";
-  k3sTokenFile = pkgs.writeText "token" config.k3s-paas.k3s.token;
-  certs =  builtins.map (url: builtins.fetchurl { inherit url; }) config.k3s-paas.certs;
+  certs =  builtins.map (cert: builtins.fetchurl { inherit (cert) url sha256; }) config.k3s-paas.certs;
   certManagerCrds = builtins.fetchurl {
     url = "https://github.com/cert-manager/cert-manager/releases/download/v1.14.4/cert-manager.crds.yaml";
     sha256 = "060bn3gvrr5jphaig1g195prip5rn0x1s7qrp09q47719fgc6636";
@@ -28,9 +27,16 @@ in {
       fsType = "vfat";
     };
 
+  swapDevices = [ {
+    device = "/var/lib/swapfile";
+    size = 16 * 1024;
+  } ];
+
   boot.loader.systemd-boot.consoleMode = "auto";
 
   system.stateVersion = "23.05";
+  # FIXME: when branch is merged, uncomment the following line
+  # system.autoUpgrade.flake = "github:loic-roux-404/k3s-paas#nixosConfigurations.${pkgs.system}.default";
 
   time = {
     timeZone = lib.mkForce "Europe/Paris";
@@ -57,7 +63,6 @@ in {
     k3s = {
       enable = true;
       role = "server";
-      tokenFile = k3sTokenFile;
       extraFlags = with config.k3s-paas; toString [
         "--kube-apiserver-arg authorization-mode=Node,RBAC"
         "--kube-apiserver-arg oidc-issuer-url=${dex_hostname}"

@@ -4,8 +4,11 @@
   options.k3s-paas = {
 
     certs = lib.mkOption {
-      default = ["https://localhost:15000/intermediates/0"] ;
-      type = lib.types.listOf (lib.types.str);
+      default = [{
+        url = "https://localhost:15000/intermediates/0";
+        sha256 = "1vcm965pnkv24vgqg85qg8bjw10a5wr8rrnahm50yphak6jgxcmx";
+      }];
+      type = lib.types.listOf (lib.types.attrs);
       description = "Ca url to fetch and trust (need to be impure)";
     };
 
@@ -18,7 +21,7 @@
     dns.dest-ip = lib.mkOption {
       default = "127.0.0.1";
       type = lib.types.str;
-      description = "Target IP address for dns.name";
+      description = "Target IP address for dns.name (only in local dev)";
     };
 
     user.name = lib.mkOption {
@@ -43,12 +46,6 @@
       default = "traefik";
       type = lib.types.str;
       description = "Disable k3s services eg: traefik,servicelb";
-    };
-
-    k3s.token = lib.mkOption {
-      default = "example-token";
-      type = lib.types.str;
-      description = "K3s token";
     };
 
     dex.dex_client_id = lib.mkOption {

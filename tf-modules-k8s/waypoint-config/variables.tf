@@ -8,15 +8,6 @@ variable "paas_token" {
   type = string
 }
 
-variable "dex_github_orgs" {
-  description = "Github Orgs for Dex OIDC Connector"
-  type        = list(object({
-    name = string
-    teams    = list(string)
-  }))
-  default     = []
-}
-
 variable "dex_hostname" {
   description = "Hostname for DEX"
   type        = string
@@ -32,16 +23,16 @@ variable "dex_client_secret" {
   type        = string
 }
 
-variable "dex_github_client_org" {
-  default = "esgi-immo-scanner"
+variable "github_organization" {
+  default = "org-404"
 }
 
-variable "dex_github_client_team" {
+variable "github_team" {
   default = "ops-team"
 }
 
 variable "tls_skip_verify" {
-  default = true
+  default = false
 }
 
 variable "internal_acme_ca_content" {

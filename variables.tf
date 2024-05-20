@@ -1,8 +1,3 @@
-variable "platform" {
-  description = "The platform to deploy the infrastructure"
-  default     = "libvirt"
-}
-
 variable "k3s_token" {
   default = "example-token"
 }
@@ -31,27 +26,24 @@ variable "dex_namespace" {
   default = "dex"
 }
 
-variable "dex_client_id" {
-  default = "paas"
+variable "github_token" {
+  sensitive = true
+  type = string
 }
 
-variable "dex_client_secret" {
-  default = "dex-client-secret"
-}
-
-variable "dex_github_client_id" {
+variable "github_client_id" {
   default = "client-id-example"
 }
 
-variable "dex_github_client_secret" {
+variable "github_client_secret" {
   default = "secret-example"
 }
 
-variable "dex_github_client_org" {
-  default = "esgi-immo-scanner"
+variable "github_organization" {
+  default = "org-404"
 }
 
-variable "dex_github_client_team" {
+variable "github_team" {
   default = "ops-team"
 }
 

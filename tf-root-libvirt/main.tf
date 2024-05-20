@@ -106,6 +106,15 @@ resource "null_resource" "ensure_started" {
   }
 }
 
+resource "null_resource" "copy_k3s_config" {
+  triggers = {
+    domain_id = libvirt_domain.machine.id
+  }
+  provisioner "local-exec" {
+    command = "ssh ${var.ssh_connection.user}@localhost -p 2222 'sudo cat /etc/rancher/k3s/k3s.yaml' > ~/.kube/config"
+  }
+}
+
 data "healthcheck_http" "k3s" {
     path = "livez?verbose"
     status_codes = [200]
@@ -117,7 +126,6 @@ data "healthcheck_http" "k3s" {
         },
     ]
 }
-
 
 data "healthcheck_filter" "k3s" {
     up = data.healthcheck_http.k3s.up

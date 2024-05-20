@@ -7,12 +7,12 @@ variable "dex_hostname" {
   type        = string
 }
 
-variable "dex_github_client_id" {
+variable "github_client_id" {
   description = "GitHub client ID for DEX"
   type        = string
 }
 
-variable "dex_github_client_secret" {
+variable "github_client_secret" {
   description = "GitHub client secret for DEX"
   type        = string
 }
@@ -26,18 +26,8 @@ variable "dex_github_orgs" {
   default     = []
 }
 
-variable "dex_client_id" {
-  description = "Client ID for DEX"
-  type        = string
-}
-
 variable "paas_hostname" {
   description = "Hostname for paas"
-  type        = string
-}
-
-variable "dex_client_secret" {
-  description = "Client secret for DEX"
   type        = string
 }
 
