@@ -64,6 +64,7 @@
     remember_owner = 0
   '';
   security.pki.certificateFiles = [
+    "${pkgs.cacert}/etc/ssl/certs/ca-bundle.crt"
     ./pebble/cert.pem
   ] ++ builtins.map (cert: builtins.fetchurl { inherit (cert) url sha256; }) config.k3s-paas.certs;
   environment.etc."pebble/config.json".text = builtins.toJSON {
@@ -91,23 +92,26 @@
     interval = { Weekday = 0; Hour = 0; Minute = 0; };
     options = "--delete-older-than 30d";
   };
-  nix.linux-builder.enable = true;
-  nix.linux-builder.maxJobs = 8;
-  nix.linux-builder.ephemeral = true;
-  nix.linux-builder.config = ({ pkgs, ... }:
-  {
-    virtualisation.docker.enable = true;
-    virtualisation.docker.daemon.settings = {
-      hosts = [ "tcp://0.0.0.0:2375" ];
-    };
-    networking.firewall.enable = lib.mkForce false;
-    virtualisation.forwardPorts = lib.mkForce [
-      { from = "host"; guest.port = 22; host.port = 31022; }
-      { from = "host"; guest.port = 2375; host.port = 2375; }
-    ];
-    security.sudo.wheelNeedsPassword = false;
-    users.users.builder.extraGroups = lib.mkForce [ "docker" "wheel" ];
-  });
+  nix.linux-builder = {
+    enable = true;
+    maxJobs = 8;
+    package = pkgs.darwin.linux-builder-x86_64;
+    ephemeral = true;
+    config = ({ pkgs, ... }:
+    {
+      virtualisation.docker.enable = true;
+      virtualisation.docker.daemon.settings = {
+        hosts = [ "tcp://0.0.0.0:2375" ];
+      };
+      networking.firewall.enable = lib.mkForce false;
+      virtualisation.forwardPorts = lib.mkForce [
+        { from = "host"; guest.port = 22; host.port = 31022; }
+        { from = "host"; guest.port = 2375; host.port = 2375; }
+      ];
+      security.sudo.wheelNeedsPassword = false;
+      users.users.builder.extraGroups = lib.mkForce [ "docker" "wheel" ];
+    });
+  };
   nix.configureBuildUsers = true;
   nix.distributedBuilds = true;
   services.nix-daemon.enable = true;

@@ -34,9 +34,6 @@ nix develop .#builder --extra-experimental-features flakes \
 > For next builds you can discard any `--extra-experimental-features` flags.
 > --refresh is optional, it will force a rebuild of the system.
 
-> **Note:** For local and staging env use --impure flag and NIX_SSL_CERT_FILE=nixos-darwin/pebble/cert.pem to fetch urls.
-> A shortcut is `make build ARGS=--impure`
-
 For native linux simply run :
     
 ```bash
@@ -121,21 +118,21 @@ cntb get instances
 
 **`cert_manager_email`** : a valid email to register on letsencrypt.
 
-### Apply
+## Apply
+
+### Cloud (contabo)
 
 ```bash
-make . ARGS='-var-file=.prod.tfvars'
+make tf-root-contabo ARGS=-var-file=$PWD/.prod.tfvars
 ```
 
-## Quick links
+### infra (k8s)
+
+```bash
+make . ARGS=-var-file=.prod.tfvars
+```
 
 ## Cheat Sheet
-
-## Recover kubeconfig
-
-```bash
-ssh zizou@localhost -p 2222 'sudo cat /etc/rancher/k3s/k3s.yaml' > ~/.kube/config
-```
 
 ## Nix
 
@@ -201,25 +198,16 @@ Generate a sha512crypt password :
 openssl passwd -salt zizou -6 zizou420!
 ```
 
-### Trust pebble cert
-
-```bash
-make trust-ca
-```
-
-### SSH
-
-Remove destroyed vm from ssh known hosts :
-
-```bash
-ssh-keygen -R [127.0.0.1]:2222
-ssh-keygen -R [localhost]:2222
-```
-
 ### Kubectl
 
 See all pods :
 
 ```bash
 kubectl get po -A
+```
+
+See any assets :
+
+```bash
+kubectl get all -A
 ```
