@@ -1,5 +1,8 @@
 { pkgs, lib, config, ... }:
 {
+  imports = [
+    ./linux-builder.nix
+  ];
   programs.fish.enable = true;
   programs.bash.enable = true;
   environment.systemPackages = [ pkgs.bashInteractive ];
@@ -92,10 +95,9 @@
     interval = { Weekday = 0; Hour = 0; Minute = 0; };
     options = "--delete-older-than 30d";
   };
-  nix.linux-builder = {
+  nix.linux-builder-custom = {
     enable = true;
     maxJobs = 8;
-    package = pkgs.darwin.linux-builder-x86_64;
     ephemeral = true;
     config = ({ pkgs, ... }: {
       virtualisation.docker.enable = true;
