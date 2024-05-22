@@ -1,3 +1,0 @@
-ansible==7.3.0
-PyYAML
-kubernetes

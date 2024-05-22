@@ -1,0 +1,57 @@
+name: Release Nix image
+on:
+  push:
+    branches:
+      - main
+    paths:
+      - 'nixos/**.nix'
+      - 'nixos-options/**.nix'
+      - flake.nix
+      - flake.lock
+      - '!**.md'
+      - 'packer/**'
+      - .github/workflows/release-nixos.yml
+
+permissions:
+  contents: write
+  discussions: write
+
+jobs:
+  gh-release-packer:
+    runs-on: ubuntu-latest
+    name: Release nix image
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v3
+        with:
+          fetch-depth: 0
+
+      - uses: cachix/install-nix-action@v25
+        with:
+          extra_nix_config: |
+            experimental-features = nix-command flakes
+          github_access_token: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Restore and cache Nix store
+        uses: nix-community/cache-nix-action@v5
+        with:
+          primary-key: nix-${{ runner.os }}-${{ hashFiles('**/*.nix') }}
+          restore-prefixes-first-match: nix-${{ runner.os }}-
+          gc-max-store-size-linux: 1073741824
+
+      - name: Set outputs
+        id: vars
+        run: echo "sha_short=$(git rev-parse --short HEAD)" >> $GITHUB_OUTPUT
+
+      - name: Build
+        id: build
+        run: nix build .#nixosConfigurations.x86_64-linux.contabo
+          
+      - name: Release
+        uses: softprops/action-gh-release@v1
+        with:
+          tag_name: nixos-${{ steps.vars.outputs.sha_short }}
+          token: "${{ secrets.GITHUB_TOKEN }}"
+          generate_release_notes: true
+          files: |
+            result/

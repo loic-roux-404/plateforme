@@ -9,9 +9,9 @@ indent_size = 4
 end_of_line = lf
 charset = utf-8
 trim_trailing_whitespace = false
-insert_final_newline = false
+insert_final_newline = true
 
-[*.{yml,yaml,yml.*,yaml.*}]
+[*.{yml,yaml,yml.*,yaml.*,xslt.*,*.xslt}]
 indent_size = 2
 
 [*.{hcl,tf,tfvars,tfvars.*}]
@@ -19,6 +19,9 @@ indent_size = 2
 
 [*.sh]
 end_of_line = lf
+
+[*.nix]
+indent_size = 2
 
 [Makefile]
 indent_style = tab

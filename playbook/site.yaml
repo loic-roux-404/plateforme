@@ -1,8 +1,0 @@
-- hosts: all
-  gather_facts: True
-  become: True
-  pre_tasks:
-    - include_tasks: roles/waypoint/tasks/pre-import-cert.yml
-      when: cert_manager_is_internal  
-  roles:
-    - role: roles/waypoint
