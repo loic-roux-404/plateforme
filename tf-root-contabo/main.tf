@@ -96,3 +96,23 @@ resource "contabo_instance" "paas_instance" {
     }
   ))
 }
+
+resource "terraform_data" "paas_instance_wait_bootstrap" {
+  triggers_replace = [
+    contabo_instance.paas_instance.id
+  ]
+
+  connection {
+    type        = "ssh"
+    user        = local.ssh_connection.user
+    private_key = local.ssh_connection.private_key
+    host        = contabo_instance.paas_instance.ip_config[0].v4[0].ip
+  }
+
+  provisioner "remote-exec" {
+    on_failure = fail
+    inline = [
+      "sudo cloud-init status --wait && sudo cloud-init clean"
+    ]
+  }
+}
