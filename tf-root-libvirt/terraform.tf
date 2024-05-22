@@ -9,7 +9,7 @@ terraform {
       version = "3.2.2"
     }
     healthcheck = {
-      source = "Ferlab-Ste-Justine/healthcheck"
+      source  = "Ferlab-Ste-Justine/healthcheck"
       version = "0.2.0"
     }
   }

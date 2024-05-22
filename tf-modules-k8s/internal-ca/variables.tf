@@ -12,7 +12,7 @@ variable "internal_acme_hostname" {
 }
 
 variable "ingress_controller_ip" {
-  type = string
+  type        = string
   description = "value of the ingress load balancer IP"
 }
 

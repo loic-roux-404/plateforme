@@ -5,11 +5,11 @@ resource "kubernetes_namespace" "cert-manager" {
 }
 
 resource "helm_release" "cert_manager" {
-  name       = "cert-manager"
-  namespace  = kubernetes_namespace.cert-manager.metadata.0.name
-  repository = "https://charts.jetstack.io"
-  chart      = "cert-manager"
-  version    = "1.14.4"
+  name          = "cert-manager"
+  namespace     = kubernetes_namespace.cert-manager.metadata.0.name
+  repository    = "https://charts.jetstack.io"
+  chart         = "cert-manager"
+  version       = "1.14.4"
   wait_for_jobs = true
   wait          = true
 
@@ -51,11 +51,11 @@ resource "kubernetes_manifest" "issuer" {
 }
 
 resource "helm_release" "reflector" {
-  name       = "reflector"
-  namespace  = kubernetes_namespace.cert-manager.metadata.0.name
-  repository = "https://emberstack.github.io/helm-charts"
-  chart      = "reflector"
-  version    = "7.1.262"
+  name          = "reflector"
+  namespace     = kubernetes_namespace.cert-manager.metadata.0.name
+  repository    = "https://emberstack.github.io/helm-charts"
+  chart         = "reflector"
+  version       = "7.1.262"
   wait_for_jobs = true
   wait          = true
 

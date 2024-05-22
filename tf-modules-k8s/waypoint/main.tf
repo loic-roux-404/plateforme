@@ -44,23 +44,23 @@ resource "kubernetes_ingress_v1" "example" {
   metadata {
     name      = "waypoint-grpc"
     namespace = "default"
-    
+
     annotations = {
-      "kubernetes.io/ingress.class"                    = var.k8s_ingress_class
-      "nginx.ingress.kubernetes.io/backend-protocol"   = "GRPCS"
-      "nginx.ingress.kubernetes.io/ssl-redirect"       = "true"
-      "nginx.ingress.kubernetes.io/grpc-backend"       = "true"
-      "cert-manager.io/cluster-issuer"                 = "letsencrypt-acme-issuer"
+      "kubernetes.io/ingress.class"                  = var.k8s_ingress_class
+      "nginx.ingress.kubernetes.io/backend-protocol" = "GRPCS"
+      "nginx.ingress.kubernetes.io/ssl-redirect"     = "true"
+      "nginx.ingress.kubernetes.io/grpc-backend"     = "true"
+      "cert-manager.io/cluster-issuer"               = "letsencrypt-acme-issuer"
     }
   }
 
   spec {
     rule {
-      host = "${var.paas_hostname}"
+      host = var.paas_hostname
 
       http {
         path {
-          path     = "/hashicorp.waypoint.Waypoint/"
+          path      = "/hashicorp.waypoint.Waypoint/"
           path_type = "ImplementationSpecific"
 
           backend {
@@ -68,13 +68,13 @@ resource "kubernetes_ingress_v1" "example" {
               name = "waypoint-server"
               port {
                 name = "grpc"
-              } 
+              }
             }
           }
         }
 
         path {
-          path     = "/grpc.reflection.v1alpha.ServerReflection/ServerReflectionInfo"
+          path      = "/grpc.reflection.v1alpha.ServerReflection/ServerReflectionInfo"
           path_type = "ImplementationSpecific"
 
           backend {
@@ -82,7 +82,7 @@ resource "kubernetes_ingress_v1" "example" {
               name = "waypoint-server"
               port {
                 name = "grpc"
-              } 
+              }
             }
           }
         }

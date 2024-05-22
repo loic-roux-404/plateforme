@@ -28,5 +28,5 @@ variable "cert_manager_acme_url" {
 
 variable "letsencrypt_env" {
   description = "Environment to use for letsencrypt"
-  default = "local"
+  default     = "local"
 }

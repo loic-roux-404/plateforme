@@ -1,5 +1,5 @@
 variable "default_ssl_certificate" {
-  type = bool
+  type    = bool
   default = false
 }
 

@@ -44,10 +44,10 @@ module "internal_ca" {
 }
 
 module "github" {
-  source = "./tf-modules-k8s/github"
-  github_token = var.github_token
+  source              = "./tf-modules-k8s/github"
+  github_token        = var.github_token
   github_organization = var.github_organization
-  github_team = var.github_team
+  github_team         = var.github_team
 }
 
 module "dex" {

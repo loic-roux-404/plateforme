@@ -1,10 +1,10 @@
 variable "github_organization" {
-  type = string
+  type    = string
   default = "org-404"
 }
 
 variable "github_team" {
-  type = string
+  type    = string
   default = "ops-team"
 }
 

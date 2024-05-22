@@ -30,7 +30,7 @@ resource "kubernetes_manifest" "metallb_manifests_metallb_frr" {
 }
 
 resource "kubernetes_manifest" "metallb_ip_address_pool" {
-  depends_on = [ kubernetes_manifest.metallb_manifests_metallb_frr ]
+  depends_on = [kubernetes_manifest.metallb_manifests_metallb_frr]
   manifest = {
     apiVersion = "metallb.io/v1beta1"
     kind       = "IPAddressPool"
@@ -45,7 +45,7 @@ resource "kubernetes_manifest" "metallb_ip_address_pool" {
 }
 
 resource "kubernetes_manifest" "metallb_l2_advertisement" {
-  depends_on = [ kubernetes_manifest.metallb_manifests_metallb_frr ]
+  depends_on = [kubernetes_manifest.metallb_manifests_metallb_frr]
   manifest = {
     apiVersion = "metallb.io/v1beta1"
     kind       = "L2Advertisement"
@@ -59,7 +59,7 @@ resource "kubernetes_manifest" "metallb_l2_advertisement" {
 resource "kubernetes_manifest" "speaker_daemonset" {
   # Assuming that the spect for speaker_daemonset is available in
   # the file 'speaker_daemonset.yaml'
-  depends_on = [ kubernetes_manifest.metallb_manifests_metallb_frr ]
+  depends_on = [kubernetes_manifest.metallb_manifests_metallb_frr]
   manifest = {
     apiVersion = "apps/v1"
     kind       = "DaemonSet"

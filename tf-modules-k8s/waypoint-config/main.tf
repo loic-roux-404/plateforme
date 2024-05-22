@@ -9,7 +9,7 @@ terraform {
 }
 
 locals {
-  oidc_setup_cmd = join(" ", [ 
+  oidc_setup_cmd = join(" ", [
     "waypoint auth-method set oidc",
     "-client-id='${var.dex_client_id}'",
     "-display-name='GitHub'",
@@ -34,7 +34,7 @@ locals {
 
 resource "null_resource" "setup_oidc" {
   triggers = {
-    login_cmd = local.login_cmd
+    login_cmd      = local.login_cmd
     oidc_setup_cmd = local.oidc_setup_cmd
   }
 

@@ -1,9 +1,9 @@
 resource "helm_release" "ingress-nginx" {
-  repository = "https://kubernetes.github.io/ingress-nginx"
-  name       = "ingress-nginx"
-  namespace  = "kube-system"
-  chart      = "ingress-nginx"
-  timeout    = 600
+  repository    = "https://kubernetes.github.io/ingress-nginx"
+  name          = "ingress-nginx"
+  namespace     = "kube-system"
+  chart         = "ingress-nginx"
+  timeout       = 600
   wait_for_jobs = true
   wait          = true
   values = [
@@ -27,7 +27,7 @@ resource "helm_release" "ingress-nginx" {
 }
 
 data "kubernetes_service" "ingress_service" {
-  depends_on = [ helm_release.ingress-nginx ]
+  depends_on = [helm_release.ingress-nginx]
   metadata {
     name      = "ingress-nginx-controller"
     namespace = "kube-system"

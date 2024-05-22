@@ -19,11 +19,11 @@ variable "github_client_secret" {
 
 variable "dex_github_orgs" {
   description = "Github Orgs for Dex OIDC Connector"
-  type        = list(object({
-    name = string
-    teams    = list(string)
+  type = list(object({
+    name  = string
+    teams = list(string)
   }))
-  default     = []
+  default = []
 }
 
 variable "paas_hostname" {
@@ -34,7 +34,7 @@ variable "paas_hostname" {
 variable "k8s_ingress_class" {
   description = "ingress class"
   type        = string
-  default = "nginx"
+  default     = "nginx"
 }
 
 variable "cert_manager_cluster_issuer" {

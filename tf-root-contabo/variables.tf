@@ -15,7 +15,7 @@ variable "trusted_ssh_user" {
 }
 
 variable "paas_base_domain" {
-  type = string
+  type    = string
   default = "k3s.test"
 }
 
@@ -48,6 +48,29 @@ variable "gandi_dnssec_public_key" {
 }
 
 variable "image_url" {
-  type = string
+  type    = string
   default = "https://github.com/loic-roux-404/k3s-paas/releases/download/nixos-a665502/nixos.qcow2"
+}
+
+variable "image_version" {
+  type    = string
+  default = "a665502"
+}
+
+variable "ssh_connection" {
+  type = object({
+    user          = string
+    password      = string
+    password_hash = string
+    public_key    = string
+    private_key   = string
+  })
+  default = {
+    password      = "badSecret12!"
+    password_hash = "$6$zizou$5kLDHHKr97WNOkvnTzpnqIQ/z.n.rJmV0YFdUiy1cwxxdz/wIgnI8Rd7lnO8Ry6t01KT3OLMhrFgOZiR7cMLb1"
+    private_key   = "~/.ssh/id_rsa"
+    public_key    = "~/.ssh/id_rsa.pub"
+    user          = "admin"
+  }
+  sensitive = true
 }

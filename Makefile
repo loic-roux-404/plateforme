@@ -21,6 +21,8 @@ build-x86:
 TF_ROOT_DIRS := $(wildcard tf-root-*) .
 TF_ROOT_DIRS_DESTROY:=$(addsuffix -destroy, $(TF_ROOT_DIRS))
 TF_ROOT_DIRS_INIT:=$(addsuffix -init, $(TF_ROOT_DIRS))
+TF_ROOT_DIRS_FMT:=$(addsuffix -fmt, $(TF_ROOT_DIRS))
+TF_ROOT_DIRS_VALIDATE:=$(addsuffix -validate, $(TF_ROOT_DIRS))
 
 init: $(TF_ROOT_DIRS_INIT)
 
@@ -35,4 +37,16 @@ $(TF_ROOT_DIRS_DESTROY):
 	@$(eval DIR:=$(subst -destroy,,$@))
 	@terraform -chdir=$(DIR) destroy -auto-approve $(ARGS)
 
-.PHONY: build build-x86 bootstrap init $(TF_ROOT_DIRS) $(TF_ROOT_DIRS_DESTROY) $(TF_ROOT_DIRS_INIT)
+fmt: $(TF_ROOT_DIRS_FMT)
+
+$(TF_ROOT_DIRS_FMT):
+	@$(eval DIR:=$(subst -fmt,,$@))
+	terraform -chdir=$(DIR) fmt $(ARGS)
+
+validate: $(TF_ROOT_DIRS_VALIDATE)
+
+$(TF_ROOT_DIRS_VALIDATE):
+	@$(eval DIR:=$(subst -validate,,$@))
+	terraform -chdir=$(DIR) validate -no-color $(ARGS)
+
+.PHONY: fmt validate build build-x86 bootstrap init $(TF_ROOT_DIRS) $(TF_ROOT_DIRS_DESTROY) $(TF_ROOT_DIRS_INIT)

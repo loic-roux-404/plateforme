@@ -1,7 +1,7 @@
 variable "paas_hostname" {
   description = "Hostname for paas"
   type        = string
-  default = "paas.k3s.test"
+  default     = "paas.k3s.test"
 }
 
 variable "paas_token" {
@@ -36,6 +36,6 @@ variable "tls_skip_verify" {
 }
 
 variable "internal_acme_ca_content" {
-  type = string
+  type      = string
   sensitive = true
 }

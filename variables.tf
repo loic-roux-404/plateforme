@@ -28,7 +28,7 @@ variable "dex_namespace" {
 
 variable "github_token" {
   sensitive = true
-  type = string
+  type      = string
 }
 
 variable "github_client_id" {

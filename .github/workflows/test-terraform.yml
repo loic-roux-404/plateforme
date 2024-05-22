@@ -17,9 +17,6 @@ permissions:
 jobs:
   tf-test:
     runs-on: ubuntu-latest
-    strategy:
-      matrix:
-        dir: [libvirt, .]
     steps:
       - name: Checkout
         uses: actions/checkout@v3
@@ -29,12 +26,12 @@ jobs:
 
       - name: Terraform Init
         id: init
-        run: terraform -chdir=${{ matrix.dir }} init
+        run: make init
 
       - name: Terraform fmt
         id: fmt
-        run: terraform -chdir=${{ matrix.dir }} fmt -check -diff
+        run: make fmt ARGS='-check -diff'
 
       - name: Terraform Validate
         id: validate
-        run: terraform -chdir=${{ matrix.dir }} validate -no-color
+        run: make validate
