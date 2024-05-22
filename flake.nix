@@ -94,8 +94,8 @@
 
         # Need a bare darwinConfigurations.builder started before building this one.
         builder-docker = self.darwinConfigurations.builder.override {
-          specialArgs = {
-            linux-builder-config = ./nixos-darwin/linux-builder-docker.nix;
+          extraModules = singleton {
+            nix.linux-builder.config = ./nixos-darwin/linux-builder-docker.nix;
           };
         };
 

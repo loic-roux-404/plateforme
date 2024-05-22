@@ -13,6 +13,9 @@ bootstrap:
 build:
 	@$(BUILDER_EXEC) nix build .#nixosConfigurations.aarch64-darwin.default --system aarch64-linux $(ARGS)
 
+build-x86:
+	@$(BUILDER_EXEC) nix build .#nixosConfigurations.x86_64-darwin.default --system x86_64-linux $(ARGS)
+
 #### Terraform
 
 TF_ROOT_DIRS := $(wildcard tf-root-*) .
@@ -32,4 +35,4 @@ $(TF_ROOT_DIRS_DESTROY):
 	@$(eval DIR:=$(subst -destroy,,$@))
 	@terraform -chdir=$(DIR) destroy -auto-approve $(ARGS)
 
-.PHONY: build bootstrap init $(TF_ROOT_DIRS) $(TF_ROOT_DIRS_DESTROY) $(TF_ROOT_DIRS_INIT)
+.PHONY: build build-x86 bootstrap init $(TF_ROOT_DIRS) $(TF_ROOT_DIRS_DESTROY) $(TF_ROOT_DIRS_INIT)

@@ -1,7 +1,6 @@
 { 
   pkgs,
   config, 
-  linux-builder-config ? ({ pkgs, ... }: {}),
   ... }:
 {
   programs.fish.enable = true;
@@ -101,8 +100,6 @@
     maxJobs = 8;
     package = pkgs.darwin.linux-builder-x86_64;
     ephemeral = true;
-    config = linux-builder-config;
-    systems = [ "aarch64-linux" "x86_64-linux" ];
   };
   nix.configureBuildUsers = true;
   services.nix-daemon.enable = true;

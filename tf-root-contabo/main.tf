@@ -31,13 +31,13 @@ resource "tailscale_tailnet_key" "k3s_paas_node" {
   description   = "VM instance key"
 }
 
-# resource "contabo_image" "paas_instance_qcow2" {
-#   name        = "k3s"
-#   image_url   = var.image_url
-#   os_type     = "Linux"
-#   version     = var.ubuntu_release_info.iso_version_tag
-#   description = "Generated PaaS vm image with packer"
-# }
+resource "contabo_image" "paas_instance_qcow2" {
+  name        = "k3s"
+  image_url   = var.image_url
+  os_type     = "Linux"
+  version     = var.ubuntu_release_info.iso_version_tag
+  description = "Generated PaaS vm image with packer"
+}
 
 data "contabo_instance" "paas_instance" {
   id = var.contabo_instance
@@ -64,15 +64,16 @@ resource "gandi_livedns_record" "www" {
     data.contabo_instance.paas_instance.ip_config[0].v4[0].ip
   ]
 }
-# resource "contabo_instance" "paas_instance" {
-#   existing_instance_id = var.contabo_instance
-#   display_name = "nixos-k3s-paas"
-#   image_id     = contabo_image.paas_instance_qcow2.id
-#   ssh_keys     = [contabo_secret.paas_instance_ssh_key.id]
-#   user_data = sensitive(templatefile(
-#     "${path.root}/user-data.yaml.tmpl",
-#     {
-#       tailscale_key = tailscale_tailnet_key.k3s_paas_node.key
-#     }
-#   ))
-# }
+
+resource "contabo_instance" "paas_instance" {
+  existing_instance_id = var.contabo_instance
+  display_name = "nixos-k3s-paas"
+  image_id     = contabo_image.paas_instance_qcow2.id
+  ssh_keys     = [contabo_secret.paas_instance_ssh_key.id]
+  user_data = sensitive(templatefile(
+    "${path.root}/user-data.yaml.tmpl",
+    {
+      tailscale_key = tailscale_tailnet_key.k3s_paas_node.key
+    }
+  ))
+}

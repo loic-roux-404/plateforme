@@ -46,3 +46,8 @@ variable "gandi_token" {
 variable "gandi_dnssec_public_key" {
   type = string
 }
+
+variable "image_url" {
+  type = string
+  default = "https://github.com/loic-roux-404/k3s-paas/releases/download/nixos-a665502/nixos.qcow2"
+}

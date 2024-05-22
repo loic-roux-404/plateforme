@@ -6,7 +6,7 @@
     certs = lib.mkOption {
       default = [{
         url = "https://localhost:15000/intermediates/0";
-        sha256 = "1vcm965pnkv24vgqg85qg8bjw10a5wr8rrnahm50yphak6jgxcmx";
+        sha256 = "06fpbiljbzmcnfsxnr92p7mhm6i4yglbhj5q7csw2pcsklw68z8n";
       }];
       type = lib.types.listOf (lib.types.attrs);
       description = "Ca url to fetch and trust (need to be impure)";
