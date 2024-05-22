@@ -162,19 +162,21 @@
           default = pkgs.mkShell {
             name = "default";
             packages = attrValues {
-              inherit (pkgs) bashInteractive docker-client kubectl nil pebble jq grpcurl
-              e2fsprogs coreutils libvirt qemu tailscale kubernetes-helm cntb;
-              inherit (stablePkgs) terraform nix-tree waypoint;
+              inherit (pkgs) bashInteractive grpcurl jq coreutils e2fsprogs
+              docker-client kubectl kubernetes-helm libvirt qemu
+              tailscale pebble cntb
+              nil nix-tree;
+              inherit (stablePkgs) terraform waypoint;
             };
             shellHook = ''
-            export DOCKER_HOST=tcp://127.0.0.1:2375
+              export DOCKER_HOST=tcp://127.0.0.1:2375
             '';
           };
 
           builder-docker = pkgs.mkShell {
             name = "docker";
             packages = attrValues {
-              inherit (pkgs) bashInteractive docker-client;
+              inherit (pkgs) nil bashInteractive docker-client;
             };
             shellHook = ''
               set -e

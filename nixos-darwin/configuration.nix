@@ -1,11 +1,12 @@
-{ pkgs,
-  lib,
+{ 
+  pkgs,
   config, 
   linux-builder-config ? ({ pkgs, ... }: {}),
   ... }:
 {
   programs.fish.enable = true;
   programs.bash.enable = true;
+  programs.direnv.enable = true;
   environment.systemPackages = [ pkgs.bashInteractive ];
 
   services.dnsmasq = {
@@ -101,6 +102,7 @@
     package = pkgs.darwin.linux-builder-x86_64;
     ephemeral = true;
     config = linux-builder-config;
+    systems = [ "aarch64-linux" "x86_64-linux" ];
   };
   nix.configureBuildUsers = true;
   services.nix-daemon.enable = true;
