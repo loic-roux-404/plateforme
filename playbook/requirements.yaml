@@ -1,9 +1,0 @@
----
-roles:
-    - name: xanmanning.k3s
-      src: https://github.com/PyratLabs/ansible-role-k3s.git
-      version: v3.3.1
-
-collections:
-    - name: community.general
-    - name: kubernetes.core
