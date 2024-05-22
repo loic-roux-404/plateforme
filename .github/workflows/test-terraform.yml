@@ -5,10 +5,10 @@ on:
     branches:
       - main
     paths:
-      - 'contabo/**.hcl'
-      - 'contabo/**.tf'
-      - 'contabo/**.tfvars'
-      - 'contabo/**.tmpl'
+      - 'terraform/**.hcl'
+      - 'terraform/**.tf'
+      - 'terraform/**.tfvars'
+      - 'terraform/**.tmpl'
       - .github/workflows/test-terraform.yml
 
 permissions:
@@ -24,14 +24,27 @@ jobs:
           fetch-depth: 0
       - uses: hashicorp/setup-terraform@v2
 
+      - name: Configure Terraform plugin cache
+        run: |
+          echo "TF_PLUGIN_CACHE_DIR=$HOME/.terraform.d/plugin-cache" >>"$GITHUB_ENV"
+          mkdir --parents "$HOME/.terraform.d/plugin-cache"
+      - name: Cache Terraform
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/.terraform.d/plugin-cache
+          key: terraform-${{ runner.os }}-${{ hashFiles('**/.terraform.lock.hcl') }}
+          restore-keys: |
+            terraform-${{ runner.os }}-
+
       - name: Terraform Init
         id: init
-        run: terraform init
+        run: make init
 
       - name: Terraform fmt
         id: fmt
-        run: terraform fmt -check -diff
+        run: make fmt ARGS='-check -diff'
 
       - name: Terraform Validate
         id: validate
-        run: terraform validate -no-color
+        run: make validate

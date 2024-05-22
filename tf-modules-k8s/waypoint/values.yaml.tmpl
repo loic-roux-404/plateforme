@@ -1,0 +1,28 @@
+server:
+  image:
+    tag: 0.11.4
+  cert:
+    secretName: ${paas_hostname}-tls
+  extraVolumeMounts: ${jsonencode(waypoint_extra_volume_mounts)}
+  extraVolumes: ${jsonencode(waypoint_extra_volumes)}
+runner:
+  image:
+    tag: 0.11.4
+odr:
+  image:
+    tag: 0.11.4
+ui:
+  service:
+    type: NodePort
+  ingress:
+    enabled: true
+    annotations:
+      cert-manager.io/cluster-issuer: letsencrypt-acme-issuer
+      kubernetes.io/ingress.class: "${k8s_ingress_class}"
+    hosts:
+      - host: "${paas_hostname}"
+        paths: ["/"]
+    tls:
+      - hosts:
+          - "${paas_hostname}"
+        secretName: ${paas_hostname}-tls

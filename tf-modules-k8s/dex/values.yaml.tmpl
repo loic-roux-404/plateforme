@@ -1,0 +1,46 @@
+---
+config:
+  issuer: "https://${dex_hostname}"
+  web:
+    http: 0.0.0.0:5556
+  storage:
+    type: kubernetes
+    config:
+      inCluster: true
+  connectors:
+  - type: github
+    id: github
+    name: GitHub
+    config:
+      clientID: '${github_client_id}'
+      clientSecret: '${github_client_secret}'
+      redirectURI: "https://${dex_hostname}/callback"
+      orgs:
+        ${dex_github_orgs}
+  oauth2:
+    skipApprovalScreen: true
+  staticClients:
+  - id: "${dex_client_id}"
+    redirectURIs:
+    - http://127.0.0.1/oidc/callback
+    - 'https://${paas_hostname}/auth/oidc-callback'
+    name: paas
+    secret: "${dex_client_secret}"
+ingress:
+  enabled: true
+  className: "${k8s_ingress_class}"
+  annotations:
+    cert-manager.io/cluster-issuer: ${cert_manager_cluster_issuer}
+    nginx.ingress.kubernetes.io/ssl-redirect: "true"
+    nginx.ingress.kubernetes.io/rewrite-target: /
+    traefik.ingress.kubernetes.io/rule.type: PathPrefixStrip
+    traefik.ingress.kubernets.io/router.tls: "true"
+  hosts:
+  - host: ${dex_hostname}
+    paths:
+      - path: /
+        pathType: ImplementationSpecific
+  tls:
+    - secretName: ${dex_hostname}-tls
+      hosts:
+        - ${dex_hostname}
