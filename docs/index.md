@@ -9,19 +9,13 @@
 ### Requirements
 
 - A Contabo subscription [contabo](https://contabo.com)
-- An account of the Dns provider [namedotcom](https://name.com)
+- An account of the Gandi [gand](https://gandi.net)
 
 > Note: You could easily adapt terraform to use another provider, it just needs to support `user_data` with a cloud-init compatible syntax.
 
-> Note: For dns provider, it could be more complex but good terraform provider exists for namecheap, cloudflare, etc.
+## Applying
 
-### Quick deploy with terraform
-
-`cd terraform/`
-
-Rename `prod.tfvars.dist` to `prod.tfvars` and fill variables (precision to find them are in file comments).
-
-Then run `make apply`
+Follow the steps in [README.md](https://github.com/loic-roux-404/k3s-paas/blob/main/README.md) to apply the infrastructure.
 
 ## Index
 
