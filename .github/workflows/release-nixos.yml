@@ -45,13 +45,13 @@ jobs:
 
       - name: Build
         id: build
-        run: nix build .#nixosConfigurations.x86_64-linux.contabo
+        run: nix build .#nixosConfigurations.x86_64-linux.contabo && ls -lah
           
-      - name: Release
-        uses: softprops/action-gh-release@v1
-        with:
-          tag_name: nixos-${{ steps.vars.outputs.sha_short }}
-          token: "${{ secrets.GITHUB_TOKEN }}"
-          generate_release_notes: true
-          files: |
-            result/
+      # - name: Release
+      #   uses: softprops/action-gh-release@v1
+      #   with:
+      #     tag_name: nixos-${{ steps.vars.outputs.sha_short }}
+      #     token: "${{ secrets.GITHUB_TOKEN }}"
+      #     generate_release_notes: true
+      #     files: |
+      #       result/

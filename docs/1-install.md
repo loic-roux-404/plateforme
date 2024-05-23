@@ -14,7 +14,7 @@ For this we will use a technical base composed of :
 
 - [`k3s`](https://k3s.io/) tool which simplifies the installation of kubernetes on ARM machines while remaining compatible with classic X64 architectures. It provides by default pods (containers in execution) to include features often sought on this type of edge computing configuration (reverse proxy, DNS configuration ...)
 - [Nix Os](https://nixos.org/manual/nixpkgs/stable/) to create iso images of linux machines
-- [Terraform](https://www.terraform.io/) to control azure in an IaC way and to trigger all the PaaS implementation on it.
+- [Terraform](https://www.terraform.io/) to control many cloud platforms like Gandi, Contabo, GitHub, kubernetes...
 
 ## Usefull links
 
@@ -28,25 +28,21 @@ K3s Architecture :
 
 > Note : Here we are only using single node mode
 
-## Installation de vscode
+## Usage
 
-- [Avec installer toutes plateformes](https://code.visualstudio.com/download)
-- Homebrew sur mac `brew install --cask visual-studio-code`
-- [Avec snap pour linux](https://snapcraft.io/code) sur linux
-
-
-
-To open UI with https add pebble certificate to your truststore :
+To open UI with https add pebble certificate to your truststore (this is automaticly done by nixos-darwin):
 
 ```bash
 curl -k https://localhost:15000/intermediates/0 > ~/Downloads/pebble-ca.pem
 sudo security add-trusted-cert -d -r trustAsRoot -k /Library/Keychains/System.keychain ~/Downloads/pebble-ca.pem
 ```
 
+## K3s PaaS
+
 - [Dex](https://dex.k3s.test/.well-known/openid-configuration)
 - [waypoint](https://waypoint.k3s.test/)
 
-> Authentication with dex is not working over waypoint UI in localhost because of non trusted certificate.
+> Authentication with dex is not working over waypoint UI in localhost because of non-trusted certificate.
 
 Setup waypoint inside cluster before getting token :
 
@@ -69,39 +65,9 @@ waypoint context create \
 
 ```
 
-## Libvirt Stack
-
-> Define your vars and secrets in a `prod.tfvars` file before. Consult the file to see where to get/generate them.
-
-```bash
-terraform -chdir=libvirt apply -auto-approve
-
-```
-
-## Contabo Stack
-
-```bash
-terraform -chdir=contabo apply -auto-approve
-```
-
-For contabo cli usage from your tfvar file : `make setup_cntb`
-
-
-## Then apply k3s stack
-
-> Adapt url to your stack between libvirt and contabo
-
-```bash
-terraform apply -auto-approve -var k3s_host=k3s.test
-```
-
 ## Secure ssh connections
 
-### Connect to instance :
-
-Setup with `make setup_ssh`
-
-Then :
+After applying infrastructure to terraform you will be able to log in ssh with :
 
 ```bash
 ssh user@device-name
