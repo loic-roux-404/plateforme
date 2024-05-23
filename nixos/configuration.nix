@@ -3,40 +3,48 @@
   lib,
   pkgs,
   stableLegacyPackages,
+  modulesPath,
   ...
 }: 
 
 let
   dex_hostname = "https://dex.${config.k3s-paas.dns.name}";
-  certs =  builtins.map (cert: builtins.fetchurl { inherit (cert) url sha256; }) config.k3s-paas.certs;
+  certs = builtins.map (cert: builtins.fetchurl { inherit (cert) url sha256; }) config.k3s-paas.certs;
   certManagerCrds = builtins.fetchurl {
     url = "https://github.com/cert-manager/cert-manager/releases/download/v1.14.4/cert-manager.crds.yaml";
     sha256 = "060bn3gvrr5jphaig1g195prip5rn0x1s7qrp09q47719fgc6636";
   };
   manifests = builtins.filter (d: d != "") [certManagerCrds];
 in {
+
+  system.build.qcow = lib.mkForce (import "${toString modulesPath}/../lib/make-disk-image.nix" {
+    inherit lib config pkgs;
+    diskSize = "auto";
+    format = "qcow2-compressed";
+    partitionTableType = "hybrid";
+  });
+
   console = {
     earlySetup = true;
     keyMap = "fr";
   };
 
+  boot.tmp.cleanOnBoot = true;
   boot.kernelPackages = pkgs.linuxPackages_latest;
-  fileSystems."/".autoResize = true;
-  fileSystems."/boot" =
-    { device = "/dev/disk/by-label/boot";
-      fsType = "vfat";
-    };
-
-  swapDevices = [ {
-    device = "/var/lib/swapfile";
-    size = 16 * 1024;
-  } ];
-
   boot.loader.systemd-boot.consoleMode = "auto";
 
+  zramSwap.algorithm  = "zstd";
+
+  # fileSystems = {
+  #   "/boot" = { 
+  #     device = "/dev/disk/by-label/boot";
+  #     fsType = "vfat";
+  #   };
+  # };
+
+  #services.cloud-init.enable = true;
+
   system.stateVersion = "23.05";
-  # FIXME: when branch is merged, uncomment the following line
-  # system.autoUpgrade.flake = "github:loic-roux-404/k3s-paas#nixosConfigurations.${pkgs.system}.default";
 
   time = {
     timeZone = lib.mkForce "Europe/Paris";
@@ -143,18 +151,18 @@ in {
   networking = {
     hostName = "k3s-paas";
     useNetworkd = true;
-    useDHCP = false;
+    useDHCP = true;
     firewall = {
       enable = true;
       allowedTCPPorts = lib.mkForce [80 443 22 6443];
     };
     nftables.enable = true;
-    networkmanager.enable = true;
+    networkmanager.enable = false;
     usePredictableInterfaceNames = true;
   };
 
   systemd.network = {
-    enable = true;
+    enable = lib.mkForce true;
     wait-online.anyInterface = true;
   };
 

@@ -36,13 +36,14 @@ resource "libvirt_domain" "machine" {
 
   disk {
     volume_id = libvirt_volume.nixos_worker.id
+    #scsi      = true
   }
 
-  filesystem {
-    source   = "/nix/store"
-    target   = "nix-store"
-    readonly = false
-  }
+  # filesystem {
+  #   source   = "/nix/store"
+  #   target   = "nix-store"
+  #   readonly = false
+  # }
 
   filesystem {
     source   = "${path.cwd}/xchg"
@@ -99,7 +100,7 @@ resource "null_resource" "ensure_started" {
       private_key = local.private_key
       port        = "2222"
       agent       = false
-      timeout     = "6m"
+      timeout     = "4m"
     }
 
     inline = ["echo 'Vm ${libvirt_domain.machine.id} started'"]
@@ -109,6 +110,7 @@ resource "null_resource" "ensure_started" {
 resource "null_resource" "copy_k3s_config" {
   triggers = {
     domain_id = libvirt_domain.machine.id
+    started = null_resource.ensure_started.id
   }
   provisioner "local-exec" {
     command = "ssh ${var.ssh_connection.user}@localhost -p 2222 'sudo cat /etc/rancher/k3s/k3s.yaml' > ~/.kube/config"
@@ -116,6 +118,7 @@ resource "null_resource" "copy_k3s_config" {
 }
 
 data "healthcheck_http" "k3s" {
+  depends_on = [ null_resource.ensure_started ]
   path         = "livez?verbose"
   status_codes = [200]
   endpoints = [

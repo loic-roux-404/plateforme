@@ -25,7 +25,7 @@
     };
 
     user.name = lib.mkOption {
-      default = "zizou";
+      default = "admin";
       type = lib.types.str;
       description = "User name";
     };

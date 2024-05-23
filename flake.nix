@@ -94,8 +94,8 @@
 
         # Need a bare darwinConfigurations.builder started before building this one.
         builder-docker = self.darwinConfigurations.builder.override {
-          extraModules = singleton {
-            nix.linux-builder.config = ./nixos-darwin/linux-builder-docker.nix;
+          extraModules = attrValues {
+            linux-docker-builder = ./nixos-darwin/linux-builder-docker.nix;
           };
         };
 
@@ -136,13 +136,17 @@
           };
         };
 
+        iso = self.nixosConfigurations.${system}.qcow.override {
+          format = "iso";
+        };
+
         contabo = self.nixosConfigurations.${system}.qcow.override {
           modules = attrValues self.nixosModules ++ [
             ./nixos/contabo.nix
           ];
         };
 
-        docker = self.nixosConfigurations.${system}.qcow.override {
+        container = self.nixosConfigurations.${system}.qcow.override {
           modules = attrValues self.nixosModules ++ [ 
             ./nixos/docker.nix
           ];
@@ -165,7 +169,7 @@
               inherit (pkgs) bashInteractive grpcurl jq coreutils e2fsprogs
               docker-client kubectl kubernetes-helm libvirt qemu
               tailscale pebble cntb
-              nil nix-tree;
+              nil nix-tree python3;
               inherit (stablePkgs) terraform waypoint;
             };
             shellHook = ''

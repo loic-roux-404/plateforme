@@ -8,7 +8,7 @@ Compatibility Matrix :
 | OS | Status |
 | --- | --- |
 | Darwin | OK |
-| Linux | missing builder tooling |
+| Linux | NO |
 
 ## New Nix system (beta)
 

@@ -60,21 +60,15 @@ locals {
   })
 }
 
-resource "contabo_secret" "paas_instance_ssh_key" {
-  name  = "paas_instance_ssh_key"
+resource "contabo_secret" "paas_instance_trusted_key" {
+  name  = "paas_instance_trusted_key"
   type  = "ssh"
   value = local.ssh_connection.public_key
 }
 
-resource "contabo_secret" "paas_instance_password" {
-  name  = "paas_instance_password"
-  type  = "password"
-  value = local.ssh_connection.password
-}
-
-resource "contabo_image" "paas_instance_qcow2" {
+resource "contabo_image" "paas_instance_image" {
   name        = "k3s"
-  image_url   = var.image_url
+  image_url   = format(var.image_url_format, var.image_version)
   os_type     = "Linux"
   version     = var.image_version
   description = "Generated PaaS vm image with packer"
@@ -87,14 +81,8 @@ data "contabo_instance" "paas_instance" {
 resource "contabo_instance" "paas_instance" {
   existing_instance_id = var.contabo_instance
   display_name         = "nixos-k3s-paas"
-  image_id             = contabo_image.paas_instance_qcow2.id
-  ssh_keys             = [contabo_secret.paas_instance_ssh_key.id]
-  user_data = sensitive(templatefile(
-    "${path.root}/user-data.yaml.tmpl",
-    {
-      tailscale_key = tailscale_tailnet_key.k3s_paas_node.key
-    }
-  ))
+  image_id             = contabo_image.paas_instance_image.id
+  ssh_keys             = [contabo_secret.paas_instance_trusted_key.id]
 }
 
 resource "terraform_data" "paas_instance_wait_bootstrap" {
@@ -109,10 +97,13 @@ resource "terraform_data" "paas_instance_wait_bootstrap" {
     host        = contabo_instance.paas_instance.ip_config[0].v4[0].ip
   }
 
+  # TODO move following code in a nix configuration to update machine with
+  # new user, ssh key password and tailscale link
   provisioner "remote-exec" {
     on_failure = fail
     inline = [
-      "sudo cloud-init status --wait && sudo cloud-init clean"
+      "echo ${contabo_instance.paas_instance.id}",
+      "tailscale, up, -authkey, '${tailscale_tailnet_key.k3s_paas_node.key}'"
     ]
   }
 }

@@ -1,7 +1,10 @@
 SHELL:=/usr/bin/env bash
 MAKEFLAGS += --no-builtin-rules --no-builtin-variables
 
+#### Nix
+
 BUILDER_EXEC:=
+NIXOS_CONFIG:=qcow
 
 ifeq ($(shell uname -s),Darwin)
    BUILDER_EXEC:=NIX_CONF_DIR=$(PWD)/bootstrap nix develop .\#builder --command
@@ -11,10 +14,10 @@ bootstrap:
 	@$(BUILDER_EXEC) echo "Started build environment"
 
 build:
-	@$(BUILDER_EXEC) nix build .#nixosConfigurations.aarch64-darwin.default --system aarch64-linux $(ARGS)
+	@$(BUILDER_EXEC) nix build .#nixosConfigurations.aarch64-darwin.$(NIXOS_CONFIG) --system aarch64-linux $(ARGS)
 
 build-x86:
-	@$(BUILDER_EXEC) nix build .#nixosConfigurations.x86_64-darwin.default --system x86_64-linux $(ARGS)
+	@$(BUILDER_EXEC) nix build .#nixosConfigurations.x86_64-darwin.$(NIXOS_CONFIG) --system x86_64-linux $(ARGS)
 
 #### Terraform
 
@@ -49,4 +52,14 @@ $(TF_ROOT_DIRS_VALIDATE):
 	@$(eval DIR:=$(subst -validate,,$@))
 	terraform -chdir=$(DIR) validate -no-color $(ARGS)
 
-.PHONY: fmt validate build build-x86 bootstrap init $(TF_ROOT_DIRS) $(TF_ROOT_DIRS_DESTROY) $(TF_ROOT_DIRS_INIT)
+#### Image server
+
+serve-iso:
+	@nohup python -m http.server -d result/iso &
+
+kill-iso-server:
+	@pkill -f "python -m http.server"
+
+.PHONY: fmt validate build build-x86 bootstrap init \
+  $(TF_ROOT_DIRS) $(TF_ROOT_DIRS_DESTROY) $(TF_ROOT_DIRS_INIT) \
+  serve-iso kill-iso-server
