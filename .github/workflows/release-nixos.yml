@@ -6,6 +6,7 @@ on:
     paths:
       - 'nixos/**.nix'
       - 'nixos-options/**.nix'
+      - 'nixos-generators/**.nix'
       - flake.nix
       - flake.lock
       - '!**.md'
@@ -45,13 +46,7 @@ jobs:
 
       - name: Build
         id: build
-        run: nix build .#nixosConfigurations.x86_64-linux.contabo && ls -lah
-
-      # - name: Retrieve result path
-      #   id: nixos_result
-      #   run: |
-      #     result_path="$(readlink -f ./result)"
-      #     echo "::set-output name=path::$result_path"
+        run: nix build .#nixosConfigurations.x86_64-linux.contabo
 
       - name: Release
         uses: softprops/action-gh-release@v1

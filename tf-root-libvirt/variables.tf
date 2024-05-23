@@ -35,7 +35,7 @@ variable "ssh_connection" {
   })
   default = {
     private_key = "~/.ssh/id_ed25519"
-    user        = "zizou"
+    user        = "admin"
   }
 }
 

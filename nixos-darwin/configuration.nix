@@ -1,7 +1,9 @@
 { 
   pkgs,
-  config, 
-  ... }:
+  config,
+  lib,
+  ... 
+}:
 {
   programs.fish.enable = true;
   programs.bash.enable = true;
@@ -54,8 +56,8 @@
     unix_sock_admin_perms = "0770"
     auth_unix_ro = "none"
     auth_unix_rw = "none"
-    log_level = 1
-    log_outputs="1:stderr"
+    log_level = 3
+    log_outputs="3:stderr"
   '';
   environment.etc."libvirt/qemu.conf".text = ''
     security_driver = "none"
@@ -94,8 +96,12 @@
   nix.linux-builder = {
     enable = true;
     maxJobs = 8;
-    package = pkgs.darwin.linux-builder;
-    ephemeral = true;
+    package = lib.mkDefault pkgs.darwin.linux-builder-x86_64;
+    ephemeral = lib.mkDefault true;
+    config = lib.mkDefault ({ lib, ... }: { 
+      # WAITING FOR https://github.com/NixOS/nixpkgs/issues/313784
+      # nixpkgs.hostPlatform = lib.mkForce "x86_64-linux";
+    });
   };
   nix.configureBuildUsers = true;
   services.nix-daemon.enable = true;

@@ -6,12 +6,8 @@ variable "tailscale_api_key" {
   type = string
 }
 
-# variable "tailscale_tailnet_id" {
-#   type = string
-# }
-
 variable "trusted_ssh_user" {
-  default = "zizou"
+  default = "admin"
 }
 
 variable "paas_base_domain" {
@@ -23,7 +19,6 @@ variable "domain_ttl" {
   type    = number
   default = 3000
 }
-
 
 variable "contabo_instance" {
   type = string
@@ -47,29 +42,25 @@ variable "gandi_dnssec_public_key" {
   type = string
 }
 
-variable "image_url" {
-  type    = string
-  default = "https://github.com/loic-roux-404/k3s-paas/releases/download/nixos-a665502/nixos.qcow2"
+variable "image_version" {
+  default = "9883308"
 }
 
-variable "image_version" {
-  type    = string
-  default = "a665502"
+variable "image_url_format" {
+  default = "https://github.com/loic-roux-404/k3s-paas/releases/download/nixos-%s/nixos.qcow2"
 }
 
 variable "ssh_connection" {
   type = object({
     user          = string
     password      = string
-    password_hash = string
     public_key    = string
     private_key   = string
   })
   default = {
-    password      = "badSecret12!"
-    password_hash = "$6$zizou$5kLDHHKr97WNOkvnTzpnqIQ/z.n.rJmV0YFdUiy1cwxxdz/wIgnI8Rd7lnO8Ry6t01KT3OLMhrFgOZiR7cMLb1"
-    private_key   = "~/.ssh/id_rsa"
-    public_key    = "~/.ssh/id_rsa.pub"
+    password      = "zizou420!"
+    private_key   = "~/.ssh/id_ed25519"
+    public_key    = "~/.ssh/id_ed25519.pub"
     user          = "admin"
   }
   sensitive = true
