@@ -2,47 +2,39 @@
   config,
   lib,
   pkgs,
-  stableLegacyPackages,
-  modulesPath,
+  oldLegacyPackages,
   ...
-}: 
+}:
+
+with config.k3s-paas;
 
 let
-  dex_hostname = "https://dex.${config.k3s-paas.dns.name}";
-  certs = builtins.map (cert: builtins.fetchurl { inherit (cert) url sha256; }) config.k3s-paas.certs;
+  certs = [ ../nixos-darwin/pebble/cert.crt ];
   certManagerCrds = builtins.fetchurl {
     url = "https://github.com/cert-manager/cert-manager/releases/download/v1.14.4/cert-manager.crds.yaml";
     sha256 = "060bn3gvrr5jphaig1g195prip5rn0x1s7qrp09q47719fgc6636";
   };
-  manifests = builtins.filter (d: d != "") [certManagerCrds];
+  manifests = [certManagerCrds];
 in {
 
-  system.build.qcow = lib.mkForce (import "${toString modulesPath}/../lib/make-disk-image.nix" {
-    inherit lib config pkgs;
-    diskSize = "auto";
-    format = "qcow2-compressed";
-    partitionTableType = "hybrid";
-  });
+  fileSystems."/" = {
+    device = "/dev/disk/by-label/nixos";
+    autoResize = true;
+    fsType = "ext4";
+  };
 
   console = {
     earlySetup = true;
     keyMap = "fr";
   };
 
+  boot.growPartition = lib.mkDefault true;
+  boot.loader.grub.device = lib.mkForce "/dev/sda";
   boot.tmp.cleanOnBoot = true;
   boot.kernelPackages = pkgs.linuxPackages_latest;
   boot.loader.systemd-boot.consoleMode = "auto";
 
   zramSwap.algorithm  = "zstd";
-
-  # fileSystems = {
-  #   "/boot" = { 
-  #     device = "/dev/disk/by-label/boot";
-  #     fsType = "vfat";
-  #   };
-  # };
-
-  #services.cloud-init.enable = true;
 
   system.stateVersion = "23.05";
 
@@ -67,18 +59,24 @@ in {
     };
     tailscale = {
       enable = true;
+      openFirewall = true;
+      extraUpFlags = ["--ssh"];
+      extraDaemonFlags = tailscale.baseDaemonExtraArgs;
+      permitCertUid = user.name;
     };
     k3s = {
       enable = true;
       role = "server";
-      extraFlags = with config.k3s-paas; toString [
-        "--kube-apiserver-arg authorization-mode=Node,RBAC"
-        "--kube-apiserver-arg oidc-issuer-url=${dex_hostname}"
-        "--kube-apiserver-arg oidc-client-id=${dex.dex_client_id}"
-        "--kube-apiserver-arg oidc-username-claim=email"
-        "--kube-apiserver-arg oidc-groups-claim=groups"
-        (if k3s.disableServices != "" then "--disable=${k3s.disableServices}" else "")
-       ];
+      extraFlags = lib.strings.concatStringsSep " " ([
+          (if k3s.disableServices != "" then "--disable=${k3s.disableServices}" else "")
+        ] ++ (if dex.dexClientId != "" then [
+          "--kube-apiserver-arg authorization-mode=Node,RBAC"
+          "--kube-apiserver-arg oidc-issuer-url=https://dex.${dns.name}"
+          "--kube-apiserver-arg oidc-client-id=${dex.dexClientId}"
+          "--kube-apiserver-arg oidc-username-claim=email"
+          "--kube-apiserver-arg oidc-groups-claim=groups"
+        ] else [])
+      );
     };
 
     fail2ban.enable = true;
@@ -88,11 +86,7 @@ in {
   home-manager.useUserPackages = true;
   home-manager.users.${config.k3s-paas.user.name} = {
     xdg.enable = true;
-    home.stateVersion = "23.05";
-    home.sessionVariables = {
-      EDITOR = "vim";
-      PAGER = "less -FirSwX";
-    };
+    home.stateVersion = "23.11";
     programs.bash = {
       enable = true;
       historyControl = [ "ignoredups" "ignorespace" ];
@@ -106,6 +100,10 @@ in {
 
   environment = {
     shells = [ pkgs.bashInteractive ];
+    variables = {
+      EDITOR = "vim";
+      PAGER = "less -FirSwX";
+    };
     systemPackages = with pkgs; [
       glibcLocales
       systemd
@@ -122,7 +120,8 @@ in {
       wget
       k3s
       kubectl
-      stableLegacyPackages.waypoint
+      kubernetes-helm
+      oldLegacyPackages.waypoint
       tailscale
     ];
   };
@@ -133,15 +132,13 @@ in {
     defaultUserShell = pkgs.bashInteractive;
     allowNoPasswordLogin = true;
     users = {
-      ${config.k3s-paas.user.name} = {
-        password = config.k3s-paas.user.password;
+      ${user.name} = {
+        hashedPasswordFile = lib.mkDefault "${(pkgs.writeText "password" user.defaultPassword)}";
         isNormalUser = true;
         extraGroups = [ "wheel" "networkmanager" ];
         openssh = {
           authorizedKeys = {
-            keys = [
-              config.k3s-paas.user.key
-            ];
+            keys = [ user.key ];
           };
         };
       };
@@ -149,12 +146,13 @@ in {
   };
 
   networking = {
-    hostName = "k3s-paas";
     useNetworkd = true;
     useDHCP = true;
     firewall = {
+      trustedInterfaces = [ "tailscale0" "cni0" ];
       enable = true;
-      allowedTCPPorts = lib.mkForce [80 443 22 6443];
+      allowedTCPPorts = lib.mkDefault [80 443 22 6443];
+      allowedUDPPorts = [ config.services.tailscale.port ];
     };
     nftables.enable = true;
     networkmanager.enable = false;

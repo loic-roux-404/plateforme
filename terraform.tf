@@ -20,18 +20,16 @@ terraform {
 }
 
 provider "kubernetes" {
-  host        = "https://${var.vm_ip}:6443"
   config_path = "~/.kube/config"
   exec {
     api_version = "client.authentication.k8s.io/v1beta1"
-    args        = ["zizou@localhost", "-p", "2222", "sudo", "cat", "/etc/rancher/k3s/k3s.yaml", ">", "~/.kube/config"]
-    command     = "ssh"
+    args        = ["configure", "kubeconfig", "tailscale-operator"]
+    command     = "tailscale"
   }
 }
 
 provider "helm" {
   kubernetes {
-    host        = "https://${var.vm_ip}:6443"
     config_path = "~/.kube/config"
   }
 }

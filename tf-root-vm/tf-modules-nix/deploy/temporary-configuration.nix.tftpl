@@ -1,0 +1,5 @@
+{...} : {
+  %{~ for options, value in nixos_options ~}
+  ${options} = "${value}";
+  %{~ endfor ~}
+}
