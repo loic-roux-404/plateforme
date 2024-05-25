@@ -46,7 +46,7 @@ jobs:
 
       - name: Build
         id: build
-        run: nix build .#nixosConfigurations.x86_64-linux.contabo
+        run: nix build .#nixosConfigurations.contabo
 
       - name: Release
         uses: softprops/action-gh-release@v1

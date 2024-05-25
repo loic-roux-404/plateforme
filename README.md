@@ -100,8 +100,8 @@ cntb get instances
 > **Warn :** Delete `@` record for your domain on [gandi](https://admin.gandi.net/domain/)
 
 ### 3. Tailscale (SSH VPN)
-
-**`tailscale_api_key`** : Register on tailscale and get key on [admin console](https://login.tailscale.com/admin/settings/keys)
+**`tailscale_oauth_client_id`** : Register on tailscale and get key on [admin console](https://login.tailscale.com/admin/settings/keys)
+**`tailscale_oauth_client_secret`** : retrieve it during step above.
 **`tailscale_trusted_device`** : Approve your device on tailscale with **`tailscale login`** and recover its tailscale hostname.
 
 ### 4. Github (Authentication & users)
@@ -202,6 +202,13 @@ openssl passwd -salt zizou -6 zizou420!
 
 ### Kubectl
 
+Set context :
+
+```bash
+kubectl config set-cluster default --server=http://k3s-paas-master-0:6443
+kubectl config default test-cluster
+```
+
 See all pods :
 
 ```bash
@@ -212,4 +219,12 @@ See any assets :
 
 ```bash
 kubectl get all -A
+```
+
+### Tailscale
+
+Retrieve kubeconfig :
+
+```bash
+tailscale configure kubeconfig
 ```

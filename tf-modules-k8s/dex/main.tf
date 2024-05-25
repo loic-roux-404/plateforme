@@ -4,18 +4,12 @@ resource "kubernetes_namespace" "cert-manager" {
   }
 }
 
-resource "random_password" "dex_client_id" {
-  length  = 16
-  special = false
-}
-
 resource "random_password" "dex_client_secret" {
   length  = 24
   special = false
 }
 
 locals {
-  dex_client_id     = random_password.dex_client_id.result
   dex_client_secret = random_password.dex_client_secret.result
 }
 
@@ -34,7 +28,7 @@ resource "helm_release" "dex" {
       github_client_id            = var.github_client_id,
       github_client_secret        = var.github_client_secret,
       dex_github_orgs             = jsonencode(var.dex_github_orgs),
-      dex_client_id               = local.dex_client_id,
+      dex_client_id               = var.dex_client_id,
       paas_hostname               = var.paas_hostname,
       dex_client_secret           = local.dex_client_secret,
       k8s_ingress_class           = var.k8s_ingress_class
@@ -63,10 +57,6 @@ output "dex_ingress" {
 
 output "dex_service" {
   value = data.kubernetes_service.dex_service.id
-}
-
-output "dex_client_id" {
-  value = local.dex_client_id
 }
 
 output "dex_client_secret" {

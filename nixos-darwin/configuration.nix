@@ -8,7 +8,6 @@
   programs.fish.enable = true;
   programs.bash.enable = true;
   programs.direnv.enable = true;
-  environment.systemPackages = [ pkgs.bashInteractive ];
 
   services.dnsmasq = {
     enable = true;
@@ -16,6 +15,8 @@
       ".${config.k3s-paas.dns.name}" = config.k3s-paas.dns.dest-ip;
     };
   };
+  services.tailscale.enable = true;
+
   launchd.daemons."libvirt" = {
     path = [ pkgs.gcc pkgs.qemu pkgs.dnsmasq pkgs.libvirt ];
     serviceConfig = {
@@ -64,16 +65,13 @@
     dynamic_ownership = 0
     remember_owner = 0
   '';
-  security.pki.certificateFiles = [
-    "${pkgs.cacert}/etc/ssl/certs/ca-bundle.crt"
-    ./pebble/cert.pem
-  ];
+  security.pki.installCACerts = true;
   environment.etc."pebble/config.json".text = builtins.toJSON {
     pebble = {
       listenAddress = "0.0.0.0:14000";
       managementListenAddress = "0.0.0.0:15000";
-      certificate = pkgs.writeText "pebble-cert" (builtins.readFile ./pebble/cert.pem);
-      privateKey = pkgs.writeText "pebble-key" (builtins.readFile ./pebble/key.pem);
+      certificate = pkgs.writeText "cert" (builtins.readFile ./pebble/cert.crt);
+      privateKey = pkgs.writeText "key" (builtins.readFile ./pebble/cert.key);
       httpPort = 80;
       tlsPort = 443;
       ocspResponderURL = "";

@@ -3,8 +3,9 @@
 
   inputs = {
     # Package sets
-    nixpkgs-stable.url = "github:NixOS/nixpkgs/23.11";
-    nixpkgs-stable-darwin.url = "github:NixOS/nixpkgs/nixpkgs-23.11-darwin";
+    nixpkgs-legacy.url = "github:NixOS/nixpkgs/23.11";
+    nixpkgs-stable.url = "github:NixOS/nixpkgs/24.05";
+    nixpkgs-stable-darwin.url = "github:NixOS/nixpkgs/nixpkgs-24.05-darwin";
     nixpkgs-unstable.url = "github:NixOS/nixpkgs/nixos-unstable";
     srvos.url = "github:numtide/srvos";
     nixpkgs-srvos.follows = "srvos/nixpkgs";
@@ -27,11 +28,12 @@
     flake-compat = { url = "github:edolstra/flake-compat"; flake = false; };
     flake-utils.url = "github:numtide/flake-utils";
 
+    sops-nix.url = "github:Mic92/sops-nix";
   };
 
   outputs = { self, srvos, darwin, nixos-generators, flake-utils, ... }@inputs:
     let
-      inherit (self.lib) attrValues makeOverridable mkForce optionalAttrs singleton;
+      inherit (self.lib) attrValues makeOverridable mkForce optionalAttrs singleton nixosSystem;
       nixpkgsDefaults = {
         config = {
           allowUnfree = true;
@@ -75,6 +77,7 @@
       };
 
       nixosModules = {
+        sops = inputs.sops-nix.nixosModules.sops;
         common = srvos.nixosModules.common;
         server = srvos.nixosModules.server;
         home-manager = inputs.home-manager.nixosModules.home-manager;
@@ -82,14 +85,24 @@
         config = ./nixos-options/default.nix;
       };
 
+      nixosAllModules = rec {
+        default = attrValues self.nixosModules;
+        contabo = default ++ [ ./nixos/contabo.nix ];
+        deploy = default ++ [ ./nixos/tailscale-deploy.nix  ./nixos/deploy.nix ];
+        deployContabo = default ++ [ ./nixos/contabo.nix ./nixos/tailscale.nix  ./nixos/deploy.nix ];
+      };
+
       darwinConfigurations = {
         default = self.darwinConfigurations.builder;
         builder = makeOverridable self.lib.mkDarwinSystem ({
-          modules = attrValues self.darwinModules ++ singleton {
+          modules = attrValues self.darwinModules;
+          extraModules = singleton ({ pkgs, ... } : {
             nixpkgs = nixpkgsDefaults;
             nix.registry.my.flake = inputs.self;
-          };
-          extraModules = singleton {};
+            environment.systemPackages = [ 
+              pkgs.bashInteractive 
+            ];
+          });
         });
 
         # Need a bare darwinConfigurations.builder started before building this one.
@@ -111,43 +124,53 @@
           };
         };
       };
-
-    } // flake-utils.lib.eachDefaultSystem (system: 
+    } 
+    // flake-utils.lib.eachDefaultSystem (system:
     let
       linux = builtins.replaceStrings ["darwin"] ["linux"] system;
       legacyPackages = import inputs.nixpkgs-srvos (nixpkgsDefaults // { inherit system; });
       stableLegacyPackages = import inputs.nixpkgs-stable (nixpkgsDefaults // { inherit system; });
+      oldLegacyPackages = import inputs.nixpkgs-legacy (nixpkgsDefaults // { inherit system; });
+      specialArgs = {
+        inherit oldLegacyPackages;
+      };
     in {
-      # Re-export `nixpkgs-stable` with overlays.
-      # This is handy in combination with setting `nix.registry.my.flake = inputs.self`.
-      # Allows doing things like `nix run my#prefmanager -- watch --all`
-      inherit legacyPackages;
-      inherit stableLegacyPackages;
 
-      nixosConfigurations = rec {
-        default = qcow;
+      packages.nixosConfigurations = {
+        default = self.qcow;
 
-        qcow = makeOverridable nixos-generators.nixosGenerate {
+        deploy = nixosSystem {
           system = linux;
-          modules = attrValues self.nixosModules;
-          format = "qcow";
-          specialArgs = {
-            inherit stableLegacyPackages;
-          };
+          inherit specialArgs;
+          modules = self.nixosAllModules.deploy;
         };
 
-        iso = self.nixosConfigurations.${system}.qcow.override {
+        deploy-contabo = nixosSystem {
+          system = "x86_64-linux";
+          inherit specialArgs;
+          modules = self.nixosAllModules.deployContabo;
+        };
+
+        qcow = makeOverridable nixos-generators.nixosGenerate {
+          inherit system specialArgs;
+          modules = self.nixosAllModules.default ++ [
+            ./nixos/qcow-compressed.nix
+          ];
+          format = "qcow";
+        };
+
+        iso = self.packages.${system}.nixosConfigurations.qcow.override {
           format = "iso";
         };
 
-        contabo = self.nixosConfigurations.${system}.qcow.override {
-          modules = attrValues self.nixosModules ++ [
-            ./nixos/contabo.nix
+        contabo = self.packages.${system}.nixosConfigurations.qcow.override {
+          modules = self.nixosAllModules.contabo ++ [
+            ./nixos/qcow-compressed.nix
           ];
         };
 
-        container = self.nixosConfigurations.${system}.qcow.override {
-          modules = attrValues self.nixosModules ++ [ 
+        container = self.packages.${system}.nixosConfigurations.qcow.override {
+          modules = self.nixosAllModules.default ++ [ 
             ./nixos/docker.nix
           ];
           format = "docker";
@@ -159,8 +182,8 @@
       # With `nix.registry.my.flake = inputs.self`, development shells can be created by running,
       # e.g., `nix develop my#python`.
       devShells = let 
-        pkgs = self.legacyPackages.${system};
-        stablePkgs = self.stableLegacyPackages.${system};
+        pkgs = legacyPackages;
+        stablePkgs = stableLegacyPackages;
        in
         {
           default = pkgs.mkShell {
@@ -169,8 +192,9 @@
               inherit (pkgs) bashInteractive grpcurl jq coreutils e2fsprogs
               docker-client kubectl kubernetes-helm libvirt qemu
               tailscale pebble cntb
-              nil nix-tree python3;
-              inherit (stablePkgs) terraform waypoint;
+              nil nix-tree;
+              inherit (stablePkgs) nix terraform sops ssh-to-age nixos-rebuild;
+              inherit (oldLegacyPackages) waypoint;
             };
             shellHook = ''
               export DOCKER_HOST=tcp://127.0.0.1:2375

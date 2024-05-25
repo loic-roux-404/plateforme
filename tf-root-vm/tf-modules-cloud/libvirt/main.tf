@@ -28,7 +28,7 @@ resource "libvirt_volume" "nixos_worker" {
 }
 
 resource "libvirt_domain" "machine" {
-  name      = "vm1"
+  name      = var.node_hostname
   vcpu      = 2
   memory    = 4096
   type      = "hvf"
@@ -36,14 +36,13 @@ resource "libvirt_domain" "machine" {
 
   disk {
     volume_id = libvirt_volume.nixos_worker.id
-    #scsi      = true
   }
 
-  # filesystem {
-  #   source   = "/nix/store"
-  #   target   = "nix-store"
-  #   readonly = false
-  # }
+  filesystem {
+    source   = "/nix/store"
+    target   = "nix-store"
+    readonly = false
+  }
 
   filesystem {
     source   = "${path.cwd}/xchg"
@@ -83,58 +82,20 @@ resource "libvirt_domain" "machine" {
   }
 
   provisioner "local-exec" {
-    when    = create
-    command = "ssh-keygen -R [localhost]:2222 && ssh-keygen -R [127.0.0.1]:2222"
+    command = "ssh-keygen -R localhost && ssh-keygen -R 127.0.0.1"
   }
 }
 
-resource "null_resource" "ensure_started" {
-  triggers = {
-    domain_id = libvirt_domain.machine.id
-  }
-  provisioner "remote-exec" {
-    connection {
-      type        = "ssh"
-      user        = var.ssh_connection.user
-      host        = "localhost"
-      private_key = local.private_key
-      port        = "2222"
-      agent       = false
-      timeout     = "4m"
-    }
-
-    inline = ["echo 'Vm ${libvirt_domain.machine.id} started'"]
-  }
+output "name" {
+  depends_on = [ libvirt_domain.machine ]
+  value = var.node_hostname
 }
 
-resource "null_resource" "copy_k3s_config" {
-  triggers = {
-    domain_id = libvirt_domain.machine.id
-    started = null_resource.ensure_started.id
-  }
-  provisioner "local-exec" {
-    command = "ssh ${var.ssh_connection.user}@localhost -p 2222 'sudo cat /etc/rancher/k3s/k3s.yaml' > ~/.kube/config"
-  }
+output "id" {
+  value = libvirt_domain.machine.id
 }
 
-data "healthcheck_http" "k3s" {
-  depends_on = [ null_resource.ensure_started ]
-  path         = "livez?verbose"
-  status_codes = [200]
-  endpoints = [
-    {
-      name    = "k3s-1"
-      address = "127.0.0.1"
-      port    = 6443
-    },
-  ]
-}
-
-data "healthcheck_filter" "k3s" {
-  up   = data.healthcheck_http.k3s.up
-  down = data.healthcheck_http.k3s.down
-}
-
-output "up_k3s_endpoint" {
-  value = data.healthcheck_filter.k3s.up
+output "ip" {
+  value = "127.0.0.1"
+  depends_on = [ libvirt_domain.machine ]
 }

@@ -5,6 +5,8 @@ MAKEFLAGS += --no-builtin-rules --no-builtin-variables
 
 BUILDER_EXEC:=
 NIXOS_CONFIG:=qcow
+TF_WORKSPACE:=dev
+TF_ALL_WORKSPACES:=dev prod
 
 ifeq ($(shell uname -s),Darwin)
    BUILDER_EXEC:=NIX_CONF_DIR=$(PWD)/bootstrap nix develop .\#builder --command
@@ -14,20 +16,22 @@ bootstrap:
 	@$(BUILDER_EXEC) echo "Started build environment"
 
 build:
-	@$(BUILDER_EXEC) nix build .#nixosConfigurations.aarch64-darwin.$(NIXOS_CONFIG) --system aarch64-linux $(ARGS)
-
-build-x86:
-	@$(BUILDER_EXEC) nix build .#nixosConfigurations.x86_64-darwin.$(NIXOS_CONFIG) --system x86_64-linux $(ARGS)
+	@nix build .#nixosConfigurations.$(NIXOS_CONFIG) --system aarch64-linux $(ARGS)
 
 #### Terraform
 
 TF_ROOT_DIRS := $(wildcard tf-root-*) .
-TF_ROOT_DIRS_DESTROY:=$(addsuffix -destroy, $(TF_ROOT_DIRS))
-TF_ROOT_DIRS_INIT:=$(addsuffix -init, $(TF_ROOT_DIRS))
-TF_ROOT_DIRS_FMT:=$(addsuffix -fmt, $(TF_ROOT_DIRS))
-TF_ROOT_DIRS_VALIDATE:=$(addsuffix -validate, $(TF_ROOT_DIRS))
+TF_ROOT_DIRS_DESTROY:=$(addsuffix -destroy,$(TF_ROOT_DIRS))
+TF_ROOT_DIRS_CONSOLE:=$(addsuffix -console,$(TF_ROOT_DIRS))
+TF_ROOT_DIRS_INIT:=$(addsuffix -init,$(TF_ROOT_DIRS))
+TF_ROOT_DIRS_FMT:=$(addsuffix -fmt,$(TF_ROOT_DIRS))
+TF_ROOT_DIRS_VALIDATE:=$(addsuffix -validate,$(TF_ROOT_DIRS))
 
-init: $(TF_ROOT_DIRS_INIT)
+init: $(TF_ROOT_DIRS_INIT) $(TF_ALL_WORKSPACES)
+	@terraform workspace select $(TF_WORKSPACE)
+
+$(TF_ALL_WORKSPACES):
+	@terraform workspace new $@ || true
 
 $(TF_ROOT_DIRS_INIT):
 	@$(eval DIR:=$(subst -init,,$@))
@@ -39,6 +43,10 @@ $(TF_ROOT_DIRS):
 $(TF_ROOT_DIRS_DESTROY):
 	@$(eval DIR:=$(subst -destroy,,$@))
 	@terraform -chdir=$(DIR) destroy -auto-approve $(ARGS)
+
+$(TF_ROOT_DIRS_CONSOLE):
+	@$(eval DIR:=$(subst -console,,$@))
+	@terraform -chdir=$(DIR) console $(ARGS)
 
 fmt: $(TF_ROOT_DIRS_FMT)
 
@@ -52,14 +60,10 @@ $(TF_ROOT_DIRS_VALIDATE):
 	@$(eval DIR:=$(subst -validate,,$@))
 	terraform -chdir=$(DIR) validate -no-color $(ARGS)
 
-#### Image server
+trust-ca:
+	@curl -k https://localhost:15000/intermediates/0 > /tmp/pebble.crt && \
+      sudo security add-trusted-cert -d -r trustAsRoot -k /Library/Keychains/System.keychain /tmp/pebble.crt
 
-serve-iso:
-	@nohup python -m http.server -d result/iso &
-
-kill-iso-server:
-	@pkill -f "python -m http.server"
-
-.PHONY: fmt validate build build-x86 bootstrap init \
+.PHONY: fmt validate build build-x86 bootstrap init trust-ca \
   $(TF_ROOT_DIRS) $(TF_ROOT_DIRS_DESTROY) $(TF_ROOT_DIRS_INIT) \
-  serve-iso kill-iso-server
+  $(TF_ROOT_DIRS_CONSOLE) $(TF_ROOT_DIRS_FMT) $(TF_ROOT_DIRS_VALIDATE)

@@ -1,7 +1,7 @@
 variable "port_mappings" {
   type = map(number)
   default = {
-    2222 = 22
+    22 = 22
     6443 = 6443
     443  = 443
     80   = 80
@@ -41,4 +41,9 @@ variable "ssh_connection" {
 
 variable "libvirt_pool_path" {
   default = "/etc/libvirt/k3s-paas-pool"
+}
+
+variable "node_hostname" {
+  type = string
+  default = "localhost"
 }

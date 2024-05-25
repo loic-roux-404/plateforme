@@ -1,5 +1,5 @@
-variable "k3s_token" {
-  default = "example-token"
+variable "paas_hostname" {
+  default = "paas.k3s.test"
 }
 
 variable "paas_base_domain" {
@@ -16,10 +16,6 @@ variable "cert_manager_namespace" {
 
 variable "cert_manager_email" {
   default = "toto@k3s.test"
-}
-
-variable "cert_manager_private_key_secret" {
-  default = "test_secret"
 }
 
 variable "dex_namespace" {
@@ -47,12 +43,15 @@ variable "github_team" {
   default = "ops-team"
 }
 
-variable "paas_namespace" {
-  default = "default"
+variable "tailscale_oauth_client" {
+  type = object({
+    id     = string
+    secret = string
+  })
 }
 
-variable "paas_hostname" {
-  default = "paas.k3s.test"
+variable "paas_namespace" {
+  default = "default"
 }
 
 variable "k8s_ingress_class" {
@@ -100,4 +99,8 @@ variable "vm_ip" {
 
 variable "internal_network_ip" {
   default = "10.0.2.2"
+}
+
+variable "nix_flake" {
+  default = "#nixosConfigurations.aarch64-linux.default"
 }
