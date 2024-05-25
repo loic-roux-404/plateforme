@@ -97,13 +97,11 @@ resource "terraform_data" "paas_instance_wait_bootstrap" {
     host        = contabo_instance.paas_instance.ip_config[0].v4[0].ip
   }
 
-  # TODO move following code in a nix configuration to update machine with
-  # new user, ssh key password and tailscale link
   provisioner "remote-exec" {
-    on_failure = fail
+    on_failure = continue
     inline = [
       "echo ${contabo_instance.paas_instance.id}",
-      "tailscale, up, -authkey, '${tailscale_tailnet_key.k3s_paas_node.key}'"
+      "sudo tailscale up --ssh -authkey '${tailscale_tailnet_key.k3s_paas_node.key}'"
     ]
   }
 }

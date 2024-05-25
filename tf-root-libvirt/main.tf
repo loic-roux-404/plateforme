@@ -36,14 +36,13 @@ resource "libvirt_domain" "machine" {
 
   disk {
     volume_id = libvirt_volume.nixos_worker.id
-    #scsi      = true
   }
 
-  # filesystem {
-  #   source   = "/nix/store"
-  #   target   = "nix-store"
-  #   readonly = false
-  # }
+  filesystem {
+    source   = "/nix/store"
+    target   = "nix-store"
+    readonly = false
+  }
 
   filesystem {
     source   = "${path.cwd}/xchg"

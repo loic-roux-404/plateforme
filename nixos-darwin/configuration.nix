@@ -16,6 +16,8 @@
       ".${config.k3s-paas.dns.name}" = config.k3s-paas.dns.dest-ip;
     };
   };
+  services.tailscale.enable = true;
+
   launchd.daemons."libvirt" = {
     path = [ pkgs.gcc pkgs.qemu pkgs.dnsmasq pkgs.libvirt ];
     serviceConfig = {
