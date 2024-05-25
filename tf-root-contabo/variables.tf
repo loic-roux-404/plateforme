@@ -43,7 +43,7 @@ variable "gandi_dnssec_public_key" {
 }
 
 variable "image_version" {
-  default = "9883308"
+  default = "1817d1d"
 }
 
 variable "image_url_format" {
