@@ -34,6 +34,12 @@ module "ingress-nginx" {
   default_ssl_certificate     = true
 }
 
+module "tailscale" {
+  source                        = "./tf-modules-k8s/tailscale"
+  tailscale_oauth_client_id     = var.tailscale_oauth_client_id
+  tailscale_oauth_client_secret = var.tailscale_oauth_client_secret
+}
+
 module "internal_ca" {
   source                   = "./tf-modules-k8s/internal-ca"
   for_each                 = var.cert_manager_letsencrypt_env == "local" ? toset(["internal-ca"]) : toset([])

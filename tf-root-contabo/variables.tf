@@ -2,7 +2,20 @@ variable "tailscale_trusted_device" {
   type = string
 }
 
-variable "tailscale_api_key" {
+variable "tailscale_node_device" {
+  type    = string
+  default = "k3s-paas"
+}
+
+variable "tailscale_oauth_client_id" {
+  type = string
+}
+
+variable "tailscale_oauth_client_secret" {
+  type = string
+}
+
+variable "tailscale_tailnet" {
   type = string
 }
 
@@ -43,25 +56,25 @@ variable "gandi_dnssec_public_key" {
 }
 
 variable "image_version" {
-  default = "1817d1d"
+  default = "minimal"
 }
 
 variable "image_url_format" {
-  default = "https://github.com/loic-roux-404/k3s-paas/releases/download/nixos-%s/nixos.qcow2"
+  default = "https://channels.nixos.org/nixos-23.11/latest-nixos-%s-x86_64-linux.iso"
 }
 
 variable "ssh_connection" {
   type = object({
-    user          = string
-    password      = string
-    public_key    = string
-    private_key   = string
+    user        = string
+    password    = string
+    public_key  = string
+    private_key = string
   })
   default = {
-    password      = "zizou420!"
-    private_key   = "~/.ssh/id_ed25519"
-    public_key    = "~/.ssh/id_ed25519.pub"
-    user          = "admin"
+    password    = "zizou420!"
+    private_key = "~/.ssh/id_ed25519"
+    public_key  = "~/.ssh/id_ed25519.pub"
+    user        = "admin"
   }
   sensitive = true
 }

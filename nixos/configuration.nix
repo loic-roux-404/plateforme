@@ -8,7 +8,6 @@
 }: 
 
 let
-  dex_hostname = "https://dex.${config.k3s-paas.dns.name}";
   certs = builtins.map (cert: builtins.fetchurl { inherit (cert) url sha256; }) config.k3s-paas.certs;
   certManagerCrds = builtins.fetchurl {
     url = "https://github.com/cert-manager/cert-manager/releases/download/v1.14.4/cert-manager.crds.yaml";
@@ -16,7 +15,6 @@ let
   };
   manifests = builtins.filter (d: d != "") [certManagerCrds];
 in {
-
   system.build.qcow = lib.mkForce (import "${toString modulesPath}/../lib/make-disk-image.nix" {
     inherit lib config pkgs;
     diskSize = "auto";
@@ -34,15 +32,6 @@ in {
   boot.loader.systemd-boot.consoleMode = "auto";
 
   zramSwap.algorithm  = "zstd";
-
-  # fileSystems = {
-  #   "/boot" = { 
-  #     device = "/dev/disk/by-label/boot";
-  #     fsType = "vfat";
-  #   };
-  # };
-
-  #services.cloud-init.enable = true;
 
   system.stateVersion = "23.05";
 
@@ -67,16 +56,12 @@ in {
     };
     tailscale = {
       enable = true;
+      openFirewall = true;
     };
     k3s = {
       enable = true;
       role = "server";
       extraFlags = with config.k3s-paas; toString [
-        "--kube-apiserver-arg authorization-mode=Node,RBAC"
-        "--kube-apiserver-arg oidc-issuer-url=${dex_hostname}"
-        "--kube-apiserver-arg oidc-client-id=${dex.dex_client_id}"
-        "--kube-apiserver-arg oidc-username-claim=email"
-        "--kube-apiserver-arg oidc-groups-claim=groups"
         (if k3s.disableServices != "" then "--disable=${k3s.disableServices}" else "")
        ];
     };

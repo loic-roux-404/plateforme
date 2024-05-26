@@ -112,6 +112,22 @@
         };
       };
 
+    colmena = {
+      meta = {
+        nixpkgs = import inputs.nixpkgs-stable { system ="x86_64-linux"; };
+      };
+
+      k3s-paas-master = [
+        ./nixos-nodes/k3s-paas-master.nix
+        ./nixos-options/k3s-paas.nix
+      ];
+
+      k3s-paas-agent = [
+        ./nixos-nodes/k3s-paas-agent.nix
+        ./nixos-options
+      ];
+    };
+
     } // flake-utils.lib.eachDefaultSystem (system: 
     let
       linux = builtins.replaceStrings ["darwin"] ["linux"] system;
@@ -169,7 +185,7 @@
               inherit (pkgs) bashInteractive grpcurl jq coreutils e2fsprogs
               docker-client kubectl kubernetes-helm libvirt qemu
               tailscale pebble cntb
-              nil nix-tree python3;
+              nil nix-tree colmena;
               inherit (stablePkgs) terraform waypoint;
             };
             shellHook = ''

@@ -52,14 +52,5 @@ $(TF_ROOT_DIRS_VALIDATE):
 	@$(eval DIR:=$(subst -validate,,$@))
 	terraform -chdir=$(DIR) validate -no-color $(ARGS)
 
-#### Image server
-
-serve-iso:
-	@nohup python -m http.server -d result/iso &
-
-kill-iso-server:
-	@pkill -f "python -m http.server"
-
 .PHONY: fmt validate build build-x86 bootstrap init \
-  $(TF_ROOT_DIRS) $(TF_ROOT_DIRS_DESTROY) $(TF_ROOT_DIRS_INIT) \
-  serve-iso kill-iso-server
+  $(TF_ROOT_DIRS) $(TF_ROOT_DIRS_DESTROY) $(TF_ROOT_DIRS_INIT)

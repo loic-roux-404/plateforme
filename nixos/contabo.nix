@@ -12,6 +12,7 @@
 
   k3s-paas.dns.name = "404-tools.xyz";
   k3s-paas.certs = [];
-  # system.autoUpgrade.flake = "github:loic-roux-404/k3s-paas#nixosConfigurations.${pkgs.system}.default";
+  
+  system.autoUpgrade.flake = "github:loic-roux-404/k3s-paas#nixosConfigurations.${pkgs.system}.default";
 }
  

@@ -100,8 +100,8 @@ cntb get instances
 > **Warn :** Delete `@` record for your domain on [gandi](https://admin.gandi.net/domain/)
 
 ### 3. Tailscale (SSH VPN)
-
-**`tailscale_api_key`** : Register on tailscale and get key on [admin console](https://login.tailscale.com/admin/settings/keys)
+**`tailscale_oauth_client_id`** : Register on tailscale and get key on [admin console](https://login.tailscale.com/admin/settings/keys)
+**`tailscale_oauth_client_secret`** : retrieve it during step above.
 **`tailscale_trusted_device`** : Approve your device on tailscale with **`tailscale login`** and recover its tailscale hostname.
 
 ### 4. Github (Authentication & users)

@@ -1,4 +1,4 @@
-{ lib, ... }:
+{ lib, config, pkgs, ... }:
 
 {
   options.k3s-paas = {
@@ -48,10 +48,35 @@
       description = "Disable k3s services eg: traefik,servicelb";
     };
 
-    dex.dex_client_id = lib.mkOption {
-      default = "client-id";
+    tailscale.authKey = lib.mkOption {
+      type = lib.types.str;
+      description = "Client ID for Tailscale";
+    };
+
+    k3s.token = lib.mkOption {
+      type = lib.types.str;
+      description = "K3s token";
+    };
+
+    dex.dexClientId = lib.mkOption {
       type = lib.types.str;
       description = "Client ID for Dex";
     };
+  };
+
+  services.k3s.tokenFile = with config.k3s-paas.k3s; lib.mkIf token (pkgs.writeText "token" token);
+  services.k3s.extraFlags = with config.k3s-paas; lib.mkIf dexClientId (toString [
+    "--kube-apiserver-arg authorization-mode=Node,RBAC"
+    "--kube-apiserver-arg oidc-issuer-url=https://dex.${dns.name}"
+    "--kube-apiserver-arg oidc-client-id=${dex.dexClientId}"
+    "--kube-apiserver-arg oidc-username-claim=email"
+    "--kube-apiserver-arg oidc-groups-claim=groups"
+    (if k3s.disableServices != "" then "--disable=${k3s.disableServices}" else "")
+  ]);
+
+  services.tailscale = lib.mkIf config.k3s-paas.tailscale.authKey != null {
+    extraUpFlags = ["--ssh"];
+    authKeyFile = pkgs.writeText "tailscale-authkey" config.k3s-paas.tailscale.authKey;
+    permitCertUid = config.k3s-paas.user.name;
   };
 }

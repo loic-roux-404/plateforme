@@ -16,12 +16,17 @@ terraform {
     tailscale = {
       source = "tailscale/tailscale"
     }
+    healthcheck = {
+      source  = "Ferlab-Ste-Justine/healthcheck"
+      version = "0.2.0"
+    }
   }
 }
 
 provider "tailscale" {
-  api_key = var.tailscale_api_key
-  #tailnet = var.tailscale_tailnet_id
+  oauth_client_id     = var.tailscale_oauth_client_id
+  oauth_client_secret = var.tailscale_oauth_client_secret
+  tailnet             = var.tailscale_tailnet
 }
 
 provider "gandi" {
