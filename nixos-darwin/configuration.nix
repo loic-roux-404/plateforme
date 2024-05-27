@@ -66,16 +66,17 @@
     dynamic_ownership = 0
     remember_owner = 0
   '';
+  security.pki.installCACerts = true;
   security.pki.certificateFiles = [
     "${pkgs.cacert}/etc/ssl/certs/ca-bundle.crt"
-    ./pebble/cert.pem
+    ./pebble/cert.crt
   ];
   environment.etc."pebble/config.json".text = builtins.toJSON {
     pebble = {
       listenAddress = "0.0.0.0:14000";
       managementListenAddress = "0.0.0.0:15000";
-      certificate = pkgs.writeText "pebble-cert" (builtins.readFile ./pebble/cert.pem);
-      privateKey = pkgs.writeText "pebble-key" (builtins.readFile ./pebble/key.pem);
+      certificate = pkgs.writeText "cert" (builtins.readFile ./pebble/cert.crt);
+      privateKey = pkgs.writeText "key" (builtins.readFile ./pebble/cert.key);
       httpPort = 80;
       tlsPort = 443;
       ocspResponderURL = "";

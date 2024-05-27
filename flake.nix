@@ -112,27 +112,12 @@
         };
       };
 
-    colmena = {
-      meta = {
-        nixpkgs = import inputs.nixpkgs-stable { system ="x86_64-linux"; };
-      };
-
-      k3s-paas-master = [
-        ./nixos-nodes/k3s-paas-master.nix
-        ./nixos-options/k3s-paas.nix
-      ];
-
-      k3s-paas-agent = [
-        ./nixos-nodes/k3s-paas-agent.nix
-        ./nixos-options
-      ];
-    };
-
     } // flake-utils.lib.eachDefaultSystem (system: 
     let
       linux = builtins.replaceStrings ["darwin"] ["linux"] system;
       legacyPackages = import inputs.nixpkgs-srvos (nixpkgsDefaults // { inherit system; });
       stableLegacyPackages = import inputs.nixpkgs-stable (nixpkgsDefaults // { inherit system; });
+      stablex86Packages = import inputs.nixpkgs-stable (nixpkgsDefaults // { system = "x86_64-linux"; });
     in {
       # Re-export `nixpkgs-stable` with overlays.
       # This is handy in combination with setting `nix.registry.my.flake = inputs.self`.
@@ -140,12 +125,40 @@
       inherit legacyPackages;
       inherit stableLegacyPackages;
 
+      colmena = {
+        meta = {
+          nixpkgs = import inputs.nixpkgs-stable (nixpkgsDefaults // { inherit system; });
+          nodeNixpkgs = {
+            k3s-paas-master-contabo = stablex86Packages;
+            k3s-paas-agent-contabo = stablex86Packages;
+          };
+        };
+
+        default = attrValues self.nixosModules;
+        k3s-paas-master = [
+          ./nixos-nodes/k3s-paas-master.nix
+        ];
+        k3s-paas-agent = self.colmena.k3s-paas-master ++ [
+          ./nixos-nodes/k3s-paas-agent.nix
+        ];
+        k3s-paas-master-contabo = self.colmena.k3s-paas-master ++ [
+          ./nixos/contabo.nix
+          ./nixos-nodes/contabo-master.nix
+        ];
+        k3s-paas-agent-contabo = self.colmena.k3s-paas-agent ++ [
+          ./nixos/contabo.nix
+          ./nixos-nodes/contabo-agent.nix
+        ];
+      };
+
       nixosConfigurations = rec {
         default = qcow;
 
         qcow = makeOverridable nixos-generators.nixosGenerate {
           system = linux;
-          modules = attrValues self.nixosModules;
+          modules = attrValues self.nixosModules ++ [
+            ./nixos/qcow-compressed.nix
+          ];
           format = "qcow";
           specialArgs = {
             inherit stableLegacyPackages;
@@ -159,12 +172,14 @@
         contabo = self.nixosConfigurations.${system}.qcow.override {
           modules = attrValues self.nixosModules ++ [
             ./nixos/contabo.nix
+            ./nixos/qcow-compressed.nix
           ];
         };
 
         container = self.nixosConfigurations.${system}.qcow.override {
           modules = attrValues self.nixosModules ++ [ 
             ./nixos/docker.nix
+            ./nixos/qcow-compressed.nix
           ];
           format = "docker";
         };
@@ -186,7 +201,7 @@
               docker-client kubectl kubernetes-helm libvirt qemu
               tailscale pebble cntb
               nil nix-tree colmena;
-              inherit (stablePkgs) terraform waypoint;
+              inherit (stablePkgs) nix terraform waypoint;
             };
             shellHook = ''
               export DOCKER_HOST=tcp://127.0.0.1:2375

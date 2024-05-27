@@ -9,7 +9,6 @@ resource "helm_release" "tailscale_operator" {
   repository        = "https://pkgs.tailscale.com/helmcharts"
   chart             = "tailscale-operator"
   namespace         = kubernetes_namespace.tailscale.metadata.0.name
-  create_namespace  = true
   wait_for_jobs = true
   wait          = true
 

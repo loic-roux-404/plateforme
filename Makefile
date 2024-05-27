@@ -5,6 +5,8 @@ MAKEFLAGS += --no-builtin-rules --no-builtin-variables
 
 BUILDER_EXEC:=
 NIXOS_CONFIG:=qcow
+TF_WORKSPACE:=dev
+TF_ALL_WORKSPACES:=dev prod
 
 ifeq ($(shell uname -s),Darwin)
    BUILDER_EXEC:=NIX_CONF_DIR=$(PWD)/bootstrap nix develop .\#builder --command
@@ -27,16 +29,21 @@ TF_ROOT_DIRS_INIT:=$(addsuffix -init, $(TF_ROOT_DIRS))
 TF_ROOT_DIRS_FMT:=$(addsuffix -fmt, $(TF_ROOT_DIRS))
 TF_ROOT_DIRS_VALIDATE:=$(addsuffix -validate, $(TF_ROOT_DIRS))
 
-init: $(TF_ROOT_DIRS_INIT)
+init: $(TF_ROOT_DIRS_INIT) $(TF_ALL_WORKSPACES)
+
+$(TF_ALL_WORKSPACES):
+	@terraform workspace new $@ || true
 
 $(TF_ROOT_DIRS_INIT):
 	@$(eval DIR:=$(subst -init,,$@))
 	terraform -chdir=$(DIR) init -upgrade $(ARGS)
 
 $(TF_ROOT_DIRS):
+	@terraform workspace select $(TF_WORKSPACE)
 	@terraform -chdir=$@ apply -compact-warnings -auto-approve $(ARGS)
 
 $(TF_ROOT_DIRS_DESTROY):
+	@terraform workspace select $(TF_WORKSPACE)
 	@$(eval DIR:=$(subst -destroy,,$@))
 	@terraform -chdir=$(DIR) destroy -auto-approve $(ARGS)
 

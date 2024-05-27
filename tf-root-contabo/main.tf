@@ -117,30 +117,6 @@ resource "contabo_instance" "k3s_paas_master" {
   ssh_keys             = [contabo_secret.k3s_paas_master_trusted_key.id]
 }
 
-# resource "null_resource" "tailscale_destroy" {
-#   triggers = {
-#     user        = local.ssh_connection.user
-#     private_key = local.ssh_connection.private_key
-#     host        = contabo_instance.k3s_paas_master.ip_config[0].v4[0].ip
-#   }
-
-#   connection {
-#     type        = "ssh"
-#     user        = self.triggers.user
-#     private_key = self.triggers.private_key
-#     host        = self.triggers.host
-#   }
-
-#   provisioner "remote-exec" {
-#     when       = destroy
-#     on_failure = continue
-#     inline = [
-#       "sudo tailscale down",
-#       "sudo tailscale serve reset",
-#     ]
-#   }
-# }
-
 locals {
   nixos_options = {
     "k3s-paas.dex.dexClientId" = "id-dex-default"
@@ -172,8 +148,6 @@ resource "terraform_data" "tailscale_bootstrap" {
     on_failure = fail
     inline = [
       "echo ${contabo_instance.k3s_paas_master.id}",
-      # "sudo tailscale up --ssh -authkey '${tailscale_tailnet_key.k3s_paas_node.key}'",
-      # "sudo tailscale cert ${local.tailscale_trusted_net_name}",
     ]
   }
 }

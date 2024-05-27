@@ -3,30 +3,33 @@
   lib,
   pkgs,
   stableLegacyPackages,
-  modulesPath,
   ...
-}: 
+}:
+
+with config.k3s-paas;
 
 let
-  certs = builtins.map (cert: builtins.fetchurl { inherit (cert) url sha256; }) config.k3s-paas.certs;
+  certs = [ ../nixos-darwin/pebble/cert.crt ]; # builtins.map (cert: builtins.fetchurl { inherit (cert) url sha256; }) config.k3s-paas.certs;
   certManagerCrds = builtins.fetchurl {
     url = "https://github.com/cert-manager/cert-manager/releases/download/v1.14.4/cert-manager.crds.yaml";
     sha256 = "060bn3gvrr5jphaig1g195prip5rn0x1s7qrp09q47719fgc6636";
   };
   manifests = builtins.filter (d: d != "") [certManagerCrds];
 in {
-  system.build.qcow = lib.mkForce (import "${toString modulesPath}/../lib/make-disk-image.nix" {
-    inherit lib config pkgs;
-    diskSize = "auto";
-    format = "qcow2-compressed";
-    partitionTableType = "hybrid";
-  });
+
+  fileSystems."/" = {
+    device = "/dev/disk/by-label/nixos";
+    autoResize = true;
+    fsType = "ext4";
+  };
 
   console = {
     earlySetup = true;
     keyMap = "fr";
   };
 
+  boot.growPartition = lib.mkDefault true;
+  boot.loader.grub.device = lib.mkForce "/dev/sda";
   boot.tmp.cleanOnBoot = true;
   boot.kernelPackages = pkgs.linuxPackages_latest;
   boot.loader.systemd-boot.consoleMode = "auto";
@@ -54,20 +57,35 @@ in {
         PermitRootLogin = "no";
       };
     };
-    tailscale = {
+    tailscale = lib.mkIf (tailscale.authKey != "") {
       enable = true;
       openFirewall = true;
+      extraUpFlags = ["--ssh"];
+      authKeyFile = pkgs.writeText "tailscale-authkey" tailscale.authKey;
+      permitCertUid = user.name;
     };
     k3s = {
       enable = true;
       role = "server";
-      extraFlags = with config.k3s-paas; toString [
-        (if k3s.disableServices != "" then "--disable=${k3s.disableServices}" else "")
-       ];
+      tokenFile = lib.mkIf (k3s.token != "") (pkgs.writeText "token" token);
+      extraFlags = lib.strings.concatStringsSep " " ([
+          (if k3s.disableServices != "" then "--disable=${k3s.disableServices}" else "")
+        ] ++ (if dex.dexClientId != "" then [
+          "--kube-apiserver-arg authorization-mode=Node,RBAC"
+          "--kube-apiserver-arg oidc-issuer-url=https://dex.${dns.name}"
+          "--kube-apiserver-arg oidc-client-id=${dex.dexClientId}"
+          "--kube-apiserver-arg oidc-username-claim=email"
+          "--kube-apiserver-arg oidc-groups-claim=groups"
+        ] else [])
+      );
     };
 
     fail2ban.enable = true;
   };
+
+  system.activationScripts.tailscale.text = if (tailscale.authKey != "") then ''
+    tailscale serve --bg https+insecure://localhost:6443
+  '' else "";
 
   home-manager.useGlobalPkgs = true;
   home-manager.useUserPackages = true;
@@ -118,15 +136,13 @@ in {
     defaultUserShell = pkgs.bashInteractive;
     allowNoPasswordLogin = true;
     users = {
-      ${config.k3s-paas.user.name} = {
-        password = config.k3s-paas.user.password;
+      ${user.name} = {
+        password = user.password;
         isNormalUser = true;
         extraGroups = [ "wheel" "networkmanager" ];
         openssh = {
           authorizedKeys = {
-            keys = [
-              config.k3s-paas.user.key
-            ];
+            keys = [ user.key ];
           };
         };
       };
@@ -139,7 +155,7 @@ in {
     useDHCP = true;
     firewall = {
       enable = true;
-      allowedTCPPorts = lib.mkForce [80 443 22 6443];
+      allowedTCPPorts = [80 443 22 6443];
     };
     nftables.enable = true;
     networkmanager.enable = false;

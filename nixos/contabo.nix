@@ -1,7 +1,5 @@
-{ lib, ... }:
+{ pkgs, ... }:
 {
-
-  boot.loader.grub.device = lib.mkForce "/dev/sda";
 
   boot.initrd.availableKernelModules = [ "ata_piix" "uhci_hcd" "virtio_pci" "virtio_scsi" "sd_mod" ];
   boot.initrd.kernelModules = [ ];
