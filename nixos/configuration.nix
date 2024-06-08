@@ -2,14 +2,16 @@
   config,
   lib,
   pkgs,
-  stableLegacyPackages,
+  oldLegacyPackages,
+  system,
+  inputs,
   ...
 }:
 
 with config.k3s-paas;
 
 let
-  certs = [ ../nixos-darwin/pebble/cert.crt ]; # builtins.map (cert: builtins.fetchurl { inherit (cert) url sha256; }) config.k3s-paas.certs;
+  certs = [ ../nixos-darwin/pebble/cert.crt ];
   certManagerCrds = builtins.fetchurl {
     url = "https://github.com/cert-manager/cert-manager/releases/download/v1.14.4/cert-manager.crds.yaml";
     sha256 = "060bn3gvrr5jphaig1g195prip5rn0x1s7qrp09q47719fgc6636";
@@ -57,11 +59,10 @@ in {
         PermitRootLogin = "no";
       };
     };
-    tailscale = lib.mkIf (tailscale.authKey != "") {
+    tailscale = lib.mkIf tailscale.enable {
       enable = true;
       openFirewall = true;
       extraUpFlags = ["--ssh"];
-      authKeyFile = pkgs.writeText "tailscale-authkey" tailscale.authKey;
       permitCertUid = user.name;
     };
     k3s = {
@@ -83,7 +84,7 @@ in {
     fail2ban.enable = true;
   };
 
-  system.activationScripts.tailscale.text = if (tailscale.authKey != "") then ''
+  system.activationScripts.tailscale.text = if tailscale.enable then ''
     tailscale serve --bg https+insecure://localhost:6443
   '' else "";
 
@@ -125,7 +126,7 @@ in {
       wget
       k3s
       kubectl
-      stableLegacyPackages.waypoint
+      oldLegacyPackages.waypoint
       tailscale
     ];
   };
@@ -137,7 +138,7 @@ in {
     allowNoPasswordLogin = true;
     users = {
       ${user.name} = {
-        password = user.password;
+        hashedPasswordFile = lib.mkDefault (pkgs.writeText "password" user.defaultPassword);
         isNormalUser = true;
         extraGroups = [ "wheel" "networkmanager" ];
         openssh = {
@@ -150,12 +151,11 @@ in {
   };
 
   networking = {
-    hostName = "k3s-paas";
     useNetworkd = true;
     useDHCP = true;
     firewall = {
       enable = true;
-      allowedTCPPorts = [80 443 22 6443];
+      allowedTCPPorts = lib.mkDefault [80 443 22 6443];
     };
     nftables.enable = true;
     networkmanager.enable = false;

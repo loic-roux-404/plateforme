@@ -37,3 +37,6 @@ terraform.rc
 result
 .direnv
 keys
+
+secrets.nix
+*.age

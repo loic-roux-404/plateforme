@@ -3,8 +3,9 @@
 
   inputs = {
     # Package sets
-    nixpkgs-stable.url = "github:NixOS/nixpkgs/23.11";
-    nixpkgs-stable-darwin.url = "github:NixOS/nixpkgs/nixpkgs-23.11-darwin";
+    nixpkgs-legacy.url = "github:NixOS/nixpkgs/23.11";
+    nixpkgs-stable.url = "github:NixOS/nixpkgs/24.05";
+    nixpkgs-stable-darwin.url = "github:NixOS/nixpkgs/nixpkgs-24.05-darwin";
     nixpkgs-unstable.url = "github:NixOS/nixpkgs/nixos-unstable";
     srvos.url = "github:numtide/srvos";
     nixpkgs-srvos.follows = "srvos/nixpkgs";
@@ -31,7 +32,7 @@
 
   outputs = { self, srvos, darwin, nixos-generators, flake-utils, ... }@inputs:
     let
-      inherit (self.lib) attrValues makeOverridable mkForce optionalAttrs singleton;
+      inherit (self.lib) attrValues makeOverridable mkForce optionalAttrs singleton nixosSystem;
       nixpkgsDefaults = {
         config = {
           allowUnfree = true;
@@ -82,14 +83,23 @@
         config = ./nixos-options/default.nix;
       };
 
+      nixosAllModules = rec {
+        default = attrValues self.nixosModules;
+        contabo = default ++ [ ./nixos/contabo.nix ];
+        deploy = [./nixos/deploy.nix];
+      };
+
       darwinConfigurations = {
         default = self.darwinConfigurations.builder;
         builder = makeOverridable self.lib.mkDarwinSystem ({
-          modules = attrValues self.darwinModules ++ singleton {
+          modules = attrValues self.darwinModules;
+          extraModules = singleton ({ pkgs, ... } : {
             nixpkgs = nixpkgsDefaults;
             nix.registry.my.flake = inputs.self;
-          };
-          extraModules = singleton {};
+            environment.systemPackages = [ 
+              pkgs.bashInteractive 
+            ];
+          });
         });
 
         # Need a bare darwinConfigurations.builder started before building this one.
@@ -111,75 +121,54 @@
           };
         };
       };
-
-    } // flake-utils.lib.eachDefaultSystem (system: 
+    } 
+    // flake-utils.lib.eachDefaultSystem (system:
     let
       linux = builtins.replaceStrings ["darwin"] ["linux"] system;
       legacyPackages = import inputs.nixpkgs-srvos (nixpkgsDefaults // { inherit system; });
       stableLegacyPackages = import inputs.nixpkgs-stable (nixpkgsDefaults // { inherit system; });
-      stablex86Packages = import inputs.nixpkgs-stable (nixpkgsDefaults // { system = "x86_64-linux"; });
+      oldLegacyPackages = import inputs.nixpkgs-legacy (nixpkgsDefaults // { inherit system; });
+      specialArgs = {
+        inherit oldLegacyPackages;
+      };
     in {
-      # Re-export `nixpkgs-stable` with overlays.
-      # This is handy in combination with setting `nix.registry.my.flake = inputs.self`.
-      # Allows doing things like `nix run my#prefmanager -- watch --all`
-      inherit legacyPackages;
-      inherit stableLegacyPackages;
 
-      colmena = {
-        meta = {
-          nixpkgs = import inputs.nixpkgs-stable (nixpkgsDefaults // { inherit system; });
-          nodeNixpkgs = {
-            k3s-paas-master-contabo = stablex86Packages;
-            k3s-paas-agent-contabo = stablex86Packages;
-          };
+      packages.nixosConfigurations = {
+        default = self.qcow;
+
+        deploy = nixosSystem {
+          system = linux;
+          inherit specialArgs;
+          modules = self.nixosAllModules.default ++ self.nixosAllModules.deploy;
         };
 
-        default = attrValues self.nixosModules;
-        k3s-paas-master = [
-          ./nixos-nodes/k3s-paas-master.nix
-        ];
-        k3s-paas-agent = self.colmena.k3s-paas-master ++ [
-          ./nixos-nodes/k3s-paas-agent.nix
-        ];
-        k3s-paas-master-contabo = self.colmena.k3s-paas-master ++ [
-          ./nixos/contabo.nix
-          ./nixos-nodes/contabo-master.nix
-        ];
-        k3s-paas-agent-contabo = self.colmena.k3s-paas-agent ++ [
-          ./nixos/contabo.nix
-          ./nixos-nodes/contabo-agent.nix
-        ];
-      };
-
-      nixosConfigurations = rec {
-        default = qcow;
+        deploy-contabo = nixosSystem {
+          system = "x86_64-linux";
+          inherit specialArgs;
+          modules = self.nixosAllModules.contabo ++ self.nixosAllModules.deploy;
+        };
 
         qcow = makeOverridable nixos-generators.nixosGenerate {
-          system = linux;
-          modules = attrValues self.nixosModules ++ [
+          inherit system specialArgs;
+          modules = self.nixosAllModules.default ++ [
             ./nixos/qcow-compressed.nix
           ];
           format = "qcow";
-          specialArgs = {
-            inherit stableLegacyPackages;
-          };
         };
 
-        iso = self.nixosConfigurations.${system}.qcow.override {
+        iso = self.packages.nixosConfigurations.${system}.qcow.override {
           format = "iso";
         };
 
-        contabo = self.nixosConfigurations.${system}.qcow.override {
-          modules = attrValues self.nixosModules ++ [
-            ./nixos/contabo.nix
+        contabo = self.packages.nixosConfigurations.${system}.qcow.override {
+          modules = self.nixosAllModules.contabo ++ [
             ./nixos/qcow-compressed.nix
           ];
         };
 
-        container = self.nixosConfigurations.${system}.qcow.override {
-          modules = attrValues self.nixosModules ++ [ 
+        container = self.packages.nixosConfigurations.${system}.qcow.override {
+          modules = self.nixosAllModules.default ++ [ 
             ./nixos/docker.nix
-            ./nixos/qcow-compressed.nix
           ];
           format = "docker";
         };
@@ -190,8 +179,8 @@
       # With `nix.registry.my.flake = inputs.self`, development shells can be created by running,
       # e.g., `nix develop my#python`.
       devShells = let 
-        pkgs = self.legacyPackages.${system};
-        stablePkgs = self.stableLegacyPackages.${system};
+        pkgs = legacyPackages;
+        stablePkgs = stableLegacyPackages;
        in
         {
           default = pkgs.mkShell {
@@ -201,7 +190,8 @@
               docker-client kubectl kubernetes-helm libvirt qemu
               tailscale pebble cntb
               nil nix-tree colmena;
-              inherit (stablePkgs) nix terraform waypoint;
+              inherit (stablePkgs) nix terraform;
+              inherit (oldLegacyPackages) waypoint;
             };
             shellHook = ''
               export DOCKER_HOST=tcp://127.0.0.1:2375

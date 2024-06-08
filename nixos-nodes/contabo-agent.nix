@@ -1,3 +1,0 @@
-{ ... } : {
-  deployment.tags = [ "agent-contabo" ];
-}

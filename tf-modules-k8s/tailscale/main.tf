@@ -14,17 +14,17 @@ resource "helm_release" "tailscale_operator" {
 
   set {
     name = "oauth.clientId"         
-    value = var.tailscale_oauth_client_id
+    value = var.tailscale_oauth_client.id
+  }
+
+  set {
+    name = "oauth.clientSecret"     
+    value = var.tailscale_oauth_client.secret
   }
 
   set {
     name = "apiServerProxyConfig.mode"
     value = "true"
     type = "string"
-  }
-
-  set {
-    name = "oauth.clientSecret"     
-    value = var.tailscale_oauth_client_secret
   }
 }

@@ -8,7 +8,6 @@
   programs.fish.enable = true;
   programs.bash.enable = true;
   programs.direnv.enable = true;
-  environment.systemPackages = [ pkgs.bashInteractive ];
 
   services.dnsmasq = {
     enable = true;

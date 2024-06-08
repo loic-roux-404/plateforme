@@ -35,9 +35,8 @@ module "ingress-nginx" {
 }
 
 module "tailscale" {
-  source                        = "./tf-modules-k8s/tailscale"
-  tailscale_oauth_client_id     = var.tailscale_oauth_client_id
-  tailscale_oauth_client_secret = var.tailscale_oauth_client_secret
+  source                 = "./tf-modules-k8s/tailscale"
+  tailscale_oauth_client = var.tailscale_oauth_client.id
 }
 
 module "internal_ca" {

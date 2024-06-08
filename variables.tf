@@ -43,16 +43,11 @@ variable "github_team" {
   default = "ops-team"
 }
 
-variable "tailscale_oauth_client_id" {
-  description = "OAuth Client ID"
-  type        = string
-  sensitive   = true
-}
-
-variable "tailscale_oauth_client_secret" {
-  description = "OAuth Client Secret"
-  type        = string
-  sensitive   = true
+variable "tailscale_oauth_client" {
+  type = object({
+    id     = string
+    secret = string
+  })
 }
 
 variable "paas_namespace" {
@@ -104,4 +99,8 @@ variable "vm_ip" {
 
 variable "internal_network_ip" {
   default = "10.0.2.2"
+}
+
+variable "nix_flake" {
+  default = "#nixosConfigurations.aarch64-linux.default"
 }

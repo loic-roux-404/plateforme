@@ -30,10 +30,10 @@
       description = "User name";
     };
 
-    user.password = lib.mkOption {
+    user.defaultPassword = lib.mkOption {
       default = "$6$zizou$reVO3q7LFsUq.GT5P5pYFFcpxCo7eTRT5yJTD.gVoOy/FSzHEtXdofvZ7E04Rej.jiQHKaWJB0Qob5FHov1WU/";
       type = lib.types.str;
-      description = "User password";
+      description = "Default password for user";
     };
 
     user.key = lib.mkOption {
@@ -48,22 +48,22 @@
       description = "Disable k3s services eg: traefik,servicelb";
     };
 
-    tailscale.authKey = lib.mkOption {
-      type = lib.types.str;
-      description = "Client ID for Tailscale";
-      default = "";
-    };
-
     k3s.token = lib.mkOption {
       type = lib.types.str;
       description = "K3s token";
       default = "";
     };
 
+    tailscale.enable = lib.mkOption {
+      type = lib.types.bool;
+      description = "Enable secret for tailscale";
+      default = "";
+    };
+
     dex.dexClientId = lib.mkOption {
       type = lib.types.str;
       description = "Client ID for Dex";
-      default = "";
+      default = "dex-k3s-paas";
     };
   };
 }
