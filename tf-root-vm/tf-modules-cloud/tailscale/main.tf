@@ -1,6 +1,6 @@
 data "tailscale_device" "trusted_device" {
   for_each = toset([var.tailscale_trusted_device])
-  name     = each.value
+  name     = "${each.value}.${var.tailscale_tailnet}"
   wait_for = "60s"
 }
 
@@ -11,11 +11,12 @@ resource "tailscale_device_authorization" "sample_authorization" {
 }
 
 resource "tailscale_acl" "as_json" {
+  overwrite_existing_content = true
   acl = jsonencode({
     acls = [
       {
         action = "accept"
-        src    = ["tag:all", "*"]
+        src    = ["*"]
         dst    = ["*:*"]
       }
     ]
@@ -57,6 +58,7 @@ resource "tailscale_dns_preferences" "sample_preferences" {
 }
 
 resource "tailscale_tailnet_key" "k3s_paas_node" {
+  depends_on = [ tailscale_acl.as_json ]
   reusable      = true
   ephemeral     = true
   preauthorized = true

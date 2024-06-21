@@ -1,19 +1,82 @@
-resource "terraform_data" "apply_hostname" {
-  connection {
-    type        = "ssh"
-    user        = var.ssh_connection.user
-    private_key = var.ssh_connection.private_key
-    host        = var.vm_ip
-  }
+data "external" "deploy_key_pub" {
+  program = ["bash", "${path.module}/key-to-age.sh"]
 
-  provisioner "file" {
-    content = var.node_hostname
-    destination = "hostname"
+  query = {
+    key = var.ssh_connection.public_key
   }
+}
+
+data "external" "deploy_key" {
+  program = ["bash", "${path.module}/key-to-age.sh"]
+
+  query = {
+    key = var.ssh_connection.private_key
+    args = "-private-key"
+  }
+}
+
+data "external" "machine_key_pub" {
+  program = ["bash", "${path.module}/retrieve-vm-age-key.sh"]
+
+  query = {
+    machine_ip = var.vm_ip
+  }
+}
+
+locals {
+  keys = [
+    data.external.deploy_key_pub.result.key,
+    data.external.machine_key_pub.result.key
+  ]
+  file_content = yamlencode({
+    keys = local.keys
+    creation_rules = [
+      {
+        path_regex = "\\w\\.(yaml|json|env|ini)$"
+        key_groups = [
+          {
+            age = local.keys
+          }
+        ]
+      }
+    ]
+  })
+}
+
+resource "local_file" "sops_config" {
+  content  = local.file_content
+  filename = "${path.cwd}/.sops.yaml"
+}
+
+resource "local_sensitive_file" "non_encrypted_secrets" {
+  content  = yamlencode(var.nixos_secrets)
+  filename = "${path.cwd}/secrets.yaml"
+}
+
+resource "terraform_data" "create_secrets" {
+  triggers_replace = {
+    always = timestamp()
+  }
+  provisioner "local-exec" {
+    environment = {
+      SOPS_AGE_KEY = data.external.deploy_key.result.key
+    }
+    interpreter = [
+      "sops", "--config", local_file.sops_config.filename, "--encrypt", "--in-place",
+    ]
+    command = local_sensitive_file.non_encrypted_secrets.filename
+  }
+}
+
+data "local_file" "encrypted_secrets" {
+  depends_on = [terraform_data.create_secrets]
+  filename = "${path.cwd}/secrets.yaml"
 }
 
 resource "terraform_data" "apply_secrets" {
-  for_each = var.nixos_secrets
+  triggers_replace = {
+    always = timestamp()
+  }
   connection {
     type        = "ssh"
     user        = var.ssh_connection.user
@@ -22,21 +85,49 @@ resource "terraform_data" "apply_secrets" {
   }
 
   provisioner "file" {
-    content = each.value
-    destination = ".${each.key}"
+    content = data.local_file.encrypted_secrets.content
+    destination = "/home/${var.ssh_connection.user}/secrets.yaml"
   }
 }
 
+locals {
+  components = split("#", var.nix_flake)
+  uri = local.components[0]
+  attribute_path = local.components[1]
+  real_flake = "${local.uri}#nixosConfigurations.${local.attribute_path}"
+}
 
-module "deploy_nixos" {
-  source     = "github.com/Gabriella439/terraform-nixos-ng//nixos"
-  host       = "${var.ssh_connection.user}@${var.vm_ip}"
-  flake      = var.nix_flake
-  arguments  = ["--use-remote-sudo"]
-  depends_on = [terraform_data.apply_hostname, terraform_data.apply_secrets]
+data "external" "instantiate" {
+  depends_on = [terraform_data.apply_secrets]
+  program = [ "${path.module}/instantiate.sh", local.real_flake ]
+}
+
+resource "null_resource" "deploy" {
+  triggers = {
+    derivation = data.external.instantiate.result["path"]
+  }
+
+  provisioner "local-exec" {
+    environment = {
+      NIX_SSHOPTS = var.nix_ssh_options
+    }
+
+    interpreter = concat (
+      [ 
+        "nixos-rebuild", 
+        "--fast",
+        "--flake", var.nix_flake,
+        "--target-host", 
+        "${var.ssh_connection.user}@${var.vm_ip}",
+      ],
+      var.nix_rebuild_arguments
+    )
+
+    command = "switch"
+  }
 }
 
 output "secure_hostname" {
-  depends_on = [module.deploy_nixos]
+  depends_on = [null_resource.deploy]
   value      = var.node_hostname
 }

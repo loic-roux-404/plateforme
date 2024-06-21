@@ -54,12 +54,6 @@
       default = "";
     };
 
-    tailscale.enable = lib.mkOption {
-      type = lib.types.bool;
-      description = "Enable secret for tailscale";
-      default = "";
-    };
-
     dex.dexClientId = lib.mkOption {
       type = lib.types.str;
       description = "Client ID for Dex";

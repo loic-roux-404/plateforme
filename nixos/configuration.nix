@@ -3,8 +3,6 @@
   lib,
   pkgs,
   oldLegacyPackages,
-  system,
-  inputs,
   ...
 }:
 
@@ -16,7 +14,7 @@ let
     url = "https://github.com/cert-manager/cert-manager/releases/download/v1.14.4/cert-manager.crds.yaml";
     sha256 = "060bn3gvrr5jphaig1g195prip5rn0x1s7qrp09q47719fgc6636";
   };
-  manifests = builtins.filter (d: d != "") [certManagerCrds];
+  manifests = [certManagerCrds];
 in {
 
   fileSystems."/" = {
@@ -59,7 +57,7 @@ in {
         PermitRootLogin = "no";
       };
     };
-    tailscale = lib.mkIf tailscale.enable {
+    tailscale = {
       enable = true;
       openFirewall = true;
       extraUpFlags = ["--ssh"];
@@ -68,7 +66,6 @@ in {
     k3s = {
       enable = true;
       role = "server";
-      tokenFile = lib.mkIf (k3s.token != "") (pkgs.writeText "token" token);
       extraFlags = lib.strings.concatStringsSep " " ([
           (if k3s.disableServices != "" then "--disable=${k3s.disableServices}" else "")
         ] ++ (if dex.dexClientId != "" then [
@@ -84,15 +81,11 @@ in {
     fail2ban.enable = true;
   };
 
-  system.activationScripts.tailscale.text = if tailscale.enable then ''
-    tailscale serve --bg https+insecure://localhost:6443
-  '' else "";
-
   home-manager.useGlobalPkgs = true;
   home-manager.useUserPackages = true;
   home-manager.users.${config.k3s-paas.user.name} = {
     xdg.enable = true;
-    home.stateVersion = "23.05";
+    home.stateVersion = "23.11";
     home.sessionVariables = {
       EDITOR = "vim";
       PAGER = "less -FirSwX";
@@ -138,7 +131,7 @@ in {
     allowNoPasswordLogin = true;
     users = {
       ${user.name} = {
-        hashedPasswordFile = lib.mkDefault (pkgs.writeText "password" user.defaultPassword);
+        hashedPasswordFile = lib.mkDefault "${(pkgs.writeText "password" user.defaultPassword)}";
         isNormalUser = true;
         extraGroups = [ "wheel" "networkmanager" ];
         openssh = {

@@ -28,6 +28,7 @@
     flake-compat = { url = "github:edolstra/flake-compat"; flake = false; };
     flake-utils.url = "github:numtide/flake-utils";
 
+    sops-nix.url = "github:Mic92/sops-nix";
   };
 
   outputs = { self, srvos, darwin, nixos-generators, flake-utils, ... }@inputs:
@@ -76,6 +77,7 @@
       };
 
       nixosModules = {
+        sops = inputs.sops-nix.nixosModules.sops;
         common = srvos.nixosModules.common;
         server = srvos.nixosModules.server;
         home-manager = inputs.home-manager.nixosModules.home-manager;
@@ -189,8 +191,8 @@
               inherit (pkgs) bashInteractive grpcurl jq coreutils e2fsprogs
               docker-client kubectl kubernetes-helm libvirt qemu
               tailscale pebble cntb
-              nil nix-tree colmena;
-              inherit (stablePkgs) nix terraform;
+              nil nix-tree;
+              inherit (stablePkgs) nix terraform sops ssh-to-age nixos-rebuild;
               inherit (oldLegacyPackages) waypoint;
             };
             shellHook = ''

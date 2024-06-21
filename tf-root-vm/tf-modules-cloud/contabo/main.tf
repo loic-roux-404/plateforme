@@ -23,13 +23,9 @@ resource "contabo_instance" "k3s_paas_master" {
   ssh_keys             = [contabo_secret.k3s_paas_master_trusted_key.id]
 }
 
-output "k3s_paas_master" {
-  value = contabo_instance.k3s_paas_master
-}
-
 output "name" {
   depends_on = [ contabo_instance.k3s_paas_master ]
-  value = var.node_hostname
+  value = contabo_instance.k3s_paas_master.name
 }
 
 output "ip" {

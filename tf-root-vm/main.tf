@@ -38,8 +38,6 @@ module "gandi_domain" {
   target_ip        = each.value.ip
 }
 
-
-
 locals {
   ssh_connection = merge(var.ssh_connection, {
     public_key  = trimspace(file(pathexpand(var.ssh_connection.public_key)))
@@ -51,6 +49,7 @@ module "tailscale" {
   source = "./tf-modules-cloud/tailscale"
   tailscale_trusted_device = var.tailscale_trusted_device  
   trusted_ssh_user = var.ssh_connection.user
+  tailscale_tailnet = var.tailscale_tailnet
 }
 
 resource "random_password" "admin_password" {
@@ -59,7 +58,7 @@ resource "random_password" "admin_password" {
   override_special = "!#$%&*()-_=+[]{}<>:?"
 }
 
-module "security" {
+module "deploy" {
   source                   = "./tf-modules-nix/deploy"
   for_each                 = local.machines_hosts
   node_hostname            = each.key
@@ -69,11 +68,12 @@ module "security" {
   nixos_secrets = {
     "tailscale" = "${module.tailscale.key}"
     "password" = "${random_password.admin_password.bcrypt_hash}"
+    "hostname" = "${each.key}"
   }
 }
 
 resource "terraform_data" "wait_tunneled_vm_ssh" {
-  for_each = module.security
+  for_each = module.deploy
 
   connection {
     type        = "ssh"
@@ -89,7 +89,7 @@ resource "terraform_data" "wait_tunneled_vm_ssh" {
 }
 
 resource "null_resource" "copy_k3s_config" {
-  for_each = module.security
+  for_each = module.deploy
   triggers = {
     started = terraform_data.wait_tunneled_vm_ssh[each.key].id
   }
@@ -102,7 +102,7 @@ data "healthcheck_http" "k3s" {
   depends_on   = [null_resource.copy_k3s_config]
   path         = "livez?verbose"
   status_codes = [200]
-  endpoints = [for _, v in module.security : {
+  endpoints = [for _, v in module.deploy : {
     name    = v.secure_hostname
     address = v.secure_hostname
     port    = 6443

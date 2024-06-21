@@ -45,4 +45,5 @@ variable "libvirt_pool_path" {
 
 variable "node_hostname" {
   type = string
+  default = "localhost"
 }

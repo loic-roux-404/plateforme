@@ -5,3 +5,7 @@ variable "tailscale_trusted_device" {
 variable "trusted_ssh_user" {
   default = "admin"
 }
+
+variable "tailscale_tailnet" {
+  type = string
+}

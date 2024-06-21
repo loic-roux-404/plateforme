@@ -38,5 +38,5 @@ result
 .direnv
 keys
 
-secrets.nix
-*.age
+secrets.yaml
+.sops.yaml
