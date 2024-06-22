@@ -114,7 +114,7 @@ locals {
 }
 
 resource local_file "additional_nixos_vars" {
-  content  = "{}: { networking.hostName = \"${var.node_hostname}\";}"
+  content  = "{...}: { networking.hostName = \"${var.node_hostname}\";}\n"
   filename = "${path.cwd}/nixos/temporary-configuration.nix"
 }
 
@@ -150,7 +150,7 @@ resource "null_resource" "deploy" {
 
 resource "local_file" "reset_temporary_configuration" {
   depends_on = [null_resource.deploy]
-  content  = "{...}: {}"
+  content  = "{...}: {}\n"
   filename = "${path.cwd}/nixos/temporary-configuration.nix"
 }
 
@@ -179,7 +179,7 @@ resource "terraform_data" "cleanup" {
   }
 }
 
-output "secure_hostname" {
+output "hostname" {
   depends_on = [null_resource.deploy]
   value      = var.node_hostname
 }

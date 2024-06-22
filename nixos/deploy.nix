@@ -3,10 +3,7 @@
 with config.k3s-paas;
 
 {
-  imports = [
-    ./temporary-configuration.nix
-  ];
-  networking.hostName = additionalConfig.hostname;
+  imports = [ ./temporary-configuration.nix ];
 
   sops.validateSopsFiles = false;
   sops.defaultSopsFormat = "yaml";
@@ -19,6 +16,7 @@ with config.k3s-paas;
   };
 
   services.tailscale.authKeyFile = config.sops.secrets.tailscale.path;
+  services.tailscale.extraUpFlags = ["--ssh" "--hostname=${config.networking.hostName}"];
 
   users.users.${user.name}.hashedPasswordFile = config.sops.secrets.password.path;
 }

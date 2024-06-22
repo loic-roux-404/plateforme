@@ -78,12 +78,12 @@ resource "terraform_data" "wait_tunneled_vm_ssh" {
     type        = "ssh"
     user        = local.ssh_connection.user
     private_key = local.ssh_connection.private_key
-    host        = each.value.secure_hostname
+    host        = each.value.hostname
   }
 
   provisioner "remote-exec" {
     on_failure = fail
-    inline     = ["echo ${each.value.secure_hostname}"]
+    inline     = ["echo ${each.value.hostname}"]
   }
 }
 
@@ -93,7 +93,7 @@ resource "null_resource" "copy_k3s_config" {
     started = terraform_data.wait_tunneled_vm_ssh[each.key].id
   }
   provisioner "local-exec" {
-    command = "ssh ${var.ssh_connection.user}@${each.value.secure_hostname} -p 2222 'sudo cat /etc/rancher/k3s/k3s.yaml' > ~/.kube/config"
+    command = "ssh ${var.ssh_connection.user}@${each.value.hostname} 'sudo cat /etc/rancher/k3s/k3s.yaml' > ~/.kube/config"
   }
 }
 
@@ -102,8 +102,8 @@ data "healthcheck_http" "k3s" {
   path         = "livez?verbose"
   status_codes = [200]
   endpoints = [for _, v in module.deploy : {
-    name    = v.secure_hostname
-    address = v.secure_hostname
+    name    = v.hostname
+    address = v.hostname
     port    = 6443
   }]
 }

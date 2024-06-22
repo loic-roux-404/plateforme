@@ -1,2 +1,1 @@
-# This files will be overwritten by the next run of the script
-{...}: {}
+{...}: { networking.hostName = "k3s-paas-master-0";}
