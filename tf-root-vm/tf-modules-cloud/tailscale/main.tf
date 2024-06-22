@@ -25,7 +25,7 @@ resource "tailscale_acl" "as_json" {
         action = "accept"
         src    = ["autogroup:member"]
         dst    = ["autogroup:self"]
-        users  = [var.trusted_ssh_user]
+        users  = ["autogroup:nonroot"]
       }
     ],
     nodeAttrs = [
@@ -60,9 +60,8 @@ resource "tailscale_dns_preferences" "sample_preferences" {
 resource "tailscale_tailnet_key" "k3s_paas_node" {
   depends_on = [ tailscale_acl.as_json ]
   reusable      = true
-  ephemeral     = true
+  ephemeral     = false
   preauthorized = true
-  expiry        = 3600
   description   = "VM instance key"
   tags = ["tag:all"]
 }

@@ -15,7 +15,23 @@ data "external" "deploy_key" {
   }
 }
 
+resource "terraform_data" "check_ssh" {
+  connection {
+    type        = "ssh"
+    user        = var.ssh_connection.user
+    private_key = var.ssh_connection.private_key
+    host        = var.vm_ip
+  }
+
+  provisioner "remote-exec" {
+    inline = [
+      "echo 'SSH connection established'",
+    ]
+  }
+}
+
 data "external" "machine_key_pub" {
+  depends_on = [ terraform_data.check_ssh ]
   program = ["bash", "${path.module}/retrieve-vm-age-key.sh"]
 
   query = {
@@ -97,9 +113,14 @@ locals {
   real_flake = "${local.uri}#nixosConfigurations.${local.attribute_path}"
 }
 
+resource local_file "additional_nixos_vars" {
+  content  = "{}: { networking.hostName = \"${var.node_hostname}\";}"
+  filename = "${path.cwd}/nixos/temporary-configuration.nix"
+}
+
 data "external" "instantiate" {
   depends_on = [terraform_data.apply_secrets]
-  program = [ "${path.module}/instantiate.sh", local.real_flake ]
+  program = [ "${path.module}/instantiate.sh", local.real_flake]
 }
 
 resource "null_resource" "deploy" {
@@ -118,12 +139,43 @@ resource "null_resource" "deploy" {
         "--fast",
         "--flake", var.nix_flake,
         "--target-host", 
-        "${var.ssh_connection.user}@${var.vm_ip}",
+        "${var.ssh_connection.user}@${var.vm_ip}"
       ],
       var.nix_rebuild_arguments
     )
 
     command = "switch"
+  }
+}
+
+resource "local_file" "reset_temporary_configuration" {
+  depends_on = [null_resource.deploy]
+  content  = "{...}: {}"
+  filename = "${path.cwd}/nixos/temporary-configuration.nix"
+}
+
+resource "terraform_data" "cleanup" {
+  count = var.nix_deploy_debug ? 0 : 1
+  depends_on = [null_resource.deploy]
+
+  provisioner "local-exec" {
+    on_failure = continue
+    command = "rm ${local_file.additional_nixos_vars.filename}"
+  }
+
+  provisioner "local-exec" {
+    on_failure = continue
+    command = "rm ${local_sensitive_file.non_encrypted_secrets.filename}"
+  }
+
+  provisioner "local-exec" {
+    on_failure = continue
+    command = "rm ${data.local_file.encrypted_secrets.filename}"
+  }
+
+  provisioner "local-exec" {
+    on_failure = continue
+    command = "rm ${local_file.sops_config.filename}"
   }
 }
 

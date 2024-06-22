@@ -188,7 +188,8 @@
           default = pkgs.mkShell {
             name = "default";
             packages = attrValues {
-              inherit (pkgs) bashInteractive grpcurl jq coreutils e2fsprogs
+              inherit (pkgs) bashInteractive grpcurl 
+              jq coreutils e2fsprogs lsof
               docker-client kubectl kubernetes-helm libvirt qemu
               tailscale pebble cntb
               nil nix-tree;

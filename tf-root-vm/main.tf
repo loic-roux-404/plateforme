@@ -68,7 +68,6 @@ module "deploy" {
   nixos_secrets = {
     "tailscale" = "${module.tailscale.key}"
     "password" = "${random_password.admin_password.bcrypt_hash}"
-    "hostname" = "${each.key}"
   }
 }
 
