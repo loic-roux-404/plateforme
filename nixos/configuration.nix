@@ -62,6 +62,7 @@ in {
       openFirewall = true;
       extraUpFlags = ["--ssh"];
       permitCertUid = user.name;
+      interfaceName = "userspace-networking";
     };
     k3s = {
       enable = true;
@@ -119,6 +120,7 @@ in {
       wget
       k3s
       kubectl
+      kubernetes-helm
       oldLegacyPackages.waypoint
       tailscale
     ];

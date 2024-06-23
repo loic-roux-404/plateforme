@@ -43,6 +43,11 @@ variable "nixos_secrets" {
   default = {}
 }
 
+variable "nixos_options" {
+  type = map(string)
+  default = {}
+}
+
 variable "nix_flake" {
   type = string
 

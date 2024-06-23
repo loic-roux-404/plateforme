@@ -202,6 +202,13 @@ openssl passwd -salt zizou -6 zizou420!
 
 ### Kubectl
 
+Set context :
+
+```bash
+kubectl config set-cluster default --server=http://k3s-paas-master-0:6443
+kubectl config default test-cluster
+```
+
 See all pods :
 
 ```bash

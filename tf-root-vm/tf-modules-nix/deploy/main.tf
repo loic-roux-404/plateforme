@@ -113,13 +113,23 @@ locals {
   real_flake = "${local.uri}#nixosConfigurations.${local.attribute_path}"
 }
 
-resource local_file "additional_nixos_vars" {
-  content  = "{...}: { networking.hostName = \"${var.node_hostname}\";}\n"
+data "local_file" "temporary_configuration" {
   filename = "${path.cwd}/nixos/temporary-configuration.nix"
 }
 
+resource local_file "additional_nixos_vars" {
+  filename = "${path.cwd}/nixos/temporary-configuration.nix"
+  content  = templatefile("${path.module}/temporary-configuration.nix.tftpl", {
+    nixos_options = var.nixos_options
+  })
+
+  provisioner "local-exec" {
+    command = "git update-index --assume-unchanged ${local_file.additional_nixos_vars.filename}"
+  }
+}
+
 data "external" "instantiate" {
-  depends_on = [terraform_data.apply_secrets]
+  depends_on = [terraform_data.apply_secrets, local_file.additional_nixos_vars]
   program = [ "${path.module}/instantiate.sh", local.real_flake]
 }
 
@@ -150,8 +160,11 @@ resource "null_resource" "deploy" {
 
 resource "local_file" "reset_temporary_configuration" {
   depends_on = [null_resource.deploy]
-  content  = "{...}: {}\n"
+  content  = data.local_file.temporary_configuration.content
   filename = "${path.cwd}/nixos/temporary-configuration.nix"
+  lifecycle {
+    prevent_destroy = true
+  }
 }
 
 resource "terraform_data" "cleanup" {

@@ -65,9 +65,14 @@ module "deploy" {
   dex_client_id            = var.dex_client_id
   vm_ip                    = each.value.ip
   ssh_connection           = local.ssh_connection
+  nixos_options            = {
+    "networking.hostName" = each.key
+  }
   nixos_secrets = {
     "tailscale" = "${module.tailscale.key}"
     "password" = "${random_password.admin_password.bcrypt_hash}"
+    "tailscale_oauth_client_id" = var.tailscale_oauth_client.id
+    "tailscale_oauth_client_secret" = var.tailscale_oauth_client.secret
   }
 }
 
@@ -115,4 +120,9 @@ data "healthcheck_filter" "k3s" {
 
 output "up_k3s_endpoint" {
   value = data.healthcheck_filter.k3s.up
+}
+
+output "password" {
+  value = random_password.admin_password.result
+  sensitive = true
 }

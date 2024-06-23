@@ -88,7 +88,8 @@
       nixosAllModules = rec {
         default = attrValues self.nixosModules;
         contabo = default ++ [ ./nixos/contabo.nix ];
-        deploy = [./nixos/deploy.nix];
+        deploy = default ++ [ ./nixos/tailscale.nix  ./nixos/deploy.nix ];
+        deployContabo = default ++ [ ./nixos/contabo.nix ./nixos/tailscale.nix  ./nixos/deploy.nix ];
       };
 
       darwinConfigurations = {
@@ -141,13 +142,13 @@
         deploy = nixosSystem {
           system = linux;
           inherit specialArgs;
-          modules = self.nixosAllModules.default ++ self.nixosAllModules.deploy;
+          modules = self.nixosAllModules.deploy;
         };
 
         deploy-contabo = nixosSystem {
           system = "x86_64-linux";
           inherit specialArgs;
-          modules = self.nixosAllModules.contabo ++ self.nixosAllModules.deploy;
+          modules = self.nixosAllModules.deployContabo;
         };
 
         qcow = makeOverridable nixos-generators.nixosGenerate {
@@ -188,8 +189,7 @@
           default = pkgs.mkShell {
             name = "default";
             packages = attrValues {
-              inherit (pkgs) bashInteractive grpcurl 
-              jq coreutils e2fsprogs lsof
+              inherit (pkgs) bashInteractive grpcurl jq coreutils e2fsprogs
               docker-client kubectl kubernetes-helm libvirt qemu
               tailscale pebble cntb
               nil nix-tree;
