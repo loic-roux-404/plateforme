@@ -22,22 +22,22 @@ resource "tailscale_acl" "as_json" {
     ]
     ssh = [
       {
-        "action": "accept",
-        "src": ["autogroup:member"],
-        "dst": ["autogroup:self"],
-        "users": ["autogroup:nonroot"]
+        "action" : "accept",
+        "src" : ["autogroup:member"],
+        "dst" : ["autogroup:self"],
+        "users" : ["autogroup:nonroot"]
       },
       {
-        "action": "accept",
-        "src": ["autogroup:member"],
-        "dst": ["tag:all"],
-        "users": ["autogroup:nonroot"]
+        "action" : "accept",
+        "src" : ["autogroup:member"],
+        "dst" : ["tag:all"],
+        "users" : ["autogroup:nonroot"]
       },
       {
-        "action": "accept",
-        "src": ["tag:all"],
-        "dst": ["tag:all"],
-        "users": ["autogroup:nonroot"]
+        "action" : "accept",
+        "src" : ["tag:all"],
+        "dst" : ["tag:all"],
+        "users" : ["autogroup:nonroot"]
       }
     ],
     nodeAttrs = [
@@ -47,7 +47,7 @@ resource "tailscale_acl" "as_json" {
       },
     ],
     tagOwners = {
-      "tag:all": [],
+      "tag:all" : [],
       "tag:k8s-operator" = []
       "tag:k8s"          = ["tag:k8s-operator"]
     }
@@ -70,12 +70,14 @@ resource "tailscale_dns_preferences" "sample_preferences" {
 }
 
 resource "tailscale_tailnet_key" "k3s_paas_node" {
-  depends_on = [ tailscale_acl.as_json ]
-  reusable      = true
-  ephemeral     = false
-  preauthorized = true
-  description   = "VM instance key"
-  tags = ["tag:all"]
+  depends_on          = [tailscale_acl.as_json]
+  reusable            = true
+  ephemeral           = true
+  expiry              = 3600
+  recreate_if_invalid = "always"
+  preauthorized       = true
+  description         = "VM instance key"
+  tags                = ["tag:all"]
 }
 
 output "key" {

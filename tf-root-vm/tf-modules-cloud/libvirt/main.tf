@@ -82,7 +82,7 @@ resource "libvirt_domain" "machine" {
   }
 
   provisioner "local-exec" {
-    command = "ssh-keygen -R [localhost]:22 && ssh-keygen -R [127.0.0.1]:22"
+    command = "ssh-keygen -R localhost:22 && ssh-keygen -R 127.0.0.1:22"
   }
 }
 

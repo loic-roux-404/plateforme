@@ -61,8 +61,8 @@ in {
       enable = true;
       openFirewall = true;
       extraUpFlags = ["--ssh"];
+      extraDaemonFlags = tailscale.baseDaemonExtraArgs;
       permitCertUid = user.name;
-      interfaceName = "userspace-networking";
     };
     k3s = {
       enable = true;
@@ -87,10 +87,6 @@ in {
   home-manager.users.${config.k3s-paas.user.name} = {
     xdg.enable = true;
     home.stateVersion = "23.11";
-    home.sessionVariables = {
-      EDITOR = "vim";
-      PAGER = "less -FirSwX";
-    };
     programs.bash = {
       enable = true;
       historyControl = [ "ignoredups" "ignorespace" ];
@@ -104,6 +100,10 @@ in {
 
   environment = {
     shells = [ pkgs.bashInteractive ];
+    variables = {
+      EDITOR = "vim";
+      PAGER = "less -FirSwX";
+    };
     systemPackages = with pkgs; [
       glibcLocales
       systemd
@@ -149,8 +149,10 @@ in {
     useNetworkd = true;
     useDHCP = true;
     firewall = {
+      trustedInterfaces = [ "tailscale0" ];
       enable = true;
       allowedTCPPorts = lib.mkDefault [80 443 22 6443];
+      allowedUDPPorts = [ config.services.tailscale.port ];
     };
     nftables.enable = true;
     networkmanager.enable = false;

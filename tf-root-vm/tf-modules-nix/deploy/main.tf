@@ -113,10 +113,6 @@ locals {
   real_flake = "${local.uri}#nixosConfigurations.${local.attribute_path}"
 }
 
-data "local_file" "temporary_configuration" {
-  filename = "${path.cwd}/nixos/temporary-configuration.nix"
-}
-
 resource local_file "additional_nixos_vars" {
   filename = "${path.cwd}/nixos/temporary-configuration.nix"
   content  = templatefile("${path.module}/temporary-configuration.nix.tftpl", {
@@ -155,40 +151,6 @@ resource "null_resource" "deploy" {
     )
 
     command = "switch"
-  }
-}
-
-resource "local_file" "reset_temporary_configuration" {
-  depends_on = [null_resource.deploy]
-  content  = data.local_file.temporary_configuration.content
-  filename = "${path.cwd}/nixos/temporary-configuration.nix"
-  lifecycle {
-    prevent_destroy = true
-  }
-}
-
-resource "terraform_data" "cleanup" {
-  count = var.nix_deploy_debug ? 0 : 1
-  depends_on = [null_resource.deploy]
-
-  provisioner "local-exec" {
-    on_failure = continue
-    command = "rm ${local_file.additional_nixos_vars.filename}"
-  }
-
-  provisioner "local-exec" {
-    on_failure = continue
-    command = "rm ${local_sensitive_file.non_encrypted_secrets.filename}"
-  }
-
-  provisioner "local-exec" {
-    on_failure = continue
-    command = "rm ${data.local_file.encrypted_secrets.filename}"
-  }
-
-  provisioner "local-exec" {
-    on_failure = continue
-    command = "rm ${local_file.sops_config.filename}"
   }
 }
 

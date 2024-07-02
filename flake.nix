@@ -88,7 +88,7 @@
       nixosAllModules = rec {
         default = attrValues self.nixosModules;
         contabo = default ++ [ ./nixos/contabo.nix ];
-        deploy = default ++ [ ./nixos/tailscale.nix  ./nixos/deploy.nix ];
+        deploy = default ++ [ ./nixos/tailscale-deploy.nix  ./nixos/deploy.nix ];
         deployContabo = default ++ [ ./nixos/contabo.nix ./nixos/tailscale.nix  ./nixos/deploy.nix ];
       };
 
