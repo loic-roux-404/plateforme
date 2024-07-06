@@ -22,22 +22,22 @@ resource "tailscale_acl" "as_json" {
     ]
     ssh = [
       {
-        "action" : "accept",
-        "src" : ["autogroup:member"],
-        "dst" : ["autogroup:self"],
-        "users" : ["autogroup:nonroot"]
+        action : "accept",
+        src : ["autogroup:member"],
+        dst : ["autogroup:self"],
+        users : ["autogroup:nonroot"]
       },
       {
-        "action" : "accept",
-        "src" : ["tag:all", "autogroup:member"],
-        "dst" : ["tag:all", "tag:k8s-operator"],
-        "users" : ["autogroup:nonroot"]
+        action : "accept",
+        src : ["tag:all", "autogroup:member"],
+        dst : ["tag:all", "tag:k8s-operator"],
+        users : ["autogroup:nonroot"]
       },
       {
-        "action": "accept",
-        "src": ["autogroup:member"],
-        "dst": ["tag:k8s-operator"],
-        "users" : ["autogroup:nonroot"]
+        action: "accept",
+        src: ["autogroup:member"],
+        dst: ["tag:k8s-operator"],
+        users : ["autogroup:nonroot"]
       },
     ],
     nodeAttrs = [

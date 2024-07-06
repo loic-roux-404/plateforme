@@ -48,7 +48,7 @@ locals {
     keys = local.keys
     creation_rules = [
       {
-        path_regex = "\\w\\.(yaml|json|env|ini)$"
+        path_regex = "\\w\\.(yaml|json)$"
         key_groups = [
           {
             age = local.keys
@@ -64,29 +64,9 @@ resource "local_file" "sops_config" {
   filename = "${path.cwd}/.sops.yaml"
 }
 
-resource "local_sensitive_file" "non_encrypted_secrets" {
-  content  = yamlencode(var.nixos_secrets)
-  filename = "${path.cwd}/secrets.yaml"
-}
-
-resource "terraform_data" "create_secrets" {
-  triggers_replace = {
-    always = timestamp()
-  }
-  provisioner "local-exec" {
-    environment = {
-      SOPS_AGE_KEY = data.external.deploy_key.result.key
-    }
-    interpreter = [
-      "sops", "--config", local_file.sops_config.filename, "--encrypt", "--in-place",
-    ]
-    command = local_sensitive_file.non_encrypted_secrets.filename
-  }
-}
-
 data "local_file" "encrypted_secrets" {
   depends_on = [terraform_data.create_secrets]
-  filename = "${path.cwd}/secrets.yaml"
+  filename = var.secrets_file
 }
 
 resource "terraform_data" "apply_secrets" {
@@ -114,7 +94,7 @@ locals {
 }
 
 resource local_file "additional_nixos_vars" {
-  filename = "${path.cwd}/nixos/temporary-configuration.nix"
+  filename = var.temporary_nixos_configuration
   content  = templatefile("${path.module}/temporary-configuration.nix.tftpl", {
     nixos_options = var.nixos_options
   })
@@ -124,7 +104,6 @@ resource local_file "additional_nixos_vars" {
   }
 
   provisioner "local-exec" {
-    when = "destroy"
     command = "git update-index --skip-worktree  ${local_file.additional_nixos_vars.filename}"
   }
 }

@@ -48,6 +48,15 @@ variable "nixos_options" {
   default = {}
 }
 
+variable "temporary_nixos_configuration" {
+  type = string
+  default = "${path.cwd}/nixos/temporary-configuration.nix"
+}
+
+variable "secrets_file" {
+  default = "${path.cwd}/secrets/local.yaml"
+}
+
 variable "nix_flake" {
   type = string
 

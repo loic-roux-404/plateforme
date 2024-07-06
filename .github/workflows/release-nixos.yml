@@ -1,8 +1,8 @@
 name: Release Nix image
 on:
   push:
-    branches:
-      - main
+    tags:
+      - nixos-stable
     paths:
       - 'nixos/**.nix'
       - 'nixos-options/**.nix'
@@ -40,18 +40,14 @@ jobs:
           restore-prefixes-first-match: nix-${{ runner.os }}-
           gc-max-store-size-linux: 1073741824
 
-      - name: Set outputs
-        id: vars
-        run: echo "sha_short=$(git rev-parse --short HEAD)" >> $GITHUB_OUTPUT
-
       - name: Build
         id: build
         run: nix build .#nixosConfigurations.contabo
-
+        
       - name: Release
         uses: softprops/action-gh-release@v1
         with:
-          tag_name: nixos-${{ steps.vars.outputs.sha_short }}
+          tag_name: nixos-stable
           token: "${{ secrets.GITHUB_TOKEN }}"
           generate_release_notes: true
           files: |

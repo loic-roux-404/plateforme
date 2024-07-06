@@ -159,10 +159,6 @@
           format = "qcow";
         };
 
-        iso = self.packages.${system}.nixosConfigurations.qcow.override {
-          format = "iso";
-        };
-
         contabo = self.packages.${system}.nixosConfigurations.qcow.override {
           modules = self.nixosAllModules.contabo ++ [
             ./nixos/qcow-compressed.nix
@@ -193,12 +189,12 @@
               docker-client kubectl kubernetes-helm libvirt qemu
               tailscale pebble cntb
               nil nix-tree;
-              inherit (stablePkgs) nix terraform sops ssh-to-age nixos-rebuild;
+              inherit (stablePkgs) nix terragrunt terraform sops ssh-to-age nixos-rebuild;
               inherit (oldLegacyPackages) waypoint;
             };
             shellHook = ''
               export DOCKER_HOST=tcp://127.0.0.1:2375
-            '';
+            '' + builtins.readFile ./nix-flake/init-sops.sh;
           };
 
           builder-docker = pkgs.mkShell {
