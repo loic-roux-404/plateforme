@@ -85,7 +85,3 @@ variable "nix_flake" {
     error_message = "Empty flake attribute paths not supported"
   }
 }
-
-variable "nix_deploy_debug" {
-  default = false
-}

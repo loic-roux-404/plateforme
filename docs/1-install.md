@@ -47,7 +47,7 @@ sudo security add-trusted-cert -d -r trustAsRoot -k /Library/Keychains/System.ke
 Setup waypoint inside cluster before getting token :
 
 ```bash
-Run KUBECONFIG=/etc/rancher/k3s/k3s.yaml waypoint login -from-kubernetes"
+Run KUBECONFIG=/etc/rancher/k3s/k3s.yaml waypoint login -from-kubernetes
 ```
 
 Setup waypoint login context outside cluster :

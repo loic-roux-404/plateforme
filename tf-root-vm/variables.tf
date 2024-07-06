@@ -7,12 +7,12 @@ variable "vm_provider" {
 ### Gandi domain provider
 
 variable "gandi_token" {
-  type = string
+  type     = string
   nullable = true
 }
 
 variable "paas_base_domain" {
-  type = string
+  type    = string
   default = "k3s.test"
 }
 
@@ -29,9 +29,9 @@ variable "contabo_credentials" {
 }
 
 variable "contabo_instance" {
-  type = string
+  type     = string
   nullable = true
-  default = null
+  default  = null
 }
 
 variable "image_version" {
@@ -43,9 +43,9 @@ variable "image_url_format" {
 }
 
 variable "admin_password" {
-  type = string
+  type      = string
   sensitive = true
-  default = "$6$zizou$reVO3q7LFsUq.GT5P5pYFFcpxCo7eTRT5yJTD.gVoOy/FSzHEtXdofvZ7E04Rej.jiQHKaWJB0Qob5FHov1WU/"
+  default   = "$6$zizou$reVO3q7LFsUq.GT5P5pYFFcpxCo7eTRT5yJTD.gVoOy/FSzHEtXdofvZ7E04Rej.jiQHKaWJB0Qob5FHov1WU/"
 }
 
 variable "ssh_connection" {
@@ -74,9 +74,9 @@ variable "tailscale_oauth_client" {
 }
 
 variable "tailscale_tailnet" {
-  type = string
+  type        = string
   description = "Like tailxxxxx.ts.net"
-  nullable = true
+  nullable    = true
 }
 
 variable "tailscale_trusted_device" {
@@ -84,7 +84,7 @@ variable "tailscale_trusted_device" {
 }
 
 variable "dex_client_id" {
-  type = string
+  type      = string
   sensitive = true
-  default = "dex-k3s-paas"
+  default   = "dex-k3s-paas"
 }

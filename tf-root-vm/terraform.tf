@@ -52,6 +52,6 @@ provider "tailscale" {
   oauth_client_id     = var.tailscale_oauth_client.id
   oauth_client_secret = var.tailscale_oauth_client.secret
   tailnet             = var.tailscale_tailnet
-  scopes = ["all"]
+  scopes              = ["all"]
 }
 

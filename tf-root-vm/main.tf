@@ -16,10 +16,10 @@ module "contabo_vm" {
 
 locals {
   contabo_hosts = { for vm in module.contabo_vm : vm.name => {
-      id = vm.id
-      ip = vm.ip
-      }
+    id = vm.id
+    ip = vm.ip
     }
+  }
   machines_hosts = merge(
     { for vm in module.libvirt_vm : vm.name => {
       id = vm.id
@@ -46,10 +46,10 @@ locals {
 }
 
 module "tailscale" {
-  source = "./tf-modules-cloud/tailscale"
-  tailscale_trusted_device = var.tailscale_trusted_device  
-  trusted_ssh_user = var.ssh_connection.user
-  tailscale_tailnet = var.tailscale_tailnet
+  source                   = "./tf-modules-cloud/tailscale"
+  tailscale_trusted_device = var.tailscale_trusted_device
+  trusted_ssh_user         = var.ssh_connection.user
+  tailscale_tailnet        = var.tailscale_tailnet
 }
 
 resource "random_password" "admin_password" {
@@ -59,19 +59,19 @@ resource "random_password" "admin_password" {
 }
 
 module "deploy" {
-  source                   = "./tf-modules-nix/deploy"
-  for_each                 = local.machines_hosts
-  node_hostname            = each.key
-  dex_client_id            = var.dex_client_id
-  vm_ip                    = each.value.ip
-  ssh_connection           = local.ssh_connection
-  nixos_options            = {
+  source         = "./tf-modules-nix/deploy"
+  for_each       = local.machines_hosts
+  node_hostname  = each.key
+  dex_client_id  = var.dex_client_id
+  vm_ip          = each.value.ip
+  ssh_connection = local.ssh_connection
+  nixos_options = {
     "networking.hostName" = each.key
   }
   nixos_secrets = {
-    "tailscale" = "${module.tailscale.key}"
-    "password" = "${random_password.admin_password.bcrypt_hash}"
-    "tailscale_oauth_client_id" = var.tailscale_oauth_client.id
+    "tailscale"                     = "${module.tailscale.key}"
+    "password"                      = "${random_password.admin_password.bcrypt_hash}"
+    "tailscale_oauth_client_id"     = var.tailscale_oauth_client.id
     "tailscale_oauth_client_secret" = var.tailscale_oauth_client.secret
   }
 }
@@ -123,6 +123,6 @@ output "up_k3s_endpoint" {
 }
 
 output "password" {
-  value = random_password.admin_password.result
+  value     = random_password.admin_password.result
   sensitive = true
 }
