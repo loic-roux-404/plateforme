@@ -33,7 +33,7 @@ make bootstrap
 For native linux simply run build command directly :
     
 ```bash
-nix build .#nixosConfigurations.aarch64-darwin.default 
+nix build .#nixosConfigurations.default 
 ```
 
 > Supported systems are `aarch64-linux`, `x86_64-linux`, `aarch64-darwin` and `x86_64-darwin`.
@@ -54,12 +54,17 @@ sudo dscacheutil -flushcache; sudo killall -HUP mDNSResponder
 
 ### Terraform local setup
 
-Bootrap local vm :
+```bash
+make init
+```
+
+Boostrap local vm and tailscale :
 
 ```bash
-terraform -chdir=tf-root-libvirt init
-terraform -chdir=tf-root-libvirt apply -auto-approve
+make tf-root-vm ARGS=-var-file=$PWD/.dev.tfvars
 ```
+
+> See below to fill variables, adapt variables to a non production environment.
 
 Setup k8s modules :
 
@@ -133,6 +138,8 @@ make tf-root-contabo ARGS=-var-file=$PWD/.prod.tfvars
 ```bash
 make . ARGS=-var-file=.prod.tfvars
 ```
+
+> **Note :** You can also use `make trust-ca` to trust internal CA on your system.
 
 ## Cheat Sheet
 

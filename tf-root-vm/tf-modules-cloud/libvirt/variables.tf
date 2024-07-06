@@ -17,11 +17,6 @@ variable "vm_size" {
   default     = 8092
 }
 
-variable "debug" {
-  type    = bool
-  default = false
-}
-
 variable "darwin" {
   type    = bool
   default = true
