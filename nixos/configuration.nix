@@ -14,7 +14,12 @@ let
     url = "https://github.com/cert-manager/cert-manager/releases/download/v1.14.4/cert-manager.crds.yaml";
     sha256 = "060bn3gvrr5jphaig1g195prip5rn0x1s7qrp09q47719fgc6636";
   };
-  manifests = [certManagerCrds];
+  manifests = [{
+    file = certManagerCrds;
+    toWait = "crd/certificates.cert-manager.io";
+    namespace = "";
+    condition = "condition=established";
+  }];
 in {
 
   fileSystems."/" = {
@@ -93,10 +98,9 @@ in {
     };
   };
 
-  system.activationScripts.k3s-certs.text = ''
-    mkdir -p /var/lib/rancher/k3s/server/manifests
-  '' + lib.strings.concatMapStrings 
-    (drv: "cp -fp ${drv} /var/lib/rancher/k3s/server/manifests;") manifests;
+  system.activationScripts.k3sCerts.text = (pkgs.callPackage ./install-k3s-manifest.nix { 
+    inherit lib pkgs manifests;
+  }).script;
 
   environment = {
     shells = [ pkgs.bashInteractive ];

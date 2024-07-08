@@ -40,5 +40,9 @@ variable "libvirt_pool_path" {
 
 variable "node_hostname" {
   type = string
-  default = "localhost"
+  default = "localhost-0"
+}
+
+variable "libvirt_qcow_source" {
+  default = "result/nixos.qcow2"
 }

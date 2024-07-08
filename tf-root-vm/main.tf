@@ -1,11 +1,12 @@
 module "libvirt_vm" {
   count         = var.vm_provider == "libvirt" ? 1 : 0
-  source        = "./tf-modules-cloud/libvirt"
-  node_hostname = "k3s-paas-master-${count.index}"
+  source        = "../tf-modules-cloud/libvirt"
+  node_hostname = "localhost"
+  libvirt_qcow_source = var.libvirt_qcow_source
 }
 
 module "contabo_vm" {
-  source           = "./tf-modules-cloud/contabo"
+  source           = "../tf-modules-cloud/contabo"
   count            = var.vm_provider == "contabo" && var.contabo_instance != null ? 1 : 0
   contabo_instance = var.contabo_instance
   image_version    = var.image_version
@@ -31,7 +32,7 @@ locals {
 }
 
 module "gandi_domain" {
-  source           = "./tf-modules-cloud/gandi"
+  source           = "../tf-modules-cloud/gandi"
   for_each         = local.contabo_hosts
   gandi_token      = var.gandi_token
   paas_base_domain = var.paas_base_domain
@@ -46,7 +47,7 @@ locals {
 }
 
 module "tailscale" {
-  source                   = "./tf-modules-cloud/tailscale"
+  source                   = "../tf-modules-cloud/tailscale"
   tailscale_trusted_device = var.tailscale_trusted_device
   trusted_ssh_user         = var.ssh_connection.user
   tailscale_tailnet        = var.tailscale_tailnet
@@ -59,16 +60,18 @@ resource "random_password" "admin_password" {
 }
 
 module "deploy" {
-  source         = "./tf-modules-nix/deploy"
+  source         = "../tf-modules-nix/deploy"
   for_each       = local.machines_hosts
   node_hostname  = each.key
+  nix_flake = var.nix_flake
+  secrets_file = var.secrets_file
   dex_client_id  = var.dex_client_id
   vm_ip          = each.value.ip
   ssh_connection = local.ssh_connection
   nixos_options = {
     "networking.hostName" = each.key
   }
-  nixos_secrets = {
+  nixos_transient_secrets = {
     "tailscale"                     = "${module.tailscale.key}"
     "password"                      = "${random_password.admin_password.bcrypt_hash}"
     "tailscale_oauth_client_id"     = var.tailscale_oauth_client.id
@@ -92,18 +95,7 @@ resource "terraform_data" "wait_tunneled_vm_ssh" {
   }
 }
 
-resource "null_resource" "copy_k3s_config" {
-  for_each = module.deploy
-  triggers = {
-    started = terraform_data.wait_tunneled_vm_ssh[each.key].id
-  }
-  provisioner "local-exec" {
-    command = "ssh ${var.ssh_connection.user}@${each.value.hostname} 'sudo cat /etc/rancher/k3s/k3s.yaml' > ~/.kube/config"
-  }
-}
-
 data "healthcheck_http" "k3s" {
-  depends_on   = [null_resource.copy_k3s_config]
   path         = "livez?verbose"
   status_codes = [200]
   endpoints = [for _, v in module.deploy : {

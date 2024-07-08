@@ -33,6 +33,9 @@ override.tf.json
 .terraformrc
 terraform.rc
 
+.terragrunt-cache
+.terragrunt
+
 # nix
 result
 .direnv

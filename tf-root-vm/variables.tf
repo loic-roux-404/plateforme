@@ -88,3 +88,15 @@ variable "dex_client_id" {
   sensitive = true
   default   = "dex-k3s-paas"
 }
+
+variable "secrets_file" {
+  type = string
+}
+
+variable "libvirt_qcow_source" {
+  type = string
+}
+
+variable "nix_flake" {
+  type = string
+}

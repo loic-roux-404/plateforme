@@ -15,7 +15,7 @@ resource "libvirt_pool" "volumetmp" {
 
 resource "libvirt_volume" "nixos" {
   name   = "nixos.qcow2"
-  source = "${path.cwd}/result/nixos.qcow2"
+  source = var.libvirt_qcow_source
   pool   = libvirt_pool.volumetmp.name
   format = "qcow2"
 }
@@ -41,18 +41,6 @@ resource "libvirt_domain" "machine" {
   filesystem {
     source   = "/nix/store"
     target   = "nix-store"
-    readonly = false
-  }
-
-  filesystem {
-    source   = "${path.cwd}/xchg"
-    target   = "xchg"
-    readonly = false
-  }
-
-  filesystem {
-    source   = "${path.cwd}/xchg"
-    target   = "shared"
     readonly = false
   }
 

@@ -1,12 +1,7 @@
+include "root" {
+  path = find_in_parent_folders()
+}
+
 terraform {
-  source = "${include.envcommon.locals.base_source_url}"
+  source = "..//tf-root-vm"
 }
-
-locals {
-  secret_vars = yamldecode(sops_decrypt_file(find_in_parent_folders("secrets/local.yaml")))
-}
-
-inputs = merge(
-  local.secret_vars,
-  {}
-)

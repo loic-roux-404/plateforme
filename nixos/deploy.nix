@@ -3,8 +3,6 @@
 with config.k3s-paas;
 
 {
-  imports = [ ./temporary-configuration.nix ];
-
   sops.validateSopsFiles = false;
   sops.defaultSopsFormat = "yaml";
   sops.defaultSopsFile = "/home/${user.name}/secrets.yaml";

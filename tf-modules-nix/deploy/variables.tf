@@ -38,7 +38,7 @@ variable "nix_rebuild_arguments" {
   default = ["--use-remote-sudo"]
 }
 
-variable "nixos_secrets" {
+variable "nixos_transient_secrets" {
   type = map(string)
   default = {}
 }
@@ -48,13 +48,8 @@ variable "nixos_options" {
   default = {}
 }
 
-variable "temporary_nixos_configuration" {
-  type = string
-  default = "${path.cwd}/nixos/temporary-configuration.nix"
-}
-
 variable "secrets_file" {
-  default = "${path.cwd}/secrets/local.yaml"
+  type = string
 }
 
 variable "nix_flake" {

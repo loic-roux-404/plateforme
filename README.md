@@ -186,7 +186,7 @@ virsh -c qemu:///system pool-undefine libvirt-pool-k3s-paas
 Undefine vm to avoid conflicts :
 
 ```bash
-virsh -c qemu:///system undefine --nvram vm1
+virsh -c qemu:///system undefine --nvram k3s-paas-master-0
 ```
 
 Open console :
