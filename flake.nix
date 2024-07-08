@@ -136,8 +136,8 @@
       };
     in {
 
-      packages.nixosConfigurations = {
-        default = self.qcow;
+      packages.nixosConfigurations = rec {
+        default = qcow;
 
         deploy = nixosSystem {
           system = linux;

@@ -1,33 +1,38 @@
 { config, pkgs, lib, ... }: 
 
-let manifests = [{
-  file = config.sops.templates."tailscale.yaml".path;
-  toWait = "deployment.apps/operator";
-  namespace = "tailscale";
-  condition = "Available";
-}];
+let manifests = [
+  {
+    file = config.sops.templates."tailscale.yaml".path;
+    toWait = "deployment.apps/operator";
+    namespace = "tailscale";
+    condition = "condition=Available";
+  } 
+  {
+    file = pkgs.writeText "tailscale-namespace.yaml" ''
+      apiVersion: v1
+      kind: Namespace
+      metadata:
+        name: tailscale
+    '';
+    condition = "jsonpath={.status.phase}=Active";
+    toWait = "namespace/tailscale";
+    namespace = "";
+  }
+];
 in {
   services.tailscale.authKeyFile = config.sops.secrets.tailscale.path;
   services.tailscale.extraUpFlags = ["--ssh" "--hostname=${config.networking.hostName}"];
 
   system.activationScripts.tailscaleOperator.deps = [ "renderSecrets" ];
-  system.activationScripts.tailscaleOperator.text = "mkdir -p /var/lib/rancher/k3s/server/manifests;" +
-    lib.strings.concatMapStrings (manifest: with manifest; ''
-      cp -fp ${file} /var/lib/rancher/k3s/server/manifests;
-      ${pkgs.k3s}/bin/kubectl wait --for=condition=${condition} ${toWait} -n ${namespace} --timeout=2m;
-    '') manifests;
+  system.activationScripts.tailscaleOperator.text = (pkgs.callPackage ./install-k3s-manifest.nix { 
+    inherit lib pkgs manifests;
+  }).script;
 
   sops.secrets.tailscale = {};
   sops.secrets.tailscale_oauth_client_id = {};
   sops.secrets.tailscale_oauth_client_secret = {};
 
   sops.templates."tailscale.yaml".content = ''
-    apiVersion: v1
-    kind: Namespace
-    metadata:
-      name: tailscale
-
-    ---
     apiVersion: helm.cattle.io/v1
     kind: HelmChart
     metadata:

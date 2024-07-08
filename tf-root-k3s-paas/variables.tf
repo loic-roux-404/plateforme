@@ -100,7 +100,3 @@ variable "vm_ip" {
 variable "internal_network_ip" {
   default = "10.0.2.2"
 }
-
-variable "nix_flake" {
-  default = "#nixosConfigurations.aarch64-linux.default"
-}
