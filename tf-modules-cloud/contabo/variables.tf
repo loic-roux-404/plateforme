@@ -14,7 +14,6 @@ variable "image_url_format" {
 variable "ssh_connection" {
   type = object({
     user        = string
-    password    = string
     public_key  = string
     private_key = string
   })

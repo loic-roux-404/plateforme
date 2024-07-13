@@ -32,8 +32,8 @@ locals {
   ])
 }
 
-resource "null_resource" "setup_oidc" {
-  triggers = {
+resource "terraform_data" "setup_oidc" {
+  triggers_replace = {
     login_cmd      = local.login_cmd
     oidc_setup_cmd = local.oidc_setup_cmd
   }

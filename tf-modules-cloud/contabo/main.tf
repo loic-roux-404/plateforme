@@ -1,7 +1,7 @@
 resource "contabo_secret" "k3s_paas_master_trusted_key" {
   name  = "k3s_paas_master_trusted_key"
   type  = "ssh"
-  value = var.ssh_connection.public_key
+  value = file(var.ssh_connection.public_key)
 }
 
 resource "contabo_image" "k3s_paas_master_image" {
@@ -23,15 +23,15 @@ resource "contabo_instance" "k3s_paas_master" {
   ssh_keys             = [contabo_secret.k3s_paas_master_trusted_key.id]
 }
 
-output "name" {
+output "node_hostname" {
   depends_on = [ contabo_instance.k3s_paas_master ]
   value = contabo_instance.k3s_paas_master.name
 }
 
-output "ip" {
+output "node_ip" {
   value = data.contabo_instance.k3s_paas_master.ip_config[0].v4[0].ip
 }
 
-output "id" {
+output "node_id" {
   value = contabo_instance.k3s_paas_master.id
 }

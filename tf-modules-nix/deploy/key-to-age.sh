@@ -2,6 +2,6 @@
 
 eval "$(jq -r '@sh "key=\(.key) args=\(.args)"')"
 
-OUTPUT=$(echo "$key" | ssh-to-age "${args:-}")
+OUTPUT=$(ssh-to-age "${args:-}" < "$key")
 
 jq -n --arg output "$OUTPUT" '{"key": $output}'

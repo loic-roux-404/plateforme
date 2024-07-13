@@ -1,7 +1,7 @@
 module "libvirt_vm" {
-  count         = var.vm_provider == "libvirt" ? 1 : 0
-  source        = "../tf-modules-cloud/libvirt"
-  node_hostname = "localhost"
+  count               = var.vm_provider == "libvirt" ? 1 : 0
+  source              = "../tf-modules-cloud/libvirt"
+  node_hostname       = "localhost-${count.index}"
   libvirt_qcow_source = var.libvirt_qcow_source
 }
 
@@ -16,17 +16,18 @@ module "contabo_vm" {
 }
 
 locals {
-  contabo_hosts = { for vm in module.contabo_vm : vm.name => {
-    id = vm.id
-    ip = vm.ip
-    }
-  }
+  contabo_hosts = { for count, vm in module.contabo_vm : count => {
+    node_hostname = vm.node_hostname
+    node_id = vm.node_id
+    node_ip = vm.node_ip
+  } }
+  libvirt_hosts = { for count, vm in module.libvirt_vm : count => {
+    node_hostname = vm.node_hostname
+    node_id = vm.node_id
+    node_ip = vm.node_ip
+  } }
   machines_hosts = merge(
-    { for vm in module.libvirt_vm : vm.name => {
-      id = vm.id
-      ip = vm.ip
-      }
-    },
+    local.libvirt_hosts,
     local.contabo_hosts
   )
 }
@@ -36,21 +37,19 @@ module "gandi_domain" {
   for_each         = local.contabo_hosts
   gandi_token      = var.gandi_token
   paas_base_domain = var.paas_base_domain
-  target_ip        = each.value.ip
-}
-
-locals {
-  ssh_connection = merge(var.ssh_connection, {
-    public_key  = trimspace(file(pathexpand(var.ssh_connection.public_key)))
-    private_key = trimspace(file(pathexpand(var.ssh_connection.private_key)))
-  })
+  target_ip        = each.value.node_ip
 }
 
 module "tailscale" {
+  for_each                 = local.machines_hosts
   source                   = "../tf-modules-cloud/tailscale"
   tailscale_trusted_device = var.tailscale_trusted_device
   trusted_ssh_user         = var.ssh_connection.user
   tailscale_tailnet        = var.tailscale_tailnet
+  node_hostname            = each.value.node_hostname
+  node_ip                  = each.value.node_ip
+  node_id                  = each.value.node_id
+  tailscale_oauth_client   = var.tailscale_oauth_client
 }
 
 resource "random_password" "admin_password" {
@@ -61,21 +60,20 @@ resource "random_password" "admin_password" {
 
 module "deploy" {
   source         = "../tf-modules-nix/deploy"
-  for_each       = local.machines_hosts
-  node_hostname  = each.key
-  nix_flake = var.nix_flake
-  secrets_file = var.secrets_file
+  for_each       = module.tailscale
+  node_id        = each.value.node_id
+  node_ip        = each.value.node_ip
+  config         = each.value.config
+  nix_flake      = var.nix_flake
+  secrets_file   = var.secrets_file
   dex_client_id  = var.dex_client_id
-  vm_ip          = each.value.ip
-  ssh_connection = local.ssh_connection
-  nixos_options = {
-    "networking.hostName" = each.key
-  }
+  ssh_connection = var.ssh_connection
   nixos_transient_secrets = {
-    "tailscale"                     = "${module.tailscale.key}"
-    "password"                      = "${random_password.admin_password.bcrypt_hash}"
-    "tailscale_oauth_client_id"     = var.tailscale_oauth_client.id
-    "tailscale_oauth_client_secret" = var.tailscale_oauth_client.secret
+    "tailscaleNodeKey"           = "${each.value.config.node_key}"
+    "password"                   = "${random_password.admin_password.bcrypt_hash}"
+    "tailscaleOauthClientId"     = var.tailscale_oauth_client.id
+    "tailscaleOauthClientSecret" = var.tailscale_oauth_client.secret
+    "tailscaleNodeHostname"      = each.value.config.node_hostname
   }
 }
 
@@ -83,35 +81,16 @@ resource "terraform_data" "wait_tunneled_vm_ssh" {
   for_each = module.deploy
 
   connection {
-    type        = "ssh"
-    user        = local.ssh_connection.user
-    private_key = local.ssh_connection.private_key
-    host        = each.value.hostname
+    type    = "ssh"
+    user    = var.ssh_connection.user
+    host    = each.value.config.node_hostname
+    timeout = "1m"
   }
 
   provisioner "remote-exec" {
     on_failure = fail
-    inline     = ["echo ${each.value.hostname}"]
+    inline     = ["echo '${each.value.config.node_hostname} => ${each.value.config.node_id}'"]
   }
-}
-
-data "healthcheck_http" "k3s" {
-  path         = "livez?verbose"
-  status_codes = [200]
-  endpoints = [for _, v in module.deploy : {
-    name    = v.hostname
-    address = v.hostname
-    port    = 6443
-  }]
-}
-
-data "healthcheck_filter" "k3s" {
-  up   = data.healthcheck_http.k3s.up
-  down = data.healthcheck_http.k3s.down
-}
-
-output "up_k3s_endpoint" {
-  value = data.healthcheck_filter.k3s.up
 }
 
 output "password" {

@@ -2,7 +2,7 @@ data "external" "deploy_key" {
   program = ["bash", "${path.module}/key-to-age.sh"]
 
   query = {
-    key  = var.ssh_connection.private_key
+    key  = pathexpand(var.ssh_connection.private_key)
     args = "-private-key"
   }
 }
@@ -11,8 +11,9 @@ resource "terraform_data" "check_ssh" {
   connection {
     type        = "ssh"
     user        = var.ssh_connection.user
-    private_key = var.ssh_connection.private_key
-    host        = var.vm_ip
+    private_key = file(pathexpand(var.ssh_connection.private_key))
+    host        = var.node_ip
+    timeout = "1m"
   }
 
   provisioner "remote-exec" {
@@ -27,31 +28,25 @@ data "external" "machine_key_pub" {
   program    = ["bash", "${path.module}/retrieve-vm-age-key.sh"]
 
   query = {
-    machine_ip = var.vm_ip
-  }
-}
-
-locals {
-  sops_environment = {
-    SOPS_AGE_KEY        = data.external.deploy_key.result.key
-    SOPS_AGE_RECIPIENTS = data.external.machine_key_pub.result.key
+    machine_ip = var.node_ip
   }
 }
 
 resource "local_sensitive_file" "non_encrypted_secrets" {
   content  = yamlencode(var.nixos_transient_secrets)
-  filename = "${path.cwd}/${uuid()}.yaml"
+  filename = "${path.cwd}/${var.node_ip}.yaml"
 }
 
 resource "terraform_data" "create_transient_secrets" {
   triggers_replace = {
-    always = timestamp()
+    changed = var.node_id
   }
   provisioner "local-exec" {
-    environment = local.sops_environment
-    interpreter = [
-      "sops", "--encrypt", "--in-place",
-    ]
+    environment = {
+      SOPS_AGE_KEY        = data.external.deploy_key.result.key
+      SOPS_AGE_RECIPIENTS = data.external.machine_key_pub.result.key
+    }
+    interpreter = [ "sops", "--encrypt", "--in-place"]
     command = local_sensitive_file.non_encrypted_secrets.filename
   }
 }
@@ -63,13 +58,13 @@ data "local_file" "encrypted_secrets" {
 
 resource "terraform_data" "apply_secrets" {
   triggers_replace = {
-    always = timestamp()
+    changed = data.local_file.encrypted_secrets.content
   }
   connection {
     type        = "ssh"
     user        = var.ssh_connection.user
-    private_key = var.ssh_connection.private_key
-    host        = var.vm_ip
+    private_key = file(pathexpand(var.ssh_connection.private_key))
+    host        = var.node_ip
   }
 
   provisioner "file" {
@@ -93,17 +88,17 @@ data "external" "instantiate" {
 resource "terraform_data" "deploy" {
   triggers_replace = {
     derivation = data.external.instantiate.result["path"]
+    secrets = data.local_file.encrypted_secrets.content
   }
 
   provisioner "local-exec" {
     environment = { NIX_SSHOPTS = var.nix_ssh_options }
     interpreter = concat(
       [
-        "nixos-rebuild",
+        "nixos-rebuild", 
         "--fast",
         "--flake", var.nix_flake,
-        "--target-host",
-        "${var.ssh_connection.user}@${var.vm_ip}"
+        "--target-host", "${var.ssh_connection.user}@${var.node_ip}"
       ],
       var.nix_rebuild_arguments
     )
@@ -112,18 +107,10 @@ resource "terraform_data" "deploy" {
   }
 }
 
-resource "terraform_data" "delete_transient_secrets" {
-  triggers_replace = {
-    after = terraform_data.deploy
-  }
-  provisioner "local-exec" {
-    interpreter = ["rm", "-f"]
-    command = local_sensitive_file.non_encrypted_secrets.filename
-  }
-}
-
-
-output "hostname" {
+output "config" {
   depends_on = [terraform_data.deploy]
-  value      = var.node_hostname
+  value      = merge(var.config, {
+    node_ip = var.node_ip
+    node_id = var.node_id
+  })
 }
