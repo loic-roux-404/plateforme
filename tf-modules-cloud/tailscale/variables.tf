@@ -9,3 +9,23 @@ variable "trusted_ssh_user" {
 variable "tailscale_tailnet" {
   type = string
 }
+
+variable "node_hostname" {
+  type = string
+}
+
+variable "node_ip" {
+  type = string
+}
+
+variable "node_id" {
+  type = string
+}
+
+variable "tailscale_oauth_client" {
+  sensitive = true
+  type = object({
+    id     = string
+    secret = string
+  })
+}

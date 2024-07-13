@@ -14,12 +14,6 @@ let
     url = "https://github.com/cert-manager/cert-manager/releases/download/v1.14.4/cert-manager.crds.yaml";
     sha256 = "060bn3gvrr5jphaig1g195prip5rn0x1s7qrp09q47719fgc6636";
   };
-  manifests = [{
-    file = certManagerCrds;
-    toWait = "crd/certificates.cert-manager.io";
-    namespace = "";
-    condition = "condition=established";
-  }];
 in {
 
   fileSystems."/" = {
@@ -65,7 +59,7 @@ in {
     tailscale = {
       enable = true;
       openFirewall = true;
-      extraUpFlags = ["--ssh"];
+      extraUpFlags = ["--ssh" "--accept-dns"];
       extraDaemonFlags = tailscale.baseDaemonExtraArgs;
       permitCertUid = user.name;
     };
@@ -99,13 +93,20 @@ in {
   };
 
   system.activationScripts.k3sCerts.text = (pkgs.callPackage ./install-k3s-manifest.nix { 
-    inherit lib pkgs manifests;
+    inherit pkgs;
+    manifest = {
+      file = certManagerCrds;
+      toWait = "crd/certificates.cert-manager.io";
+      namespace = "";
+      condition = "condition=established";
+    };
   }).script;
 
   environment = {
     shells = [ pkgs.bashInteractive ];
     variables = {
       EDITOR = "vim";
+      SYSTEMD_EDITOR = "vim";
       PAGER = "less -FirSwX";
     };
     systemPackages = with pkgs; [

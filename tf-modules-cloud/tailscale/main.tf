@@ -34,9 +34,9 @@ resource "tailscale_acl" "as_json" {
         users : ["autogroup:nonroot"]
       },
       {
-        action: "accept",
-        src: ["autogroup:member"],
-        dst: ["tag:k8s-operator"],
+        action : "accept",
+        src : ["autogroup:member"],
+        dst : ["tag:k8s-operator"],
         users : ["autogroup:nonroot"]
       },
     ],
@@ -69,10 +69,14 @@ resource "tailscale_dns_preferences" "sample_preferences" {
   magic_dns = true
 }
 
+resource "terraform_data" "node_changed" {
+  triggers_replace = [var.node_id]
+}
+
 resource "tailscale_tailnet_key" "k3s_paas_node" {
   depends_on          = [tailscale_acl.as_json]
   reusable            = true
-  ephemeral           = true
+  ephemeral           = false
   expiry              = 3600
   recreate_if_invalid = "always"
   preauthorized       = true
@@ -80,6 +84,38 @@ resource "tailscale_tailnet_key" "k3s_paas_node" {
   tags                = ["tag:all"]
 }
 
-output "key" {
-  value = tailscale_tailnet_key.k3s_paas_node.key
+resource "terraform_data" "destroy_node" {
+  input = {
+    TAILNET             = var.tailscale_tailnet
+    OAUTH_CLIENT_ID     = var.tailscale_oauth_client.id
+    OAUTH_CLIENT_SECRET = var.tailscale_oauth_client.secret
+    NODE_HOSTNAMES      = join(",", [
+      var.node_hostname, 
+      "k8s-operator-${var.node_hostname}"
+    ])
+  }
+
+  provisioner "local-exec" {
+    when        = destroy
+    environment = self.input
+    on_failure  = fail
+    command     = "${path.module}/delete-node-devices.sh"
+  }
+}
+
+output "node_id" {
+  value = var.node_id
+}
+
+output "node_ip" {
+  value = var.node_ip
+}
+
+output "config" {
+  depends_on = [tailscale_tailnet_key.k3s_paas_node]
+  value = {
+    node_hostname = var.node_hostname
+    node_fqdn     = "${var.node_hostname}.${var.tailscale_tailnet}"
+    node_key      = tailscale_tailnet_key.k3s_paas_node.key
+  }
 }

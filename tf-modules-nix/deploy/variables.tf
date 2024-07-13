@@ -4,13 +4,17 @@ variable "dex_client_id" {
   default = "dex-k3s-paas"
 }
 
-variable "vm_ip" {
+variable "node_ip" {
   type = string
 }
 
-variable "node_hostname" {
+variable "node_id" {
   type = string
-  default = "k3s-paas-master"
+}
+
+variable "config" {
+  type = map(string)
+  default = {}
 }
 
 variable "k3s_server_addr" {
@@ -20,10 +24,9 @@ variable "k3s_server_addr" {
 
 variable "ssh_connection" {
   type = object({
-    user        = string
-    password    = string
     public_key  = string
     private_key = string
+    user        = string
   })
   sensitive = true
 }
@@ -39,11 +42,6 @@ variable "nix_rebuild_arguments" {
 }
 
 variable "nixos_transient_secrets" {
-  type = map(string)
-  default = {}
-}
-
-variable "nixos_options" {
   type = map(string)
   default = {}
 }

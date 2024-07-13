@@ -6,11 +6,8 @@ on:
     paths:
       - 'nixos/**.nix'
       - 'nixos-options/**.nix'
-      - 'nixos-generators/**.nix'
       - flake.nix
       - flake.lock
-      - '!**.md'
-      - 'packer/**'
       - .github/workflows/release-nixos.yml
 
 permissions:

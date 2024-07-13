@@ -1,13 +1,8 @@
 terraform {
   required_version = ">=1.4"
   required_providers {
-    null = {
-      source  = "hashicorp/null"
-      version = "3.2.2"
-    }
     contabo = {
       source  = "contabo/contabo"
-      version = ">= 0.1.23"
     }
     time = {
       source = "hashicorp/time"
@@ -20,10 +15,6 @@ terraform {
     }
     gandi = {
       source = "go-gandi/gandi"
-    }
-    healthcheck = {
-      source  = "Ferlab-Ste-Justine/healthcheck"
-      version = "0.2.0"
     }
     libvirt = {
       source = "dmacvicar/libvirt"
@@ -41,8 +32,6 @@ provider "contabo" {
   oauth2_user          = var.contabo_credentials.oauth2_user
   oauth2_pass          = var.contabo_credentials.oauth2_pass
 }
-
-provider "healthcheck" {}
 
 provider "libvirt" {
   uri = "qemu:///system"

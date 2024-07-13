@@ -51,12 +51,10 @@ variable "admin_password" {
 variable "ssh_connection" {
   type = object({
     user        = string
-    password    = string
     public_key  = string
     private_key = string
   })
   default = {
-    password    = "zizou420!"
     private_key = "~/.ssh/id_ed25519"
     public_key  = "~/.ssh/id_ed25519.pub"
     user        = "admin"
@@ -67,6 +65,7 @@ variable "ssh_connection" {
 ### Security
 
 variable "tailscale_oauth_client" {
+  sensitive = true
   type = object({
     id     = string
     secret = string
@@ -77,6 +76,7 @@ variable "tailscale_tailnet" {
   type        = string
   description = "Like tailxxxxx.ts.net"
   nullable    = true
+  sensitive = true
 }
 
 variable "tailscale_trusted_device" {
@@ -99,4 +99,9 @@ variable "libvirt_qcow_source" {
 
 variable "nix_flake" {
   type = string
+}
+
+variable "nix_deploy_force_rebuild" {
+  type    = bool
+  default = false
 }

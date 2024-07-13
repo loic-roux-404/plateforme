@@ -93,7 +93,7 @@ variable "metallb_ip_range" {
   default     = null
 }
 
-variable "vm_ip" {
+variable "node_ip" {
   default = "localhost"
 }
 

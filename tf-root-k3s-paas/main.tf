@@ -51,9 +51,7 @@ module "github" {
 }
 
 module "dex" {
-  depends_on = [
-    module.cert_manager.reflector_metadata_name
-  ]
+  depends_on = [ module.cert_manager.reflector_metadata_name ]
   source               = "../tf-modules-k8s/dex"
   dex_namespace        = var.dex_namespace
   dex_hostname         = local.dex_hostname
