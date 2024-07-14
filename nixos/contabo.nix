@@ -1,4 +1,4 @@
-{ pkgs, ... }:
+{ pkgs, lib, ... }:
 {
 
   boot.initrd.availableKernelModules = [ "ata_piix" "uhci_hcd" "virtio_pci" "virtio_scsi" "sd_mod" ];
@@ -8,7 +8,7 @@
 
   swapDevices = [ ];
 
-  security.sudo.wheelNeedsPassword = true;
+  security.sudo.wheelNeedsPassword = lib.mkForce true;
   security.sudo = {
     enable = true;
     extraRules = [{
@@ -32,10 +32,6 @@
         "${pkgs.k3s}/bin/kubectl wait"
         "${pkgs.k3s}/bin/kubectl api-resources"
         "${pkgs.k3s}/bin/kubectl version"
-        "${pkgs.vim}/bin/vim"
-        "${pkgs.less}/bin/less"
-        "${pkgs.coreutils}/bin/tail"
-        "${pkgs.coreutils}/bin/grep"
         "${pkgs.nettools}/bin/ifconfig"
         "${pkgs.iproute2}/bin/ip"
         "${pkgs.iptables}/bin/iptables"
