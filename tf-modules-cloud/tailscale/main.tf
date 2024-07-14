@@ -89,8 +89,8 @@ resource "terraform_data" "destroy_node" {
     TAILNET             = var.tailscale_tailnet
     OAUTH_CLIENT_ID     = var.tailscale_oauth_client.id
     OAUTH_CLIENT_SECRET = var.tailscale_oauth_client.secret
-    NODE_HOSTNAMES      = join(",", [
-      var.node_hostname, 
+    NODE_HOSTNAMES = join(",", [
+      var.node_hostname,
       "k8s-operator-${var.node_hostname}"
     ])
   }
@@ -117,5 +117,6 @@ output "config" {
     node_hostname = var.node_hostname
     node_fqdn     = "${var.node_hostname}.${var.tailscale_tailnet}"
     node_key      = tailscale_tailnet_key.k3s_paas_node.key
+    k8s_operator_hostname  = "k8s-operator-${var.node_hostname}"
   }
 }

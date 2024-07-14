@@ -1,7 +1,9 @@
-variable "vm_provider" {
-  description = "The provider to use for the VM"
-  type        = string
-  default     = "libvirt"
+variable "machine" {
+  type = object({
+    node_hostname = string
+    node_id       = string
+    node_ip       = string
+  })
 }
 
 ### Gandi domain provider
@@ -14,32 +16,6 @@ variable "gandi_token" {
 variable "paas_base_domain" {
   type    = string
   default = "k3s.test"
-}
-
-### Contabo
-
-variable "contabo_credentials" {
-  type = object({
-    oauth2_client_id     = string
-    oauth2_client_secret = string
-    oauth2_user          = string
-    oauth2_pass          = string
-  })
-  sensitive = true
-}
-
-variable "contabo_instance" {
-  type     = string
-  nullable = true
-  default  = null
-}
-
-variable "image_version" {
-  default = "57942d4"
-}
-
-variable "image_url_format" {
-  default = "https://github.com/loic-roux-404/k3s-paas/releases/download/nixos-%s/nixos.qcow2"
 }
 
 variable "admin_password" {
@@ -76,7 +52,7 @@ variable "tailscale_tailnet" {
   type        = string
   description = "Like tailxxxxx.ts.net"
   nullable    = true
-  sensitive = true
+  sensitive   = true
 }
 
 variable "tailscale_trusted_device" {
@@ -89,12 +65,10 @@ variable "dex_client_id" {
   default   = "dex-k3s-paas"
 }
 
-variable "secrets_file" {
-  type = string
-}
-
 variable "libvirt_qcow_source" {
-  type = string
+  type     = string
+  nullable = true
+  default  = null
 }
 
 variable "nix_flake" {

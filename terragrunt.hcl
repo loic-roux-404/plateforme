@@ -5,7 +5,7 @@ locals {
 remote_state {
   backend = "local"
   config = {
-    path = "${get_parent_terragrunt_dir()}/.terragrunt/${local.env.locals.env}/terraform.tfstate"
+    path = "${get_parent_terragrunt_dir()}/.terragrunt/${local.env.locals.env}/${path_relative_to_include()}/terraform.tfstate"
   }
 
   generate = {
@@ -14,7 +14,4 @@ remote_state {
   }
 }
 
-inputs = merge(
-  local.env.locals.secret_vars,
-  local.env.locals.input_vars
-)
+inputs = local.env.locals.input_vars

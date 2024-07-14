@@ -13,13 +13,11 @@ resource "terraform_data" "check_ssh" {
     user        = var.ssh_connection.user
     private_key = file(pathexpand(var.ssh_connection.private_key))
     host        = var.node_ip
-    timeout = "1m"
+    timeout     = "1m"
   }
 
   provisioner "remote-exec" {
-    inline = [
-      "echo 'SSH connection established'",
-    ]
+    inline = ["echo 'SSH connection ready'",]
   }
 }
 
@@ -39,26 +37,27 @@ resource "local_sensitive_file" "non_encrypted_secrets" {
 
 resource "terraform_data" "create_transient_secrets" {
   triggers_replace = {
-    changed = var.node_id
+    changed_secrets = local_sensitive_file.non_encrypted_secrets.content
   }
   provisioner "local-exec" {
     environment = {
       SOPS_AGE_KEY        = data.external.deploy_key.result.key
       SOPS_AGE_RECIPIENTS = data.external.machine_key_pub.result.key
     }
-    interpreter = [ "sops", "--encrypt", "--in-place"]
-    command = local_sensitive_file.non_encrypted_secrets.filename
+    interpreter = ["sops", "--encrypt", "--in-place"]
+    command     = local_sensitive_file.non_encrypted_secrets.filename
   }
 }
 
-data "local_file" "encrypted_secrets" {
+data "local_sensitive_file" "encrypted_secrets" {
   depends_on = [terraform_data.create_transient_secrets]
   filename   = local_sensitive_file.non_encrypted_secrets.filename
 }
 
-resource "terraform_data" "apply_secrets" {
+resource "terraform_data" "upload_secrets" {
   triggers_replace = {
-    changed = data.local_file.encrypted_secrets.content
+    changed_secrets = data.local_sensitive_file.encrypted_secrets.content
+    changed_node = var.node_id
   }
   connection {
     type        = "ssh"
@@ -68,7 +67,7 @@ resource "terraform_data" "apply_secrets" {
   }
 
   provisioner "file" {
-    content     = data.local_file.encrypted_secrets.content
+    content     = data.local_sensitive_file.encrypted_secrets.content
     destination = "/home/${var.ssh_connection.user}/secrets.yaml"
   }
 }
@@ -81,21 +80,21 @@ locals {
 }
 
 data "external" "instantiate" {
-  depends_on = [terraform_data.apply_secrets]
+  depends_on = [terraform_data.upload_secrets]
   program    = ["${path.module}/instantiate.sh", local.real_flake]
 }
 
 resource "terraform_data" "deploy" {
   triggers_replace = {
     derivation = data.external.instantiate.result["path"]
-    secrets = data.local_file.encrypted_secrets.content
+    secrets    = data.local_sensitive_file.encrypted_secrets.content
   }
 
   provisioner "local-exec" {
     environment = { NIX_SSHOPTS = var.nix_ssh_options }
     interpreter = concat(
       [
-        "nixos-rebuild", 
+        "nixos-rebuild",
         "--fast",
         "--flake", var.nix_flake,
         "--target-host", "${var.ssh_connection.user}@${var.node_ip}"
@@ -109,7 +108,7 @@ resource "terraform_data" "deploy" {
 
 output "config" {
   depends_on = [terraform_data.deploy]
-  value      = merge(var.config, {
+  value = merge(var.config, {
     node_ip = var.node_ip
     node_id = var.node_id
   })

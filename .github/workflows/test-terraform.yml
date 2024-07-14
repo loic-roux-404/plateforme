@@ -15,7 +15,22 @@ permissions:
   pull-requests: write
 
 jobs:
+  tf-fmt:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v3
+        with:
+          fetch-depth: 0
+      - uses: hashicorp/setup-terraform@v1
+      - name: Terraform fmt
+        id: fmt
+        run: terraform fmt -check -diff
+
   tf-test:
+    strategy:
+      matrix:
+        project: [cloud/local, network/local, paas/local]
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
@@ -23,7 +38,6 @@ jobs:
         with:
           fetch-depth: 0
       - uses: hashicorp/setup-terraform@v2
-
       - name: Configure Terraform plugin cache
         run: |
           echo "TF_PLUGIN_CACHE_DIR=$HOME/.terraform.d/plugin-cache" >>"$GITHUB_ENV"
@@ -37,14 +51,7 @@ jobs:
           restore-keys: |
             terraform-${{ runner.os }}-
 
-      - name: Terraform Init
-        id: init
-        run: make init
-
-      - name: Terraform fmt
-        id: fmt
-        run: make fmt ARGS='-check -diff'
-
       - name: Terraform Validate
+        working-directory: terragrunt/${{ matrix.project }}
         id: validate
-        run: make validate
+        run: terragrunt validate

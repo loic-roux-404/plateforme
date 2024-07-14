@@ -21,9 +21,10 @@ terraform {
 
 provider "kubernetes" {
   config_path = "~/.kube/config"
+  config_context_cluster = var.tailscale_operator_hostname
   exec {
     api_version = "client.authentication.k8s.io/v1beta1"
-    args        = ["configure", "kubeconfig", "tailscale-operator"]
+    args        = ["configure", "kubeconfig", var.tailscale_operator_hostname]
     command     = "tailscale"
   }
 }

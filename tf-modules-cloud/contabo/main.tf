@@ -24,8 +24,8 @@ resource "contabo_instance" "k3s_paas_master" {
 }
 
 output "node_hostname" {
-  depends_on = [ contabo_instance.k3s_paas_master ]
-  value = contabo_instance.k3s_paas_master.name
+  depends_on = [contabo_instance.k3s_paas_master]
+  value      = contabo_instance.k3s_paas_master.name
 }
 
 output "node_ip" {

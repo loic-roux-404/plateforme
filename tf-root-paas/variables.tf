@@ -15,7 +15,7 @@ variable "cert_manager_namespace" {
 }
 
 variable "cert_manager_email" {
-  default = "toto@k3s.test"
+  type      = string
 }
 
 variable "dex_namespace" {
@@ -28,26 +28,25 @@ variable "github_token" {
 }
 
 variable "github_client_id" {
-  default = "client-id-example"
+  type = string
 }
 
 variable "github_client_secret" {
-  default = "secret-example"
+  type = string
 }
 
 variable "github_organization" {
+  type    = string
   default = "org-404"
 }
 
 variable "github_team" {
+  type    = string
   default = "ops-team"
 }
 
-variable "tailscale_oauth_client" {
-  type = object({
-    id     = string
-    secret = string
-  })
+variable "tailscale_operator_hostname" {
+  type = string
 }
 
 variable "paas_namespace" {
@@ -91,10 +90,6 @@ variable "metallb_ip_range" {
   type        = string
   description = "value of the ip range"
   default     = null
-}
-
-variable "node_ip" {
-  default = "localhost"
 }
 
 variable "internal_network_ip" {

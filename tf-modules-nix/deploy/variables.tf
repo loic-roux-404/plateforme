@@ -1,7 +1,7 @@
 variable "dex_client_id" {
-  type = string
+  type      = string
   sensitive = true
-  default = "dex-k3s-paas"
+  default   = "dex-k3s-paas"
 }
 
 variable "node_ip" {
@@ -13,12 +13,12 @@ variable "node_id" {
 }
 
 variable "config" {
-  type = map(string)
+  type    = map(string)
   default = {}
 }
 
 variable "k3s_server_addr" {
-  type = string
+  type    = string
   default = null
 }
 
@@ -32,22 +32,19 @@ variable "ssh_connection" {
 }
 
 variable "nix_ssh_options" {
-  type = string
+  type    = string
   default = ""
 }
 
 variable "nix_rebuild_arguments" {
-  type = list(string)
+  type    = list(string)
   default = ["--use-remote-sudo"]
 }
 
 variable "nixos_transient_secrets" {
-  type = map(string)
+  type    = map(string)
   default = {}
-}
-
-variable "secrets_file" {
-  type = string
+  sensitive = true
 }
 
 variable "nix_flake" {
