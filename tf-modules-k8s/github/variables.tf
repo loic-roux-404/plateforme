@@ -1,4 +1,4 @@
-variable "github_organization" {
+variable "github_organisation" {
   type    = string
   default = "org-404"
 }

@@ -35,7 +35,7 @@ variable "github_client_secret" {
   type = string
 }
 
-variable "github_organization" {
+variable "github_organisation" {
   type    = string
   default = "org-404"
 }

@@ -19,7 +19,7 @@ locals {
     "-allowed-redirect-uri='https://${var.paas_hostname}/auth/oidc-callback'",
     "-claim-scope='groups'",
     "-list-claim-mapping='groups=groups'",
-    "-access-selector='\"${var.github_organization}:${var.github_team}\" in list.groups'",
+    "-access-selector='\"${var.github_organisation}:${var.github_team}\" in list.groups'",
     var.internal_acme_ca_content != null ? "-issuer-ca-pem='${var.internal_acme_ca_content}'" : "",
     "dex"
   ])

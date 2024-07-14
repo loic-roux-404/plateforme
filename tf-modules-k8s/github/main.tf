@@ -1,9 +1,9 @@
-data "github_organization" "org" {
-  name = var.github_organization
+data "github_organisation" "org" {
+  name = var.github_organisation
 }
 
 data "github_membership" "all" {
-  for_each = toset(data.github_organization.org.members)
+  for_each = toset(data.github_organisation.org.members)
   username = each.value
 }
 
