@@ -133,10 +133,16 @@ in {
 
   security.sudo.wheelNeedsPassword = false;
 
+  nix.trustedUsers = [ user.name ];
   users = {
     defaultUserShell = pkgs.bashInteractive;
     allowNoPasswordLogin = true;
+    groups.readers = {};
     users = {
+      reader = {
+        isNormalUser = true;
+        extraGroups = [ "readers" ];
+      };
       ${user.name} = {
         hashedPasswordFile = lib.mkDefault "${(pkgs.writeText "password" user.defaultPassword)}";
         isNormalUser = true;
@@ -146,6 +152,9 @@ in {
             keys = [ user.key ];
           };
         };
+      };
+      root = {
+        hashedPasswordFile = lib.mkDefault "${(pkgs.writeText "root-password" user.defaultPassword)}";
       };
     };
   };

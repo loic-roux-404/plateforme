@@ -10,7 +10,7 @@ locals {
     github_token = local.secret_vars.github_token
     github_client_id = local.secret_vars.github_client_id
     github_client_secret = local.secret_vars.github_client_secret
-    github_organization = local.secret_vars.github_organization
+    github_organisation = local.secret_vars.github_organisation
     github_team = local.secret_vars.github_team
   }
 }

@@ -59,23 +59,6 @@ variable "tailscale_trusted_device" {
   type = string
 }
 
-variable "dex_client_id" {
-  type      = string
-  sensitive = true
-  default   = "dex-k3s-paas"
-}
-
-variable "libvirt_qcow_source" {
-  type     = string
-  nullable = true
-  default  = null
-}
-
 variable "nix_flake" {
   type = string
-}
-
-variable "nix_deploy_force_rebuild" {
-  type    = bool
-  default = false
 }

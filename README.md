@@ -58,28 +58,27 @@ make trust-ca
 ./result/sw/bin/darwin-uninstaller
 ```
 
-## Terraform project
+## Terraform project secrets
 
-### Terraform local
-
-Setup cloud modules :
+You have to create a secrets file utilising following sops command :
 
 ```bash
-cd tg-local
-terragrunt apply -auto-approve
+sops secrets/prod.yaml
 ```
+
+> **Note** : sops follow environment variables from default flake shell to encrypt files with the default `id_ed25519` ssh key.
 
 ### 1. Contabo (VPS)
 
 **contabo_credentials** :
 
-```hcl
-contabo_credentials = {
-  oauth2_client_id     = "client-id"
-  oauth2_client_secret = "secret"
-  oauth2_pass          = "password!"
-  oauth2_user = "mail@mail"
-}
+```yaml
+contabo_credentials:
+  oauth2_client_id: "client-id"
+  oauth2_client_secret: "secret"
+  oauth2_pass: "password!"
+  oauth2_user: "mail@mail"
+
 ```
 
 Seek for credentials in [API](https://my.contabo.com/api/details) 
@@ -99,8 +98,10 @@ cntb get instances
 > **Warn :** Delete `@` record for your domain on [gandi](https://admin.gandi.net/domain/)
 
 ### 3. Tailscale (SSH VPN)
-**`tailscale_oauth_client_id`** : Register on tailscale and get key on [admin console](https://login.tailscale.com/admin/settings/keys)
-**`tailscale_oauth_client_secret`** : retrieve it during step above.
+**`tailscale_oauth_client`** : 
+    - `id` : Register on tailscale and get key on [admin console](https://login.tailscale.com/admin/settings/keys)
+    - `secret` : retrieve it during step above.
+
 **`tailscale_trusted_device`** : Approve your device on tailscale with **`tailscale login`** and recover its tailscale hostname.
 
 ### 4. Github (Authentication & users)
@@ -108,32 +109,42 @@ cntb get instances
 **`github_token`** : https://github.com/settings/tokens and create a token with scopes `repo`, `user` and `admin`.
 **`github_client_id`** : Create a new OAuth App.
 **`github_client_secret`** : On new OAuth App ask for a new client secret.
+**github_organisation :** : Your github organization name.
+**github_team :** : Your github team id.
 
 ### 5. Cert-manager (TLS)
 
 **`cert_manager_email`** : a valid email to register on letsencrypt.
 
-## Apply
-
-Init all terraform providers and modules.
-
-```bash
-make init
-```
-
 ### Cloud (contabo)
 
 ```bash
-make tf-root-contabo ARGS=-var-file=$PWD/.prod.tfvars
+make terragrunt/cloud/contabo
+```
+
+### Network (tailscale)
+
+```bash
+make terragrunt/network/contabo
 ```
 
 ### infra (k8s)
 
 ```bash
-make . ARGS=-var-file=.prod.tfvars
+make terragrunt/paas/contabo
 ```
 
-> **Note :** You can also use `make trust-ca` to trust internal CA on your system.
+### Install in local
+
+Here is the command to set up the paas on a libvirt vm.
+
+```bash
+make terragrunt/cloud/local
+make terragrunt/network/local
+make terragrunt/paas/local
+```
+
+Then you have to do `make trust-ca` to trust paas internal CA on your system.
 
 ## Cheat Sheet
 
@@ -234,4 +245,18 @@ tailscale configure kubeconfig
 
 ```bash
 git tag nixos-stable -f && gp --tags --force
+```
+
+### Contabo
+
+Retrieve images :
+
+```bash
+cntb get images --imageType custom
+```
+
+Import existing image in terraform :
+
+```bash
+terraform import module.contabo.contabo_image.k3s_paas_master_image uuid
 ```

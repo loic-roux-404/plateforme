@@ -9,5 +9,7 @@ locals {
     tailscale_oauth_client = local.secret_vars.tailscale_oauth_client
     tailscale_tailnet = local.secret_vars.tailscale_tailnet
     tailscale_trusted_device = local.secret_vars.tailscale_trusted_device
+    gandi_token = local.secret_vars.gandi_token
+    nix_flake = "${dirname(find_in_parent_folders("flake.nix"))}#deploy"
   }
 }

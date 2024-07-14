@@ -8,7 +8,6 @@
 
   swapDevices = [ ];
 
-  security.sudo.wheelNeedsPassword = lib.mkForce true;
   security.sudo = {
     enable = true;
     extraRules = [{
@@ -36,7 +35,7 @@
         "${pkgs.iproute2}/bin/ip"
         "${pkgs.iptables}/bin/iptables"
       ];
-      groups = [ "wheel" ];
+      groups = [ "reader" ];
     }];
   };
 

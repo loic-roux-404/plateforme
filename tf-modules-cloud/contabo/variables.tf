@@ -14,7 +14,7 @@ variable "contabo_credentials" {
 }
 
 variable "image_version" {
-  default = "1817d1d"
+  default = "stable"
 }
 
 variable "image_url_format" {

@@ -46,7 +46,7 @@ module "internal_ca" {
 module "github" {
   source              = "../tf-modules-k8s/github"
   github_token        = var.github_token
-  github_organization = var.github_organization
+  github_organisation = var.github_organisation
   github_team         = var.github_team
 }
 
@@ -58,7 +58,7 @@ module "dex" {
   github_client_id     = var.github_client_id
   github_client_secret = var.github_client_secret
   dex_github_orgs = [{
-    name  = var.github_organization
+    name  = var.github_organisation
     teams = [module.github.team_name]
   }]
   k8s_ingress_class           = var.k8s_ingress_class

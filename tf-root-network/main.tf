@@ -29,9 +29,9 @@ module "deploy" {
   node_ip        = module.tailscale.node_ip
   config         = module.tailscale.config
   nix_flake      = var.nix_flake
-  dex_client_id  = var.dex_client_id
   ssh_connection = var.ssh_connection
   nixos_transient_secrets = {
+    "dexClientId"                = "dex-client-id"
     "tailscaleNodeKey"           = "${module.tailscale.config.node_key}"
     "password"                   = "${random_password.admin_password.bcrypt_hash}"
     "tailscaleOauthClientId"     = var.tailscale_oauth_client.id
