@@ -17,11 +17,11 @@ variable "github_client_secret" {
   type        = string
 }
 
- variable "dex_client_id" {
-   description = "Client ID for Dex OIDC Connector"
-   type        = string
-   default = "dex-k3s-paas"
- }
+variable "dex_client_id" {
+  description = "Client ID for Dex OIDC Connector"
+  type        = string
+  default     = "dex-k3s-paas"
+}
 
 variable "dex_github_orgs" {
   description = "Github Orgs for Dex OIDC Connector"

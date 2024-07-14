@@ -3,5 +3,5 @@ include "root" {
 }
 
 terraform {
-  source = "..//tf-root-vm"
+  source = "${get_parent_terragrunt_dir()}//tf-root-paas"
 }

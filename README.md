@@ -27,21 +27,27 @@ echo '. /nix/var/nix/profiles/default/etc/profile.d/nix-daemon.fish' >> ~/.confi
 Set up nixos-darwin :
 
 ```bash
-make bootstrap
+NIX_CONF_DIR=$PWD/bootstrap nix develop .#builder --command echo 
 ```
 
-For native linux simply run build command directly :
-    
-```bash
-nix build .#nixosConfigurations.default 
-```
+Build an image between available nixos configuration `contabo` and `qcow2` :
 
 > Supported systems are `aarch64-linux`, `x86_64-linux`, `aarch64-darwin` and `x86_64-darwin`.
+    
+```bash
+nix build .#nixosConfigurations.default --system aarch64-linux
+```
 
 On macOS, dnsmasq starts in background, you might need to force a refresh of the dns cache :
 
 ```bash
 sudo dscacheutil -flushcache; sudo killall -HUP mDNSResponder
+```
+
+Also you will have to trust the CA :
+
+```bash
+make trust-ca
 ```
 
 ### Uninstall on Darwin:
@@ -52,28 +58,16 @@ sudo dscacheutil -flushcache; sudo killall -HUP mDNSResponder
 ./result/sw/bin/darwin-uninstaller
 ```
 
-### Terraform local setup
+## Terraform project
+
+### Terraform local
+
+Setup cloud modules :
 
 ```bash
-make init
+cd tg-local
+terragrunt apply -auto-approve
 ```
-
-Boostrap local vm and tailscale :
-
-```bash
-make tf-root-vm ARGS=-var-file=$PWD/.dev.tfvars
-```
-
-> See below to fill variables, adapt variables to a non production environment.
-
-Setup k8s modules :
-
-```bash
-terraform init
-terraform apply -auto-approve
-```
-
-## Terraform variables
 
 ### 1. Contabo (VPS)
 
@@ -234,4 +228,10 @@ Retrieve kubeconfig :
 
 ```bash
 tailscale configure kubeconfig
+```
+
+### Release
+
+```bash
+git tag nixos-stable -f && gp --tags --force
 ```

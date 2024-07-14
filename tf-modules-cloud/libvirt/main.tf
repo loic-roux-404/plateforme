@@ -74,16 +74,16 @@ resource "libvirt_domain" "machine" {
   }
 }
 
-output "name" {
-  depends_on = [ libvirt_domain.machine ]
-  value = var.node_hostname
+output "node_hostname" {
+  depends_on = [libvirt_domain.machine]
+  value      = var.node_hostname
 }
 
-output "id" {
+output "node_id" {
   value = libvirt_domain.machine.id
 }
 
-output "ip" {
-  value = "127.0.0.1"
-  depends_on = [ libvirt_domain.machine ]
+output "node_ip" {
+  value      = "127.0.0.1"
+  depends_on = [libvirt_domain.machine]
 }

@@ -1,7 +1,7 @@
 variable "port_mappings" {
   type = map(number)
   default = {
-    22 = 22
+    22   = 22
     6443 = 6443
     443  = 443
     80   = 80
@@ -39,7 +39,7 @@ variable "libvirt_pool_path" {
 }
 
 variable "node_hostname" {
-  type = string
+  type    = string
   default = "localhost-0"
 }
 

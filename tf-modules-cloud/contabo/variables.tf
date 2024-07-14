@@ -3,12 +3,22 @@ variable "contabo_instance" {
   type = string
 }
 
+variable "contabo_credentials" {
+  type = object({
+    oauth2_client_id     = string
+    oauth2_client_secret = string
+    oauth2_user          = string
+    oauth2_pass          = string
+  })
+  sensitive = true
+}
+
 variable "image_version" {
-  type = string
+  default = "1817d1d"
 }
 
 variable "image_url_format" {
-  type = string
+  default = "https://github.com/loic-roux-404/k3s-paas/releases/download/nixos-%s/nixos.qcow2"
 }
 
 variable "ssh_connection" {
@@ -18,6 +28,11 @@ variable "ssh_connection" {
     private_key = string
   })
   sensitive = true
+  default = {
+    private_key = "~/.ssh/id_ed25519"
+    public_key = "~/.ssh/id_ed25519.pub"
+    user        = "admin"
+  }
 }
 
 variable "node_hostname" {
