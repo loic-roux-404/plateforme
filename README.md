@@ -93,7 +93,7 @@ cntb get instances
 ### 2. Gandi (domain)
 
 - **`paas_base_domain`** : Order a domain on [gandi](https://www.gandi.net)
-- **`gandi_token`** : Generate a Personal Access Token on [gandi organisation](https://admin.gandi.net/organizations/)
+- **`gandi_token`** : Generate a Personal Access Token on [gandi organization](https://admin.gandi.net/organizations/)
 
 > **Warn :** Delete `@` record for your domain on [gandi](https://admin.gandi.net/domain/)
 
@@ -109,7 +109,7 @@ cntb get instances
 **`github_token`** : https://github.com/settings/tokens and create a token with scopes `repo`, `user` and `admin`.
 **`github_client_id`** : Create a new OAuth App.
 **`github_client_secret`** : On new OAuth App ask for a new client secret.
-**github_organisation :** : Your github organization name.
+**github_organization :** : Your github organization name.
 **github_team :** : Your github team id.
 
 ### 5. Cert-manager (TLS)
@@ -259,4 +259,12 @@ Import existing image in terraform :
 
 ```bash
 terraform import module.contabo.contabo_image.k3s_paas_master_image uuid
+```
+
+## Trouble shoot
+
+#### Permissions errors on result directory in Terragrunt
+
+```bash
+rm -rf result
 ```

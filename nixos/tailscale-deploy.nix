@@ -2,7 +2,7 @@
 
 {
   services.tailscale.authKeyFile = config.sops.secrets.tailscaleNodeKey.path;
-  services.tailscale.extraUpFlags = ["--ssh" "--accept-dns" ];
+  services.tailscale.extraUpFlags = ["--ssh" "--accept-dns" "--hostname=${config.networking.hostName}" ];
 
   sops.secrets.tailscaleNodeKey = {};
   sops.secrets.tailscaleNodeHostname = {};

@@ -21,11 +21,15 @@ resource "contabo_instance" "k3s_paas_master" {
   display_name         = var.node_hostname
   image_id             = contabo_image.k3s_paas_master_image.id
   ssh_keys             = [contabo_secret.k3s_paas_master_trusted_key.id]
+
+  provisioner "local-exec" {
+    command = "ssh-keygen -R ${self.ip_config[0].v4[0].ip}"
+  }
 }
 
 output "node_hostname" {
   depends_on = [contabo_instance.k3s_paas_master]
-  value      = contabo_instance.k3s_paas_master.name
+  value      = "contabo-master-0"
 }
 
 output "node_ip" {

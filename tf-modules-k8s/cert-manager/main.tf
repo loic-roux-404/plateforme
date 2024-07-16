@@ -29,7 +29,7 @@ resource "kubernetes_manifest" "issuer" {
     }
     spec = {
       acme = {
-        skipTLSVerify = var.letsencrypt_env != "prod"
+        skipTLSVerify = var.letsencrypt_env == "local"
         email         = var.cert_manager_email
         server        = var.cert_manager_acme_url
         privateKeySecretRef = {
@@ -82,10 +82,6 @@ resource "kubernetes_config_map" "acme_internal_root_ca" {
   }
 }
 
-locals {
-  root_ca_config_map = kubernetes_config_map.acme_internal_root_ca.0.metadata[0].name
-}
-
 output "issuer" {
   value = kubernetes_manifest.issuer.object.metadata.name
 }
@@ -95,19 +91,23 @@ output "reflector_metadata_name" {
 }
 
 output "root_ca_config_map_volume" {
-  value = local.root_ca_config_map != null ? [{
-    name = local.root_ca_config_map
-    configMap = {
-      name = local.root_ca_config_map
-    }
-  }] : []
+  value = flatten([
+    for config_map in kubernetes_config_map.acme_internal_root_ca : [{
+      name = config_map.metadata[0].name
+      configMap = {
+        name = config_map.metadata[0].name
+      }
+    }]
+  ])
 }
 
 output "root_ca_config_map_volume_mounts" {
-  value = local.root_ca_config_map != null ? [{
-    name      = local.root_ca_config_map
-    mountPath = "/etc/ssl/certs/ca.crt"
-    subPath   = "ca.crt"
-    readOnly  = true
-  }] : []
+  value = flatten([
+    for config_map in kubernetes_config_map.acme_internal_root_ca : [{
+      name = config_map.metadata[0].name
+      mountPath = "/etc/ssl/certs/ca-${config_map.metadata[0].name}.crt"
+      subPath   = "ca.crt"
+      readOnly  = true
+    }]
+  ])
 }

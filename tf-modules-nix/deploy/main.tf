@@ -17,7 +17,7 @@ resource "terraform_data" "check_ssh" {
   }
 
   provisioner "remote-exec" {
-    inline = ["echo 'SSH connection ready'",]
+    inline = ["echo 'SSH connection ready'", ]
   }
 }
 
@@ -37,7 +37,7 @@ resource "local_sensitive_file" "non_encrypted_secrets" {
 
 resource "terraform_data" "create_transient_secrets" {
   triggers_replace = {
-    changed_secrets = local_sensitive_file.non_encrypted_secrets.content
+    changed_secrets = local_sensitive_file.non_encrypted_secrets
   }
   provisioner "local-exec" {
     environment = {
@@ -57,7 +57,7 @@ data "local_sensitive_file" "encrypted_secrets" {
 resource "terraform_data" "upload_secrets" {
   triggers_replace = {
     changed_secrets = data.local_sensitive_file.encrypted_secrets.content
-    changed_node = var.node_id
+    changed_node    = var.node_id
   }
   connection {
     type        = "ssh"
@@ -77,6 +77,15 @@ locals {
   uri            = local.components[0]
   attribute_path = local.components[1]
   real_flake     = "${local.uri}#nixosConfigurations.${local.attribute_path}"
+  nix_rebuild_interpreter = concat(
+    [
+      "nixos-rebuild",
+      "--fast",
+      "--build-host", "${var.ssh_connection.user}@${var.node_ip}",
+      "--target-host", "${var.ssh_connection.user}@${var.node_ip}"
+    ],
+    var.nix_rebuild_arguments
+  )
 }
 
 data "external" "instantiate" {
@@ -91,17 +100,40 @@ resource "terraform_data" "deploy" {
   }
 
   provisioner "local-exec" {
+    interpreter = concat(local.nix_rebuild_interpreter, ["--flake", var.nix_flake])
     environment = { NIX_SSHOPTS = var.nix_ssh_options }
-    interpreter = concat(
-      [
-        "nixos-rebuild",
-        "--fast",
-        "--flake", var.nix_flake,
-        "--target-host", "${var.ssh_connection.user}@${var.node_ip}"
-      ],
-      var.nix_rebuild_arguments
-    )
+    command = "switch"
+  }
+}
 
+locals {
+  reset_nix_flake_components     = split("#", var.reset_nix_flake)
+  reset_nix_flake_uri            = local.reset_nix_flake_components[0]
+  reset_nix_flake_attribute_path = local.reset_nix_flake_components[1]
+}
+
+resource "terraform_data" "instanciate_reset" {
+  input = {
+    real_flake = local.reset_nix_flake_uri
+  }
+  provisioner "local-exec" {
+    when = destroy
+    command = "${path.module}/instantiate.sh ${self.input.real_flake}"
+  }
+}
+
+resource "terraform_data" "deploy_reset" {
+  depends_on = [ terraform_data.instanciate_reset ]
+  input = {
+    nix_rebuild_interpreter = local.nix_rebuild_interpreter
+    environment = { NIX_SSHOPTS = var.nix_ssh_options }
+    reset_real_flake = var.reset_nix_flake
+  }
+
+  provisioner "local-exec" {
+    when = destroy
+    environment = self.input.environment
+    interpreter = concat(self.input.nix_rebuild_interpreter, ["--flake", self.input.reset_real_flake])
     command = "switch"
   }
 }

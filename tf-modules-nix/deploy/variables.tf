@@ -33,7 +33,7 @@ variable "ssh_connection" {
 
 variable "nix_ssh_options" {
   type    = string
-  default = ""
+  default = "-o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null"
 }
 
 variable "nix_rebuild_arguments" {
@@ -81,6 +81,29 @@ variable "nix_flake" {
     # We could in theory attempt to match this behavior in terraform, but it's
     # simpler to disallow this and instead require the user to specify a
     # non-empty attribute path.
+    error_message = "Empty flake attribute paths not supported"
+  }
+}
+
+variable "reset_nix_flake" {
+  type = string
+
+  nullable = false
+
+  default = ".#reset"
+
+  description = <<-END
+    Flake URI for the NixOS configuration to reset to
+    END
+
+  validation {
+    condition = length(split("#", var.reset_nix_flake)) == 2
+
+    error_message = "Invalid flake URI"
+  }
+
+  validation {
+    condition = length(split("#", var.reset_nix_flake)) == 2 ? split("#", var.reset_nix_flake)[1] != "" : true
     error_message = "Empty flake attribute paths not supported"
   }
 }

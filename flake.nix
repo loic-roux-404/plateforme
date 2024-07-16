@@ -76,6 +76,14 @@
         os = ./nixos-darwin/configuration.nix;
       };
 
+      darwinDefaultExtraModules = singleton ({ pkgs, ... } : {
+        nixpkgs = nixpkgsDefaults;
+        nix.registry.my.flake = inputs.self;
+        environment.systemPackages = [ 
+          pkgs.bashInteractive 
+        ];
+      });
+
       nixosModules = {
         sops = inputs.sops-nix.nixosModules.sops;
         common = srvos.nixosModules.common;
@@ -89,21 +97,21 @@
         default = attrValues self.nixosModules;
         contabo = default ++ [ ./nixos/contabo.nix ];
         deploy = default ++ [ ./nixos/tailscale-deploy.nix  ./nixos/deploy.nix ];
-        deployContabo = default ++ [ ./nixos/contabo.nix ./nixos/tailscale.nix  ./nixos/deploy.nix ];
+        deployContabo = deploy ++ [ ./nixos/contabo.nix ];
       };
 
       darwinConfigurations = {
         default = self.darwinConfigurations.builder;
         builder = makeOverridable self.lib.mkDarwinSystem ({
           modules = attrValues self.darwinModules;
-          extraModules = singleton ({ pkgs, ... } : {
-            nixpkgs = nixpkgsDefaults;
-            nix.registry.my.flake = inputs.self;
-            environment.systemPackages = [ 
-              pkgs.bashInteractive 
-            ];
-          });
+          extraModules = self.darwinDefaultExtraModules;
         });
+
+        builder-x86 = self.darwinConfigurations.builder.override {
+          extraModules = self.darwinDefaultExtraModules ++ [ 
+            ./nixos-darwin/configuration-x86.nix
+          ];
+        };
 
         # Need a bare darwinConfigurations.builder started before building this one.
         builder-docker = self.darwinConfigurations.builder.override {
@@ -145,10 +153,26 @@
           modules = self.nixosAllModules.deploy;
         };
 
+        reset = nixosSystem {
+          system = linux;
+          inherit specialArgs;
+          modules = self.nixosAllModules.default ++ [
+            ./nixos/reset.nix
+          ];
+        };
+
         deploy-contabo = nixosSystem {
           system = "x86_64-linux";
           inherit specialArgs;
           modules = self.nixosAllModules.deployContabo;
+        };
+
+        contabo-reset = nixosSystem {
+          system = "x86_64-linux";
+          inherit specialArgs;
+          modules = self.nixosAllModules.contabo ++ [
+            ./nixos/reset.nix
+          ];
         };
 
         qcow = makeOverridable nixos-generators.nixosGenerate {
@@ -215,12 +239,13 @@
             packages = attrValues {
               inherit (pkgs) nil bashInteractive;
             };
-            shellHook = (if pkgs.system == "aarch64-darwin" then ''
+            shellHook = ''
               set -e
-              nix build .#darwinConfigurations.builder.system
-              ./result/sw/bin/darwin-rebuild switch --flake .#builder
-              '' else "echo 'Linux not implemented'");
+              nix build .#darwinConfigurations.builder''${VARIANT:-builder}.system
+              ./result/sw/bin/darwin-rebuild switch --flake .#''${VARIANT:-builder}
+            '';
           };
+
         };
     });
 }

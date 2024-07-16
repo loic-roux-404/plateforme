@@ -94,12 +94,8 @@
   nix.linux-builder = {
     enable = true;
     maxJobs = 8;
-    package = lib.mkDefault pkgs.darwin.linux-builder-x86_64;
+    package = lib.mkDefault pkgs.darwin.linux-builder;
     ephemeral = lib.mkDefault true;
-    config = lib.mkDefault ({ lib, ... }: { 
-      # WAITING FOR https://github.com/NixOS/nixpkgs/issues/313784
-      # nixpkgs.hostPlatform = lib.mkForce "x86_64-linux";
-    });
   };
   nix.configureBuildUsers = true;
   services.nix-daemon.enable = true;

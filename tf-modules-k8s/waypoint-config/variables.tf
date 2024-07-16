@@ -24,7 +24,7 @@ variable "dex_client_secret" {
   type        = string
 }
 
-variable "github_organisation" {
+variable "github_organization" {
   default = "org-404"
 }
 

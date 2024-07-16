@@ -60,10 +60,5 @@
       default = "dex-k3s-paas";
     };
 
-    tailscale.baseDaemonExtraArgs = lib.mkOption {
-      type = lib.types.listOf (lib.types.str);
-      description = "Extra arguments for tailscale";
-      default = [];
-    };
   };
 }
