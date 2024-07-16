@@ -12,5 +12,9 @@ with config.k3s-paas;
     neededForUsers = true;
   };
 
+  networking.hostName = "contabo-master-0";
+
+  users.users.reader.hashedPasswordFile = config.sops.secrets.password.path;
   users.users.${user.name}.hashedPasswordFile = config.sops.secrets.password.path;
+  users.users.root.hashedPasswordFile = config.sops.secrets.password.path;
 }

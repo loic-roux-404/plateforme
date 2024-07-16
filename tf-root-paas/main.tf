@@ -1,15 +1,15 @@
 locals {
   cert_manager_acme_url         = var.letsencrypt_envs[var.cert_manager_letsencrypt_env]
   cert_manager_acme_ca_cert_url = var.letsencrypt_envs_ca_certs[var.cert_manager_letsencrypt_env]
-  ingress_hosts_internals       = [var.paas_base_domain, local.dex_hostname, var.paas_hostname]
   dex_hostname                  = "dex.${var.paas_base_domain}"
   paas_hostname                 = "paas.${var.paas_base_domain}"
   internal_acme_hostname        = "acme-internal.${var.paas_base_domain}"
+  ingress_hosts_internals       = [var.paas_base_domain, local.dex_hostname, local.paas_hostname]
 }
 
 data "http" "paas_internal_acme_ca" {
+  count    = local.cert_manager_acme_ca_cert_url != "" ? 1 : 0
   url      = local.cert_manager_acme_ca_cert_url
-  count    = var.cert_manager_letsencrypt_env != "prod" ? 1 : 0
   insecure = var.cert_manager_letsencrypt_env == "local"
 }
 
@@ -25,6 +25,7 @@ module "cert_manager" {
   internal_acme_ca_content = length(data.http.paas_internal_acme_ca) > 0 ? data.http.paas_internal_acme_ca[0].response_body : null
   cert_manager_acme_url    = replace(local.cert_manager_acme_url, "localhost", local.internal_acme_hostname)
   letsencrypt_env          = var.cert_manager_letsencrypt_env
+  cert_manager_email       = var.cert_manager_email
 }
 
 module "ingress-nginx" {
@@ -46,7 +47,7 @@ module "internal_ca" {
 module "github" {
   source              = "../tf-modules-k8s/github"
   github_token        = var.github_token
-  github_organisation = var.github_organisation
+  github_organization = var.github_organization
   github_team         = var.github_team
 }
 
@@ -58,7 +59,7 @@ module "dex" {
   github_client_id     = var.github_client_id
   github_client_secret = var.github_client_secret
   dex_github_orgs = [{
-    name  = var.github_organisation
+    name  = var.github_organization
     teams = [module.github.team_name]
   }]
   k8s_ingress_class           = var.k8s_ingress_class

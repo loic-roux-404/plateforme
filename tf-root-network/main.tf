@@ -24,12 +24,13 @@ resource "random_password" "admin_password" {
 }
 
 module "deploy" {
-  source         = "../tf-modules-nix/deploy"
-  node_id        = module.tailscale.node_id
-  node_ip        = module.tailscale.node_ip
-  config         = module.tailscale.config
-  nix_flake      = var.nix_flake
-  ssh_connection = var.ssh_connection
+  source          = "../tf-modules-nix/deploy"
+  node_id         = module.tailscale.node_id
+  node_ip         = module.tailscale.node_ip
+  config          = module.tailscale.config
+  nix_flake       = var.nix_flake
+  reset_nix_flake = var.reset_nix_flake
+  ssh_connection  = var.ssh_connection
   nixos_transient_secrets = {
     "dexClientId"                = "dex-client-id"
     "tailscaleNodeKey"           = "${module.tailscale.config.node_key}"

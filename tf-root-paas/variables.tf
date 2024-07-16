@@ -1,5 +1,5 @@
-variable "paas_hostname" {
-  default = "paas.k3s.test"
+variable "paas_subdomain" {
+  default = "paas"
 }
 
 variable "paas_base_domain" {
@@ -35,7 +35,7 @@ variable "github_client_secret" {
   type = string
 }
 
-variable "github_organisation" {
+variable "github_organization" {
   type    = string
   default = "org-404"
 }
@@ -67,8 +67,8 @@ variable "letsencrypt_envs" {
   })
   default = {
     local   = "https://localhost:14000/dir"
-    staging = "https://acme-v02.api.letsencrypt.org/directory"
-    prod    = "https://acme-staging-v02.api.letsencrypt.org/directory"
+    prod = "https://acme-v02.api.letsencrypt.org/directory"
+    staging    = "https://acme-staging-v02.api.letsencrypt.org/directory"
   }
 }
 
@@ -82,7 +82,7 @@ variable "letsencrypt_envs_ca_certs" {
   default = {
     local   = "https://localhost:15000/roots/0"
     staging = "https://letsencrypt.org/certs/staging/letsencrypt-stg-root-x1.pem"
-    prod    = null
+    prod    = ""
   }
 }
 

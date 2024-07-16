@@ -14,6 +14,11 @@ let
     url = "https://github.com/cert-manager/cert-manager/releases/download/v1.14.4/cert-manager.crds.yaml";
     sha256 = "060bn3gvrr5jphaig1g195prip5rn0x1s7qrp09q47719fgc6636";
   };
+  userSshConfig = {
+    authorizedKeys = {
+      keys = [ user.key ];
+    };
+  };
 in {
 
   fileSystems."/" = {
@@ -59,8 +64,7 @@ in {
     tailscale = {
       enable = true;
       openFirewall = true;
-      extraUpFlags = ["--ssh" "--accept-dns"];
-      extraDaemonFlags = tailscale.baseDaemonExtraArgs;
+      extraUpFlags = lib.mkDefault ["--ssh" "--accept-dns"];
       permitCertUid = user.name;
     };
     k3s = {
@@ -132,26 +136,53 @@ in {
   };
 
   security.sudo.wheelNeedsPassword = false;
+  security.sudo = {
+    enable = true;
+    extraRules = [{
+      commands = map (cmd: {
+        command = cmd;
+        options = [ "NOPASSWD" ];
+      }) [
+        "${pkgs.systemd}/bin/systemctl status"
+        "${pkgs.systemd}/bin/systemctl show"
+        "${pkgs.systemd}/bin/systemctl list-units"
+        "${pkgs.systemd}/bin/systemctl list-machines"
+        "${pkgs.systemd}/bin/systemctl list-jobs"
+        "${pkgs.systemd}/bin/systemctl is-system-running"
+        "${pkgs.systemd}/bin/journalctl"
+        "${pkgs.k3s}/bin/kubectl get"
+        "${pkgs.k3s}/bin/kubectl describe"
+        "${pkgs.k3s}/bin/kubectl explain"
+        "${pkgs.k3s}/bin/kubectl logs"
+        "${pkgs.k3s}/bin/kubectl diff"
+        "${pkgs.k3s}/bin/kubectl events"
+        "${pkgs.k3s}/bin/kubectl wait"
+        "${pkgs.k3s}/bin/kubectl api-resources"
+        "${pkgs.k3s}/bin/kubectl version"
+        "${pkgs.nettools}/bin/ifconfig"
+        "${pkgs.iproute2}/bin/ip"
+        "${pkgs.iptables}/bin/iptables"
+      ];
+      groups = [ "reader" ];
+    }];
+  };
 
-  nix.trustedUsers = [ user.name ];
   users = {
     defaultUserShell = pkgs.bashInteractive;
     allowNoPasswordLogin = true;
     groups.readers = {};
     users = {
       reader = {
+        hashedPasswordFile = lib.mkDefault "${(pkgs.writeText "password" user.defaultPassword)}";
         isNormalUser = true;
         extraGroups = [ "readers" ];
+        openssh = userSshConfig;
       };
       ${user.name} = {
         hashedPasswordFile = lib.mkDefault "${(pkgs.writeText "password" user.defaultPassword)}";
         isNormalUser = true;
         extraGroups = [ "wheel" "networkmanager" ];
-        openssh = {
-          authorizedKeys = {
-            keys = [ user.key ];
-          };
-        };
+        openssh = userSshConfig;
       };
       root = {
         hashedPasswordFile = lib.mkDefault "${(pkgs.writeText "root-password" user.defaultPassword)}";
@@ -173,10 +204,10 @@ in {
     usePredictableInterfaceNames = true;
   };
 
-  systemd.network = {
-    enable = lib.mkForce true;
-    wait-online.anyInterface = true;
-  };
+  # systemd.network = {
+  #   enable = lib.mkForce true;
+  #   wait-online.anyInterface = true;
+  # };
 
   security.pki.certificateFiles = certs;
 
@@ -191,6 +222,8 @@ in {
     optimise = {
       automatic = true;
     };
+
+    trustedUsers = [ user.name ];
 
     settings.auto-optimise-store = true;
 

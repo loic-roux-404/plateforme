@@ -62,3 +62,7 @@ variable "tailscale_trusted_device" {
 variable "nix_flake" {
   type = string
 }
+
+variable "reset_nix_flake" {
+  type = string
+}
