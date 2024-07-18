@@ -96,44 +96,11 @@ data "external" "instantiate" {
 resource "terraform_data" "deploy" {
   triggers_replace = {
     derivation = data.external.instantiate.result["path"]
-    secrets    = data.local_sensitive_file.encrypted_secrets.content
   }
 
   provisioner "local-exec" {
     interpreter = concat(local.nix_rebuild_interpreter, ["--flake", var.nix_flake])
     environment = { NIX_SSHOPTS = var.nix_ssh_options }
-    command = "switch"
-  }
-}
-
-locals {
-  reset_nix_flake_components     = split("#", var.reset_nix_flake)
-  reset_nix_flake_uri            = local.reset_nix_flake_components[0]
-  reset_nix_flake_attribute_path = local.reset_nix_flake_components[1]
-}
-
-resource "terraform_data" "instanciate_reset" {
-  input = {
-    real_flake = local.reset_nix_flake_uri
-  }
-  provisioner "local-exec" {
-    when = destroy
-    command = "${path.module}/instantiate.sh ${self.input.real_flake}"
-  }
-}
-
-resource "terraform_data" "deploy_reset" {
-  depends_on = [ terraform_data.instanciate_reset ]
-  input = {
-    nix_rebuild_interpreter = local.nix_rebuild_interpreter
-    environment = { NIX_SSHOPTS = var.nix_ssh_options }
-    reset_real_flake = var.reset_nix_flake
-  }
-
-  provisioner "local-exec" {
-    when = destroy
-    environment = self.input.environment
-    interpreter = concat(self.input.nix_rebuild_interpreter, ["--flake", self.input.reset_real_flake])
     command = "switch"
   }
 }

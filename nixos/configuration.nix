@@ -64,21 +64,15 @@ in {
     tailscale = {
       enable = true;
       openFirewall = true;
-      extraUpFlags = lib.mkDefault ["--ssh" "--accept-dns"];
+      extraUpFlags = lib.mkDefault ["--ssh"];
       permitCertUid = user.name;
     };
     k3s = {
       enable = true;
       role = "server";
-      extraFlags = lib.strings.concatStringsSep " " ([
-          (if k3s.disableServices != "" then "--disable=${k3s.disableServices}" else "")
-        ] ++ (if dex.dexClientId != "" then [
-          "--kube-apiserver-arg authorization-mode=Node,RBAC"
-          "--kube-apiserver-arg oidc-issuer-url=https://dex.${dns.name}"
-          "--kube-apiserver-arg oidc-client-id=${dex.dexClientId}"
-          "--kube-apiserver-arg oidc-username-claim=email"
-          "--kube-apiserver-arg oidc-groups-claim=groups"
-        ] else [])
+      extraFlags = lib.strings.concatStringsSep " " (
+        map (service: "--disable=${service}") k3s.disableServices
+        ++ k3s.serverExtraArgs
       );
     };
 
@@ -106,11 +100,10 @@ in {
     };
   }).script;
 
+  programs.vim.defaultEditor = true;
   environment = {
     shells = [ pkgs.bashInteractive ];
     variables = {
-      EDITOR = "vim";
-      SYSTEMD_EDITOR = "vim";
       PAGER = "less -FirSwX";
     };
     systemPackages = with pkgs; [
@@ -135,6 +128,9 @@ in {
     ];
   };
 
+  security.sudo.configFile = ''
+    Defaults  env_keep += "SYSTEMD_EDITOR"
+  '';
   security.sudo.wheelNeedsPassword = false;
   security.sudo = {
     enable = true;
@@ -204,11 +200,6 @@ in {
     usePredictableInterfaceNames = true;
   };
 
-  # systemd.network = {
-  #   enable = lib.mkForce true;
-  #   wait-online.anyInterface = true;
-  # };
-
   security.pki.certificateFiles = certs;
 
   nixpkgs = {
@@ -223,8 +214,7 @@ in {
       automatic = true;
     };
 
-    trustedUsers = [ user.name ];
-
+    settings.trusted-users = [ user.name ];
     settings.auto-optimise-store = true;
 
     gc = {

@@ -84,26 +84,3 @@ variable "nix_flake" {
     error_message = "Empty flake attribute paths not supported"
   }
 }
-
-variable "reset_nix_flake" {
-  type = string
-
-  nullable = false
-
-  default = ".#reset"
-
-  description = <<-END
-    Flake URI for the NixOS configuration to reset to
-    END
-
-  validation {
-    condition = length(split("#", var.reset_nix_flake)) == 2
-
-    error_message = "Invalid flake URI"
-  }
-
-  validation {
-    condition = length(split("#", var.reset_nix_flake)) == 2 ? split("#", var.reset_nix_flake)[1] != "" : true
-    error_message = "Empty flake attribute paths not supported"
-  }
-}

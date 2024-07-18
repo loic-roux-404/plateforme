@@ -9,6 +9,7 @@ locals {
     github_token = local.secret_vars.github_token
     github_client_id = local.secret_vars.github_client_id
     github_client_secret = local.secret_vars.github_client_secret
-    tailscale_operator_hostname = local.dependencies.dependency.network.outputs.tailscale_operator_hostname
+    k3s_config = local.dependencies.dependency.network.outputs.k3s_config
+    k3s_endpoint = local.dependencies.dependency.network.outputs.k3s_endpoint
   }
 }

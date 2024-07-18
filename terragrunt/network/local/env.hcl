@@ -7,7 +7,6 @@ locals {
     gandi_token = ""
     machine = local.dependencies.dependency.cloud.outputs
     nix_flake = "${local.flake_dir}#deploy"
-    reset_nix_flake = "${local.flake_dir}#reset"
     tailscale_oauth_client = local.secret_vars.tailscale_oauth_client
     tailscale_tailnet = local.secret_vars.tailscale_tailnet
     tailscale_trusted_device = local.secret_vars.tailscale_trusted_device

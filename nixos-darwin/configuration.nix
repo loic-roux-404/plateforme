@@ -49,6 +49,12 @@
       StandardErrorPath = "/var/log/pebble-error.log";
     };
   };
+
+  system.activationScripts.importPebbleCert.text = ''
+    curl -k https://localhost:15000/intermediates/0 > /tmp/pebble-ca.pem;
+    sudo security add-trusted-cert -d -r trustAsRoot -k /Library/Keychains/System.keychain /tmp/pebble-ca.pem;
+  '';
+
   environment.etc."libvirt/libvirtd.conf".text = ''
     mode = "direct"
     unix_sock_group = "staff"

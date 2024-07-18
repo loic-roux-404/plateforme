@@ -16,7 +16,7 @@
 
     home-manager = { 
       url = "github:nix-community/home-manager/master"; 
-      inputs.nixpkgs.follows = "srvos/nixpkgs"; 
+      inputs.nixpkgs.follows = "srvos/nixpkgs";
     };
 
     nixos-generators = {
@@ -96,7 +96,7 @@
       nixosAllModules = rec {
         default = attrValues self.nixosModules;
         contabo = default ++ [ ./nixos/contabo.nix ];
-        deploy = default ++ [ ./nixos/tailscale-deploy.nix  ./nixos/deploy.nix ];
+        deploy = default ++ [ ./nixos/deploy.nix ];
         deployContabo = deploy ++ [ ./nixos/contabo.nix ];
       };
 
@@ -153,25 +153,11 @@
           modules = self.nixosAllModules.deploy;
         };
 
-        reset = nixosSystem {
-          system = linux;
-          inherit specialArgs;
-          modules = self.nixosAllModules.default ++ [
-            ./nixos/reset.nix
-          ];
-        };
-
         deploy-contabo = nixosSystem {
           system = "x86_64-linux";
           inherit specialArgs;
-          modules = self.nixosAllModules.deployContabo;
-        };
-
-        contabo-reset = nixosSystem {
-          system = "x86_64-linux";
-          inherit specialArgs;
-          modules = self.nixosAllModules.contabo ++ [
-            ./nixos/reset.nix
+          modules = self.nixosAllModules.deployContabo ++ [
+            ./nixos/contabo-master-0.nix
           ];
         };
 

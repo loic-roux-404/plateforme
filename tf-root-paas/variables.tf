@@ -15,7 +15,7 @@ variable "cert_manager_namespace" {
 }
 
 variable "cert_manager_email" {
-  type      = string
+  type = string
 }
 
 variable "dex_namespace" {
@@ -45,8 +45,17 @@ variable "github_team" {
   default = "ops-team"
 }
 
-variable "tailscale_operator_hostname" {
+variable "k3s_endpoint" {
   type = string
+}
+
+variable "k3s_config" {
+  sensitive = true
+  type = object({
+    cluster_ca_certificate = string
+    client_certificate = string
+    client_key = string
+  })
 }
 
 variable "paas_namespace" {
@@ -67,8 +76,8 @@ variable "letsencrypt_envs" {
   })
   default = {
     local   = "https://localhost:14000/dir"
-    prod = "https://acme-v02.api.letsencrypt.org/directory"
-    staging    = "https://acme-staging-v02.api.letsencrypt.org/directory"
+    prod    = "https://acme-v02.api.letsencrypt.org/directory"
+    staging = "https://acme-staging-v02.api.letsencrypt.org/directory"
   }
 }
 
