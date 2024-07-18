@@ -8,11 +8,32 @@ with config.k3s-paas;
   sops.defaultSopsFile = "/home/${user.name}/secrets.yaml";
   sops.age.sshKeyPaths = [ "/etc/ssh/ssh_host_ed25519_key" ];
 
+  services.tailscale.authKeyFile = config.sops.secrets.tailscaleNodeKey.path;
+  services.tailscale.extraUpFlags = ["--ssh" "--hostname=${config.networking.hostName}" ];
+
+  sops.secrets.tailscaleNodeKey = {};
+  sops.secrets.paasDomain = {};
+  sops.secrets.tailscaleDomain = {};
   sops.secrets.password = {
     neededForUsers = true;
   };
 
-  networking.hostName = "contabo-master-0";
+  k3s-paas.k3s.serverExtraArgs = [
+    "--config ${config.sops.templates."k3s-config.yaml".path}"
+  ];
+  sops.templates."k3s-config.yaml".content = ''
+    tls-san:
+      - localhost
+      - ${config.networking.hostName}
+      - ${config.sops.placeholder.tailscaleDomain}"
+
+  '' + (if dex.dexClientId != "" then ''
+      kube-apiserver-arg=authorization-mode: Node,RBAC
+      kube-apiserver-arg=oidc-issuer-url: https://dex.${config.sops.placeholder.paasDomain}
+      kube-apiserver-arg=oidc-client-id: ${dex.dexClientId}
+      kube-apiserver-arg=oidc-username-claim: email
+      kube-apiserver-arg=oidc-groups-claim: groups
+    '' else []);
 
   users.users.reader.hashedPasswordFile = config.sops.secrets.password.path;
   users.users.${user.name}.hashedPasswordFile = config.sops.secrets.password.path;

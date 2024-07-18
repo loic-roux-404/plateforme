@@ -29,7 +29,7 @@ resource "contabo_instance" "k3s_paas_master" {
 
 output "node_hostname" {
   depends_on = [contabo_instance.k3s_paas_master]
-  value      = "contabo-master-0"
+  value      = var.node_hostname
 }
 
 output "node_ip" {

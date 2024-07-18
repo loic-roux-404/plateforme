@@ -12,6 +12,5 @@ locals {
     tailscale_trusted_device = local.secret_vars.tailscale_trusted_device
     gandi_token = local.secret_vars.gandi_token
     nix_flake = "${local.flake_dir}#deploy-contabo"
-    reset_nix_flake = "${local.flake_dir}#contabo-reset"
   }
 }

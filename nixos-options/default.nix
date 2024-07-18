@@ -43,9 +43,15 @@
     };
 
     k3s.disableServices = lib.mkOption {
-      default = "traefik";
-      type = lib.types.str;
+      default = ["traefik"];
+      type = lib.types.listOf lib.types.str;
       description = "Disable k3s services eg: traefik,servicelb";
+    };
+
+    k3s.serverExtraArgs = lib.mkOption {
+      default = [];
+      type = lib.types.listOf lib.types.str;
+      description = "Extra arguments for k3s server";
     };
 
     k3s.token = lib.mkOption {

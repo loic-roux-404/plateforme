@@ -4,6 +4,6 @@ locals {
   input_vars = {
     contabo_credentials = local.secret_vars.contabo_credentials
     contabo_instance = local.secret_vars.contabo_instance
-    node_hostname = "k3s-paas-master-0"
+    node_hostname = "contabo-master-0"
   }
 }

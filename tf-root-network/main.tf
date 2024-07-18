@@ -24,36 +24,26 @@ resource "random_password" "admin_password" {
 }
 
 module "deploy" {
-  source          = "../tf-modules-nix/deploy"
-  node_id         = module.tailscale.node_id
-  node_ip         = module.tailscale.node_ip
-  config          = module.tailscale.config
-  nix_flake       = var.nix_flake
-  reset_nix_flake = var.reset_nix_flake
-  ssh_connection  = var.ssh_connection
+  source         = "../tf-modules-nix/deploy"
+  node_id        = module.tailscale.node_id
+  node_ip        = module.tailscale.node_ip
+  config         = module.tailscale.config
+  nix_flake      = var.nix_flake
+  ssh_connection = var.ssh_connection
   nixos_transient_secrets = {
-    "dexClientId"                = "dex-client-id"
-    "tailscaleNodeKey"           = "${module.tailscale.config.node_key}"
-    "password"                   = "${random_password.admin_password.bcrypt_hash}"
-    "tailscaleOauthClientId"     = var.tailscale_oauth_client.id
-    "tailscaleOauthClientSecret" = var.tailscale_oauth_client.secret
-    "tailscaleNodeHostname"      = module.tailscale.config.node_hostname
+    "dexClientId"      = "dex-client-id"
+    "tailscaleNodeKey" = "${module.tailscale.config.node_key}"
+    "password"         = "${random_password.admin_password.bcrypt_hash}"
+    "tailscaleDomain"  = "${module.tailscale.config.node_fqdn}"
+    "paasDomain"       = "${var.paas_base_domain}"
   }
 }
 
-resource "terraform_data" "wait_tunneled_vm_ssh" {
-
-  connection {
-    type    = "ssh"
-    user    = var.ssh_connection.user
-    host    = module.deploy.config.node_hostname
-    timeout = "1m"
-  }
-
-  provisioner "remote-exec" {
-    on_failure = fail
-    inline     = ["echo '${module.deploy.config.node_hostname} => ${module.deploy.config.node_id}'"]
-  }
+module "retrieve_k3s_config" {
+  source                     = "../tf-modules-cloud/k3s-get-config"
+  ssh_connection             = var.ssh_connection
+  node_hostname              = module.deploy.config.node_fqdn
+  remote_k3s_config_location = "/etc/rancher/k3s/k3s.yaml"
 }
 
 output "password" {
@@ -61,6 +51,12 @@ output "password" {
   sensitive = true
 }
 
-output "tailscale_operator_hostname" {
-  value = module.deploy.config.k8s_operator_hostname
+output "k3s_endpoint" {
+  value     = "https://${module.retrieve_k3s_config.k3s_endpoint}:6443"
+  sensitive = true
+}
+
+output "k3s_config" {
+  sensitive = true
+  value     = module.retrieve_k3s_config.k3s_config
 }
