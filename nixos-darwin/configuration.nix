@@ -17,7 +17,7 @@
   };
   services.tailscale.enable = true;
 
-  launchd.daemons."libvirt" = {
+  launchd.daemons.libvirt = {
     path = [ pkgs.gcc pkgs.qemu pkgs.dnsmasq pkgs.libvirt ];
     serviceConfig = {
       KeepAlive = true;
@@ -25,26 +25,29 @@
       ProgramArguments = [ 
         "${pkgs.libvirt}/bin/libvirtd" "-f" "/etc/libvirt/libvirtd.conf" "-v"
       ];
+      WorkingDirectory = "/var/lib/libvirt";
       StandardOutPath = "/var/log/libvirt/libvirt.log";
       StandardErrorPath = "/var/log/libvirt/libvirt-error.log";
     };
   };
-  launchd.daemons."virtlogd" = {
+  launchd.daemons.virtlogd = {
     path = [ pkgs.libvirt ];
     serviceConfig = {
       KeepAlive = true;
       RunAtLoad = true;
+      WorkingDirectory = "/var/lib/libvirt";
       ProgramArguments = [ "${pkgs.libvirt}/bin/virtlogd" "-d" ];
       StandardOutPath = "/var/log/libvirt/virtlogd.log";
       StandardErrorPath = "/var/log/libvirt/virtlogd-error.log";
     };
   };
-  launchd.daemons."pebble" = {
+  launchd.daemons.pebble = {
     path = [ pkgs.pebble ];
     serviceConfig = {
       KeepAlive = true;
       RunAtLoad = true;
       ProgramArguments = [ "${pkgs.pebble}/bin/pebble" "-config" "/etc/pebble/config.json" ];
+      WorkingDirectory = "/var/lib/pebble";
       StandardOutPath = "/var/log/pebble.log";
       StandardErrorPath = "/var/log/pebble-error.log";
     };

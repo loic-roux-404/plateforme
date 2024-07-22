@@ -134,6 +134,13 @@ make terragrunt/network/contabo
 make terragrunt/paas/contabo
 ```
 
+**Note** : Retrieve any config with :
+
+```bash
+make terragrunt/network/contabo TF_CMD='output -json k3s_config | yq -p json -o yaml'
+
+```
+
 ### Install in local
 
 Here is the command to set up the paas on a libvirt vm.
@@ -231,14 +238,6 @@ See any assets :
 
 ```bash
 kubectl get all -A
-```
-
-### Tailscale
-
-Retrieve kubeconfig :
-
-```bash
-tailscale configure kubeconfig
 ```
 
 ### Release

@@ -12,7 +12,7 @@
 
     # Environment/system management
     darwin.url = "github:LnL7/nix-darwin";
-    darwin.inputs.nixpkgs.follows = "srvos/nixpkgs";
+    darwin.inputs.nixpkgs.follows = "nixpkgs-stable-darwin";
 
     home-manager = { 
       url = "github:nix-community/home-manager/master"; 
@@ -169,7 +169,7 @@
           format = "qcow";
         };
 
-        contabo = self.packages.${system}.nixosConfigurations.qcow.override {
+        contabo-qcow = self.packages.${system}.nixosConfigurations.qcow.override {
           modules = self.nixosAllModules.contabo ++ [
             ./nixos/qcow-compressed.nix
           ];
@@ -227,7 +227,7 @@
             };
             shellHook = ''
               set -e
-              nix build .#darwinConfigurations.builder''${VARIANT:-builder}.system
+              nix build .#darwinConfigurations.''${VARIANT:-builder}.system
               ./result/sw/bin/darwin-rebuild switch --flake .#''${VARIANT:-builder}
             '';
           };

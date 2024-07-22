@@ -1,6 +1,10 @@
+
+targetNamespace: ${waypoint_namespace}
+
 server:
   image:
     tag: 0.11.4
+  # tokenSecret: TODO
   cert:
     secretName: ${paas_hostname}-tls
   extraVolumeMounts: ${jsonencode(waypoint_extra_volume_mounts)}

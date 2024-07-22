@@ -1,7 +1,7 @@
 SHELL:=/usr/bin/env bash
 MAKEFLAGS += --no-builtin-rules --no-builtin-variables
 TF_CMD:=apply -auto-approve
-VARIANT:=builder
+VARIANT=builder
 
 #### Nix
 
@@ -9,14 +9,14 @@ BUILDER_EXEC:=
 NIXOS_CONFIG:=qcow
 
 ifeq ($(shell uname -s),Darwin)
-   BUILDER_EXEC:=NIX_CONF_DIR=$(PWD)/bootstrap nix develop .\#$(BUILDER) --command
+   BUILDER_EXEC:=NIX_CONF_DIR=$(PWD)/bootstrap nix develop .\#builder --command
 endif
 
 bootstrap:
 	@$(BUILDER_EXEC) echo "Started default build environment"
 
 bootstrap-x86:
-	@VARIANT=$(VARIANT)=builder-x86 $(BUILDER_EXEC) echo "Started x86 environment"
+	@VARIANT=builder-x86 $(BUILDER_EXEC) echo "Started x86 environment"
 
 nixos-local:
 	@$(BUILDER_EXEC) nix build .#nixosConfigurations.default --system aarch64-linux
@@ -24,8 +24,7 @@ nixos-local:
 TERRAGRUNT_FILES:=$(shell find terragrunt -type d -name '.*' -prune -o -name 'terragrunt.hcl' -exec dirname {} \;)
 
 $(TERRAGRUNT_FILES):
-	@echo "Running apply in $@ directory"
-	@chmod -f -R 777 result/ || true
+	@chmod -fR 755 $@/.terragrunt-cache/ && chmod -fR 755 result || true
 	@cd $@ && terragrunt $(TF_CMD)
 
 release-stable:

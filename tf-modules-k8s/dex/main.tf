@@ -20,7 +20,7 @@ resource "helm_release" "dex" {
   chart         = "dex"
   timeout       = 600
   wait_for_jobs = true
-  wait          = true
+  atomic        = true
 
   values = [
     templatefile("${path.module}/values.yaml.tmpl", {

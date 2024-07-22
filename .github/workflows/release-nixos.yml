@@ -39,7 +39,7 @@ jobs:
 
       - name: Build
         id: build
-        run: nix build .#nixosConfigurations.contabo
+        run: nix build .#nixosConfigurations.contabo-qcow
         
       - name: Release
         uses: softprops/action-gh-release@v1

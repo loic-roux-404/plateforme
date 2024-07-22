@@ -17,19 +17,16 @@ locals {
 }
 
 resource "helm_release" "waypoint" {
-  name          = "waypoint"
-  repository    = "https://helm.releases.hashicorp.com"
-  chart         = "waypoint"
-  version       = "0.1.21"
-  namespace     = local.namespace
-  values        = [local.waypoint_manifest_values]
-  wait_for_jobs = true
-  wait          = true
-
-  set {
-    name  = "targetNamespace"
-    value = local.namespace
-  }
+  name              = "waypoint"
+  repository        = "https://helm.releases.hashicorp.com"
+  chart             = "waypoint"
+  version           = "0.1.21"
+  namespace         = local.namespace
+  values            = [local.waypoint_manifest_values]
+  atomic            = true
+  wait_for_jobs     = true
+  dependency_update = var.dependency_update
+  timeout           = 120
 }
 
 data "kubernetes_secret" "waypoint_token" {
