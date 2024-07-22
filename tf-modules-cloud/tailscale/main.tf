@@ -103,20 +103,30 @@ resource "terraform_data" "destroy_node" {
   }
 }
 
+data "tailscale_devices" "already_present" {
+  name_prefix = var.node_hostname
+}
+
+locals  {
+  already_present = length(data.tailscale_devices.already_present.devices) > 0
+  node_fqdn = "${var.node_hostname}.${var.tailscale_tailnet}"
+}
+
 output "node_id" {
   value = var.node_id
 }
 
-output "node_ip" {
-  value = var.node_ip
+output "node_address" {
+  value = local.already_present ? local.node_fqdn : var.node_ip
 }
 
 output "config" {
   depends_on = [tailscale_tailnet_key.k3s_paas_node]
   value = {
-    node_hostname = var.node_hostname
-    node_fqdn     = "${var.node_hostname}.${var.tailscale_tailnet}"
-    node_key      = tailscale_tailnet_key.k3s_paas_node.key
-    k8s_operator_hostname  = "k8s-operator-${var.node_hostname}"
+    node_ip               = var.node_ip
+    node_hostname         = var.node_hostname
+    node_fqdn             = local.node_fqdn
+    node_key              = tailscale_tailnet_key.k3s_paas_node.key
+    k8s_operator_hostname = "k8s-operator-${var.node_hostname}"
   }
 }

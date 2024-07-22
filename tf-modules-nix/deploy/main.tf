@@ -12,7 +12,7 @@ resource "terraform_data" "check_ssh" {
     type        = "ssh"
     user        = var.ssh_connection.user
     private_key = file(pathexpand(var.ssh_connection.private_key))
-    host        = var.node_ip
+    host        = var.node_address
     timeout     = "1m"
   }
 
@@ -26,13 +26,13 @@ data "external" "machine_key_pub" {
   program    = ["bash", "${path.module}/retrieve-vm-age-key.sh"]
 
   query = {
-    machine_ip = var.node_ip
+    machine_ip = var.node_address
   }
 }
 
 resource "local_sensitive_file" "non_encrypted_secrets" {
   content  = yamlencode(var.nixos_transient_secrets)
-  filename = "${path.cwd}/${var.node_ip}.yaml"
+  filename = "${path.cwd}/${var.node_address}.yaml"
 }
 
 resource "terraform_data" "create_transient_secrets" {
@@ -63,7 +63,7 @@ resource "terraform_data" "upload_secrets" {
     type        = "ssh"
     user        = var.ssh_connection.user
     private_key = file(pathexpand(var.ssh_connection.private_key))
-    host        = var.node_ip
+    host        = var.node_address
   }
 
   provisioner "file" {
@@ -81,8 +81,8 @@ locals {
     [
       "nixos-rebuild",
       "--fast",
-      "--build-host", "${var.ssh_connection.user}@${var.node_ip}",
-      "--target-host", "${var.ssh_connection.user}@${var.node_ip}"
+      "--build-host", "${var.ssh_connection.user}@${var.node_address}",
+      "--target-host", "${var.ssh_connection.user}@${var.node_address}"
     ],
     var.nix_rebuild_arguments
   )
@@ -108,7 +108,7 @@ resource "terraform_data" "deploy" {
 output "config" {
   depends_on = [terraform_data.deploy]
   value = merge(var.config, {
-    node_ip = var.node_ip
+    node_address = var.node_address
     node_id = var.node_id
   })
 }

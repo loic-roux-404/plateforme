@@ -72,6 +72,7 @@ in {
       role = "server";
       extraFlags = lib.strings.concatStringsSep " " (
         map (service: "--disable=${service}") k3s.disableServices
+        ++ ["--write-kubeconfig-mode=400" "--write-kubeconfig-user=${user.name}"]
         ++ k3s.serverExtraArgs
       );
     };
@@ -105,6 +106,8 @@ in {
     shells = [ pkgs.bashInteractive ];
     variables = {
       PAGER = "less -FirSwX";
+      KUBECONFIG = "/etc/rancher/k3s/k3s.yaml";
+      SYSTEMD_EDITOR = "vim";
     };
     systemPackages = with pkgs; [
       glibcLocales
@@ -192,7 +195,7 @@ in {
     firewall = {
       trustedInterfaces = [ "tailscale0" "cni0" ];
       enable = true;
-      allowedTCPPorts = lib.mkDefault [80 443 22 6443];
+      allowedTCPPorts = lib.mkDefault [ 80 443 22 ];
       allowedUDPPorts = [ config.services.tailscale.port ];
     };
     nftables.enable = true;

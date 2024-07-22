@@ -4,7 +4,7 @@ variable "dex_client_id" {
   default   = "dex-k3s-paas"
 }
 
-variable "node_ip" {
+variable "node_address" {
   type = string
 }
 

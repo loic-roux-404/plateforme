@@ -8,6 +8,7 @@ with config.k3s-paas;
   sops.defaultSopsFile = "/home/${user.name}/secrets.yaml";
   sops.age.sshKeyPaths = [ "/etc/ssh/ssh_host_ed25519_key" ];
 
+  networking.firewall.allowedTCPPorts = [ 80 443 ];
   services.tailscale.authKeyFile = config.sops.secrets.tailscaleNodeKey.path;
   services.tailscale.extraUpFlags = ["--ssh" "--hostname=${config.networking.hostName}" ];
 

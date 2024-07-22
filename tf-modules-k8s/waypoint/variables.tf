@@ -27,3 +27,7 @@ variable "waypoint_extra_volumes" {
 variable "cert_manager_cluster_issuer" {
   description = "value of the cert-manager cluster issuer"
 }
+
+variable "dependency_update" {
+  default = true
+}

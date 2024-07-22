@@ -26,7 +26,7 @@ resource "random_password" "admin_password" {
 module "deploy" {
   source         = "../tf-modules-nix/deploy"
   node_id        = module.tailscale.node_id
-  node_ip        = module.tailscale.node_ip
+  node_address   = module.tailscale.node_address 
   config         = module.tailscale.config
   nix_flake      = var.nix_flake
   ssh_connection = var.ssh_connection
@@ -39,7 +39,7 @@ module "deploy" {
   }
 }
 
-module "retrieve_k3s_config" {
+module "k3s_get_config" {
   source                     = "../tf-modules-cloud/k3s-get-config"
   ssh_connection             = var.ssh_connection
   node_hostname              = module.deploy.config.node_fqdn
@@ -52,11 +52,11 @@ output "password" {
 }
 
 output "k3s_endpoint" {
-  value     = "https://${module.retrieve_k3s_config.k3s_endpoint}:6443"
+  value     = "https://${module.k3s_get_config.k3s_endpoint}:6443"
   sensitive = true
 }
 
 output "k3s_config" {
   sensitive = true
-  value     = module.retrieve_k3s_config.k3s_config
+  value     = module.k3s_get_config.k3s_config
 }

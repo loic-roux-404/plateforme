@@ -55,6 +55,10 @@ variable "tailscale_tailnet" {
   sensitive   = true
 }
 
+variable "tailscale_expected_device" {
+  default = "localhost"
+}
+
 variable "tailscale_trusted_device" {
   type = string
 }
