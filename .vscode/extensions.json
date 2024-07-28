@@ -1,15 +1,11 @@
 {
     "recommendations": [
         "hashicorp.hcl",
-        "redhat.ansible",
         "ms-kubernetes-tools.vscode-kubernetes-tools",
         "mindaro.mindaro",
-        "szTheory.vscode-packer-powertools",
-        "ms-azuretools.vscode-azureterraform",
         "HashiCorp.terraform",
         "valentjn.vscode-ltex",
         "ms-python.python",
-        "4ops.packer",
         "pinage404.nix-extension-pack"
     ]
 }

@@ -1,21 +1,6 @@
 {
-    "ansible.python.interpreterPath": "/Users/loic/mambaforge/envs/playbook-paas/bin/python",
-    "vs-kubernetes": {
-        "vs-kubernetes.knownKubeconfigs": [
-            "/Users/loic/.kube/config"
-        ],
-        "vs-kubernetes.kubeconfig": "/Users/loic/.kube/config"
-    },
-    "nix.enableLanguageServer": true, // Enable LSP.
+    "nix.enableLanguageServer": true,
     "nix.serverPath": "nil", 
-    "ltex.language": "en",
-    "ltex.dictionary": {
-        "en": [
-            "adaptivity",
-            "precomputed",
-            "subproblem"
-        ]
-    },
     "files.associations": {
         "*.y*ml.*": "yaml"
     },
