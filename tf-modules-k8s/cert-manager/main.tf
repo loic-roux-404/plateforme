@@ -1,22 +1,13 @@
-resource "kubernetes_namespace" "cert-manager" {
-  metadata {
-    name = var.cert_manager_namespace
-  }
-}
-
 resource "helm_release" "cert_manager" {
   name          = "cert-manager"
-  namespace     = kubernetes_namespace.cert-manager.metadata.0.name
+  namespace     = var.cert_manager_namespace
+  create_namespace = true
   repository    = "https://charts.jetstack.io"
   chart         = "cert-manager"
   version       = "1.14.4"
   wait_for_jobs = true
   atomic = true
-
-  set {
-    name  = "installCRDs"
-    value = false
-  }
+  timeout = 120
 }
 
 resource "kubernetes_manifest" "issuer" {
@@ -50,18 +41,25 @@ resource "kubernetes_manifest" "issuer" {
   }
 }
 
+data "kubernetes_namespace" "cert-manager" {
+  depends_on = [ helm_release.cert_manager ]
+  metadata {
+    name = var.cert_manager_namespace
+  }
+}
+
 resource "helm_release" "reflector" {
   name          = "reflector"
-  namespace     = kubernetes_namespace.cert-manager.metadata.0.name
+  namespace     = data.kubernetes_namespace.cert-manager.metadata.0.name
   repository    = "https://emberstack.github.io/helm-charts"
   chart         = "reflector"
   version       = "7.1.262"
   wait_for_jobs = true
-  wait          = true
+  atomic        = true
 
   set {
     name  = "targetNamespace"
-    value = kubernetes_namespace.cert-manager.metadata.0.name
+    value = data.kubernetes_namespace.cert-manager.metadata.0.name
   }
 
 }
@@ -70,7 +68,7 @@ resource "kubernetes_config_map" "acme_internal_root_ca" {
   count = var.letsencrypt_env == "local" ? 1 : 0
   metadata {
     name      = "acme-internal-root-ca"
-    namespace = kubernetes_namespace.cert-manager.metadata.0.name
+    namespace = data.kubernetes_namespace.cert-manager.metadata.0.name
     annotations = {
       "reflector.v1.k8s.emberstack.com/reflection-allowed"      = "true"
       "reflector.v1.k8s.emberstack.com/reflection-auto-enabled" = "true"

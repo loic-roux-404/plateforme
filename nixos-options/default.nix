@@ -43,7 +43,7 @@
     };
 
     k3s.disableServices = lib.mkOption {
-      default = ["traefik"];
+      default = ["traefik" "metrics-server"];
       type = lib.types.listOf lib.types.str;
       description = "Disable k3s services eg: traefik,servicelb";
     };

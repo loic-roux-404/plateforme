@@ -7,7 +7,7 @@ variable "cert_manager_namespace" {
 variable "k8s_ingress_class" {
   description = "The ingress class to use for cert-manager"
   type        = string
-  default     = "nginx"
+  default     = "cilium"
 }
 
 variable "cert_manager_email" {

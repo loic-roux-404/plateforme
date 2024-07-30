@@ -21,6 +21,9 @@ resource "random_password" "admin_password" {
   length           = 16
   special          = true
   override_special = "!#$%&*()-_=+[]{}<>:?"
+  keepers = {
+    node_id = module.tailscale.node_id
+  }
 }
 
 module "deploy" {
@@ -31,11 +34,11 @@ module "deploy" {
   nix_flake      = var.nix_flake
   ssh_connection = var.ssh_connection
   nixos_transient_secrets = {
-    "dexClientId"      = "dex-client-id"
-    "tailscaleNodeKey" = "${module.tailscale.config.node_key}"
-    "password"         = "${random_password.admin_password.bcrypt_hash}"
-    "tailscaleDomain"  = "${module.tailscale.config.node_fqdn}"
-    "paasDomain"       = "${var.paas_base_domain}"
+    dexClientId      = "dex-client-id"
+    tailscaleNodeKey = "${module.tailscale.config.node_key}"
+    password         = "${random_password.admin_password.bcrypt_hash}"
+    tailscaleDomain  = "${module.tailscale.config.node_fqdn}"
+    paasDomain       = "${var.paas_base_domain}"
   }
 }
 
@@ -51,9 +54,17 @@ output "password" {
   sensitive = true
 }
 
+output "node_name" {
+  value = var.machine.node_hostname
+}
+
 output "k3s_endpoint" {
-  value     = "https://${module.k3s_get_config.k3s_endpoint}:6443"
+  value     = module.k3s_get_config.k3s_endpoint
   sensitive = true
+}
+
+output "k3s_port" {
+  value = "6443"
 }
 
 output "k3s_config" {

@@ -40,7 +40,7 @@ variable "paas_hostname" {
 variable "k8s_ingress_class" {
   description = "ingress class"
   type        = string
-  default     = "nginx"
+  default     = "cilium"
 }
 
 variable "cert_manager_cluster_issuer" {

@@ -19,8 +19,20 @@ module "metallb" {
   for_each         = var.metallb_ip_range != null ? toset(["metallb"]) : toset([])
 }
 
+module "cilium" {
+  count        = var.k8s_ingress_class == "cilium" ? 1 : 0
+  source       = "../tf-modules-k8s/cilium"
+  k3s_port     = var.k3s_port
+  node_name    = var.node_name
+}
+
+module "metrics_server" {
+  depends_on = [ module.cilium[0] ]
+  source = "../tf-modules-k8s/metrics-server"
+}
+
 module "cert_manager" {
-  depends_on               = [module.metallb[0]]
+  depends_on               = [module.metallb[0], module.cilium[0]]
   source                   = "../tf-modules-k8s/cert-manager"
   internal_acme_ca_content = length(data.http.paas_internal_acme_ca) > 0 ? data.http.paas_internal_acme_ca[0].response_body : null
   cert_manager_acme_url    = replace(local.cert_manager_acme_url, "localhost", local.internal_acme_hostname)
@@ -28,11 +40,10 @@ module "cert_manager" {
   cert_manager_email       = var.cert_manager_email
 }
 
-module "ingress-nginx" {
-  source                      = "../tf-modules-k8s/nginx-ingress-controller"
-  cert_manager_cluster_issuer = module.cert_manager.issuer
-  paas_base_domain            = var.paas_base_domain
-  default_ssl_certificate     = true
+locals {
+  ingress_controller_ip = one(
+    [for _, ci in module.cilium : ci.ingress_controller_ip]
+  )
 }
 
 module "internal_ca" {
@@ -41,7 +52,7 @@ module "internal_ca" {
   internal_acme_hostname   = local.internal_acme_hostname
   internal_acme_network_ip = var.internal_network_ip
   ingress_hosts_internals  = local.ingress_hosts_internals
-  ingress_controller_ip    = module.ingress-nginx.ingress_controller_ip
+  ingress_controller_ip    = local.ingress_controller_ip
 }
 
 module "github" {

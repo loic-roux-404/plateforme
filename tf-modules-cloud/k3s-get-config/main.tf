@@ -37,7 +37,7 @@ output "k3s_endpoint" {
 }
 
 output "kube_config" {
-  value = local.cluster
+  value = local.kube_config
 }
 
 output "k3s_config" {

@@ -31,7 +31,6 @@
     };
   };
   launchd.daemons.virtlogd = {
-    path = [ pkgs.libvirt ];
     serviceConfig = {
       KeepAlive = true;
       RunAtLoad = true;
@@ -42,12 +41,11 @@
     };
   };
   launchd.daemons.pebble = {
-    path = [ pkgs.pebble ];
     serviceConfig = {
       KeepAlive = true;
       RunAtLoad = true;
       ProgramArguments = [ "${pkgs.pebble}/bin/pebble" "-config" "/etc/pebble/config.json" ];
-      WorkingDirectory = "/var/lib/pebble";
+      WorkingDirectory = "/tmp";
       StandardOutPath = "/var/log/pebble.log";
       StandardErrorPath = "/var/log/pebble-error.log";
     };
