@@ -49,6 +49,14 @@ variable "k3s_endpoint" {
   type = string
 }
 
+variable "k3s_port" {
+  default = "6443"
+}
+
+variable "node_name" {
+  type = string
+}
+
 variable "k3s_config" {
   sensitive = true
   type = object({
@@ -63,7 +71,7 @@ variable "paas_namespace" {
 }
 
 variable "k8s_ingress_class" {
-  default     = "nginx"
+  default     = "cilium"
   description = "ingress class"
 }
 

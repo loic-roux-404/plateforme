@@ -1,3 +1,3 @@
-{ ... }: {
-  networking.hostName = "contabo-master-0";
+{ lib, ... }: {
+  networking.hostName = lib.mkForce "contabo-master-0";
 }

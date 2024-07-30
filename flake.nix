@@ -196,7 +196,7 @@
             name = "default";
             packages = attrValues {
               inherit (pkgs) bashInteractive grpcurl jq coreutils e2fsprogs
-              docker-client kubectl kubernetes-helm libvirt qemu
+              docker-client docker-credential-helpers libvirt qemu
               tailscale pebble cntb
               nil nix-tree;
               inherit (stablePkgs) nix terragrunt terraform sops ssh-to-age nixos-rebuild;
@@ -231,7 +231,6 @@
               ./result/sw/bin/darwin-rebuild switch --flake .#''${VARIANT:-builder}
             '';
           };
-
         };
     });
 }

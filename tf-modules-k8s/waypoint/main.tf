@@ -37,7 +37,8 @@ data "kubernetes_secret" "waypoint_token" {
   }
 }
 
-resource "kubernetes_ingress_v1" "example" {
+resource "kubernetes_ingress_v1" "waypoint_api" {
+  depends_on = [ helm_release.waypoint ]
   metadata {
     name      = "waypoint-grpc"
     namespace = "default"

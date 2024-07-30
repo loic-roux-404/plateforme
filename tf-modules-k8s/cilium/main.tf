@@ -1,50 +1,54 @@
-
-resource "kubernetes_namespace"  "cilium-secrets" {
+data "kubernetes_nodes" "selected" {
   metadata {
-    name = "cilium-secrets"
+    labels = {
+      "kubernetes.io/hostname" = var.node_name
+    }
   }
 }
 
+locals {
+  node_internal_ip = [
+    for addr in data.kubernetes_nodes.selected.nodes[0].status[0].addresses :
+    addr.address if addr.type == "InternalIP"
+  ][0]
+}
+
 resource "helm_release" "cilium" {
-  name       = "cilium"
-  namespace  = "kube-system"
-  repository = "https://helm.cilium.io"
-  chart      = "cilium"
-  version    = var.cilium_version
-  atomic = true
+  name          = "cilium"
+  namespace     = var.cilium_namespace
+  repository    = "https://helm.cilium.io"
+  chart         = "cilium"
+  version       = var.cilium_version
+  atomic        = true
   wait_for_jobs = true
+  timeout       = 180
   create_namespace = true
 
   values = [
-    yamlencode({
-      tag                      = "v${var.cilium_version}"
-      containerRuntime = {
-        integration = "containerd"
-        socketPath  = "/var/run/k3s/containerd/containerd.sock"
+    yamlencode(merge(var.cilium_helm_values, {
+      k8sServiceHost = local.node_internal_ip
+      k8sServicePort = var.k3s_port
+      ipam = {
+        operator = {
+          clusterPoolIPv4PodCIDRList = data.kubernetes_nodes.selected.nodes[0].spec[0].pod_cidrs
+          clusterPoolIPv6PodCIDRList = data.kubernetes_nodes.selected.nodes[0].spec[0].pod_cidrs
+        }
       }
-      kubeProxyReplacement = true
-      bpf = {
-        masquerade = true
-      }
-      k8sServiceHost = var.k8s_endpoint
-      k8sServicePort = var.k8s_port
-      "ipam.operator.clusterPoolIPv4PodCIDRList" = "10.42.0.0/16"
-      ingressController = {
-        enabled = true
-        default = true
-      }
-      "prometheus.enabled" = true
-      "operator.prometheus.enabled=true" = true
-      "hubble.metrics.enabled" = true
-    })
+    }))
   ]
 }
 
+data "kubernetes_namespace" "cilium" {
+  depends_on = [ helm_release.cilium ]
+  metadata {
+    name = var.cilium_namespace
+  }
+}
 
 data "kubernetes_service" "ingress" {
   metadata {
-    name      = "cilium"
-    namespace = "kube-system"
+    name      = "cilium-ingress"
+    namespace = data.kubernetes_namespace.cilium.metadata[0].name
   }
 
   depends_on = [helm_release.cilium]

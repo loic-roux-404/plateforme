@@ -1,9 +1,3 @@
-resource "kubernetes_namespace" "cert-manager" {
-  metadata {
-    name = var.dex_namespace
-  }
-}
-
 resource "random_password" "dex_client_secret" {
   length  = 24
   special = false
@@ -14,13 +8,14 @@ locals {
 }
 
 resource "helm_release" "dex" {
-  repository    = "https://charts.dexidp.io"
-  name          = "dex"
-  namespace     = kubernetes_namespace.cert-manager.metadata[0].name
-  chart         = "dex"
-  timeout       = 600
-  wait_for_jobs = true
-  atomic        = true
+  repository       = "https://charts.dexidp.io"
+  name             = "dex"
+  namespace        = var.dex_namespace
+  create_namespace = true
+  chart            = "dex"
+  timeout          = 180
+  wait_for_jobs    = true
+  atomic           = true
 
   values = [
     templatefile("${path.module}/values.yaml.tmpl", {
@@ -37,17 +32,24 @@ resource "helm_release" "dex" {
   ]
 }
 
+data "kubernetes_namespace" "dex" {
+  depends_on = [ helm_release.dex ]
+  metadata {
+    name = var.dex_namespace
+  }
+}
+
 data "kubernetes_service" "dex_service" {
   metadata {
     name      = "dex"
-    namespace = kubernetes_namespace.cert-manager.metadata[0].name
+    namespace = data.kubernetes_namespace.dex.metadata[0].name
   }
 }
 
 data "kubernetes_ingress" "dex_ingress" {
   metadata {
     name      = "dex"
-    namespace = kubernetes_namespace.cert-manager.metadata[0].name
+    namespace = data.kubernetes_namespace.dex.metadata[0].name
   }
 }
 

@@ -32,7 +32,7 @@ data "external" "machine_key_pub" {
 
 resource "local_sensitive_file" "non_encrypted_secrets" {
   content  = yamlencode(var.nixos_transient_secrets)
-  filename = "${path.cwd}/${var.node_address}.yaml"
+  filename = "${path.cwd}/${var.node_id}.yaml"
 }
 
 resource "terraform_data" "create_transient_secrets" {

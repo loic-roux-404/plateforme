@@ -11,5 +11,6 @@ locals {
     github_client_secret         = local.secret_vars.github_client_secret
     k3s_config                   = local.dependencies.dependency.network.outputs.k3s_config
     k3s_endpoint                 = local.dependencies.dependency.network.outputs.k3s_endpoint
+    k3s_port                     = local.dependencies.dependency.network.outputs.k3s_port
   }
 }

@@ -27,8 +27,10 @@ echo '. /nix/var/nix/profiles/default/etc/profile.d/nix-daemon.fish' >> ~/.confi
 Set up nixos-darwin :
 
 ```bash
-NIX_CONF_DIR=$PWD/bootstrap nix develop .#builder --command echo 
+make bootstrap
 ```
+
+> **Note** : `make bootstrap-x86` for cnotabo build and deployment.
 
 Build an image between available nixos configuration `contabo` and `qcow2` :
 
@@ -36,18 +38,6 @@ Build an image between available nixos configuration `contabo` and `qcow2` :
     
 ```bash
 nix build .#nixosConfigurations.default --system aarch64-linux
-```
-
-On macOS, dnsmasq starts in background, you might need to force a refresh of the dns cache :
-
-```bash
-sudo dscacheutil -flushcache; sudo killall -HUP mDNSResponder
-```
-
-Also you will have to trust the CA :
-
-```bash
-make trust-ca
 ```
 
 ### Uninstall on Darwin:
@@ -109,12 +99,14 @@ cntb get instances
 **`github_token`** : https://github.com/settings/tokens and create a token with scopes `repo`, `user` and `admin`.
 **`github_client_id`** : Create a new OAuth App.
 **`github_client_secret`** : On new OAuth App ask for a new client secret.
-**github_organization :** : Your github organization name.
-**github_team :** : Your github team id.
+**`github_organization` :** : Your github organization name.
+**`github_team` :** : Your github team id.
 
 ### 5. Cert-manager (TLS)
 
 **`cert_manager_email`** : a valid email to register on letsencrypt.
+
+## Terragrunt apply
 
 ### Cloud (contabo)
 
@@ -265,5 +257,20 @@ terraform import module.contabo.contabo_image.k3s_paas_master_image uuid
 #### Permissions errors on result directory in Terragrunt
 
 ```bash
-rm -rf result
+chmod -fR 755 terragrunt/**/.terragrunt-cache/ && chmod -fR 755 result || true
+
+```
+
+#### Dns Cache
+
+On macOS, dnsmasq starts in background, you might need to force a refresh of the dns cache :
+
+```bash
+sudo dscacheutil -flushcache; sudo killall -HUP mDNSResponder
+```
+
+#### Cilium secrets namespace stuck in Terminating
+
+```bash
+kubectl delete apiservice v1beta1.metrics.k8s.io
 ```

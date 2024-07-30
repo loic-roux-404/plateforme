@@ -1,3 +1,12 @@
+data "tailscale_devices" "already_present" {
+  name_prefix = var.node_hostname
+}
+
+locals  {
+  already_present = length(data.tailscale_devices.already_present.devices) > 0
+  node_fqdn = "${var.node_hostname}.${var.tailscale_tailnet}"
+}
+
 data "tailscale_device" "trusted_device" {
   for_each = toset([var.tailscale_trusted_device])
   name     = "${each.value}.${var.tailscale_tailnet}"
@@ -69,18 +78,13 @@ resource "tailscale_dns_preferences" "sample_preferences" {
   magic_dns = true
 }
 
-resource "terraform_data" "node_changed" {
-  triggers_replace = [var.node_id]
-}
-
 resource "tailscale_tailnet_key" "k3s_paas_node" {
   depends_on          = [tailscale_acl.as_json]
   reusable            = true
   ephemeral           = false
-  expiry              = 3600
   recreate_if_invalid = "always"
   preauthorized       = true
-  description         = "VM instance key"
+  description         = "Machine key - presence is ${tostring(local.already_present)}"
   tags                = ["tag:all"]
 }
 
@@ -101,15 +105,6 @@ resource "terraform_data" "destroy_node" {
     on_failure  = fail
     command     = "${path.module}/delete-node-devices.sh"
   }
-}
-
-data "tailscale_devices" "already_present" {
-  name_prefix = var.node_hostname
-}
-
-locals  {
-  already_present = length(data.tailscale_devices.already_present.devices) > 0
-  node_fqdn = "${var.node_hostname}.${var.tailscale_tailnet}"
 }
 
 output "node_id" {

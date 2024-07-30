@@ -40,7 +40,7 @@ in {
 
   zramSwap.algorithm  = "zstd";
 
-  system.stateVersion = "23.05";
+  system.stateVersion = "24.05";
 
   time = {
     timeZone = lib.mkForce "Europe/Paris";
@@ -63,17 +63,21 @@ in {
     };
     tailscale = {
       enable = true;
-      openFirewall = true;
       extraUpFlags = lib.mkDefault ["--ssh"];
       permitCertUid = user.name;
     };
     k3s = {
-      enable = true;
+      enable = lib.mkDefault false;
       role = "server";
       extraFlags = lib.strings.concatStringsSep " " (
         map (service: "--disable=${service}") k3s.disableServices
-        ++ ["--write-kubeconfig-mode=400" "--write-kubeconfig-user=${user.name}"]
         ++ k3s.serverExtraArgs
+        ++ [
+          "--flannel-backend=none"
+          "--disable-network-policy"
+          "--disable-kube-proxy"
+          "--write-kubeconfig-mode=400"
+        ]
       );
     };
 
@@ -84,7 +88,14 @@ in {
   home-manager.useUserPackages = true;
   home-manager.users.${config.k3s-paas.user.name} = {
     xdg.enable = true;
-    home.stateVersion = "23.11";
+    home.stateVersion = "24.05";
+    home.sessionVariables = {
+      KUBECONFIG = "/etc/rancher/k3s/k3s.yaml";
+    };
+    home.shellAliases = {
+      kubectl = "sudo kubectl";
+      helm = "sudo -E helm";
+    };
     programs.bash = {
       enable = true;
       historyControl = [ "ignoredups" "ignorespace" ];
@@ -93,12 +104,7 @@ in {
 
   system.activationScripts.k3sCerts.text = (pkgs.callPackage ./install-k3s-manifest.nix { 
     inherit pkgs;
-    manifest = {
-      file = certManagerCrds;
-      toWait = "crd/certificates.cert-manager.io";
-      namespace = "";
-      condition = "condition=established";
-    };
+    file = certManagerCrds;
   }).script;
 
   programs.vim.defaultEditor = true;
@@ -106,7 +112,6 @@ in {
     shells = [ pkgs.bashInteractive ];
     variables = {
       PAGER = "less -FirSwX";
-      KUBECONFIG = "/etc/rancher/k3s/k3s.yaml";
       SYSTEMD_EDITOR = "vim";
     };
     systemPackages = with pkgs; [
@@ -128,6 +133,7 @@ in {
       kubernetes-helm
       oldLegacyPackages.waypoint
       tailscale
+      cilium-cli
     ];
   };
 
@@ -193,7 +199,8 @@ in {
     useNetworkd = true;
     useDHCP = true;
     firewall = {
-      trustedInterfaces = [ "tailscale0" "cni0" ];
+      checkReversePath = false;
+      trustedInterfaces = [ "tailscale0" "cilium_host" "cilium_vxlan" "cilium_net" ];
       enable = true;
       allowedTCPPorts = lib.mkDefault [ 80 443 22 ];
       allowedUDPPorts = [ config.services.tailscale.port ];
@@ -201,6 +208,11 @@ in {
     nftables.enable = true;
     networkmanager.enable = false;
     usePredictableInterfaceNames = true;
+  };
+
+  boot.kernel.sysctl = {
+    "net.ipv4.conf.lxc*.rp_filter" = 0;
+    "net.ipv4.conf.cilium_*.rp_filter" = 0;
   };
 
   security.pki.certificateFiles = certs;
