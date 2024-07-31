@@ -31,7 +31,7 @@ resource "helm_release" "cilium" {
       ipam = {
         operator = {
           clusterPoolIPv4PodCIDRList = data.kubernetes_nodes.selected.nodes[0].spec[0].pod_cidrs
-          clusterPoolIPv6PodCIDRList = data.kubernetes_nodes.selected.nodes[0].spec[0].pod_cidrs
+          #clusterPoolIPv6PodCIDRList = data.kubernetes_nodes.selected.nodes[0].spec[0].pod_cidrs
         }
       }
     }))

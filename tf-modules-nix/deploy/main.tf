@@ -30,9 +30,36 @@ data "external" "machine_key_pub" {
   }
 }
 
+resource "tls_private_key" "machine_key" {
+  algorithm = "ED25519"
+}
+
+resource "local_sensitive_file" "secured_machine_key" {
+  content  = tls_private_key.machine_key.public_key_openssh
+  filename = "${path.cwd}/${var.node_address}.pub"
+}
+
+data "external" "secured_machine_key_pub" {
+  depends_on = [terraform_data.check_ssh]
+  program    = ["bash", "${path.module}/key-to-age.sh"]
+
+  query = {
+    key  = pathexpand(local_sensitive_file.secured_machine_key.filename)
+  }
+}
+
 resource "local_sensitive_file" "non_encrypted_secrets" {
-  content  = yamlencode(var.nixos_transient_secrets)
-  filename = "${path.cwd}/${var.node_id}.yaml"
+  content  = yamlencode(merge(var.nixos_transient_secrets, {
+    nodePrivateKey = tls_private_key.machine_key.private_key_openssh
+  }))
+  filename = "${path.cwd}/${var.node_address}.yaml"
+}
+
+locals {
+  all_recipients = [
+    data.external.machine_key_pub.result.key,
+    data.external.secured_machine_key_pub.result.key
+  ]
 }
 
 resource "terraform_data" "create_transient_secrets" {
@@ -42,7 +69,7 @@ resource "terraform_data" "create_transient_secrets" {
   provisioner "local-exec" {
     environment = {
       SOPS_AGE_KEY        = data.external.deploy_key.result.key
-      SOPS_AGE_RECIPIENTS = data.external.machine_key_pub.result.key
+      SOPS_AGE_RECIPIENTS = join(",", [for each in local.all_recipients : each if each != ""])
     }
     interpreter = ["sops", "--encrypt", "--in-place"]
     command     = local_sensitive_file.non_encrypted_secrets.filename
@@ -101,6 +128,22 @@ resource "terraform_data" "deploy" {
   provisioner "local-exec" {
     interpreter = concat(local.nix_rebuild_interpreter, ["--flake", var.nix_flake])
     environment = { NIX_SSHOPTS = var.nix_ssh_options }
+    command = "switch"
+  }
+}
+
+resource "terraform_data" "reset" {
+  count = var.reset_nix_flake != null ? 1 : 0
+  input = {
+    flake = var.reset_nix_flake
+    interpreter = local.nix_rebuild_interpreter
+    ssh_options = var.nix_ssh_options
+  }
+
+  provisioner "local-exec" {
+    when = destroy
+    interpreter = concat(self.input.nix_rebuild_interpreter, ["--flake", self.input.reset_nix_flake])
+    environment = { NIX_SSHOPTS = self.input.nix_ssh_options }
     command = "switch"
   }
 }

@@ -7,12 +7,24 @@ with config.k3s-paas;
   sops.validateSopsFiles = false;
   sops.defaultSopsFormat = "yaml";
   sops.defaultSopsFile = "/home/${user.name}/secrets.yaml";
-  sops.age.sshKeyPaths = [ "/etc/ssh/ssh_host_ed25519_key" ];
+  sops.age.sshKeyPaths = [ "/etc/ssh/ssh_host_ed25519_key" "${config.sops.secrets.nodePrivateKey.path}" ];
 
   networking.firewall.allowedTCPPorts = [ 80 443 ];
   services.tailscale.authKeyFile = config.sops.secrets.tailscaleNodeKey.path;
   services.tailscale.extraUpFlags = ["--ssh" "--hostname=${config.networking.hostName}" ];
 
+  services.openssh.hostKeys = [
+    {
+      path = "${config.sops.secrets.nodePrivateKey.path}";
+      type = "ed25519";
+    }
+    {
+      path = "/etc/ssh/ssh_host_ed25519_key";
+      type = "ed25519";
+    }
+  ];
+
+  sops.secrets.nodePrivateKey = {};
   sops.secrets.tailscaleNodeKey = {};
   sops.secrets.paasDomain = {};
   sops.secrets.tailscaleDomain = {};

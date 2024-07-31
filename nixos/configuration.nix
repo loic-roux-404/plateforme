@@ -84,6 +84,22 @@ in {
     fail2ban.enable = true;
   };
 
+  systemd.services.tailscaled-autoconnect = {
+    serviceConfig = {
+      RemainAfterExit = true; # Ensures it's remains active after running.
+    };
+  };
+
+  system.activationScripts.checkTailscaleStatus = lib.mkIf (config.networking.hostName != "") ''
+    #!/usr/bin/env bash
+    set -euo pipefail
+
+    # Check Tailscale status for the presence of the host name
+    if tailscale status --active | grep -vq "${config.networking.hostName}"; then
+      systemctl restart tailscaled-autoconnect
+    fi
+  '';
+
   home-manager.useGlobalPkgs = true;
   home-manager.useUserPackages = true;
   home-manager.users.${config.k3s-paas.user.name} = {

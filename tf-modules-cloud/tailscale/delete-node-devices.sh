@@ -1,5 +1,7 @@
 #!/usr/bin/env bash
 
+set -euo pipefail
+
 ENDPOINT=${ENDPOINT:-https://api.tailscale.com}
 API_KEY=$(curl -s -d "client_id=$OAUTH_CLIENT_ID" -d "client_secret=$OAUTH_CLIENT_SECRET" \
   "${ENDPOINT}/api/v2/oauth/token" | jq -r '.access_token')

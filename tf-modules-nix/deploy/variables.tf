@@ -84,3 +84,9 @@ variable "nix_flake" {
     error_message = "Empty flake attribute paths not supported"
   }
 }
+
+variable "reset_nix_flake" {
+  type = string
+  default = null
+  nullable = true
+}
