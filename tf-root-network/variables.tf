@@ -67,6 +67,10 @@ variable "nix_flake" {
   type = string
 }
 
+variable "nix_flake_reset" {
+  type = string
+}
+
 variable "remote_k3s_config_location" {
   default = "/etc/rancher/k3s/k3s.yaml"
 }

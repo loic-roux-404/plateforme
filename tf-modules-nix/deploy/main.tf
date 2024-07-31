@@ -133,18 +133,25 @@ resource "terraform_data" "deploy" {
 }
 
 resource "terraform_data" "reset" {
-  count = var.reset_nix_flake != null ? 1 : 0
+  count = var.nix_flake_reset != null ? 1 : 0
   input = {
-    flake = var.reset_nix_flake
-    interpreter = local.nix_rebuild_interpreter
-    ssh_options = var.nix_ssh_options
+    nix_flake_reset = var.nix_flake_reset
+    nix_rebuild_interpreter = local.nix_rebuild_interpreter
+    nix_ssh_options = var.nix_ssh_options
   }
 
   provisioner "local-exec" {
     when = destroy
-    interpreter = concat(self.input.nix_rebuild_interpreter, ["--flake", self.input.reset_nix_flake])
+    interpreter = concat(
+      self.input.nix_rebuild_interpreter, 
+      ["--flake", self.input.nix_flake_reset]
+    )
     environment = { NIX_SSHOPTS = self.input.nix_ssh_options }
     command = "switch"
+  }
+
+  lifecycle {
+    create_before_destroy = true
   }
 }
 

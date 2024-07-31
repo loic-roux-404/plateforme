@@ -32,6 +32,7 @@ module "deploy" {
   node_address   = module.tailscale.node_address 
   config         = module.tailscale.config
   nix_flake      = var.nix_flake
+  nix_flake_reset = var.nix_flake_reset
   ssh_connection = var.ssh_connection
   nixos_transient_secrets = {
     dexClientId      = "dex-client-id"
