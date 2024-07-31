@@ -85,7 +85,7 @@ variable "nix_flake" {
   }
 }
 
-variable "reset_nix_flake" {
+variable "nix_flake_reset" {
   type = string
   default = null
   nullable = true

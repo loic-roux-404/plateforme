@@ -46,6 +46,7 @@ with config.k3s-paas;
       - localhost
       - ${config.networking.hostName}
       - "${config.sops.placeholder.tailscaleDomain}"
+      - 10.0.2.15
   '' + (if dex.dexClientId != "" then 
   ''
     kube-apiserver-arg=authorization-mode: Node,RBAC

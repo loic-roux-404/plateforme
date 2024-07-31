@@ -161,12 +161,24 @@
           ];
         };
 
+        initial = nixosSystem {
+          system = linux;
+          inherit specialArgs;
+          modules = self.nixosAllModules.default;
+        };
+
         qcow = makeOverridable nixos-generators.nixosGenerate {
           inherit system specialArgs;
           modules = self.nixosAllModules.default ++ [
             ./nixos/qcow-compressed.nix
           ];
           format = "qcow";
+        };
+
+        intial-contabo = nixosSystem {
+          system = "x86_64-linux";
+          inherit specialArgs;
+          modules = self.nixosAllModules.contabo;
         };
 
         contabo-qcow = self.packages.${system}.nixosConfigurations.qcow.override {
