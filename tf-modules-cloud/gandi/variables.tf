@@ -4,7 +4,6 @@ variable "gandi_token" {
 
 variable "paas_base_domain" {
   type    = string
-  default = "k3s.test"
 }
 
 variable "target_ip" {

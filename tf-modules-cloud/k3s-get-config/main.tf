@@ -3,6 +3,7 @@ resource "terraform_data" "wait_ssh" {
     type    = "ssh"
     user    = var.ssh_connection.user
     host    = var.node_hostname
+    private_key = file(pathexpand(var.ssh_connection.private_key))
     timeout = "1m"
   }
 
@@ -25,7 +26,7 @@ data "external" "k3s_config" {
 locals {
   kube_config = yamldecode(data.external.k3s_config.result.config)
   cluster = one([ for each in toset(local.kube_config.clusters) : 
-      each.cluster if each.name == var.context_cluster_name
+    each.cluster if each.name == var.context_cluster_name
   ])
   user = one([for each in toset(local.kube_config.users) : 
     each.user if each.name == var.context_user_name

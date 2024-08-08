@@ -4,6 +4,9 @@
   lib,
   ... 
 }:
+
+with config.k3s-paas;
+
 {
   programs.fish.enable = true;
   programs.bash.enable = true;
@@ -11,10 +14,16 @@
 
   services.dnsmasq = {
     enable = true;
-    addresses = {
-      ".${config.k3s-paas.dns.name}" = config.k3s-paas.dns.dest-ip;
-    };
+    addresses = builtins.listToAttrs (builtins.map(value: {
+      name = ".${dns.name}"; inherit value; 
+    }) dns.dest-ips);
   };
+
+  environment.etc."resolver/${dns.name}".text = "${lib.concatMapStrings (destIp: ''
+    nameserver ${destIp}
+
+  '') dns.dest-ips}";
+
   services.tailscale.enable = true;
 
   launchd.daemons.libvirt = {
@@ -85,7 +94,6 @@
       externalAccountBindingRequired = false;
     };
   };
-  environment.etc."resolver/${config.k3s-paas.dns.name}".text = "nameserver ${config.k3s-paas.dns.dest-ip}";
   nix.settings = {
     trusted-users = [ "staff" "admin" "nixbld" ];
     keep-derivations = true;
