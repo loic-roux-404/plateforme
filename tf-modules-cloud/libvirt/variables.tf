@@ -1,14 +1,6 @@
-variable "port_mappings" {
-  type = map(number)
-  default = {
-    22   = 22
-    443  = 443
-    80   = 80
-  }
-}
-
-variable "qemu_network_interface" {
-  default = "en0"
+variable "mac" {
+  type = string
+  default = "de:ad:be:ef:0:1"
 }
 
 variable "vm_size" {

@@ -13,17 +13,12 @@ data "http" "paas_internal_acme_ca" {
   insecure = var.cert_manager_letsencrypt_env == "local"
 }
 
-module "metallb" {
-  source           = "../tf-modules-k8s/metallb"
-  metallb_ip_range = var.metallb_ip_range
-  for_each         = var.metallb_ip_range != null ? toset(["metallb"]) : toset([])
-}
-
 module "cilium" {
   count        = var.k8s_ingress_class == "cilium" ? 1 : 0
   source       = "../tf-modules-k8s/cilium"
   k3s_port     = var.k3s_port
-  node_name    = var.node_name
+  k3s_host     = var.k3s_endpoint
+  node_name    = var.k3s_node_name 
 }
 
 module "metrics_server" {

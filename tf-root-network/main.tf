@@ -1,5 +1,15 @@
+locals {
+  private_ip_cidrs = [
+    "^127\\.", "^10\\.", "^172\\.(1[6-9]|2[0-9]|3[0-1])\\.", "^192\\.168\\."
+  ]
+  is_private_ip = length([
+    for cidr in local.private_ip_cidrs :
+    cidr if can(regex(cidr, var.machine.node_ip))
+  ]) > 0
+}
+
 module "gandi_domain" {
-  count            = startswith(var.machine.node_ip, "127.") ? 0 : 1
+  count            = local.is_private_ip ? 0 : 1
   source           = "../tf-modules-cloud/gandi"
   gandi_token      = var.gandi_token
   paas_base_domain = var.paas_base_domain
@@ -11,10 +21,10 @@ module "tailscale" {
   tailscale_trusted_device = var.tailscale_trusted_device
   trusted_ssh_user         = var.ssh_connection.user
   tailscale_tailnet        = var.tailscale_tailnet
+  tailscale_oauth_client   = var.tailscale_oauth_client
   node_hostname            = var.machine.node_hostname
   node_ip                  = var.machine.node_ip
   node_id                  = var.machine.node_id
-  tailscale_oauth_client   = var.tailscale_oauth_client
 }
 
 resource "random_password" "admin_password" {
@@ -35,12 +45,20 @@ module "deploy" {
   nix_flake_reset = var.nix_flake_reset
   ssh_connection = var.ssh_connection
   nixos_transient_secrets = {
+    nodeIp           = var.machine.node_ip
     dexClientId      = "dex-client-id"
     tailscaleNodeKey = "${module.tailscale.config.node_key}"
     password         = "${random_password.admin_password.bcrypt_hash}"
     tailscaleDomain  = "${module.tailscale.config.node_fqdn}"
     paasDomain       = "${var.paas_base_domain}"
   }
+}
+
+module "tailscale_destroy" {
+  source = "../tf-modules-cloud/tailscale/destroy"
+  tailscale_tailnet        = var.tailscale_tailnet
+  tailscale_oauth_client   = var.tailscale_oauth_client
+  node_hostname            = module.deploy.config.node_address
 }
 
 module "k3s_get_config" {
@@ -55,7 +73,7 @@ output "password" {
   sensitive = true
 }
 
-output "node_name" {
+output "k3s_node_name" {
   value = var.machine.node_hostname
 }
 

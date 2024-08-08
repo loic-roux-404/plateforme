@@ -1,5 +1,4 @@
 locals {
-  port_mappings = join(",", [for k, v in var.port_mappings : "hostfwd=tcp::${k}-:${v}"])
   darwin_cmdline = var.darwin ? [
     "-netdev", "vmnet-shared,id=shared.0",
     "-device", "virtio-net-pci,netdev=shared.0,addr=0x9,mac=de:ad:be:ef:00:01"
@@ -60,17 +59,24 @@ resource "libvirt_domain" "machine" {
 
   xml {
     xslt = templatefile("${path.module}/nixos.xslt.tmpl", {
-      args = concat([
-        "-netdev", "user,id=user.0,${local.port_mappings}",
-        "-net", "nic,netdev=user.0,model=virtio,addr=0x8",
-        ],
-        local.darwin_cmdline
-      )
+      args = local.darwin_cmdline
     })
   }
+}
 
+data "external" "get_ip" {
+  depends_on = [ libvirt_domain.machine ]
+  program = ["bash", "${path.module}/get-ip.sh"]
+  query = {
+    timeout = 60
+    mac = var.mac
+  }
+}
+
+resource "terraform_data" "clean_ssh_known_hosts" {
+  depends_on = [ data.external.get_ip ]
   provisioner "local-exec" {
-    command = "ssh-keygen -R localhost && ssh-keygen -R 127.0.0.1"
+    command = "ssh-keygen -R ${data.external.get_ip.result.ip}"
   }
 }
 
@@ -84,6 +90,5 @@ output "node_id" {
 }
 
 output "node_ip" {
-  value      = "127.0.0.1"
-  depends_on = [libvirt_domain.machine]
+  value      = data.external.get_ip.result.ip
 }

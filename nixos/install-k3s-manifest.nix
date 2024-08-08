@@ -5,7 +5,7 @@
 
 { 
   script = ''
-    mkdir -p /var/lib/rancher/k3s/server/manifests;
-    cp -fp ${file} /var/lib/rancher/k3s/server/manifests;
+    mkdir -p /var/lib/rancher/k8s/server/manifests;
+    cp -fp ${file} /var/lib/rancher/k8s/server/manifests;
   '';
 }

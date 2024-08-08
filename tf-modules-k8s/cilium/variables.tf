@@ -4,8 +4,12 @@ variable "cilium_version" {
   default     = "1.16.0"
 }
 
+variable "k3s_host" {
+  type = string
+}
+
 variable "node_name" {
-  default = "localhost"
+  type = string
 }
 
 variable "k3s_port" {
@@ -13,12 +17,12 @@ variable "k3s_port" {
 }
 
 variable "cilium_namespace" {
-  default = "cilium"
+  default = "kube-system"
 }
 
 variable "cilium_helm_values" {
   type = object({
-    global = object({
+    global = optional(object({
       containerRuntime = object({
         integration = string
         socketPath  = string
@@ -27,13 +31,19 @@ variable "cilium_helm_values" {
       bpf = object({
         masquerade = bool
       })
-    })
+    }))
     kubeProxyReplacement = bool
+    routingMode = string
+    tunnelProtocol = string
     bpf = object({
       masquerade = bool
+      lbExternalClusterIP = bool
     })
-    ipam = object({
+    ipam = optional(object({
       mode = string
+    }))
+    k8s = object({
+      requireIPv4PodCIDR = bool
     })
     endpointRoutes = optional(object({
       enabled = bool
@@ -49,8 +59,17 @@ variable "cilium_helm_values" {
         sync = bool
       }))
     })
+    l2announcements = object({
+      enabled = bool 
+    })
+    clustermesh = object({
+      useAPIServer = bool
+    })
     prometheus = object({
       enabled = bool
+      serviceMonitor = object({
+        enabled = bool
+      })
     })
     operator = optional(object({
       replicas = number
@@ -69,36 +88,35 @@ variable "cilium_helm_values" {
     })
   })
   default = {
-    global = {
-      containerRuntime = {
-        integration = "containerd"
-        socketPath  = "/var/run/k3s/containerd/containerd.sock"
-      }
-      kubeProxyReplacement = "strict"
-      bpf = {
-        masquerade = true
-      }
-    }
-    endpointRoutes = {
+    l2announcements = {
       enabled = true
     }
-    ipam = {
-      mode = "kubernetes"
+    k8s = {
+      requireIPv4PodCIDR = false
+    }
+    clustermesh = {
+      useAPIServer = false
     }
     kubeProxyReplacement = true
     bpf = {
       masquerade = true
+      lbExternalClusterIP = false
     }
     gatewayAPI = {
       enabled = false
     }
+    routingMode = "tunnel"
+    tunnelProtocol = "vxlan"
     ingressController = {
       enabled          = true
       default          = true
-      loadbalancerMode = "shared"
+      loadbalancerMode = "dedicated"
     }
     prometheus = {
       enabled = true
+      serviceMonitor = {
+        enabled = true
+      }
     }
     operator = {
       replicas = 1
@@ -119,4 +137,17 @@ variable "cilium_helm_values" {
       }
     }
   }
+}
+
+
+variable "external_blocks" {
+  description = "List of block ranges for external IP pool."
+  type        = list(map(string))
+  default = []
+}
+
+variable "internal_blocks" {
+  description = "List of block ranges for internal IP pool."
+  type        = list(map(string))
+  default = []
 }

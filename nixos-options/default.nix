@@ -18,9 +18,9 @@
       description = "hostname for k3s-paas";
     };
 
-    dns.dest-ip = lib.mkOption {
-      default = "127.0.0.1";
-      type = lib.types.str;
+    dns.dest-ips = lib.mkOption {
+      default = ["127.0.0.1" "192.168.205.5" "192.168.205.6" "192.168.205.7" "192.168.205.8" "192.168.205.9"];
+      type = lib.types.listOf lib.types.str;
       description = "Target IP address for dns.name (only in local dev)";
     };
 
@@ -42,19 +42,19 @@
       description = "SSH public key for k3s-paas.";
     };
 
-    k3s.disableServices = lib.mkOption {
-      default = ["traefik" "metrics-server"];
+    k8s.disableServices = lib.mkOption {
+      default = ["traefik" "metrics-server" "servicelb" ];
       type = lib.types.listOf lib.types.str;
-      description = "Disable k3s services eg: traefik,servicelb";
+      description = "Disable k8s services eg: traefik,servicelb";
     };
 
-    k3s.serverExtraArgs = lib.mkOption {
+    k8s.serverExtraArgs = lib.mkOption {
       default = [];
       type = lib.types.listOf lib.types.str;
-      description = "Extra arguments for k3s server";
+      description = "Extra arguments for k8s server";
     };
 
-    k3s.token = lib.mkOption {
+    k8s.token = lib.mkOption {
       type = lib.types.str;
       description = "K3s token";
       default = "";

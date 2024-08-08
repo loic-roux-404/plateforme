@@ -53,7 +53,7 @@ variable "k3s_port" {
   default = "6443"
 }
 
-variable "node_name" {
+variable "k3s_node_name" {
   type = string
 }
 

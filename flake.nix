@@ -24,6 +24,12 @@
       inputs.nixpkgs.follows = "srvos/nixpkgs";
     };
 
+    # Nixos Rke2
+    # nixos-rke2 = {
+    #   url = "github:numtide/nixos-rke2";
+    #   inputs.nixpkgs.follows = "srvos/nixpkgs";
+    # };
+
     # Flake utilities
     flake-compat = { url = "github:edolstra/flake-compat"; flake = false; };
     flake-utils.url = "github:numtide/flake-utils";
@@ -85,6 +91,7 @@
       });
 
       nixosModules = {
+        #rke2 = inputs.nixos-rke2.nixosModules.default;
         sops = inputs.sops-nix.nixosModules.sops;
         common = srvos.nixosModules.common;
         server = srvos.nixosModules.server;
@@ -136,9 +143,7 @@
     // flake-utils.lib.eachDefaultSystem (system:
     let
       linux = builtins.replaceStrings ["darwin"] ["linux"] system;
-      legacyPackages = import inputs.nixpkgs-srvos (nixpkgsDefaults // { inherit system; });
-      stableLegacyPackages = import inputs.nixpkgs-stable (nixpkgsDefaults // { inherit system; });
-      oldLegacyPackages = import inputs.nixpkgs-legacy (nixpkgsDefaults // { inherit system; });
+      oldLegacyPackages = import inputs.nixpkgs-legacy (nixpkgsDefaults // { system = linux; });
       specialArgs = {
         inherit oldLegacyPackages;
       };
@@ -200,8 +205,8 @@
       # With `nix.registry.my.flake = inputs.self`, development shells can be created by running,
       # e.g., `nix develop my#python`.
       devShells = let 
-        pkgs = legacyPackages;
-        stablePkgs = stableLegacyPackages;
+        pkgs = import inputs.nixpkgs-srvos (nixpkgsDefaults // { inherit system; });
+        stablePkgs = import inputs.nixpkgs-stable (nixpkgsDefaults // { inherit system; });
        in
         {
           default = pkgs.mkShell {

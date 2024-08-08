@@ -11,7 +11,9 @@ with config.k3s-paas;
 
   networking.firewall.allowedTCPPorts = [ 80 443 ];
   services.tailscale.authKeyFile = config.sops.secrets.tailscaleNodeKey.path;
-  services.tailscale.extraUpFlags = ["--ssh" "--hostname=${config.networking.hostName}" ];
+  services.tailscale.extraUpFlags = [
+    "--ssh" "--hostname=${config.networking.hostName}" 
+  ];
 
   services.openssh.hostKeys = [
     {
@@ -24,29 +26,25 @@ with config.k3s-paas;
     }
   ];
 
+  sops.secrets.nodeIp = {};
   sops.secrets.nodePrivateKey = {};
   sops.secrets.tailscaleNodeKey = {};
   sops.secrets.paasDomain = {};
   sops.secrets.tailscaleDomain = {};
-  sops.secrets.password = {
-    neededForUsers = true;
-  };
+  sops.secrets.password = { neededForUsers = true; };
 
   services.k3s.enable = true;
+  services.k3s.configPath = config.sops.templates."config.yaml".path;
 
-  k3s-paas.k3s.serverExtraArgs = [
-    "--config ${config.sops.templates."k3s-config.yaml".path}"
-  ];
-  sops.templates."k3s-config.yaml".content = ''
-    # TODO replace by secret value
-    # for contabo see gateway (String)
-    node-ip: 10.0.2.15
+  sops.templates."config.yaml".content = ''
     node-name: "${config.networking.hostName}"
+    node-external-ip: "${config.sops.placeholder.nodeIp}"
+    vpn-auth: "name=tailscale,joinKey=${config.sops.placeholder.tailscaleNodeKey}"
     tls-san:
       - localhost
       - ${config.networking.hostName}
       - "${config.sops.placeholder.tailscaleDomain}"
-      - 10.0.2.15
+      - "${config.sops.placeholder.nodeIp}"
   '' + (if dex.dexClientId != "" then 
   ''
     kube-apiserver-arg=authorization-mode: Node,RBAC
