@@ -24,12 +24,6 @@
       inputs.nixpkgs.follows = "srvos/nixpkgs";
     };
 
-    # Nixos Rke2
-    # nixos-rke2 = {
-    #   url = "github:numtide/nixos-rke2";
-    #   inputs.nixpkgs.follows = "srvos/nixpkgs";
-    # };
-
     # Flake utilities
     flake-compat = { url = "github:edolstra/flake-compat"; flake = false; };
     flake-utils.url = "github:numtide/flake-utils";
@@ -91,7 +85,6 @@
       });
 
       nixosModules = {
-        #rke2 = inputs.nixos-rke2.nixosModules.default;
         sops = inputs.sops-nix.nixosModules.sops;
         common = srvos.nixosModules.common;
         server = srvos.nixosModules.server;
@@ -214,7 +207,7 @@
             packages = attrValues {
               inherit (pkgs) bashInteractive grpcurl jq coreutils e2fsprogs
               docker-client docker-credential-helpers libvirt qemu
-              tailscale pebble cntb
+              tailscale pebble cntb kubernetes-helm
               nil nix-tree;
               inherit (stablePkgs) nix terragrunt terraform sops ssh-to-age nixos-rebuild;
               inherit (oldLegacyPackages) waypoint;

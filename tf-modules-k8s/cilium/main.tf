@@ -17,59 +17,26 @@ locals {
   ][0]
 }
 
-resource "helm_release" "cilium" {
-  name             = "cilium"
-  namespace        = var.cilium_namespace
-  repository       = "https://helm.cilium.io"
-  chart            = "cilium"
-  version          = var.cilium_version
-  atomic           = true
-  wait_for_jobs    = true
-  timeout          = 180
-  create_namespace = true
-
-  values = [
-    yamlencode(merge({
-      global = {}
-      ipam   = {}
-      cluster = {
-        name = var.node_name
-      }
-      ingressController = {
-        service : {
-          labels : { "k3s-paas/internal" : "true" }
-        }
-      }
-      k8sServiceHost = var.k3s_host
-      k8sServicePort = local.node_internal_ip
-      ipam = {
-        operator = {
-          clusterPoolIPv4PodCIDRList = data.kubernetes_nodes.selected.nodes[0].spec[0].pod_cidrs
-        }
-      }
-    }, var.cilium_helm_values))
-  ]
-}
-
-resource "kubernetes_manifest" "cilium_lb_ipam" {
+resource "kubernetes_manifest" "cilium_lb_ipam_external" {
   depends_on = [helm_release.cilium]
   manifest = {
     apiVersion = "cilium.io/v2alpha1"
     kind       = "CiliumLoadBalancerIPPool"
     metadata = {
-      name      = "cilium-lb-ipam-external"
-      namespace = var.cilium_namespace
+      name = "cilium-lb-ipam-external"
     }
     spec = {
       blocks = length(var.external_blocks) > 0 ? var.external_blocks : [
         {
-          start = node_external_ip
-          end   = node_external_ip
+          cidr  = null
+          start = local.node_external_ip
+          stop  = local.node_external_ip
         }
       ]
       serviceSelector = {
         matchLabels = {
           "k3s-paas/external" = "true"
+          "wait-for-it"        = helm_release.cilium.metadata[0].name
         }
       }
     }
@@ -82,14 +49,14 @@ resource "kubernetes_manifest" "cilium_lb_ipam_internal" {
     apiVersion = "cilium.io/v2alpha1"
     kind       = "CiliumLoadBalancerIPPool"
     metadata = {
-      name      = "cilium-lb-ipam-internal"
-      namespace = var.cilium_namespace
+      name = "cilium-lb-ipam-internal"
     }
     spec = {
       blocks = length(var.external_blocks) > 0 ? var.internal_blocks : [
         {
-          start = node_internal_ip
-          end   = node_internal_ip
+          cidr  = null
+          start = local.node_internal_ip
+          stop  = local.node_internal_ip
         }
       ]
       serviceSelector = {
@@ -102,9 +69,10 @@ resource "kubernetes_manifest" "cilium_lb_ipam_internal" {
 }
 
 resource "kubernetes_service" "cilium_ingress_external" {
+  depends_on = [ kubernetes_manifest.cilium_lb_ipam_external ]
   metadata {
     name      = "cilium-ingress-external"
-    namespace = "kube-system"
+    namespace = helm_release.cilium.metadata[0].namespace
     labels = {
       "cilium.io/ingress" = "true"
       "k3s-paas/external" = "true"
@@ -137,19 +105,16 @@ resource "kubernetes_service" "cilium_ingress_external" {
 }
 
 data "kubernetes_namespace" "cilium" {
-  depends_on = [helm_release.cilium]
   metadata {
-    name = var.cilium_namespace
+    name = helm_release.cilium.metadata[0].namespace
   }
 }
 
 data "kubernetes_service" "ingress" {
   metadata {
-    name      = "cilium-ingress"
-    namespace = data.kubernetes_namespace.cilium.metadata[0].name
+    name      = "cilium-ingress-internal"
+    namespace = helm_release.cilium.metadata[0].namespace
   }
-
-  depends_on = [helm_release.cilium]
 }
 
 output "ingress_service" {

@@ -4,8 +4,7 @@ resource "terraform_data" "destroy_node" {
     OAUTH_CLIENT_ID     = var.tailscale_oauth_client.id
     OAUTH_CLIENT_SECRET = var.tailscale_oauth_client.secret
     NODE_HOSTNAMES = join(",", [
-      var.node_hostname,
-      "k8s-operator-${var.node_hostname}"
+      var.node_hostname
     ])
   }
 

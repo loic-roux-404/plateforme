@@ -1,17 +1,4 @@
-resource "helm_release" "cert_manager" {
-  name          = "cert-manager"
-  namespace     = var.cert_manager_namespace
-  create_namespace = true
-  repository    = "https://charts.jetstack.io"
-  chart         = "cert-manager"
-  version       = "1.14.4"
-  wait_for_jobs = true
-  atomic = true
-  timeout = 120
-}
-
 resource "kubernetes_manifest" "issuer" {
-  depends_on = [helm_release.cert_manager]
   manifest = {
     apiVersion = "cert-manager.io/v1"
     kind       = "ClusterIssuer"
@@ -42,7 +29,6 @@ resource "kubernetes_manifest" "issuer" {
 }
 
 data "kubernetes_namespace" "cert-manager" {
-  depends_on = [ helm_release.cert_manager ]
   metadata {
     name = var.cert_manager_namespace
   }
