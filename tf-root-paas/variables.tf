@@ -3,7 +3,7 @@ variable "paas_subdomain" {
 }
 
 variable "paas_base_domain" {
-  default = "k3s.test"
+  default = "k8s.test"
 }
 
 variable "cert_manager_letsencrypt_env" {

@@ -10,16 +10,12 @@ with config.k3s-paas;
 
 let
   certs = [ ../nixos-darwin/pebble/cert.crt ];
-  certManagerCrds = builtins.fetchurl {
-    url = "https://github.com/cert-manager/cert-manager/releases/download/v1.14.4/cert-manager.crds.yaml";
-    sha256 = "060bn3gvrr5jphaig1g195prip5rn0x1s7qrp09q47719fgc6636";
-  };
   userSshConfig = {
     authorizedKeys = {
       keys = [ user.key ];
     };
   };
-  k3sPkg = pkgs.k3s_1_29;
+  k3sPkg = oldLegacyPackages.k3s_1_27;
 in {
 
   fileSystems."/" = {
@@ -76,18 +72,34 @@ in {
     };
   };
 
+  systemd.user.services.nixos-activation = {
+    after = ["tailscaled.service" "tailscaled-autoconnect.service"];
+  };
+
+  system.userActivationScripts.checkTailscaleStatus = lib.mkIf (config.networking.hostName != "" &&
+    config.services.tailscale.enable &&
+    config.services.tailscale.authKeyFile != null
+  ) { text = ''
+      #!/usr/bin/env bash
+
+      ${pkgs.tailscale}/bin/tailscale ping -c 1 "${config.networking.hostName}" || \
+        ${pkgs.systemd}/bin/systemctl restart tailscaled-autoconnect.service;
+    ''; 
+  };
+
   systemd.services.k3s.serviceConfig.Environment = "PATH=${pkgs.tailscale}/bin";
   services.k3s = {
     enable = lib.mkDefault false;
     role = "server";
     package = k3sPkg;
     extraFlags = lib.strings.concatStringsSep " " (
-      map (service: "--disable=${service}") k8s.disableServices
-      ++ k8s.serverExtraArgs
+      map (service: "--disable=${service}") k3s.disableServices
+      ++ k3s.serverExtraArgs
       ++ [
         "--flannel-backend=none"
         "--disable-kube-proxy"
         "--disable-network-policy"
+        "--egress-selector-mode=disabled"
       ]
     );
   };
@@ -112,11 +124,6 @@ in {
       historyControl = [ "ignoredups" "ignorespace" ];
     };
   };
-
-  system.activationScripts.k8sCerts.text = (pkgs.callPackage ./install-k3s-manifest.nix { 
-    inherit pkgs;
-    file = certManagerCrds;
-  }).script;
 
   programs.vim.defaultEditor = true;
   environment = {

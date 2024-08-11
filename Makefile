@@ -24,7 +24,7 @@ nixos-local:
 TERRAGRUNT_FILES:=$(shell find terragrunt -type d -name '.*' -prune -o -name 'terragrunt.hcl' -exec dirname {} \;)
 
 $(TERRAGRUNT_FILES):
-	@chmod -fR 755 $@/.terragrunt-cache/ && chmod -fR 755 result || true
+	@sudo chmod -fR 755 $@/.terragrunt-cache/ && sudo chmod -fR 755 result
 	@cd $@ && terragrunt $(TF_CMD)
 
 release-stable:

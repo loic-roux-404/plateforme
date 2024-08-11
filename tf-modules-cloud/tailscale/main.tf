@@ -39,15 +39,9 @@ resource "tailscale_acl" "as_json" {
       {
         action : "accept",
         src : ["tag:all", "autogroup:member"],
-        dst : ["tag:all", "tag:k8s-operator"],
+        dst : ["tag:all"],
         users : ["autogroup:nonroot"]
-      },
-      {
-        action : "accept",
-        src : ["autogroup:member"],
-        dst : ["tag:k8s-operator"],
-        users : ["autogroup:nonroot"]
-      },
+      }
     ],
     nodeAttrs = [
       {
@@ -57,26 +51,13 @@ resource "tailscale_acl" "as_json" {
     ],
     tagOwners = {
       "tag:all" : [],
-      "tag:k8s-operator" = []
-      "tag:k8s"          = ["tag:k8s-operator"]
     }
     "autoApprovers" : {
       "routes" : {
         "100.64.0.0/10" : ["tag:all"],
         "2002:6440:0000::/48": ["tag:all"]
       },
-    },
-    grants = [{
-      src = ["tag:all"]
-      dst = ["tag:k8s-operator"]
-      app = {
-        "tailscale.com/cap/kubernetes" = [{
-          impersonate = {
-            groups = ["system:masters"]
-          }
-        }]
-      }
-    }]
+    }
   })
 }
 
@@ -99,7 +80,9 @@ output "node_id" {
 }
 
 output "node_address" {
-  value = local.already_present ? local.node_fqdn : var.node_ip
+  value = local.already_present ? flatten([
+    for device in data.tailscale_devices.already_present.devices: device.addresses
+  ])[0] : var.node_ip
 }
 
 output "config" {
@@ -109,6 +92,5 @@ output "config" {
     node_hostname         = var.node_hostname
     node_fqdn             = local.node_fqdn
     node_key              = tailscale_tailnet_key.k3s_paas_node.key
-    k8s_operator_hostname = "k8s-operator-${var.node_hostname}"
   }
 }
