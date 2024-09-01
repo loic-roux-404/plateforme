@@ -4,11 +4,10 @@
   options.k3s-paas = {
 
     certs = lib.mkOption {
-      default = [{
-        url = "https://localhost:15000/intermediates/0";
-        sha256 = "06fpbiljbzmcnfsxnr92p7mhm6i4yglbhj5q7csw2pcsklw68z8n";
-      }];
-      type = lib.types.listOf (lib.types.attrs);
+      default = [
+        ../nixos-darwin/pebble/cert.crt
+      ];
+      type = lib.types.listOf (lib.types.path);
       description = "Ca url to fetch and trust (need to be impure)";
     };
 
@@ -19,8 +18,11 @@
     };
 
     dns.dest-ips = lib.mkOption {
-      default = ["127.0.0.1" "192.168.205.2" "192.168.205.3"  "192.168.205.4" 
-        "192.168.205.5" "192.168.205.6" "192.168.205.7" "192.168.205.8" "192.168.205.9"];
+      default = [
+        "127.0.0.1" "192.168.205.2" "192.168.205.3" 
+        "192.168.205.4" "192.168.205.5" "192.168.205.6"
+        "192.168.205.7" "192.168.205.8" "192.168.205.9"
+      ];
       type = lib.types.listOf lib.types.str;
       description = "Target IP address for dns.name (only in local dev)";
     };
@@ -44,13 +46,13 @@
     };
 
     k3s.disableServices = lib.mkOption {
-      default = ["traefik" "metrics-server" "servicelb" ];
+      default = ["traefik" "rke2-ingress-nginx" "servicelb" ];
       type = lib.types.listOf lib.types.str;
       description = "Disable k8s services eg: traefik,servicelb";
     };
 
     k3s.serverExtraArgs = lib.mkOption {
-      default = [];
+      default = ["--disable-kube-proxy" "--egress-selector-mode=disabled"];
       type = lib.types.listOf lib.types.str;
       description = "Extra arguments for k8s server";
     };

@@ -3,6 +3,7 @@ on:
   push:
     tags:
       - nixos-stable
+      - nixos-testing
     paths:
       - 'nixos/**.nix'
       - 'nixos-options/**.nix'
@@ -37,14 +38,20 @@ jobs:
           restore-prefixes-first-match: nix-${{ runner.os }}-
           gc-max-store-size-linux: 1073741824
 
-      - name: Build
-        id: build
-        run: nix build .#nixosConfigurations.contabo-qcow
+      - name: Build production image
+        id: build-stable
+        if: github.ref == 'refs/tags/nixos-stable'
+        run: nix build .#nixosConfigurations.initial-contabo.config.formats.qcow
         
+      - name: Build testing image
+        id: build-testing
+        if: github.ref == 'refs/tags/nixos-testing'
+        run: nix build .#nixosConfigurations.initial.config.formats.qcow
+
       - name: Release
         uses: softprops/action-gh-release@v1
         with:
-          tag_name: nixos-stable
+          tag_name: ${{ github.ref_name }}
           token: "${{ secrets.GITHUB_TOKEN }}"
           generate_release_notes: true
           files: |

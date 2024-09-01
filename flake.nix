@@ -1,10 +1,10 @@
 {
-  description = "Nix Darwin configuration for my systems (from https://github.com/malob/nixpkgs)";
+  description = "Nix configurations for a k8s paas build";
 
   inputs = {
     # Package sets
+    nixpkgs.url = "github:NixOS/nixpkgs/24.05";
     nixpkgs-legacy.url = "github:NixOS/nixpkgs/23.11";
-    nixpkgs-stable.url = "github:NixOS/nixpkgs/24.05";
     nixpkgs-stable-darwin.url = "github:NixOS/nixpkgs/nixpkgs-24.05-darwin";
     nixpkgs-unstable.url = "github:NixOS/nixpkgs/nixos-unstable";
     srvos.url = "github:numtide/srvos";
@@ -22,6 +22,11 @@
     nixos-generators = {
       url = "github:nix-community/nixos-generators";
       inputs.nixpkgs.follows = "srvos/nixpkgs";
+    };
+
+    rke2 = {
+      url = "github:numtide/nixos-rke2";
+      inputs.nixpkgs.follows = "nixpkgs";
     };
 
     # Flake utilities
@@ -47,7 +52,7 @@
 
       overlays = {
         pkgs-stable = _: prev: {
-          pkgs-stable = import inputs.nixpkgs-stable {
+          pkgs-stable = import inputs.nixpkgs {
             inherit (prev.stdenv) system;
             inherit (nixpkgsDefaults) config;
           };
@@ -85,6 +90,7 @@
       });
 
       nixosModules = {
+        rke2 = inputs.rke2.nixosModules.default;
         sops = inputs.sops-nix.nixosModules.sops;
         common = srvos.nixosModules.common;
         server = srvos.nixosModules.server;
@@ -132,64 +138,58 @@
           };
         };
       };
-    } 
-    // flake-utils.lib.eachDefaultSystem (system:
-    let
-      linux = builtins.replaceStrings ["darwin"] ["linux"] system;
-      oldLegacyPackages = import inputs.nixpkgs-legacy (nixpkgsDefaults // { system = linux; });
-      specialArgs = {
-        inherit oldLegacyPackages;
-      };
-    in {
+    }
+    // flake-utils.lib.eachDefaultSystem (baseSystem:
+    {
+      packages.nixosConfigurations = let
+        system = builtins.replaceStrings ["darwin"] ["linux"] baseSystem;
+        oldLegacyPackages = import inputs.nixpkgs-legacy (nixpkgsDefaults // { inherit system; });
+        specialArgs = {
+          inherit oldLegacyPackages;
+        };
+        qcowSystemFormat = [
+          ({ ... }: { 
+            imports = [ 
+              nixos-generators.nixosModules.all-formats
+              ./nixos/qcow-compressed.nix
+            ];
+            nixpkgs.hostPlatform = system;
+          })
+        ];
+      in {
+        ## Libvirt configurations
 
-      packages.nixosConfigurations = rec {
-        default = qcow;
+        initial = nixosSystem {
+          inherit system specialArgs;
+          modules = qcowSystemFormat ++ self.nixosAllModules.default;
+        };
 
         deploy = nixosSystem {
-          system = linux;
-          inherit specialArgs;
+          inherit system specialArgs;
           modules = self.nixosAllModules.deploy;
         };
 
+        ## Contabo-specific configurations
+
+        initial-contabo = nixosSystem {
+          inherit system specialArgs;
+          modules = qcowSystemFormat ++ self.nixosAllModules.contabo;
+        };
+
         deploy-contabo = nixosSystem {
-          system = "x86_64-linux";
-          inherit specialArgs;
+          inherit system specialArgs;
           modules = self.nixosAllModules.deployContabo ++ [
             ./nixos/contabo-master-0.nix
           ];
         };
 
-        initial = nixosSystem {
-          system = linux;
-          inherit specialArgs;
-          modules = self.nixosAllModules.default;
-        };
+        ## Docker configurations
 
-        qcow = makeOverridable nixos-generators.nixosGenerate {
-          inherit system specialArgs;
-          modules = self.nixosAllModules.default ++ [
-            ./nixos/qcow-compressed.nix
-          ];
-          format = "qcow";
-        };
-
-        intial-contabo = nixosSystem {
-          system = "x86_64-linux";
-          inherit specialArgs;
-          modules = self.nixosAllModules.contabo;
-        };
-
-        contabo-qcow = self.packages.${system}.nixosConfigurations.qcow.override {
-          modules = self.nixosAllModules.contabo ++ [
-            ./nixos/qcow-compressed.nix
-          ];
-        };
-
-        container = self.packages.${system}.nixosConfigurations.qcow.override {
+        container = nixosSystem {
           modules = self.nixosAllModules.default ++ [ 
+            nixos-generators.nixosModules.docker
             ./nixos/docker.nix
           ];
-          format = "docker";
         };
       };
 
@@ -198,8 +198,10 @@
       # With `nix.registry.my.flake = inputs.self`, development shells can be created by running,
       # e.g., `nix develop my#python`.
       devShells = let 
+        system = baseSystem;
+        oldLegacyPackages = import inputs.nixpkgs-legacy (nixpkgsDefaults // { inherit system; });
         pkgs = import inputs.nixpkgs-srvos (nixpkgsDefaults // { inherit system; });
-        stablePkgs = import inputs.nixpkgs-stable (nixpkgsDefaults // { inherit system; });
+        stablePkgs = import inputs.nixpkgs (nixpkgsDefaults // { inherit system; });
        in
         {
           default = pkgs.mkShell {
@@ -207,8 +209,7 @@
             packages = attrValues {
               inherit (pkgs) bashInteractive grpcurl jq coreutils e2fsprogs
               docker-client docker-credential-helpers libvirt qemu
-              tailscale pebble cntb kubernetes-helm
-              nil nix-tree;
+              tailscale pebble cntb kubernetes-helm nil nix-tree;
               inherit (stablePkgs) nix terragrunt terraform sops ssh-to-age nixos-rebuild;
               inherit (oldLegacyPackages) waypoint;
             };

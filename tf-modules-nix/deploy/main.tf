@@ -142,6 +142,7 @@ resource "terraform_data" "reset" {
 
   provisioner "local-exec" {
     when = destroy
+    on_failure = continue
     interpreter = concat(
       self.input.nix_rebuild_interpreter, 
       ["--flake", self.input.nix_flake_reset]
