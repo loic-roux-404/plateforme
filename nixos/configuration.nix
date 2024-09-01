@@ -9,13 +9,11 @@
 with config.k3s-paas;
 
 let
-  certs = [ ../nixos-darwin/pebble/cert.crt ];
   userSshConfig = {
     authorizedKeys = {
       keys = [ user.key ];
     };
   };
-  k3sPkg = oldLegacyPackages.k3s_1_27;
 in {
 
   fileSystems."/" = {
@@ -31,19 +29,35 @@ in {
 
   boot.growPartition = lib.mkDefault true;
   boot.loader.grub.device = lib.mkForce "/dev/sda";
+  boot.tmp.useTmpfs = true;
   boot.tmp.cleanOnBoot = true;
   boot.kernelPackages = pkgs.linuxPackages_latest;
   boot.loader.systemd-boot.consoleMode = "auto";
 
+  swapDevices = [ ];
   zramSwap.algorithm  = "zstd";
 
   system.stateVersion = "24.05";
 
   time = {
     timeZone = lib.mkForce "Europe/Paris";
+    hardwareClockInLocalTime = true;
   };
 
   i18n.defaultLocale = "en_US.UTF-8";
+
+  networking = {
+    enableIPv6 = true;
+    useDHCP = true;
+    useNetworkd = true;
+    nftables.enable = true;
+    nftables.flushRuleset  = true;
+    firewall = {
+      trustedInterfaces = [ "tailscale0" ];
+      allowedTCPPorts = lib.mkDefault [ 80 443 22 ];
+      allowedUDPPorts = [ config.services.tailscale.port ];
+    };
+  };
 
   programs.ssh.package = pkgs.openssh_hpn;
   services.openssh = {
@@ -87,24 +101,19 @@ in {
     ''; 
   };
 
-  systemd.services.k3s.serviceConfig.Environment = "PATH=${pkgs.tailscale}/bin";
-  services.k3s = {
+  systemd.services.numtide-rke2.serviceConfig.Environment = "PATH=${pkgs.tailscale}/bin:${pkgs.coreutils}/bin";
+  services.numtide-rke2 = {
     enable = lib.mkDefault false;
     role = "server";
-    package = k3sPkg;
-    extraFlags = lib.strings.concatStringsSep " " (
-      map (service: "--disable=${service}") k3s.disableServices
+    extraFlags = (
+      builtins.concatMap (service: ["--disable" service]) k3s.disableServices
       ++ k3s.serverExtraArgs
-      ++ [
-        "--flannel-backend=none"
-        "--disable-kube-proxy"
-        "--disable-network-policy"
-        "--egress-selector-mode=disabled"
-      ]
     );
   };
 
   services.fail2ban.enable = true;
+
+  security.pki.certificateFiles = certs;
 
   home-manager.useGlobalPkgs = true;
   home-manager.useUserPackages = true;
@@ -112,10 +121,10 @@ in {
     xdg.enable = true;
     home.stateVersion = "24.05";
     home.sessionVariables = {
-      KUBECONFIG = "/etc/rancher/k3s/k3s.yaml";
+      KUBECONFIG = "/etc/rancher/rke2/rke2.yaml";
     };
     home.shellAliases = {
-      kubectl = "sudo kubectl";
+      kubectl = "sudo -E kubectl";
       helm = "sudo -E helm";
       k-ks = "sudo -E kubectl -n kube-system";
     };
@@ -146,12 +155,13 @@ in {
       dnsutils
       jq
       wget
-      k3sPkg
+      k3s
       kubectl
       kubernetes-helm
       oldLegacyPackages.waypoint
       tailscale
       cilium-cli
+      iptables
     ];
   };
 
@@ -173,15 +183,15 @@ in {
         "${pkgs.systemd}/bin/systemctl list-jobs"
         "${pkgs.systemd}/bin/systemctl is-system-running"
         "${pkgs.systemd}/bin/journalctl"
-        "${pkgs.k3s}/bin/kubectl get"
-        "${pkgs.k3s}/bin/kubectl describe"
-        "${pkgs.k3s}/bin/kubectl explain"
-        "${pkgs.k3s}/bin/kubectl logs"
-        "${pkgs.k3s}/bin/kubectl diff"
-        "${pkgs.k3s}/bin/kubectl events"
-        "${pkgs.k3s}/bin/kubectl wait"
-        "${pkgs.k3s}/bin/kubectl api-resources"
-        "${pkgs.k3s}/bin/kubectl version"
+        "${pkgs.kubectl}/bin/kubectl get"
+        "${pkgs.kubectl}/bin/kubectl describe"
+        "${pkgs.kubectl}/bin/kubectl explain"
+        "${pkgs.kubectl}/bin/kubectl logs"
+        "${pkgs.kubectl}/bin/kubectl diff"
+        "${pkgs.kubectl}/bin/kubectl events"
+        "${pkgs.kubectl}/bin/kubectl wait"
+        "${pkgs.kubectl}/bin/kubectl api-resources"
+        "${pkgs.kubectl}/bin/kubectl version"
         "${pkgs.nettools}/bin/ifconfig"
         "${pkgs.iproute2}/bin/ip"
         "${pkgs.iptables}/bin/iptables"
@@ -212,27 +222,6 @@ in {
       };
     };
   };
-
-  networking = {
-    useNetworkd = true;
-    useDHCP = true;
-    firewall = {
-      trustedInterfaces = [ "tailscale0" ];
-      allowedTCPPorts = lib.mkDefault [ 80 443 22 4240 ];
-      allowedUDPPorts = [ config.services.tailscale.port ];
-    };
-    # Looks its not ready to work along cilium and k3s
-    nftables.enable = false;
-    networkmanager.enable = false;
-    usePredictableInterfaceNames = true;
-  };
-
-  boot.kernel.sysctl = {
-    "net.ipv4.ip_forward" = 1;
-    "net.ipv6.conf.all.forwarding" = 1;
-  };
-
-  security.pki.certificateFiles = certs;
 
   nixpkgs = {
     config = {

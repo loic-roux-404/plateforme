@@ -37,7 +37,7 @@ Build an image between available nixos configuration `contabo` and `qcow2` :
 > Supported systems are `aarch64-linux`, `x86_64-linux`, `aarch64-darwin` and `x86_64-darwin`.
     
 ```bash
-nix build .#nixosConfigurations.default --system aarch64-linux
+nix build .#nixosConfigurations.default --system x86_64-linux
 ```
 
 ### Uninstall on Darwin:

@@ -45,6 +45,7 @@ module "deploy" {
   nix_flake_reset = var.nix_flake_reset
   ssh_connection = var.ssh_connection
   nixos_transient_secrets = {
+    internalNodeIp   = module.tailscale.node_address 
     nodeIp           = var.machine.node_ip
     dexClientId      = "dex-client-id"
     tailscaleNodeKey = "${module.tailscale.config.node_key}"
@@ -58,14 +59,14 @@ module "tailscale_destroy" {
   source = "../tf-modules-cloud/tailscale/destroy"
   tailscale_tailnet        = var.tailscale_tailnet
   tailscale_oauth_client   = var.tailscale_oauth_client
-  node_hostname            = module.deploy.config.node_address
+  node_hostname            = module.deploy.config.node_hostname
 }
 
 module "k3s_get_config" {
   source                     = "../tf-modules-cloud/k3s-get-config"
   ssh_connection             = var.ssh_connection
   node_hostname              = module.deploy.config.node_address
-  remote_k3s_config_location = "/etc/rancher/k3s/k3s.yaml"
+  remote_k3s_config_location = "/etc/rancher/rke2/rke2.yaml"
 }
 
 output "password" {

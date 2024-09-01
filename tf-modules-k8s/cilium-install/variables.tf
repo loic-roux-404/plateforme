@@ -5,7 +5,7 @@ variable "cilium_namespace" {
 variable "cilium_version" {
   description = "The version of Cilium to deploy"
   type        = string
-  default     = "1.15.7"
+  default     = "1.16.1"
 }
 
 variable "k3s_host" {
