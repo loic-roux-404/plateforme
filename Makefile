@@ -18,7 +18,7 @@ bootstrap-aarch64-linux:
 
 bootstrap-x86_64-linux:
 	@VARIANT=builder-x86 $(BUILDER_EXEC) echo "Started x86 environment"
-	@echo "Waiting builder to"
+	@echo "Waiting builder to start..."
 	@sleep 15
 
 bootstrap: bootstrap-$(SYSTEM)
@@ -26,12 +26,11 @@ bootstrap: bootstrap-$(SYSTEM)
 nixos-local: bootstrap build
 
 build:
-	@nix build .#nixosConfigurations.default --system $(SYSTEM)
+	@nix build .#nixosConfigurations.initial.config.formats.qcow --system $(SYSTEM)
 
 TERRAGRUNT_FILES:=$(shell find terragrunt -type d -name '.*' -prune -o -name 'terragrunt.hcl' -exec dirname {} \;)
 
 $(TERRAGRUNT_FILES):
-	@sudo chmod -fR 755 $@/.terragrunt-cache/ && sudo chmod -fR 755 result
 	@cd $@ && terragrunt $(TF_CMD)
 
 release-stable:

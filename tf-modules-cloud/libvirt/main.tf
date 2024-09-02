@@ -23,15 +23,15 @@ resource "libvirt_volume" "nixos_worker" {
   name           = "nixos-worker.qcow2"
   base_volume_id = libvirt_volume.nixos.id
   pool           = libvirt_pool.volumetmp.name
-  size           = 16384 * 1024 * 1024
 }
 
 resource "libvirt_domain" "machine" {
   name      = var.node_hostname
-  vcpu      = 2
+  vcpu      = 4
   memory    = 4096
   type      = "hvf"
   autostart = true
+  arch      = var.arch
 
   disk {
     volume_id = libvirt_volume.nixos_worker.id
@@ -53,10 +53,6 @@ resource "libvirt_domain" "machine" {
     type = "vga"
   }
 
-  cpu {
-    mode = "host-passthrough"
-  }
-
   xml {
     xslt = templatefile("${path.module}/nixos.xslt.tmpl", {
       args = local.darwin_cmdline
@@ -68,7 +64,7 @@ data "external" "get_ip" {
   depends_on = [ libvirt_domain.machine ]
   program = ["bash", "${path.module}/get-ip.sh"]
   query = {
-    timeout = 60
+    timeout = 90
     mac = var.mac
   }
 }

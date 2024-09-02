@@ -19,9 +19,8 @@
 
     dns.dest-ips = lib.mkOption {
       default = [
-        "127.0.0.1" "192.168.205.2" "192.168.205.3" 
-        "192.168.205.4" "192.168.205.5" "192.168.205.6"
-        "192.168.205.7" "192.168.205.8" "192.168.205.9"
+        "127.0.0.1" "192.168.205.2" "192.168.205.3" "192.168.205.4" "192.168.205.5" 
+        "192.168.205.6" "192.168.205.7" "192.168.205.8" "192.168.205.9"
       ];
       type = lib.types.listOf lib.types.str;
       description = "Target IP address for dns.name (only in local dev)";
@@ -46,7 +45,7 @@
     };
 
     k3s.disableServices = lib.mkOption {
-      default = ["traefik" "rke2-ingress-nginx" "servicelb" ];
+      default = ["traefik" "servicelb" ];
       type = lib.types.listOf lib.types.str;
       description = "Disable k8s services eg: traefik,servicelb";
     };

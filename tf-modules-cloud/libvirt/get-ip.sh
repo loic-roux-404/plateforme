@@ -12,7 +12,8 @@ while [ -z "$ip_address" ] && [ $elapsed -lt ${timeout:-90} ]; do
     break
   fi
 
-  elapsed=$((elapsed + 10))
+  sleep 1
+  elapsed=$((elapsed + 1))
 
 done
 

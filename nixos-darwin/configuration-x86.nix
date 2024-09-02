@@ -1,6 +1,7 @@
 {
   pkgs, lib, ...
 }: {
+  nix.settings.extra-platforms = [ "x86_64-linux" ];
   nix.linux-builder = {
     package = pkgs.darwin.linux-builder-x86_64;
     ephemeral = lib.mkDefault true;
