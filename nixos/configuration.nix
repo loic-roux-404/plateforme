@@ -101,16 +101,40 @@ in {
     ''; 
   };
 
-  systemd.services.numtide-rke2.serviceConfig.Environment = "PATH=${pkgs.tailscale}/bin:${pkgs.coreutils}/bin";
-  services.numtide-rke2 = {
+  systemd.services.k3s.serviceConfig.Environment = "PATH=${pkgs.tailscale}/bin:${pkgs.coreutils}/bin";
+  services.k3s = {
     enable = lib.mkDefault false;
     role = "server";
-    extraFlags = (
-      builtins.concatMap (service: ["--disable" service]) k3s.disableServices
+    package = k3sPkg;
+    extraFlags = lib.strings.concatStringsSep " " (
+      map (service: "--disable=${service}") k3s.disableServices
       ++ k3s.serverExtraArgs
+      ++ [
+        "--flannel-backend=none"
+        "--disable-kube-proxy"
+        "--disable-network-policy"
+        "--egress-selector-mode=disabled"
+      ]
     );
-  };
+    # manifests = {
+    #   certManager = {
+    #     name = "cert-manager";
+    #     namespace = certManagerNamespace;
+    #     createNamespace = true;
+    #     repository = "https://charts.jetstack.io";
+    #     chart = "cert-manager";
+    #     version = "1.15.2";
+    #     waitForJobs = true;
+    #     atomic = true;
+    #     timeout = 120;
 
+    #     values = ''
+    #       crds:
+    #         enabled = true
+    #     '';
+    #   };
+    # };
+  };
   services.fail2ban.enable = true;
 
   security.pki.certificateFiles = certs;
@@ -121,7 +145,7 @@ in {
     xdg.enable = true;
     home.stateVersion = "24.05";
     home.sessionVariables = {
-      KUBECONFIG = "/etc/rancher/rke2/rke2.yaml";
+      KUBECONFIG = "/etc/rancher/k3s/k3s.yaml";
     };
     home.shellAliases = {
       kubectl = "sudo -E kubectl";

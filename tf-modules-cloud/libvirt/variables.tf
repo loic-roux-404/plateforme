@@ -5,7 +5,7 @@ variable "mac" {
 
 variable "vm_size" {
   description = "vm size in MB"
-  default     = 8092
+  default     = "16G"
 }
 
 variable "darwin" {
@@ -32,6 +32,10 @@ variable "libvirt_pool_path" {
 variable "node_hostname" {
   type    = string
   default = "localhost-0"
+}
+
+variable "arch" {
+  default = "x86_64"
 }
 
 variable "libvirt_qcow_source" {

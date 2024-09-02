@@ -17,7 +17,7 @@ variable "ssh_connection" {
 }
 
 variable "remote_k3s_config_location" {
-  default = "/etc/rancher/rke2/rke2.yaml"
+  default = "/etc/rancher/k3s/k3s.yaml"
 }
 
 variable "context_cluster_name" {

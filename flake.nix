@@ -24,11 +24,6 @@
       inputs.nixpkgs.follows = "srvos/nixpkgs";
     };
 
-    rke2 = {
-      url = "github:numtide/nixos-rke2";
-      inputs.nixpkgs.follows = "nixpkgs";
-    };
-
     # Flake utilities
     flake-compat = { url = "github:edolstra/flake-compat"; flake = false; };
     flake-utils.url = "github:numtide/flake-utils";
@@ -90,13 +85,14 @@
       });
 
       nixosModules = {
-        rke2 = inputs.rke2.nixosModules.default;
         sops = inputs.sops-nix.nixosModules.sops;
         common = srvos.nixosModules.common;
         server = srvos.nixosModules.server;
         home-manager = inputs.home-manager.nixosModules.home-manager;
         os = ./nixos/configuration.nix;
         config = ./nixos-options/default.nix;
+        qcowCompressed = ./nixos/qcow-compressed.nix;
+        allFormats = nixos-generators.nixosModules.all-formats;
       };
 
       nixosAllModules = rec {
@@ -142,26 +138,19 @@
     // flake-utils.lib.eachDefaultSystem (baseSystem:
     {
       packages.nixosConfigurations = let
-        system = builtins.replaceStrings ["darwin"] ["linux"] baseSystem;
+        rebuildSystem = (builtins.getEnv "NIXOS_REBUILD_SYSTEM");
+        system = if rebuildSystem != "" then rebuildSystem else "x86_64-linux";
         oldLegacyPackages = import inputs.nixpkgs-legacy (nixpkgsDefaults // { inherit system; });
         specialArgs = {
           inherit oldLegacyPackages;
         };
-        qcowSystemFormat = [
-          ({ ... }: { 
-            imports = [ 
-              nixos-generators.nixosModules.all-formats
-              ./nixos/qcow-compressed.nix
-            ];
-            nixpkgs.hostPlatform = system;
-          })
-        ];
+
       in {
         ## Libvirt configurations
 
         initial = nixosSystem {
           inherit system specialArgs;
-          modules = qcowSystemFormat ++ self.nixosAllModules.default;
+          modules = self.nixosAllModules.default;
         };
 
         deploy = nixosSystem {
@@ -173,7 +162,7 @@
 
         initial-contabo = nixosSystem {
           inherit system specialArgs;
-          modules = qcowSystemFormat ++ self.nixosAllModules.contabo;
+          modules = self.nixosAllModules.contabo;
         };
 
         deploy-contabo = nixosSystem {

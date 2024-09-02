@@ -100,6 +100,7 @@ with config.k3s-paas;
     keep-outputs = false;
     # https://github.com/NixOS/nix/issues/7273
     auto-optimise-store = false;
+    extra-platforms = [ "x86_64-linux" ];
   };
   nix.gc = {
     automatic = true;
