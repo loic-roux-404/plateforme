@@ -36,7 +36,6 @@ with config.k3s-paas;
   sops.secrets.tailscaleDomain = {};
   sops.secrets.password = { neededForUsers = true; };
 
-  services.k3s.enable = true;
   services.k3s.configPath = config.sops.templates."config.yaml".path;
 
   sops.templates."config.yaml".content = ''
@@ -44,14 +43,13 @@ with config.k3s-paas;
     node-name: "${config.networking.hostName}"
     cluster-domain: ${config.sops.placeholder.paasDomain}
     node-external-ip: "${config.sops.placeholder.nodeIp}"
-    cluster-cidr: 10.100.0.0/16
-    service-cidr: 10.110.0.0/16
-    cluster-dns: 10.110.0.10
+    cluster-cidr: ${k3s.podCIDR}
+    service-cidr: ${k3s.serviceCIDR}
+    cluster-dns: ${k3s.clusterDns}
     vpn-auth: "name=tailscale,joinKey=${config.sops.placeholder.tailscaleNodeKey}"
     tls-san:
-      - localhost
-      - 10.43.0.1
-      - ${config.networking.hostName}
+      - "${k3s.serviceIp}"
+      - "${config.networking.hostName}"
       - "${config.sops.placeholder.tailscaleDomain}"
       - "${config.sops.placeholder.nodeIp}"
       - "${config.sops.placeholder.internalNodeIp}"

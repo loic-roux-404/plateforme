@@ -23,6 +23,7 @@ resource "libvirt_volume" "nixos_worker" {
   name           = "nixos-worker.qcow2"
   base_volume_id = libvirt_volume.nixos.id
   pool           = libvirt_pool.volumetmp.name
+  size           = 16 * 1024 * 1024 * 1024
 }
 
 resource "libvirt_domain" "machine" {
