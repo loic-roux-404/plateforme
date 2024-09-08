@@ -1,4 +1,4 @@
-{ lib, ... }:
+{ lib, pkgs, config, ... }:
 
 {
   options.k3s-paas = {
@@ -62,11 +62,82 @@
       default = "";
     };
 
+    k3s.podCIDR = lib.mkOption {
+      type = lib.types.str;
+      description = "Pod CIDR";
+      default = "10.100.0.0/16";
+    };
+
+    k3s.serviceCIDR = lib.mkOption {
+      type = lib.types.str;
+      description = "Pod CIDR";
+      default = "10.110.0.0/16";
+    };
+
+    k3s.clusterDns = lib.mkOption {
+      type = lib.types.str;
+      description = "Cluster DNS";
+      default = "10.110.0.10";
+    };
+
+    k3s.serviceIp = lib.mkOption {
+      type = lib.types.str;
+      description = "Service IP";
+      default = "10.110.0.1";
+    };
+
+    k3s.serviceHost = lib.mkOption {
+      type = lib.types.str;
+      description = "Service host";
+      default = "";
+    };
+
+    k3s.servicePort = lib.mkOption {
+      type = lib.types.int;
+      description = "Service port";
+      default = 6443;
+    };
+
+    cilium.version = lib.mkOption {
+      type = lib.types.str;
+      description = "Cilium version";
+      default = "1.16.1";
+    };
+
     dex.dexClientId = lib.mkOption {
       type = lib.types.str;
       description = "Client ID for Dex";
       default = "dex-k3s-paas";
     };
 
+    cert-manager.version = lib.mkOption {
+      type = lib.types.str;
+      description = "Cert Manager version";
+      default = "1.15.2";
+    };
+
+    defaultK3sConfigPath = lib.mkOption {
+      type = lib.types.path;
+      description = "Default config yaml";
+      default = "";
+    };
+  };
+
+  config = with config.k3s-paas; {
+    k3s-paas.defaultK3sConfigPath = pkgs.writeText ''
+      cluster-cidr: ${k3s.podCIDR}
+      service-cidr: ${k3s.serviceCIDR}
+      cluster-dns: ${k3s.clusterDns}
+      tls-san:
+        - localhost
+        - 127.0.0.1
+        - ${k3s.serviceIp}
+        - ${config.networking.hostName}
+      kube-apiserver-arg=authorization-mode: Node,RBAC
+      kube-apiserver-arg=oidc-issuer-url: https://dex.${dns.name}
+      kube-apiserver-arg=oidc-client-id: ${dex.dexClientId}
+      kube-apiserver-arg=oidc-username-claim: email
+      kube-apiserver-arg=oidc-groups-claim: groups
+    '';
   };
 }

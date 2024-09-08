@@ -20,23 +20,9 @@ jobs:
     runs-on: ubuntu-latest
     name: Release nix image
     steps:
-      - name: Checkout
-        uses: actions/checkout@v3
-        with:
-          fetch-depth: 0
-
-      - uses: cachix/install-nix-action@v25
-        with:
-          extra_nix_config: |
-            experimental-features = nix-command flakes
-          github_access_token: ${{ secrets.GITHUB_TOKEN }}
-
-      - name: Restore and cache Nix store
-        uses: nix-community/cache-nix-action@v5
-        with:
-          primary-key: nix-${{ runner.os }}-${{ hashFiles('**/*.nix') }}
-          restore-prefixes-first-match: nix-${{ runner.os }}-
-          gc-max-store-size-linux: 1073741824
+      - uses: actions/checkout@v4
+      - uses: DeterminateSystems/nix-installer-action@main
+      - uses: DeterminateSystems/magic-nix-cache-action@main
 
       - name: Build production image
         id: build-stable

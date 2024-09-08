@@ -82,7 +82,7 @@ in {
     config.services.tailscale.enable 
   ) {
     serviceConfig = {
-      RemainAfterExit = true; # Ensures it's remains active after running.
+      RemainAfterExit = true;
     };
   };
 
@@ -103,9 +103,8 @@ in {
 
   systemd.services.k3s.serviceConfig.Environment = "PATH=${pkgs.tailscale}/bin:${pkgs.coreutils}/bin";
   services.k3s = {
-    enable = lib.mkDefault false;
+    enable = lib.mkDefault true;
     role = "server";
-    package = k3sPkg;
     extraFlags = lib.strings.concatStringsSep " " (
       map (service: "--disable=${service}") k3s.disableServices
       ++ k3s.serverExtraArgs
@@ -116,25 +115,109 @@ in {
         "--egress-selector-mode=disabled"
       ]
     );
-    # manifests = {
-    #   certManager = {
-    #     name = "cert-manager";
-    #     namespace = certManagerNamespace;
-    #     createNamespace = true;
-    #     repository = "https://charts.jetstack.io";
-    #     chart = "cert-manager";
-    #     version = "1.15.2";
-    #     waitForJobs = true;
-    #     atomic = true;
-    #     timeout = 120;
+    configPath = lib.mkDefault defaultK3sConfigPath;
+    manifests.certManager.content = {
+      apiVersion = "helm.cattle.io/v1";
+      kind = "HelmChart";
+      metadata = {
+        name = "cilium";
+        namespace = "kube-system";
+      };
+      spec = {
+        name = "cert-manager";
+        namespace = "cert-manager";
+        createNamespace = true;
+        repository = "https://charts.jetstack.io";
+        chart = "cert-manager";
+        version = cert-manager.version;
+        wait = true;
+        cleanup_on_fail = true;
+        waitForJobs = true;
+        timeout = 120;
 
-    #     values = ''
-    #       crds:
-    #         enabled = true
-    #     '';
-    #   };
-    # };
+        valuesContent = ''
+          crds:
+            enabled = true
+        '';
+      };
+    };
+    manifests.cilium.content = {
+      apiVersion = "helm.cattle.io/v1";
+      kind = "HelmChart";
+      metadata = {
+        name = "cilium";
+        namespace = "kube-system";
+      };
+      spec = {
+        name     = "cilium";
+        namespace        = "kube-system";
+        repository       = "https://helm.cilium.io";
+        chart            = "cilium";
+        wait = true;
+        cleanup_on_fail = true;
+        version          = cilium.version;
+        valuesContent = ''
+          l2announcements:
+            enabled: true
+
+          kubeProxyReplacement: true
+
+          bpf:
+            masquerade: true
+            lbExternalClusterIP: false
+
+          gatewayAPI:
+            enabled: false
+
+          routingMode: tunnel
+
+          tunnelProtocol: vxlan
+
+          ingressController:
+            enabled: true
+            default: true
+            loadbalancerMode: dedicated
+            service:
+              name: cilium-ingress-external
+              labels:
+                k3s-paas/internal: "true"
+
+          prometheus:
+            enabled: true
+            serviceMonitor:
+              enabled: true
+
+          operator:
+            replicas: 1
+            prometheus:
+              enabled: true
+
+          hubble:
+            relay:
+              enabled: true
+            metrics:
+              enabled:
+                - dns
+                - drop
+                - tcp
+                - flow
+                - port-distribution
+                - icmp
+                - httpV2:exemplars=true;labelsContext=source_ip,source_namespace,source_workload,destination_ip,destination_namespace,destination_workload,traffic_direction
+              enableOpenMetrics: true
+
+          ipam:
+            operator:
+              clusterPoolIPv4PodCIDRList:
+                - "${k3s.podCIDR}"
+        '' + (if k3s.serviceHost != "" then ''
+          k8sServiceHost: "${k3s.serviceHost}"
+          k8sServicePort: "${k3s.servicePort}"
+        '' else "");
+      };
+    };
   };
+
   services.fail2ban.enable = true;
 
   security.pki.certificateFiles = certs;
