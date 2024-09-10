@@ -6,7 +6,6 @@
     nixpkgs.url = "github:NixOS/nixpkgs/24.05";
     nixpkgs-legacy.url = "github:NixOS/nixpkgs/23.11";
     nixpkgs-stable-darwin.url = "github:NixOS/nixpkgs/nixpkgs-24.05-darwin";
-    nixpkgs-unstable.url = "github:NixOS/nixpkgs/nixos-unstable";
     srvos.url = "github:numtide/srvos";
     nixpkgs-srvos.follows = "srvos/nixpkgs";
 
@@ -53,7 +52,7 @@
           };
         };
         pkgs-unstable = _: prev: {
-          pkgs-unstable = import inputs.nixpkgs-unstable {
+          pkgs-unstable = import inputs.nixpkgs-srvos {
             inherit (prev.stdenv) system;
             inherit (nixpkgsDefaults) config;
           };
@@ -70,19 +69,6 @@
           # Add temporary overrides here
         };
       };
-
-      darwinModules = {
-        config = ./nixos-options/default.nix;
-        os = ./nixos-darwin/configuration.nix;
-      };
-
-      darwinDefaultExtraModules = singleton ({ pkgs, ... } : {
-        nixpkgs = nixpkgsDefaults;
-        nix.registry.my.flake = inputs.self;
-        environment.systemPackages = [ 
-          pkgs.bashInteractive 
-        ];
-      });
 
       nixosModules = {
         sops = inputs.sops-nix.nixosModules.sops;
@@ -101,6 +87,19 @@
         deploy = default ++ [ ./nixos/deploy.nix ];
         deployContabo = deploy ++ [ ./nixos/contabo.nix ];
       };
+
+      darwinModules = {
+        config = ./nixos-options/default.nix;
+        os = ./nixos-darwin/configuration.nix;
+      };
+
+      darwinDefaultExtraModules = singleton ({ pkgs, ... } : {
+        nixpkgs = nixpkgsDefaults;
+        nix.registry.my.flake = inputs.self;
+        environment.systemPackages = [ 
+          pkgs.bashInteractive 
+        ];
+      });
 
       darwinConfigurations = {
         default = self.darwinConfigurations.builder;
@@ -138,8 +137,7 @@
     // flake-utils.lib.eachDefaultSystem (baseSystem:
     {
       packages.nixosConfigurations = let
-        rebuildSystem = (builtins.getEnv "NIXOS_REBUILD_SYSTEM");
-        system = if rebuildSystem != "" then rebuildSystem else "x86_64-linux";
+        system = builtins.replaceStrings ["darwin"] ["linux"] baseSystem;
         oldLegacyPackages = import inputs.nixpkgs-legacy (nixpkgsDefaults // { inherit system; });
         specialArgs = {
           inherit oldLegacyPackages;
@@ -161,12 +159,14 @@
         ## Contabo-specific configurations
 
         initial-contabo = nixosSystem {
-          inherit system specialArgs;
+          inherit specialArgs;
+          system = "x86_64-linux";
           modules = self.nixosAllModules.contabo;
         };
 
         deploy-contabo = nixosSystem {
-          inherit system specialArgs;
+          inherit specialArgs;
+          system = "x86_64-linux";
           modules = self.nixosAllModules.deployContabo ++ [
             ./nixos/contabo-master-0.nix
           ];
@@ -197,9 +197,10 @@
             name = "default";
             packages = attrValues {
               inherit (pkgs) bashInteractive grpcurl jq coreutils e2fsprogs
-              docker-client docker-credential-helpers libvirt qemu
+              docker-client docker-credential-helpers 
               tailscale pebble cntb kubernetes-helm nil nix-tree;
-              inherit (stablePkgs) nix terragrunt terraform sops ssh-to-age nixos-rebuild;
+              inherit (stablePkgs) nix terraform terragrunt nixos-rebuild
+              sops ssh-to-age libvirt qemu;
               inherit (oldLegacyPackages) waypoint;
             };
             shellHook = ''

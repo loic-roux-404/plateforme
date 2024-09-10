@@ -28,7 +28,7 @@ resource "libvirt_volume" "nixos_worker" {
 
 resource "libvirt_domain" "machine" {
   name      = var.node_hostname
-  vcpu      = 4
+  vcpu      = 2
   memory    = 4096
   type      = "hvf"
   autostart = true
@@ -54,9 +54,14 @@ resource "libvirt_domain" "machine" {
     type = "vga"
   }
 
+  cpu {
+    mode = var.arch == "x86_64" ? "custom" : "host-passthrough"
+  }
+
   xml {
     xslt = templatefile("${path.module}/nixos.xslt.tmpl", {
       args = local.darwin_cmdline
+      type = var.arch == "x86_64" ? "'qemu'" : "@type"
     })
   }
 }

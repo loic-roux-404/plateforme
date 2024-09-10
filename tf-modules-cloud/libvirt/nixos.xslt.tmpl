@@ -13,13 +13,13 @@
   <xsl:template match="/domain">
     <domain xmlns:qemu='http://libvirt.org/schemas/domain/qemu/1.0'>
       <xsl:attribute name="type">
-        <xsl:value-of select="'qemu'"/>
+        <xsl:value-of select="${type}"/>
       </xsl:attribute>
       <xsl:apply-templates select="/domain/*"/>
       <qemu:commandline>
-        %{ for arg in args ~}
+        %{~ for arg in args ~}
         <qemu:arg value="${arg}"/>
-        %{ endfor ~}
+        %{~ endfor ~}
       </qemu:commandline>
     </domain>
   </xsl:template>

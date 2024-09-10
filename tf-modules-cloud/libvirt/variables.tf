@@ -35,6 +35,7 @@ variable "node_hostname" {
 }
 
 variable "arch" {
+  type = string
   default = "x86_64"
 }
 
