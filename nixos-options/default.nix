@@ -119,12 +119,11 @@
     defaultK3sConfigPath = lib.mkOption {
       type = lib.types.path;
       description = "Default config yaml";
-      default = "";
     };
   };
 
   config = with config.k3s-paas; {
-    k3s-paas.defaultK3sConfigPath = pkgs.writeText ''
+    k3s-paas.defaultK3sConfigPath = pkgs.writeText "server-config.yaml" ''
       cluster-cidr: ${k3s.podCIDR}
       service-cidr: ${k3s.serviceCIDR}
       cluster-dns: ${k3s.clusterDns}

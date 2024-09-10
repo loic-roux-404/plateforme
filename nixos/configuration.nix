@@ -134,7 +134,6 @@ in {
         cleanup_on_fail = true;
         waitForJobs = true;
         timeout = 120;
-
         valuesContent = ''
           crds:
             enabled = true
