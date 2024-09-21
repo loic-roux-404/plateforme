@@ -45,7 +45,7 @@
     };
 
     k3s.disableServices = lib.mkOption {
-      default = ["traefik" "servicelb" ];
+      default = ["traefik" "metrics-server" "servicelb" ];
       type = lib.types.listOf lib.types.str;
       description = "Disable k8s services eg: traefik,servicelb";
     };
@@ -86,16 +86,10 @@
       default = "10.110.0.1";
     };
 
-    k3s.serviceHost = lib.mkOption {
-      type = lib.types.str;
-      description = "Service host";
-      default = "";
-    };
-
     k3s.servicePort = lib.mkOption {
-      type = lib.types.int;
+      type = lib.types.str;
       description = "Service port";
-      default = 6443;
+      default = "6443";
     };
 
     cilium.version = lib.mkOption {
@@ -120,6 +114,11 @@
       type = lib.types.path;
       description = "Default config yaml";
     };
+
+    defaultCiliumConfig = lib.mkOption {
+      type = lib.types.str;
+      description = "Default cilium config";
+    };
   };
 
   config = with config.k3s-paas; {
@@ -138,5 +137,66 @@
       kube-apiserver-arg=oidc-username-claim: email
       kube-apiserver-arg=oidc-groups-claim: groups
     '';
+
+    k3s-paas.defaultCiliumConfig = ''
+      apiVersion: helm.cattle.io/v1
+      kind: HelmChart
+      metadata:
+        name: cilium
+        namespace: kube-system
+      spec:
+        name: cilium
+        targetNamespace: cilium
+        createNamespace: true
+        repo: https://helm.cilium.io
+        chart: cilium
+        backOffLimit: 200
+        timeout: "180s"
+        version: ${cilium.version}
+        valuesContent: |-
+          l2announcements:
+            enabled: true
+          kubeProxyReplacement: true
+          bpf:
+            masquerade: true
+            lbExternalClusterIP: false
+          gatewayAPI:
+            enabled: false
+          routingMode: tunnel
+          tunnelProtocol: vxlan
+          ingressController:
+            enabled: true
+            default: true
+            loadbalancerMode: dedicated
+            service:
+              name: cilium-ingress-external
+              labels:
+                k3s-paas/internal: "true"
+          prometheus:
+            enabled: true
+            serviceMonitor:
+              enabled: true
+          operator:
+            replicas: 1
+            prometheus:
+              enabled: true
+          hubble:
+            relay:
+              enabled: true
+            metrics:
+              enabled:
+                - dns
+                - drop
+                - tcp
+                - flow
+                - port-distribution
+                - icmp
+                - httpV2:exemplars=true;labelsContext=source_ip,source_namespace,source_workload,destination_ip,destination_namespace,destination_workload,traffic_direction
+              enableOpenMetrics: true
+          ipam:
+            operator:
+              clusterPoolIPv4PodCIDRList:
+                - "${k3s.podCIDR}"
+        '';
   };
 }
