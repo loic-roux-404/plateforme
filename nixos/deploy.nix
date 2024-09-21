@@ -37,10 +37,16 @@ with config.k3s-paas;
   sops.secrets.password = { neededForUsers = true; };
 
   services.k3s.configPath = config.sops.templates."config.yaml".path;
+  services.k3s.manifests.cilium.source = config.sops.templates."cilium.yaml".path;
+  
+  sops.templates."cilium.yaml".content = ''
+    ${defaultCiliumConfig}
+        k8sServiceHost: "${config.sops.placeholder.internalNodeIp}"
+        k8sServicePort: "${k3s.servicePort}"
+  '';
 
   sops.templates."config.yaml".content = ''
     advertise-address: ${config.sops.placeholder.internalNodeIp}
-    node-name: "${config.networking.hostName}"
     cluster-domain: ${config.sops.placeholder.paasDomain}
     node-external-ip: "${config.sops.placeholder.nodeIp}"
     cluster-cidr: ${k3s.podCIDR}

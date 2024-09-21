@@ -46,6 +46,7 @@ in {
 
   i18n.defaultLocale = "en_US.UTF-8";
 
+  boot.kernel.sysctl."net.ipv4.ip_forward" = 1;
   networking = {
     enableIPv6 = true;
     useDHCP = true;
@@ -102,6 +103,7 @@ in {
   };
 
   systemd.services.k3s.serviceConfig.Environment = "PATH=${pkgs.tailscale}/bin:${pkgs.coreutils}/bin";
+  systemd.services.k3s.serviceConfig.ExecStartPre = "${pkgs.coreutils}/bin/sleep 60";
   services.k3s = {
     enable = lib.mkDefault true;
     role = "server";
@@ -116,105 +118,31 @@ in {
       ]
     );
     configPath = lib.mkDefault defaultK3sConfigPath;
-    manifests.certManager.content = {
+    manifests.cert-manager.content = {
       apiVersion = "helm.cattle.io/v1";
       kind = "HelmChart";
       metadata = {
-        name = "cilium";
+        name = "cert-manager";
         namespace = "kube-system";
       };
       spec = {
         name = "cert-manager";
-        namespace = "cert-manager";
+        targetNamespace = "cert-manager";
         createNamespace = true;
-        repository = "https://charts.jetstack.io";
+        repo = "https://charts.jetstack.io";
         chart = "cert-manager";
         version = cert-manager.version;
-        wait = true;
-        cleanup_on_fail = true;
-        waitForJobs = true;
-        timeout = 120;
-        valuesContent = ''
-          crds:
-            enabled = true
-        '';
+        backOffLimit = 200;
+        timeout = "180s";
+
+        set."crds.enabled" = "true";
       };
     };
-    manifests.cilium.content = {
-      apiVersion = "helm.cattle.io/v1";
-      kind = "HelmChart";
-      metadata = {
-        name = "cilium";
-        namespace = "kube-system";
-      };
-      spec = {
-        name     = "cilium";
-        namespace        = "kube-system";
-        repository       = "https://helm.cilium.io";
-        chart            = "cilium";
-        wait = true;
-        cleanup_on_fail = true;
-        version          = cilium.version;
-        valuesContent = ''
-          l2announcements:
-            enabled: true
-
-          kubeProxyReplacement: true
-
-          bpf:
-            masquerade: true
-            lbExternalClusterIP: false
-
-          gatewayAPI:
-            enabled: false
-
-          routingMode: tunnel
-
-          tunnelProtocol: vxlan
-
-          ingressController:
-            enabled: true
-            default: true
-            loadbalancerMode: dedicated
-            service:
-              name: cilium-ingress-external
-              labels:
-                k3s-paas/internal: "true"
-
-          prometheus:
-            enabled: true
-            serviceMonitor:
-              enabled: true
-
-          operator:
-            replicas: 1
-            prometheus:
-              enabled: true
-
-          hubble:
-            relay:
-              enabled: true
-            metrics:
-              enabled:
-                - dns
-                - drop
-                - tcp
-                - flow
-                - port-distribution
-                - icmp
-                - httpV2:exemplars=true;labelsContext=source_ip,source_namespace,source_workload,destination_ip,destination_namespace,destination_workload,traffic_direction
-              enableOpenMetrics: true
-
-          ipam:
-            operator:
-              clusterPoolIPv4PodCIDRList:
-                - "${k3s.podCIDR}"
-        '' + (if k3s.serviceHost != "" then ''
-          k8sServiceHost: "${k3s.serviceHost}"
+    manifests.cilium.source = lib.mkDefault (pkgs.writeText "cilium.yaml" ''
+      ${defaultCiliumConfig}
+          k8sServiceHost: "127.0.0.1"
           k8sServicePort: "${k3s.servicePort}"
-        '' else "");
-      };
-    };
+    '');
   };
 
   services.fail2ban.enable = true;
