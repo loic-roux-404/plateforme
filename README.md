@@ -1,6 +1,6 @@
 # K3s PaaS
 
-- [Documentation](https://loic-roux-404.github.io/k3s-paas/)
+- [Documentation](https://loic-roux-404.github.io/kube-paas/)
 - [Original tutorial (FR)](https://github.com/esgi-lyon/paas-tutorial/blob/main/docs/index.md)
 
 Compatibility Matrix :
@@ -184,7 +184,7 @@ nix-store --verify --check-contents --repair
 Undefine pool :
 
 ```bash
-virsh -c qemu:///system pool-undefine libvirt-pool-k3s-paas
+virsh -c qemu:///system pool-undefine libvirt-pool-kube-paas
 ```
 
 Undefine vm to avoid conflicts :
@@ -216,7 +216,7 @@ openssl passwd -salt zizou -6 zizou420!
 Set context :
 
 ```bash
-kubectl config set-cluster default --server=http://k3s-paas-master-0:6443
+kubectl config set-cluster default --server=http://localhost-0:6443
 kubectl config default test-cluster
 ```
 

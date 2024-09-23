@@ -13,6 +13,8 @@
     darwin.url = "github:LnL7/nix-darwin";
     darwin.inputs.nixpkgs.follows = "nixpkgs-stable-darwin";
 
+    nixpkgs-rke-patched.url = "github:loic-roux-404/nixpkgs";
+
     home-manager = { 
       url = "github:nix-community/home-manager/master"; 
       inputs.nixpkgs.follows = "srvos/nixpkgs";
@@ -122,7 +124,7 @@
         };
 
         # Config with small modifications needed/desired for CI with GitHub workflow
-        githubCI = self.darwinConfigurations.k3s-paas-host.override {
+        githubCI = self.darwinConfigurations.default.override {
           system = "x86_64-darwin";
           username = "runner";
           nixConfigDirectory = "/Users/runner/work/nixpkgs/nixpkgs";
@@ -141,6 +143,7 @@
         oldLegacyPackages = import inputs.nixpkgs-legacy (nixpkgsDefaults // { inherit system; });
         specialArgs = {
           inherit oldLegacyPackages;
+          nixpkgsRkePatched = import inputs.nixpkgs-rke-patched { inherit system; };
         };
 
       in {

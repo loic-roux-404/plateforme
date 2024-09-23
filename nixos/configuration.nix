@@ -3,10 +3,11 @@
   lib,
   pkgs,
   oldLegacyPackages,
+  nixpkgsRkePatched,
   ...
 }:
 
-with config.k3s-paas;
+with config.paas;
 
 let
   userSshConfig = {
@@ -54,11 +55,14 @@ in {
     nftables.enable = true;
     nftables.flushRuleset  = true;
     firewall = {
+      enable = lib.mkForce false;
       trustedInterfaces = [ "tailscale0" ];
-      allowedTCPPorts = lib.mkDefault [ 80 443 22 ];
+      allowedTCPPorts = lib.mkDefault [ 80 443 22 4240 8472 2379 ];
       allowedUDPPorts = [ config.services.tailscale.port ];
     };
   };
+
+  services.fail2ban.enable = true;
 
   programs.ssh.package = pkgs.openssh_hpn;
   services.openssh = {
@@ -102,60 +106,64 @@ in {
     ''; 
   };
 
-  systemd.services.k3s.serviceConfig.Environment = "PATH=${pkgs.tailscale}/bin:${pkgs.coreutils}/bin";
-  systemd.services.k3s.serviceConfig.ExecStartPre = "${pkgs.coreutils}/bin/sleep 60";
-  services.k3s = {
+  services.rke2 = {
     enable = lib.mkDefault true;
+    package = nixpkgsRkePatched.rke2;
     role = "server";
-    extraFlags = lib.strings.concatStringsSep " " (
-      map (service: "--disable=${service}") k3s.disableServices
-      ++ k3s.serverExtraArgs
-      ++ [
-        "--flannel-backend=none"
-        "--disable-kube-proxy"
-        "--disable-network-policy"
-        "--egress-selector-mode=disabled"
-      ]
-    );
+    cni = "cilium";
+    extraFlags = map (service: "--disable=${service}") k3s.disableServices
+      ++ k3s.serverExtraArgs;
     configPath = lib.mkDefault defaultK3sConfigPath;
-    manifests.cert-manager.content = {
-      apiVersion = "helm.cattle.io/v1";
-      kind = "HelmChart";
-      metadata = {
-        name = "cert-manager";
-        namespace = "kube-system";
-      };
-      spec = {
-        name = "cert-manager";
-        targetNamespace = "cert-manager";
-        createNamespace = true;
-        repo = "https://charts.jetstack.io";
-        chart = "cert-manager";
-        version = cert-manager.version;
-        backOffLimit = 200;
-        timeout = "180s";
-
-        set."crds.enabled" = "true";
-      };
-    };
-    manifests.cilium.source = lib.mkDefault (pkgs.writeText "cilium.yaml" ''
-      ${defaultCiliumConfig}
-          k8sServiceHost: "127.0.0.1"
-          k8sServicePort: "${k3s.servicePort}"
-    '');
   };
 
-  services.fail2ban.enable = true;
+  environment.etc."rke2/cert-manager.yaml".source = lib.mkDefault (pkgs.writeText "cert-manager.yaml" ''
+    apiVersion: helm.cattle.io/v1
+    kind: HelmChart
+    metadata:
+      name: cert-manager
+      namespace: kube-system
+    spec:
+      name: cert-manager
+      targetNamespace: cert-manager
+      createNamespace: true
+      repo: https://charts.jetstack.io
+      chart: cert-manager
+      version: ${cert-manager.version}
+      backOffLimit: 200
+      timeout: 180s
+      set:
+        crds.enabled: "true"
+  '');
 
-  security.pki.certificateFiles = certs;
+  environment.etc."rke2/cilium-config.yaml".source = lib.mkDefault (pkgs.writeText "cilium.yaml" ''
+    apiVersion: helm.cattle.io/v1
+    kind: HelmChartConfig
+    metadata:
+      name: rke2-cilium
+      namespace: kube-system
+    spec:
+      valuesContent: |-
+        ingressController:
+          enabled: true
+          default: true
+        hubble:
+          relay:
+            enabled: true
+  '');
+
+  system.userActivationScripts.installKubeManifests = ''
+    cd /var/lib/rancher/rke2/server/manifests/
+    cp -rpf ${config.environment.etc."rke2/cilium-config.yaml".target} .
+    cp -rpf ${config.environment.etc."rke2/cert-manager.yaml".target} .
+  ''; 
 
   home-manager.useGlobalPkgs = true;
   home-manager.useUserPackages = true;
-  home-manager.users.${config.k3s-paas.user.name} = {
+  home-manager.users.${config.paas.user.name} = {
     xdg.enable = true;
     home.stateVersion = "24.05";
     home.sessionVariables = {
-      KUBECONFIG = "/etc/rancher/k3s/k3s.yaml";
+      KUBECONFIG = "/etc/rancher/rke2/rke2.yaml";
     };
     home.shellAliases = {
       kubectl = "sudo -E kubectl";
@@ -189,7 +197,7 @@ in {
       dnsutils
       jq
       wget
-      k3s
+      rke2
       kubectl
       kubernetes-helm
       oldLegacyPackages.waypoint
@@ -202,6 +210,7 @@ in {
   security.sudo.configFile = ''
     Defaults  env_keep += "SYSTEMD_EDITOR"
   '';
+  security.pki.certificateFiles = certs;
   security.sudo.wheelNeedsPassword = false;
   security.sudo = {
     enable = true;
@@ -230,7 +239,7 @@ in {
         "${pkgs.iproute2}/bin/ip"
         "${pkgs.iptables}/bin/iptables"
       ];
-      groups = [ "reader" ];
+      groups = [ "wheel" ];
     }];
   };
 

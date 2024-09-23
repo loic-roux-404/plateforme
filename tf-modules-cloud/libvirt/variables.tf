@@ -26,7 +26,7 @@ variable "ssh_connection" {
 }
 
 variable "libvirt_pool_path" {
-  default = "/var/lib/libvirt-pools/k3s-paas-pool"
+  default = "/var/lib/libvirt-pools/kube-paas-pool"
 }
 
 variable "node_hostname" {

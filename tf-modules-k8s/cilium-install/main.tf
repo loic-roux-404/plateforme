@@ -45,7 +45,7 @@ resource "helm_release" "cilium" {
         loadbalancerMode = "dedicated"
         service = {
           name   = "cilium-ingress-external"
-          labels = { "k3s-paas/internal" : "true" }
+          labels = { "kube-paas/internal" : "true" }
         }
       }
       prometheus = {

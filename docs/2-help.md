@@ -23,7 +23,7 @@ We will fetch the kubeconfig in our container that embeds K3s and the cluster.
 Copy the kube config k3s with :
 
 ```sh
-docker cp node-0:/etc/rancher/k3s/k3s.yaml ~/.kube/config
+docker cp node-0:/etc/rancher/rke2/rke2.yaml ~/.kube/config
 ```
 
 If you don't have kubectl locally:

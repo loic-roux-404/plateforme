@@ -5,7 +5,7 @@
   ... 
 }:
 
-with config.k3s-paas;
+with config.paas;
 
 {
   programs.fish.enable = true;

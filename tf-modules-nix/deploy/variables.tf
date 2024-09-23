@@ -1,7 +1,7 @@
 variable "dex_client_id" {
   type      = string
   sensitive = true
-  default   = "dex-k3s-paas"
+  default   = "dex-paas-org-404"
 }
 
 variable "node_address" {
