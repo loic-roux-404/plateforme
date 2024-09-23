@@ -1,7 +1,7 @@
 { lib, pkgs, config, ... }:
 
 {
-  options.k3s-paas = {
+  options.paas = {
 
     certs = lib.mkOption {
       default = [
@@ -14,7 +14,7 @@
     dns.name = lib.mkOption {
       default = "k3s.test";
       type = lib.types.str;
-      description = "hostname for k3s-paas";
+      description = "hostname for paas";
     };
 
     dns.dest-ips = lib.mkOption {
@@ -41,17 +41,17 @@
     user.key = lib.mkOption {
       default = "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIC94/4uRn429xMGLFWZMyJWlhb5D0L3EoO8HxzN4q1ps loic@Windows-8-Phone.local";
       type = lib.types.str;
-      description = "SSH public key for k3s-paas.";
+      description = "SSH public key for paas.";
     };
 
     k3s.disableServices = lib.mkOption {
-      default = ["traefik" "metrics-server" "servicelb" ];
+      default = [ "traefik" "rke2-ingress-nginx" ];
       type = lib.types.listOf lib.types.str;
       description = "Disable k8s services eg: traefik,servicelb";
     };
 
     k3s.serverExtraArgs = lib.mkOption {
-      default = ["--disable-kube-proxy" "--egress-selector-mode=disabled"];
+      default = [];
       type = lib.types.listOf lib.types.str;
       description = "Extra arguments for k8s server";
     };
@@ -101,7 +101,7 @@
     dex.dexClientId = lib.mkOption {
       type = lib.types.str;
       description = "Client ID for Dex";
-      default = "dex-k3s-paas";
+      default = "dex-paas-org-404";
     };
 
     cert-manager.version = lib.mkOption {
@@ -114,15 +114,10 @@
       type = lib.types.path;
       description = "Default config yaml";
     };
-
-    defaultCiliumConfig = lib.mkOption {
-      type = lib.types.str;
-      description = "Default cilium config";
-    };
   };
 
-  config = with config.k3s-paas; {
-    k3s-paas.defaultK3sConfigPath = pkgs.writeText "server-config.yaml" ''
+  config = with config.paas; {
+    paas.defaultK3sConfigPath = pkgs.writeText "server-config.yaml" ''
       cluster-cidr: ${k3s.podCIDR}
       service-cidr: ${k3s.serviceCIDR}
       cluster-dns: ${k3s.clusterDns}
@@ -137,66 +132,5 @@
       kube-apiserver-arg=oidc-username-claim: email
       kube-apiserver-arg=oidc-groups-claim: groups
     '';
-
-    k3s-paas.defaultCiliumConfig = ''
-      apiVersion: helm.cattle.io/v1
-      kind: HelmChart
-      metadata:
-        name: cilium
-        namespace: kube-system
-      spec:
-        name: cilium
-        targetNamespace: cilium
-        createNamespace: true
-        repo: https://helm.cilium.io
-        chart: cilium
-        backOffLimit: 200
-        timeout: "180s"
-        version: ${cilium.version}
-        valuesContent: |-
-          l2announcements:
-            enabled: true
-          kubeProxyReplacement: true
-          bpf:
-            masquerade: true
-            lbExternalClusterIP: false
-          gatewayAPI:
-            enabled: false
-          routingMode: tunnel
-          tunnelProtocol: vxlan
-          ingressController:
-            enabled: true
-            default: true
-            loadbalancerMode: dedicated
-            service:
-              name: cilium-ingress-external
-              labels:
-                k3s-paas/internal: "true"
-          prometheus:
-            enabled: true
-            serviceMonitor:
-              enabled: true
-          operator:
-            replicas: 1
-            prometheus:
-              enabled: true
-          hubble:
-            relay:
-              enabled: true
-            metrics:
-              enabled:
-                - dns
-                - drop
-                - tcp
-                - flow
-                - port-distribution
-                - icmp
-                - httpV2:exemplars=true;labelsContext=source_ip,source_namespace,source_workload,destination_ip,destination_namespace,destination_workload,traffic_direction
-              enableOpenMetrics: true
-          ipam:
-            operator:
-              clusterPoolIPv4PodCIDRList:
-                - "${k3s.podCIDR}"
-        '';
   };
 }

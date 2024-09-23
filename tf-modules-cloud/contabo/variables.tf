@@ -18,7 +18,7 @@ variable "image_version" {
 }
 
 variable "image_url_format" {
-  default = "https://github.com/loic-roux-404/k3s-paas/releases/download/nixos-%s/nixos.qcow2"
+  default = "https://github.com/loic-roux-404/kube-paas/releases/download/nixos-%s/nixos.qcow2"
 }
 
 variable "ssh_connection" {

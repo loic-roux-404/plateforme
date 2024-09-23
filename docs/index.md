@@ -15,7 +15,7 @@
 
 ## Applying
 
-Follow the steps in [README.md](https://github.com/loic-roux-404/k3s-paas/blob/main/README.md) to apply the infrastructure.
+Follow the steps in [README.md](https://github.com/loic-roux-404/kube-paas/blob/main/README.md) to apply the infrastructure.
 
 ## Index
 

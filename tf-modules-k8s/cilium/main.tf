@@ -35,7 +35,7 @@ resource "kubernetes_manifest" "cilium_lb_ipam_external" {
       ]
       serviceSelector = {
         matchLabels = {
-          "k3s-paas/external" = "true"
+          "kube-paas/external" = "true"
           "wait-for-it"        = helm_release.cilium.metadata[0].name
         }
       }
@@ -61,7 +61,7 @@ resource "kubernetes_manifest" "cilium_lb_ipam_internal" {
       ]
       serviceSelector = {
         matchLabels = {
-          "k3s-paas/internal" = "true"
+          "kube-paas/internal" = "true"
         }
       }
     }
@@ -75,7 +75,7 @@ resource "kubernetes_service" "cilium_ingress_external" {
     namespace = helm_release.cilium.metadata[0].namespace
     labels = {
       "cilium.io/ingress" = "true"
-      "k3s-paas/external" = "true"
+      "kube-paas/external" = "true"
     }
   }
 

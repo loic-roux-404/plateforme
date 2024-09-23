@@ -16,7 +16,7 @@ variable "dex_hostname" {
 variable "dex_client_id" {
   description = "Client ID for DEX"
   type        = string
-  default     = "dex-k3s-paas"
+  default     = "dex-paas-org-404"
 }
 
 variable "dex_client_secret" {

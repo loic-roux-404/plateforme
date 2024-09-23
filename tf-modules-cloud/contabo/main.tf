@@ -5,7 +5,7 @@ resource "contabo_secret" "k3s_paas_master_trusted_key" {
 }
 
 resource "contabo_image" "k3s_paas_master_image" {
-  name        = "nixos-k3s-paas-${var.image_version}"
+  name        = "nixos-kube-paas-${var.image_version}"
   image_url   = format(var.image_url_format, var.image_version)
   os_type     = "Linux"
   version     = var.image_version

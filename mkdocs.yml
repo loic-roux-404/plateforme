@@ -10,7 +10,7 @@ plugins:
       enumerate_headings: false
       add_to_navigation: true
 
-repo_url: https://github.com/loic-roux-404/k3s-paas
+repo_url: https://github.com/loic-roux-404/kube-paas
 markdown_extensions:
   - markdown.extensions.extra
   - toc:

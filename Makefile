@@ -2,7 +2,7 @@ SHELL:=/usr/bin/env bash
 MAKEFLAGS += --no-builtin-rules --no-builtin-variables
 TF_CMD:=apply -auto-approve
 VARIANT=builder
-TESTING_X86_URL=https://github.com/loic-roux-404/k3s-paas/releases/download/nixos-testing/nixos.qcow2
+TESTING_X86_URL=https://github.com/loic-roux-404/kube-paas/releases/download/nixos-testing/nixos.qcow2
 TARGET?=initial
 
 #### Nix

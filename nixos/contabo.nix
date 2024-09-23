@@ -8,5 +8,5 @@
 
   swapDevices = [ ];
 
-  k3s-paas.certs = [];
+  paas.certs = [];
 }
