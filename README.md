@@ -1,9 +1,14 @@
-# K3s PaaS
+# Plateforme
 
-- [Documentation](https://loic-roux-404.github.io/kube-paas/)
-- [Original tutorial (FR)](https://github.com/esgi-lyon/paas-tutorial/blob/main/docs/index.md)
+<img src="./docs/images/logo.png" alt="plateforme-logo" width="150">
 
-Compatibility Matrix :
+---
+
+#### [Documentation](https://loic-roux-404.github.io/kube-paas/)
+
+#### [Original tutorial (FR)](https://github.com/esgi-lyon/paas-tutorial/blob/main/docs/index.md)
+
+## Compatibility :
 
 | OS | Status |
 | --- | --- |
@@ -87,12 +92,9 @@ cntb get instances
 
 > **Warn :** Delete `@` record for your domain on [gandi](https://admin.gandi.net/domain/)
 
-### 3. Tailscale (SSH VPN)
-**`tailscale_oauth_client`** : 
-    - `id` : Register on tailscale and get key on [admin console](https://login.tailscale.com/admin/settings/keys)
-    - `secret` : retrieve it during step above.
+### 3. Wireguard (VPN)
 
-**`tailscale_trusted_device`** : Approve your device on tailscale with **`tailscale login`** and recover its tailscale hostname.
+WIP
 
 ### 4. Github (Authentication & users)
 
@@ -114,7 +116,7 @@ cntb get instances
 make terragrunt/cloud/contabo
 ```
 
-### Network (tailscale)
+### Network
 
 ```bash
 make terragrunt/network/contabo

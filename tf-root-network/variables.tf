@@ -38,31 +38,6 @@ variable "ssh_connection" {
   sensitive = true
 }
 
-### Security
-
-variable "tailscale_oauth_client" {
-  sensitive = true
-  type = object({
-    id     = string
-    secret = string
-  })
-}
-
-variable "tailscale_tailnet" {
-  type        = string
-  description = "Like tailxxxxx.ts.net"
-  nullable    = true
-  sensitive   = true
-}
-
-variable "tailscale_expected_device" {
-  default = "localhost"
-}
-
-variable "tailscale_trusted_device" {
-  type = string
-}
-
 variable "nix_flake" {
   type = string
 }
