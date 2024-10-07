@@ -35,6 +35,9 @@ in {
   boot.kernelPackages = pkgs.linuxPackages_latest;
   boot.loader.systemd-boot.consoleMode = "auto";
 
+  boot.kernel.sysctl."net.ipv4.ip_forward" = 1;
+  boot.kernel.sysctl."net.ipv6.conf.all.forwarding" = 1;
+
   swapDevices = [ ];
   zramSwap.algorithm  = "zstd";
 
@@ -47,7 +50,6 @@ in {
 
   i18n.defaultLocale = "en_US.UTF-8";
 
-  boot.kernel.sysctl."net.ipv4.ip_forward" = 1;
   networking = {
     enableIPv6 = true;
     useDHCP = true;
@@ -55,10 +57,10 @@ in {
     nftables.enable = true;
     nftables.flushRuleset  = true;
     firewall = {
-      enable = lib.mkForce false;
-      trustedInterfaces = [ "tailscale0" ];
+      enable = true;
+      trustedInterfaces = [ "wg0" "cilium_host" "cilium_net" "cilium_vxlan" ];
       allowedTCPPorts = lib.mkDefault [ 80 443 22 4240 8472 2379 ];
-      allowedUDPPorts = [ config.services.tailscale.port ];
+      allowedUDPPorts = [ 51820 ];
     };
   };
 
@@ -68,7 +70,6 @@ in {
   services.openssh = {
     enable = true;
     settings = {
-      # Allow forwarding ports to everywhere
       GatewayPorts = "clientspecified";
       PasswordAuthentication = lib.mkForce false;
       StreamLocalBindUnlink = lib.mkForce "yes";
@@ -76,39 +77,9 @@ in {
     };
   };
 
-  services.tailscale = {
-    enable = true;
-    extraUpFlags = lib.mkDefault ["--ssh"];
-    permitCertUid = user.name;
-    useRoutingFeatures = "both";
-  };
-
-  systemd.services.tailscaled-autoconnect = lib.mkIf (config.services.tailscale.authKeyFile != null &&
-    config.services.tailscale.enable 
-  ) {
-    serviceConfig = {
-      RemainAfterExit = true;
-    };
-  };
-
-  systemd.user.services.nixos-activation = {
-    after = ["tailscaled.service" "tailscaled-autoconnect.service"];
-  };
-
-  system.userActivationScripts.checkTailscaleStatus = lib.mkIf (config.networking.hostName != "" &&
-    config.services.tailscale.enable &&
-    config.services.tailscale.authKeyFile != null
-  ) { text = ''
-      #!/usr/bin/env bash
-
-      ${pkgs.tailscale}/bin/tailscale ping -c 1 "${config.networking.hostName}" || \
-        ${pkgs.systemd}/bin/systemctl restart tailscaled-autoconnect.service;
-    ''; 
-  };
-
   services.rke2 = {
     enable = lib.mkDefault true;
-    package = nixpkgsRkePatched.rke2;
+    package = nixpkgsRkePatched.rke2_latest;
     role = "server";
     cni = "cilium";
     extraFlags = map (service: "--disable=${service}") k3s.disableServices
@@ -116,46 +87,11 @@ in {
     configPath = lib.mkDefault defaultK3sConfigPath;
   };
 
-  environment.etc."rke2/cert-manager.yaml".source = lib.mkDefault (pkgs.writeText "cert-manager.yaml" ''
-    apiVersion: helm.cattle.io/v1
-    kind: HelmChart
-    metadata:
-      name: cert-manager
-      namespace: kube-system
-    spec:
-      name: cert-manager
-      targetNamespace: cert-manager
-      createNamespace: true
-      repo: https://charts.jetstack.io
-      chart: cert-manager
-      version: ${cert-manager.version}
-      backOffLimit: 200
-      timeout: 180s
-      set:
-        crds.enabled: "true"
-  '');
-
-  environment.etc."rke2/cilium-config.yaml".source = lib.mkDefault (pkgs.writeText "cilium.yaml" ''
-    apiVersion: helm.cattle.io/v1
-    kind: HelmChartConfig
-    metadata:
-      name: rke2-cilium
-      namespace: kube-system
-    spec:
-      valuesContent: |-
-        ingressController:
-          enabled: true
-          default: true
-        hubble:
-          relay:
-            enabled: true
-  '');
-
   system.userActivationScripts.installKubeManifests = ''
-    cd /var/lib/rancher/rke2/server/manifests/
-    cp -rpf ${config.environment.etc."rke2/cilium-config.yaml".target} .
-    cp -rpf ${config.environment.etc."rke2/cert-manager.yaml".target} .
-  ''; 
+    MANIFESTS=/var/lib/rancher/rke2/server/manifests;
+    cp -rpf ${ciliumConfigPath} $MANIFESTS;
+    cp -rpf ${certManagerConfigPath} $MANIFESTS;
+  '';
 
   home-manager.useGlobalPkgs = true;
   home-manager.useUserPackages = true;
@@ -197,13 +133,15 @@ in {
       dnsutils
       jq
       wget
-      rke2
       kubectl
       kubernetes-helm
       oldLegacyPackages.waypoint
-      tailscale
       cilium-cli
+      hubble
       iptables
+      tcpdump
+      kubeshark
+      ngrep
     ];
   };
 

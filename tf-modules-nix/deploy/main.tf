@@ -36,7 +36,7 @@ resource "tls_private_key" "machine_key" {
 
 resource "local_sensitive_file" "secured_machine_key" {
   content  = tls_private_key.machine_key.public_key_openssh
-  filename = "${path.cwd}/${var.node_address}.pub"
+  filename = "${path.cwd}/${var.node_id}.pub"
 }
 
 data "external" "secured_machine_key_pub" {
@@ -52,7 +52,7 @@ resource "local_sensitive_file" "non_encrypted_secrets" {
   content  = yamlencode(merge(var.nixos_transient_secrets, {
     nodePrivateKey = tls_private_key.machine_key.private_key_openssh
   }))
-  filename = "${path.cwd}/${var.node_address}.yaml"
+  filename = "${path.cwd}/${var.node_id}.yaml"
 }
 
 locals {
@@ -69,7 +69,9 @@ resource "terraform_data" "create_transient_secrets" {
   provisioner "local-exec" {
     environment = {
       SOPS_AGE_KEY        = data.external.deploy_key.result.key
-      SOPS_AGE_RECIPIENTS = join(",", [for each in local.all_recipients : each if each != ""])
+      SOPS_AGE_RECIPIENTS = join(",", [
+        for each in local.all_recipients : each if each != ""
+      ])
     }
     interpreter = ["sops", "--encrypt", "--in-place"]
     command     = local_sensitive_file.non_encrypted_secrets.filename

@@ -24,8 +24,6 @@ with config.paas;
 
   '') dns.dest-ips}";
 
-  services.tailscale.enable = true;
-
   launchd.daemons.libvirt = {
     path = [ pkgs.gcc pkgs.qemu pkgs.dnsmasq pkgs.libvirt ];
     serviceConfig = {

@@ -7,9 +7,6 @@ locals {
   input_vars = {
     machine = local.dependencies.dependency.cloud.outputs
     paas_base_domain = local.secret_vars.paas_base_domain
-    tailscale_oauth_client = local.secret_vars.tailscale_oauth_client
-    tailscale_tailnet = local.secret_vars.tailscale_tailnet
-    tailscale_trusted_device = local.secret_vars.tailscale_trusted_device
     gandi_token = local.secret_vars.gandi_token
     nix_flake = "${local.flake_dir}#deploy-contabo"
     nix_flake_reset = "${local.flake_dir}#initial-contabo"

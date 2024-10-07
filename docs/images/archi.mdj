@@ -4024,7 +4024,7 @@
 											"top": 713,
 											"width": 51.314453125,
 											"height": 13,
-											"text": "tailscale"
+											"text": "wireguard"
 										},
 										{
 											"_type": "LabelView",
@@ -7301,7 +7301,7 @@
 					"_parent": {
 						"$ref": "AAAAAAFF+qBWK6M3Z8Y="
 					},
-					"name": "tailscale",
+					"name": "wireguard",
 					"ownedElements": [
 						{
 							"_type": "UMLCommunicationPath",

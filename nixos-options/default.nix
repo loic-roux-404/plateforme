@@ -114,10 +114,21 @@
       type = lib.types.path;
       description = "Default config yaml";
     };
+
+    certManagerConfigPath = lib.mkOption {
+      type = lib.types.path;
+      description = "Cert Manager config yaml";
+    };
+
+    ciliumConfigPath = lib.mkOption {
+      type = lib.types.path;
+      description = "Cilium config yaml";
+    }; 
   };
 
   config = with config.paas; {
     paas.defaultK3sConfigPath = pkgs.writeText "server-config.yaml" ''
+      with-node-id: true
       cluster-cidr: ${k3s.podCIDR}
       service-cidr: ${k3s.serviceCIDR}
       cluster-dns: ${k3s.clusterDns}
@@ -132,5 +143,47 @@
       kube-apiserver-arg=oidc-username-claim: email
       kube-apiserver-arg=oidc-groups-claim: groups
     '';
+
+    paas.certManagerConfigPath = lib.mkDefault (pkgs.writeText "cert-manager.yaml" ''
+      apiVersion: helm.cattle.io/v1
+      kind: HelmChart
+      metadata:
+        name: cert-manager
+        namespace: kube-system
+      spec:
+        name: cert-manager
+        targetNamespace: cert-manager
+        createNamespace: true
+        repo: https://charts.jetstack.io
+        chart: cert-manager
+        version: ${cert-manager.version}
+        backOffLimit: 200
+        timeout: 180s
+        valuesContent: |-
+          crds:
+            enabled: true
+    '');
+
+    paas.ciliumConfigPath = lib.mkDefault (pkgs.writeText "cilium.yaml" ''
+      apiVersion: helm.cattle.io/v1
+      kind: HelmChartConfig
+      metadata:
+        name: rke2-cilium
+        namespace: kube-system
+      spec:
+        valuesContent: |-
+          l2announcements:
+            enabled: true
+          ingressController:
+            enabled: true
+            default: true
+          operator:
+            replicas: 1
+            prometheus:
+              enabled: true
+          hubble:
+            relay:
+              enabled: true
+    '');
   };
 }
