@@ -48,7 +48,7 @@ module "k3s_get_config" {
   source                     = "../tf-modules-cloud/k3s-get-config"
   ssh_connection             = var.ssh_connection
   node_hostname              = module.deploy.config.node_ip
-  remote_k3s_config_location = "/etc/rancher/rke2/rke2.yaml"
+  remote_k3s_config_location = var.remote_k3s_config_location
 }
 
 output "password" {

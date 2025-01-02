@@ -6,7 +6,7 @@ locals {
   input_vars = {
     gandi_token              = ""
     machine                  = local.dependencies.dependency.cloud.outputs
-    nix_flake                = "${local.flake_dir}#deploy"
+    nix_flake                = "${local.flake_dir}#initial"
     nix_flake_reset          = "${local.flake_dir}#initial"
   }
 }
