@@ -8,6 +8,8 @@
 with config.paas;
 
 {
+  system.stateVersion = 4;
+
   programs.fish.enable = true;
   programs.bash.enable = true;
   programs.direnv.enable = true;
@@ -95,7 +97,7 @@ with config.paas;
   nix.settings = {
     trusted-users = [ "staff" "admin" "nixbld" ];
     keep-derivations = true;
-    keep-outputs = false;
+    keep-outputs = true;
     # https://github.com/NixOS/nix/issues/7273
     auto-optimise-store = false;
     extra-platforms = [ "x86_64-linux" ];

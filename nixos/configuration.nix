@@ -2,8 +2,8 @@
   config,
   lib,
   pkgs,
+  srvosPackages,
   oldLegacyPackages,
-  nixpkgsRkePatched,
   ...
 }:
 
@@ -36,7 +36,7 @@ in {
   boot.loader.systemd-boot.consoleMode = "auto";
 
   boot.kernel.sysctl."net.ipv4.ip_forward" = 1;
-  boot.kernel.sysctl."net.ipv6.conf.all.forwarding" = 1;
+  boot.kernel.sysctl."net.ipv4.conf.all.forwarding" = 1;
 
   swapDevices = [ ];
   zramSwap.algorithm  = "zstd";
@@ -50,19 +50,31 @@ in {
 
   i18n.defaultLocale = "en_US.UTF-8";
 
+  boot.kernelModules = [ "br_netfilter" "ip_conntrack" "ip_vs" "ip_vs_rr" "ip_vs_wrr" "ip_vs_sh" "overlay" ];  
+
   networking = {
-    enableIPv6 = true;
     useDHCP = true;
     useNetworkd = true;
-    nftables.enable = true;
-    nftables.flushRuleset  = true;
     firewall = {
-      enable = true;
-      trustedInterfaces = [ "wg0" "cilium_host" "cilium_net" "cilium_vxlan" ];
-      allowedTCPPorts = lib.mkDefault [ 80 443 22 4240 8472 2379 ];
-      allowedUDPPorts = [ 51820 ];
+      package = pkgs.iptables-legacy;
+      checkReversePath = lib.mkForce false;
+      enable = lib.mkForce false;
+      trustedInterfaces = [ "wg0" "cilium_host" "cilium_net" "cilium_vxlan" "cni+" ];
+      allowedTCPPorts = lib.mkDefault [ 80 443 22 4240 8472 2379 51820 ];
+      allowedUDPPorts = [ 51820 51871 8472 ];
+      extraCommands = ''
+        iptables -A INPUT -i cni+ -j ACCEPT
+        iptables -A INPUT -i cilium+ -j ACCEPT
+      '';
     };
   };
+
+  # deploy all netbird with nixos, configure dex idp with terraform network playbook
+  # Make a service doing like tailscale autoconnect netbird join ? maybe not needed as we are the control server ?
+  # Check cilium config
+  # https://docs.netbird.io/how-to/routing-peers-and-kubernetes
+
+  #services.netbird.enable = true;
 
   services.fail2ban.enable = true;
 
@@ -79,38 +91,18 @@ in {
 
   services.rke2 = {
     enable = lib.mkDefault true;
-    package = nixpkgsRkePatched.rke2_latest;
+    package = pkgs.rke2_latest;
     role = "server";
     cni = "cilium";
-    extraFlags = map (service: "--disable=${service}") k3s.disableServices
-      ++ k3s.serverExtraArgs;
+    extraFlags = map (service: "--disable=${service}") kube.disableServices
+      ++ kube.serverExtraArgs;
     configPath = lib.mkDefault defaultK3sConfigPath;
   };
 
-  system.userActivationScripts.installKubeManifests = ''
-    MANIFESTS=/var/lib/rancher/rke2/server/manifests;
-    cp -rpf ${ciliumConfigPath} $MANIFESTS;
-    cp -rpf ${certManagerConfigPath} $MANIFESTS;
-  '';
-
-  home-manager.useGlobalPkgs = true;
-  home-manager.useUserPackages = true;
-  home-manager.users.${config.paas.user.name} = {
-    xdg.enable = true;
-    home.stateVersion = "24.05";
-    home.sessionVariables = {
-      KUBECONFIG = "/etc/rancher/rke2/rke2.yaml";
-    };
-    home.shellAliases = {
-      kubectl = "sudo -E kubectl";
-      helm = "sudo -E helm";
-      k-ks = "sudo -E kubectl -n kube-system";
-    };
-    programs.bash = {
-      enable = true;
-      historyControl = [ "ignoredups" "ignorespace" ];
-    };
-  };
+  systemd.tmpfiles.rules = builtins.attrValues (
+    builtins.mapAttrs (name: manifest: 
+    "C ${manifest.targetDir}/${name} 0640 - - - ${pkgs.writeText name manifest.content}") manifests
+  );
 
   programs.vim.defaultEditor = true;
   environment = {
@@ -118,6 +110,10 @@ in {
     variables = {
       PAGER = "less -FirSwX";
       SYSTEMD_EDITOR = "vim";
+      KUBECONFIG = config.paas.kube.config;
+    };
+    shellAliases = {
+      k-ks = "kubectl -n kube-system";
     };
     systemPackages = with pkgs; [
       glibcLocales
@@ -133,16 +129,57 @@ in {
       dnsutils
       jq
       wget
-      kubectl
+      srvosPackages.kubectl
       kubernetes-helm
       oldLegacyPackages.waypoint
       cilium-cli
       hubble
       iptables
       tcpdump
-      kubeshark
       ngrep
     ];
+  };
+
+  users = {
+    defaultUserShell = pkgs.bashInteractive;
+    allowNoPasswordLogin = true;
+    groups.readers = {};
+    users = {
+      reader = {
+        hashedPasswordFile = lib.mkDefault "${(pkgs.writeText "password" user.defaultPassword)}";
+        isNormalUser = true;
+        extraGroups = [ "readers" ];
+        openssh = userSshConfig;
+      };
+      ${user.name} = {
+        hashedPasswordFile = lib.mkDefault "${(pkgs.writeText "password" user.defaultPassword)}";
+        isNormalUser = true;
+        extraGroups = [ "wheel" "networkmanager" ];
+        openssh = userSshConfig;
+      };
+      root = {
+        hashedPasswordFile = lib.mkDefault "${(pkgs.writeText "root-password" user.defaultPassword)}";
+      };
+    };
+  };
+
+  home-manager.useGlobalPkgs = true;
+  home-manager.useUserPackages = true;
+  home-manager.users.${config.paas.user.name} = {
+    xdg.enable = true;
+    home.stateVersion = "24.05";
+    home.sessionVariables = {
+      KUBECONFIG = config.paas.kube.config;
+    };
+    home.shellAliases = {
+      kubectl = "sudo -E kubectl";
+      helm = "sudo -E helm";
+      k-ks = "sudo -E kubectl -n kube-system";
+    };
+    programs.bash = {
+      enable = true;
+      historyControl = [ "ignoredups" "ignorespace" ];
+    };
   };
 
   security.sudo.configFile = ''
@@ -179,29 +216,6 @@ in {
       ];
       groups = [ "wheel" ];
     }];
-  };
-
-  users = {
-    defaultUserShell = pkgs.bashInteractive;
-    allowNoPasswordLogin = true;
-    groups.readers = {};
-    users = {
-      reader = {
-        hashedPasswordFile = lib.mkDefault "${(pkgs.writeText "password" user.defaultPassword)}";
-        isNormalUser = true;
-        extraGroups = [ "readers" ];
-        openssh = userSshConfig;
-      };
-      ${user.name} = {
-        hashedPasswordFile = lib.mkDefault "${(pkgs.writeText "password" user.defaultPassword)}";
-        isNormalUser = true;
-        extraGroups = [ "wheel" "networkmanager" ];
-        openssh = userSshConfig;
-      };
-      root = {
-        hashedPasswordFile = lib.mkDefault "${(pkgs.writeText "root-password" user.defaultPassword)}";
-      };
-    };
   };
 
   nixpkgs = {

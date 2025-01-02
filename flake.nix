@@ -3,17 +3,15 @@
 
   inputs = {
     # Package sets
-    nixpkgs.url = "github:NixOS/nixpkgs/24.05";
+    nixpkgs.url = "github:NixOS/nixpkgs/24.11-pre";
     nixpkgs-legacy.url = "github:NixOS/nixpkgs/23.11";
-    nixpkgs-stable-darwin.url = "github:NixOS/nixpkgs/nixpkgs-24.05-darwin";
+    nixpkgs-stable-darwin.url = "github:NixOS/nixpkgs/nixpkgs-24.11-darwin";
     srvos.url = "github:numtide/srvos";
     nixpkgs-srvos.follows = "srvos/nixpkgs";
 
     # Environment/system management
     darwin.url = "github:LnL7/nix-darwin";
     darwin.inputs.nixpkgs.follows = "nixpkgs-stable-darwin";
-
-    nixpkgs-rke-patched.url = "github:crumohr/nixpkgs";
 
     home-manager = { 
       url = "github:nix-community/home-manager/master"; 
@@ -141,11 +139,10 @@
       packages.nixosConfigurations = let
         system = builtins.replaceStrings ["darwin"] ["linux"] baseSystem;
         oldLegacyPackages = import inputs.nixpkgs-legacy (nixpkgsDefaults // { inherit system; });
-        specialArgs = {
-          inherit oldLegacyPackages;
-          nixpkgsRkePatched = import inputs.nixpkgs-rke-patched { inherit system; };
+        srvosPackages = import inputs.nixpkgs-srvos (nixpkgsDefaults // { inherit system; });
+        specialArgs = { 
+          inherit oldLegacyPackages srvosPackages; 
         };
-
       in {
         ## Libvirt configurations
 

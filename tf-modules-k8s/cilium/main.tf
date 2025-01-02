@@ -52,7 +52,7 @@ resource "kubernetes_manifest" "cilium_lb_ipam_internal" {
       name = "cilium-lb-ipam-internal"
     }
     spec = {
-      blocks = length(var.external_blocks) > 0 ? var.internal_blocks : [
+      blocks = length(var.internal_blocks) > 0 ? var.internal_blocks : [
         {
           cidr  = null
           start = local.node_internal_ip
