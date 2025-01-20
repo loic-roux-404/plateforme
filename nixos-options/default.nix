@@ -6,7 +6,7 @@ let
       targetDir = lib.mkOption {
         type = lib.types.nonEmptyStr;
         example = lib.literalExpression "manifest.yaml";
-        default = "/var/lib/rancher/k3s/server/manifests";
+        default = "/var/lib/rancher/rke2/server/manifests";
         description = ''
           Name of the symlink (relative to {file}).
           Defaults to the attribute name.
@@ -66,7 +66,7 @@ let
     kube.config = lib.mkOption {
       type = lib.types.path;
       description = "Kubeconfig path";
-      default = "/etc/rancher/k3s/k3s.yaml";
+      default = "/etc/rancher/rke2/rke2.yaml";
     };
 
     kube.disableServices = lib.mkOption {
@@ -76,7 +76,7 @@ let
     };
 
     kube.serverExtraArgs = lib.mkOption {
-      default = [ "--disable-kube-proxy" "--flannel-backend=none" "--disable-network-policy" ];
+      default = [ ];
       type = lib.types.listOf lib.types.str;
       description = "Extra arguments for k8s server (ex --flannel-backend=none --disable-network-policy)";
     };
@@ -105,12 +105,6 @@ let
       default = "10.43.0.0/16";
     };
 
-    kube.clusterDns = lib.mkOption {
-      type = lib.types.str;
-      description = "Cluster DNS";
-      default = "10.43.0.10";
-    };
-
     kube.serviceIp = lib.mkOption {
       type = lib.types.str;
       description = "Service IP";
@@ -132,13 +126,7 @@ let
     cilium.version = lib.mkOption {
       type = lib.types.str;
       description = "Cilium version";
-      default = "1.16.4";
-    };
-
-    cilium.values-source = lib.mkOption {
-      type = lib.types.path;
-      description = "Cilium values source";
-      default = null;
+      default = "1.16.5";
     };
 
     dex.dexClientId = lib.mkOption {
@@ -172,9 +160,6 @@ let
       node-external-ip: "192.168.205.8"
       cluster-cidr: ${kube.podCIDR}
       service-cidr: ${kube.serviceCIDR}
-      cluster-dns: ${kube.clusterDns}
-      node-taint:
-        - "CriticalAddonsOnly=true:NoExecute"
       tls-san:
         - ${kube.serviceHost}
         - ${kube.serviceIp}
@@ -263,66 +248,70 @@ let
             protocol: TCP
     '';
 
-    paas.cilium.values-source = pkgs.writeText "cilium-values.yaml" ''
-      kubeProxyReplacement: true
-      k8sServiceHost: "192.168.205.8"
-      k8sServicePort: "${kube.servicePort}"
-      autoDirectNodeRoutes: true
-      routingMode: native
-      l7Proxy: false
-      #encryption:
-      #  enabled: true
-      #  type: wireguard
-      #  nodeEncryption: true
-      #ipv6:
-        #enabled: true
-      ipv4NativeRoutingCIDR: "${kube.podCIDR}"
-      #ipv6NativeRoutingCIDR: "${kube.podIpv6CIDR}"
-      ipam:
-        mode: kubernetes
-        operator:
-          clusterPoolIPv4PodCIDRList:
-            - "${kube.podCIDR}"
-          #clusterPoolIPv6PodCIDRList:
-            #- "${kube.podIpv6CIDR}"
-      bpf:
-        masquerade: true
-        lbExternalClusterIP: false
-      l2announcements:
-        enabled: true
-      #loadBalancer:
-      #  acceleration: native
-      #  mode: hybrid
-      operator:
-        replicas: 1
-        prometheus:
-          enabled: true
-      gatewayAPI:
-        enabled: false
-      ingressController:
-        enabled: true
-        default: true
-        loadbalancerMode: dedicated
-        service:
-          name: cilium-ingress-external
-          labels:
-            kube-paas/external: "true"
-      prometheus:
-        enabled: true
-      hubble:
-        enabled: true
-        relay:
-          enabled: true
-        metrics:
-          enabled:
-            - dns
-            - drop
-            - tcp
-            - flow
-            - port-distribution
-            - icmp
-            - httpV2:exemplars=true;labelsContext=source_ip,source_namespace,source_workload,destination_ip,destination_namespace,destination_workload,traffic_direction
-          enableOpenMetrics: true
-      '';
+    paas.manifests."cilium-config.yaml".content = ''
+      apiVersion: helm.cattle.io/v1
+      kind: HelmChartConfig
+      metadata:
+        name: rke2-cilium
+        namespace: kube-system
+      spec:
+        valuesContent: |-
+          kubeProxyReplacement: true
+          k8sServiceHost: "192.168.205.8"
+          k8sServicePort: "${kube.servicePort}"
+          #encryption:
+          #  enabled: true
+          #  type: wireguard
+          #  nodeEncryption: true
+          #ipv6:
+            #enabled: true
+          ipv4NativeRoutingCIDR: "${kube.podCIDR}"
+          #ipv6NativeRoutingCIDR: "${kube.podIpv6CIDR}"
+          ipam:
+            mode: kubernetes
+            operator:
+              clusterPoolIPv4PodCIDRList:
+                - "${kube.podCIDR}"
+              #clusterPoolIPv6PodCIDRList:
+                #- "${kube.podIpv6CIDR}"
+          bpf:
+            masquerade: true
+          l2announcements:
+            enabled: true
+          #loadBalancer:
+          #  l7:
+          #    backend: envoy
+            # acceleration: native
+            # mode: hybrid
+          operator:
+            replicas: 1
+            prometheus:
+              enabled: true
+          envoy:
+            enabled: true
+          ingressController:
+            enabled: true
+            default: true
+            service:
+              name: cilium-ingress-external
+              labels:
+                kube-paas/external: "true"
+          prometheus:
+            enabled: true
+          hubble:
+            enabled: true
+            relay:
+              enabled: true
+            metrics:
+              enabled:
+                - dns
+                - drop
+                - tcp
+                - flow
+                - port-distribution
+                - icmp
+                - httpV2:exemplars=true;labelsContext=source_ip,source_namespace,source_workload,destination_ip,destination_namespace,destination_workload,traffic_direction
+              enableOpenMetrics: true
+    '';
   };
 }

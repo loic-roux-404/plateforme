@@ -55,17 +55,9 @@ in {
   networking = {
     useDHCP = true;
     useNetworkd = true;
+    nftables.enable = true;
     firewall = {
-      package = pkgs.iptables-legacy;
-      checkReversePath = lib.mkForce false;
       enable = lib.mkForce false;
-      trustedInterfaces = [ "wg0" "cilium_host" "cilium_net" "cilium_vxlan" "cni+" ];
-      allowedTCPPorts = lib.mkDefault [ 80 443 22 4240 8472 2379 51820 ];
-      allowedUDPPorts = [ 51820 51871 8472 ];
-      extraCommands = ''
-        iptables -A INPUT -i cni+ -j ACCEPT
-        iptables -A INPUT -i cilium+ -j ACCEPT
-      '';
     };
   };
 

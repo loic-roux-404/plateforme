@@ -4,7 +4,7 @@ resource "terraform_data" "wait_ssh" {
     user    = var.ssh_connection.user
     host    = var.node_hostname
     private_key = file(pathexpand(var.ssh_connection.private_key))
-    timeout = "3m"
+    timeout = "4m"
   }
 
   provisioner "remote-exec" {
