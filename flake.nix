@@ -10,7 +10,7 @@
     nixpkgs-srvos.follows = "srvos/nixpkgs";
 
     # Environment/system management
-    darwin.url = "github:LnL7/nix-darwin";
+    darwin.url = "github:LnL7/nix-darwin/nix-darwin-24.11";
     darwin.inputs.nixpkgs.follows = "nixpkgs-stable-darwin";
 
     home-manager = { 
@@ -198,8 +198,8 @@
             packages = attrValues {
               inherit (pkgs) bashInteractive grpcurl jq coreutils e2fsprogs
               docker-client docker-credential-helpers 
-              pebble cntb kubernetes-helm nil nix-tree;
-              inherit (stablePkgs) nix terraform terragrunt nixos-rebuild
+              pebble cntb kubernetes-helm nix nil nix-tree nixos-rebuild;
+              inherit (stablePkgs) terraform terragrunt
               sops ssh-to-age libvirt qemu;
               inherit (oldLegacyPackages) waypoint;
             };

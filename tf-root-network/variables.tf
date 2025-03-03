@@ -15,7 +15,7 @@ variable "gandi_token" {
 
 variable "paas_base_domain" {
   type    = string
-  default = "k3s.test"
+  default = "kube.test"
 }
 
 variable "admin_password" {
@@ -47,5 +47,5 @@ variable "nix_flake_reset" {
 }
 
 variable "remote_k3s_config_location" {
-  default = "/etc/rancher/k3s/k3s.yaml"
+  default = "/etc/rancher/rke2/rke2.yaml"
 }
