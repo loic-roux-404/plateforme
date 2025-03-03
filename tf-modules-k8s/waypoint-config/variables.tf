@@ -1,7 +1,7 @@
 variable "paas_hostname" {
   description = "Hostname for paas"
   type        = string
-  default     = "paas.k3s.test"
+  default     = "paas.kube.test"
 }
 
 variable "paas_token" {

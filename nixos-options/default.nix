@@ -158,6 +158,7 @@ let
       with-node-id: true
       advertise-address: "192.168.205.8"
       node-external-ip: "192.168.205.8"
+      disable-kube-proxy: "true"
       cluster-cidr: ${kube.podCIDR}
       service-cidr: ${kube.serviceCIDR}
       tls-san:
@@ -292,6 +293,7 @@ let
           ingressController:
             enabled: true
             default: true
+            loadbalancerMode: shared
             service:
               name: cilium-ingress-external
               labels:

@@ -53,11 +53,28 @@ in {
   boot.kernelModules = [ "br_netfilter" "ip_conntrack" "ip_vs" "ip_vs_rr" "ip_vs_wrr" "ip_vs_sh" "overlay" ];  
 
   networking = {
-    useDHCP = true;
     useNetworkd = true;
-    nftables.enable = true;
+    nameservers = [ 
+      "1.1.1.1" "1.0.0.1" 
+      "2606:4700:4700::1111" 
+      "2606:4700:4700::1001" 
+      "8.8.8.8" "8.8.4.4" 
+      "001:4860:4860::8844" 
+      "2001:4860:4860::8888"
+    ];
+    interfaces.enp0s9.useDHCP = true;
     firewall = {
-      enable = lib.mkForce false;
+      interfaces.enp0s9 = {
+        allowedTCPPorts = lib.mkDefault [ 80 443 22 4240 8472 2379 ];
+      };
+      checkReversePath = "loose";
+      trustedInterfaces = [
+        "cilium_host"
+        "cilium_net"
+        "cilium_vxlan"
+        "lxc+"
+        "lxc*"
+      ];
     };
   };
 
