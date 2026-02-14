@@ -140,7 +140,6 @@ in {
       wget
       srvosPackages.kubectl
       kubernetes-helm
-      oldLegacyPackages.waypoint
       cilium-cli
       hubble
       iptables
