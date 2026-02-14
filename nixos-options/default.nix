@@ -266,36 +266,23 @@ let
           kubeProxyReplacement: true
           k8sServiceHost: "${kube.addr}"
           k8sServicePort: "${kube.servicePort}"
-          #encryption:
-          #  enabled: true
-          #  type: wireguard
-          #  nodeEncryption: true
-          #ipv6:
-            #enabled: true
           ipv4NativeRoutingCIDR: "${kube.podCIDR}"
-          #ipv6NativeRoutingCIDR: "${kube.podIpv6CIDR}"
           ipam:
             mode: kubernetes
             operator:
               clusterPoolIPv4PodCIDRList:
                 - "${kube.podCIDR}"
-              #clusterPoolIPv6PodCIDRList:
-                #- "${kube.podIpv6CIDR}"
           bpf:
             masquerade: true
+            hostLegacyRouting: false
           l2announcements:
             enabled: true
-          #loadBalancer:
-          #  l7:
-          #    backend: envoy
-            # acceleration: native
-            # mode: hybrid
           operator:
             replicas: 1
             prometheus:
               enabled: true
-          # envoy:
-          #   enabled: true
+          envoy:
+            enabled: true
           ingressController:
             enabled: true
             default: true

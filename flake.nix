@@ -201,7 +201,6 @@
               pebble cntb kubernetes-helm nix nil nix-tree nixos-rebuild;
               inherit (stablePkgs) terraform terragrunt
               sops ssh-to-age libvirt qemu;
-              inherit (oldLegacyPackages) waypoint;
             };
             shellHook = ''
               export DOCKER_HOST=tcp://127.0.0.1:2375
@@ -229,7 +228,7 @@
             shellHook = ''
               set -e
               nix build .#darwinConfigurations.''${VARIANT:-builder}.system
-              ./result/sw/bin/darwin-rebuild switch --flake .#''${VARIANT:-builder}
+              sudo ./result/sw/bin/darwin-rebuild switch --flake .#''${VARIANT:-builder}
             '';
           };
         };

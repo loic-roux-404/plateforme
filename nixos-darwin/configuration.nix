@@ -18,13 +18,13 @@ with config.paas;
     enable = true;
     addresses = builtins.listToAttrs (builtins.map(value: {
       name = ".${dns.name}"; inherit value; 
-    }) dns.dest-ips + [kube.addr]);
+    }) (dns.dest-ips ++ [kube.addr]));
   };
 
   environment.etc."resolver/${dns.name}".text = "${lib.concatMapStrings (destIp: ''
     nameserver ${destIp}
 
-  '') dns.dest-ips + [kube.addr]}";
+  '') (dns.dest-ips ++ [kube.addr])}";
 
   launchd.daemons.libvirt = {
     path = [ pkgs.gcc pkgs.qemu pkgs.dnsmasq pkgs.libvirt ];

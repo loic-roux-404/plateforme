@@ -59,27 +59,6 @@ module "dex" {
   cert_manager_cluster_issuer = module.cert_manager.issuer
 }
 
-module "paas" {
-  depends_on                   = [module.dex.dex_ingress]
-  source                       = "../tf-modules-k8s/waypoint"
-  paas_hostname                = local.paas_hostname
-  k8s_ingress_class            = var.k8s_ingress_class
-  waypoint_extra_volume_mounts = module.cert_manager.root_ca_config_map_volume_mounts
-  waypoint_extra_volumes       = module.cert_manager.root_ca_config_map_volume
-  cert_manager_cluster_issuer  = module.cert_manager.issuer
-}
-
-module "paas_config" {
-  source                   = "../tf-modules-k8s/waypoint-config"
-  paas_hostname            = local.paas_hostname
-  paas_token               = module.paas.token
-  dex_hostname             = local.dex_hostname
-  dex_client_secret        = module.dex.dex_client_secret
-  github_team              = var.github_team
-  tls_skip_verify          = var.cert_manager_letsencrypt_env == "local"
-  internal_acme_ca_content = length(data.http.paas_internal_acme_ca) > 0 ? data.http.paas_internal_acme_ca[0].response_body : null
-}
-
 output "paas_token" {
   value     = module.paas.token
   sensitive = true

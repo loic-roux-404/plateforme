@@ -11,7 +11,7 @@ BUILDER_EXEC:=
 NIXOS_CONFIG:=qcow
 
 ifeq ($(shell uname -s),Darwin)
-   BUILDER_EXEC:=NIX_CONF_DIR=$(PWD)/bootstrap nix develop .\#builder --command
+   BUILDER_EXEC:=nix --extra-experimental-features "nix-command flakes" develop .\#builder --command
 endif
 
 bootstrap:
