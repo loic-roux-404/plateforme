@@ -71,7 +71,7 @@ variable "paas_namespace" {
 }
 
 variable "k8s_ingress_class" {
-  default     = "cilium"
+  default     = "nginx"
   description = "ingress class"
 }
 

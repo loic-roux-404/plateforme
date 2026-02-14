@@ -70,7 +70,7 @@ let
     };
 
     kube.disableServices = lib.mkOption {
-      default = [ "traefik" "servicelb" "rke2-ingress-nginx" ];
+      default = [];
       type = lib.types.listOf lib.types.str;
       description = "Disable k8s services eg: traefik,servicelb";
     };
@@ -129,12 +129,6 @@ let
       default = "6443";
     };
 
-    cilium.version = lib.mkOption {
-      type = lib.types.str;
-      description = "Cilium version";
-      default = "1.18.7";
-    };
-
     dex.dexClientId = lib.mkOption {
       type = lib.types.str;
       description = "Client ID for Dex";
@@ -164,7 +158,6 @@ let
       with-node-id: true
       advertise-address: ${kube.addr}
       node-external-ip: ${kube.addr}
-      disable-kube-proxy: "true"
       cluster-cidr: ${kube.podCIDR}
       service-cidr: ${kube.serviceCIDR}
       tls-san:
@@ -172,141 +165,32 @@ let
         - ${kube.serviceIp}
         - ${kube.addr}
         - ${config.networking.hostName or "localhost"}
-      # kube-apiserver-arg=authorization-mode: Node,RBAC
-      # kube-apiserver-arg=oidc-issuer-url: https://dex.${dns.name}
-      # kube-apiserver-arg=oidc-client-id: ${dex.dexClientId}
-      # kube-apiserver-arg=oidc-username-claim: email
-      # kube-apiserver-arg=oidc-groups-claim: groups
+      kube-apiserver-arg=authorization-mode: Node,RBAC
+      kube-apiserver-arg=oidc-issuer-url: https://dex.${dns.name}
+      kube-apiserver-arg=oidc-client-id: ${dex.dexClientId}
+      kube-apiserver-arg=oidc-username-claim: email
+      kube-apiserver-arg=oidc-groups-claim: groups
     '';
 
-    # paas.manifests."cert-manager.yaml".content = ''
-    #   apiVersion: helm.cattle.io/v1
-    #   kind: HelmChart
-    #   metadata:
-    #     name: cert-manager
-    #     namespace: kube-system
-    #   spec:
-    #     name: cert-manager
-    #     targetNamespace: cert-manager
-    #     createNamespace: true
-    #     repo: https://charts.jetstack.io
-    #     chart: cert-manager
-    #     version: ${cert-manager.version}
-    #     backOffLimit: 200
-    #     timeout: 180s
-    #     valuesContent: |-
-    #       crds:
-    #         enabled: true
-    # '';
-
-    paas.manifests."external-load-balancer-pool.yaml".content = ''
-      apiVersion: cilium.io/v2alpha1
-      kind: CiliumLoadBalancerIPPool
-      metadata:
-        name: cilium-lb-ipam-external
-      spec:
-        blocks:
-          - start: ${kube.addr}
-            stop: ${kube.addr}
-        serviceSelector:
-          matchLabels:
-            "kube-paas/external": "true"
-      '';
-
-    paas.manifests."internal-load-balancer-pool.yaml".content = ''
-      apiVersion: cilium.io/v2alpha1
-      kind: CiliumLoadBalancerIPPool
-      metadata:
-        name: cilium-lb-ipam-internal
-      spec:
-        blocks:
-          - cidr: 10.0.0.1/24
-        serviceSelector:
-          matchLabels:
-            "kube-paas/internal": "true"
-    '';
-
-    paas.manifests."cilium-ingress-internal.yaml".content = ''
-      apiVersion: v1
-      kind: Service
-      metadata:
-        name: cilium-ingress-internal
-        namespace: kube-system
-        labels:
-          "cilium.io/ingress": "true"
-          "kube-paas/internal": "true"
-      spec:
-        type: LoadBalancer
-        allocateLoadBalancerNodePorts: true
-        externalTrafficPolicy: Cluster
-        internalTrafficPolicy: Cluster
-        sessionAffinity: None
-        ipFamilyPolicy: SingleStack
-        ipFamilies:
-          - IPv4
-        ports:
-          - name: http
-            port: 80
-            targetPort: 80
-            protocol: TCP
-          - name: https
-            port: 443
-            targetPort: 443
-            protocol: TCP
-    '';
-
-    paas.manifests."cilium-config.yaml".content = ''
+    paas.manifests."cert-manager.yaml".content = ''
       apiVersion: helm.cattle.io/v1
-      kind: HelmChartConfig
+      kind: HelmChart
       metadata:
-        name: rke2-cilium
+        name: cert-manager
         namespace: kube-system
       spec:
+        name: cert-manager
+        targetNamespace: cert-manager
+        createNamespace: true
+        repo: https://charts.jetstack.io
+        chart: cert-manager
+        version: ${cert-manager.version}
+        backOffLimit: 200
+        timeout: 180s
         valuesContent: |-
-          kubeProxyReplacement: true
-          k8sServiceHost: "${kube.addr}"
-          k8sServicePort: "${kube.servicePort}"
-          ipv4NativeRoutingCIDR: "${kube.podCIDR}"
-          ipam:
-            mode: kubernetes
-            operator:
-              clusterPoolIPv4PodCIDRList:
-                - "${kube.podCIDR}"
-          bpf:
-            masquerade: true
-            hostLegacyRouting: false
-          l2announcements:
+          crds:
             enabled: true
-          operator:
-            replicas: 1
-            prometheus:
-              enabled: true
-          envoy:
-            enabled: true
-          ingressController:
-            enabled: true
-            default: true
-            loadbalancerMode: shared
-            service:
-              name: cilium-ingress-external
-              labels:
-                kube-paas/external: "true"
-          prometheus:
-            enabled: true
-          hubble:
-            enabled: true
-            relay:
-              enabled: true
-            metrics:
-              enabled:
-                - dns
-                - drop
-                - tcp
-                - flow
-                - port-distribution
-                - icmp
-                - httpV2:exemplars=true;labelsContext=source_ip,source_namespace,source_workload,destination_ip,destination_namespace,destination_workload,traffic_direction
-              enableOpenMetrics: true
     '';
+
   };
 }

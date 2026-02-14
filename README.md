@@ -270,9 +270,3 @@ On macOS, dnsmasq starts in background, you might need to force a refresh of the
 ```bash
 sudo dscacheutil -flushcache; sudo killall -HUP mDNSResponder
 ```
-
-#### Cilium secrets namespace stuck in Terminating
-
-```bash
-kubectl delete apiservice v1beta1.metrics.k8s.io
-```

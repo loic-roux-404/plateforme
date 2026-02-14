@@ -69,9 +69,6 @@ in {
       };
       checkReversePath = "loose";
       trustedInterfaces = [
-        "cilium_host"
-        "cilium_net"
-        "cilium_vxlan"
         "lxc+"
         "lxc*"
       ];
@@ -80,7 +77,6 @@ in {
 
   # deploy all netbird with nixos, configure dex idp with terraform network playbook
   # Make a service doing like tailscale autoconnect netbird join ? maybe not needed as we are the control server ?
-  # Check cilium config
   # https://docs.netbird.io/how-to/routing-peers-and-kubernetes
 
   #services.netbird.enable = true;
@@ -102,7 +98,7 @@ in {
     enable = lib.mkDefault true;
     package = pkgs.rke2_latest;
     role = "server";
-    cni = "cilium";
+    cni = "canal";
     extraFlags = map (service: "--disable=${service}") kube.disableServices
       ++ kube.serverExtraArgs;
     configPath = lib.mkDefault defaultKubeDistribConfigPath;
@@ -140,7 +136,6 @@ in {
       wget
       srvosPackages.kubectl
       kubernetes-helm
-      cilium-cli
       hubble
       iptables
       tcpdump
