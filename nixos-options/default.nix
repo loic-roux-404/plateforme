@@ -40,7 +40,7 @@ let
     };
 
     dns.dest-ips = lib.mkOption {
-      default = [ "127.0.0.1" "192.168.205.8" ];
+      default = [ "127.0.0.1" ];
       type = lib.types.listOf lib.types.str;
       description = "Target IP address for dns.name (only in local dev)";
     };
@@ -111,6 +111,12 @@ let
       default = "10.43.0.1";
     };
 
+    kube.addr = lib.mkOption {
+      default = "192.168.205.2";
+      type = lib.types.str;
+      description = "K8s service host";
+    };
+
     kube.serviceHost = lib.mkOption {
       default = "127.0.0.1";
       type = lib.types.str;
@@ -126,7 +132,7 @@ let
     cilium.version = lib.mkOption {
       type = lib.types.str;
       description = "Cilium version";
-      default = "1.16.5";
+      default = "1.18.7";
     };
 
     dex.dexClientId = lib.mkOption {
@@ -141,7 +147,7 @@ let
       default = "1.15.2";
     };
 
-    defaultK3sConfigPath = lib.mkOption {
+    defaultKubeDistribConfigPath = lib.mkOption {
       type = lib.types.path;
       description = "Default config yaml";
     };
@@ -154,44 +160,44 @@ let
   };
 
   config = with config.paas; {
-    paas.defaultK3sConfigPath = pkgs.writeText "server-config.yaml" ''
+    paas.defaultKubeDistribConfigPath = pkgs.writeText "server-config.yaml" ''
       with-node-id: true
-      advertise-address: "192.168.205.8"
-      node-external-ip: "192.168.205.8"
+      advertise-address: ${kube.addr}
+      node-external-ip: ${kube.addr}
       disable-kube-proxy: "true"
       cluster-cidr: ${kube.podCIDR}
       service-cidr: ${kube.serviceCIDR}
       tls-san:
         - ${kube.serviceHost}
         - ${kube.serviceIp}
-        - 192.168.205.8
+        - ${kube.addr}
         - ${config.networking.hostName or "localhost"}
-      kube-apiserver-arg=authorization-mode: Node,RBAC
-      kube-apiserver-arg=oidc-issuer-url: https://dex.${dns.name}
-      kube-apiserver-arg=oidc-client-id: ${dex.dexClientId}
-      kube-apiserver-arg=oidc-username-claim: email
-      kube-apiserver-arg=oidc-groups-claim: groups
+      # kube-apiserver-arg=authorization-mode: Node,RBAC
+      # kube-apiserver-arg=oidc-issuer-url: https://dex.${dns.name}
+      # kube-apiserver-arg=oidc-client-id: ${dex.dexClientId}
+      # kube-apiserver-arg=oidc-username-claim: email
+      # kube-apiserver-arg=oidc-groups-claim: groups
     '';
 
-    paas.manifests."cert-manager.yaml".content = ''
-      apiVersion: helm.cattle.io/v1
-      kind: HelmChart
-      metadata:
-        name: cert-manager
-        namespace: kube-system
-      spec:
-        name: cert-manager
-        targetNamespace: cert-manager
-        createNamespace: true
-        repo: https://charts.jetstack.io
-        chart: cert-manager
-        version: ${cert-manager.version}
-        backOffLimit: 200
-        timeout: 180s
-        valuesContent: |-
-          crds:
-            enabled: true
-    '';
+    # paas.manifests."cert-manager.yaml".content = ''
+    #   apiVersion: helm.cattle.io/v1
+    #   kind: HelmChart
+    #   metadata:
+    #     name: cert-manager
+    #     namespace: kube-system
+    #   spec:
+    #     name: cert-manager
+    #     targetNamespace: cert-manager
+    #     createNamespace: true
+    #     repo: https://charts.jetstack.io
+    #     chart: cert-manager
+    #     version: ${cert-manager.version}
+    #     backOffLimit: 200
+    #     timeout: 180s
+    #     valuesContent: |-
+    #       crds:
+    #         enabled: true
+    # '';
 
     paas.manifests."external-load-balancer-pool.yaml".content = ''
       apiVersion: cilium.io/v2alpha1
@@ -200,8 +206,8 @@ let
         name: cilium-lb-ipam-external
       spec:
         blocks:
-          - start: 192.168.205.8
-            stop: 192.168.205.8
+          - start: ${kube.addr}
+            stop: ${kube.addr}
         serviceSelector:
           matchLabels:
             "kube-paas/external": "true"
@@ -258,7 +264,7 @@ let
       spec:
         valuesContent: |-
           kubeProxyReplacement: true
-          k8sServiceHost: "192.168.205.8"
+          k8sServiceHost: "${kube.addr}"
           k8sServicePort: "${kube.servicePort}"
           #encryption:
           #  enabled: true
@@ -288,8 +294,8 @@ let
             replicas: 1
             prometheus:
               enabled: true
-          envoy:
-            enabled: true
+          # envoy:
+          #   enabled: true
           ingressController:
             enabled: true
             default: true

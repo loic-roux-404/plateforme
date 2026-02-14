@@ -105,7 +105,7 @@ in {
     cni = "cilium";
     extraFlags = map (service: "--disable=${service}") kube.disableServices
       ++ kube.serverExtraArgs;
-    configPath = lib.mkDefault defaultK3sConfigPath;
+    configPath = lib.mkDefault defaultKubeDistribConfigPath;
   };
 
   systemd.tmpfiles.rules = builtins.attrValues (

@@ -18,13 +18,13 @@ with config.paas;
     enable = true;
     addresses = builtins.listToAttrs (builtins.map(value: {
       name = ".${dns.name}"; inherit value; 
-    }) dns.dest-ips);
+    }) dns.dest-ips + [kube.addr]);
   };
 
   environment.etc."resolver/${dns.name}".text = "${lib.concatMapStrings (destIp: ''
     nameserver ${destIp}
 
-  '') dns.dest-ips}";
+  '') dns.dest-ips + [kube.addr]}";
 
   launchd.daemons.libvirt = {
     path = [ pkgs.gcc pkgs.qemu pkgs.dnsmasq pkgs.libvirt ];
@@ -113,7 +113,6 @@ with config.paas;
     package = lib.mkDefault pkgs.darwin.linux-builder;
     ephemeral = lib.mkDefault true;
   };
-  nix.configureBuildUsers = true;
-  services.nix-daemon.enable = true;
+  nix.enable = true;
   nix.settings.experimental-features = "nix-command flakes";
 }
