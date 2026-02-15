@@ -3,7 +3,6 @@
   lib,
   pkgs,
   srvosPackages,
-  oldLegacyPackages,
   ...
 }:
 
@@ -41,7 +40,7 @@ in {
   swapDevices = [ ];
   zramSwap.algorithm  = "zstd";
 
-  system.stateVersion = "24.05";
+  system.stateVersion = "25.05";
 
   time = {
     timeZone = lib.mkForce "Europe/Paris";
@@ -55,17 +54,19 @@ in {
   networking = {
     useNetworkd = true;
     nameservers = [ 
-      "1.1.1.1" "1.0.0.1" 
+      "1.1.1.1" 
+      "1.0.0.1"
       "2606:4700:4700::1111" 
       "2606:4700:4700::1001" 
-      "8.8.8.8" "8.8.4.4" 
+      "8.8.8.8" 
+      "8.8.4.4" 
       "001:4860:4860::8844" 
       "2001:4860:4860::8888"
     ];
     interfaces.enp0s9.useDHCP = true;
     firewall = {
       interfaces.enp0s9 = {
-        allowedTCPPorts = lib.mkDefault [ 80 443 22 4240 8472 2379 ];
+        allowedTCPPorts = lib.mkDefault [ 80 443 22 4240 8472 2379 6443 ];
       };
       checkReversePath = "loose";
       trustedInterfaces = [
@@ -106,7 +107,7 @@ in {
 
   systemd.tmpfiles.rules = builtins.attrValues (
     builtins.mapAttrs (name: manifest: 
-    "C ${manifest.targetDir}/${name} 0640 - - - ${pkgs.writeText name manifest.content}") manifests
+    "C ${manifest.targetDir}/${name} 0640 - - - ${pkgs.writeText name manifest.content}") (lib.filterAttrs (n: v: v.enable) manifests)
   );
 
   programs.vim.defaultEditor = true;
@@ -170,7 +171,7 @@ in {
   home-manager.useUserPackages = true;
   home-manager.users.${config.paas.user.name} = {
     xdg.enable = true;
-    home.stateVersion = "24.05";
+    home.stateVersion = "25.05";
     home.sessionVariables = {
       KUBECONFIG = config.paas.kube.config;
     };

@@ -183,10 +183,12 @@ nix-store --verify --check-contents --repair
 
 ### Libvirt
 
-Undefine pool :
+Destroy and Undefine pool :
 
 ```bash
-virsh -c qemu:///system pool-undefine libvirt-pool-kube-paas
+virsh -c qemu:///system pool-destroy libvirt-paas-nixos-pool
+
+virsh -c qemu:///system pool-undefine libvirt-paas-nixos-pool
 ```
 
 Undefine vm to avoid conflicts :

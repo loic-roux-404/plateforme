@@ -1,0 +1,11 @@
+fullnameOverride: ${service_name}
+
+auth:
+  database: ${postgres_db}
+  username: ${postgres_user}
+  password: ${postgres_password}
+
+primary:
+  persistence:
+    enabled: true
+    size: 1Gi

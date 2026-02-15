@@ -18,7 +18,7 @@ with config.paas;
     enable = true;
     addresses = builtins.listToAttrs (builtins.map(value: {
       name = ".${dns.name}"; inherit value; 
-    }) (dns.dest-ips ++ [kube.addr]));
+    }) ([kube.addr]));
   };
 
   environment.etc."resolver/${dns.name}".text = "${lib.concatMapStrings (destIp: ''

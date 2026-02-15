@@ -198,7 +198,7 @@
             packages = attrValues {
               inherit (pkgs) bashInteractive grpcurl jq coreutils e2fsprogs
               docker-client docker-credential-helpers 
-              pebble cntb kubernetes-helm nix nil nix-tree nixos-rebuild;
+              pebble cntb kubectl kubernetes-helm nix nil nix-tree nixos-rebuild;
               inherit (stablePkgs) terraform terragrunt
               sops ssh-to-age libvirt qemu;
             };
