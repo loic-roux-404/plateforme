@@ -3,6 +3,12 @@
 let 
   manifest = lib.types.submodule ({ ... }: {
     options = {
+      enable = lib.mkOption {
+        type = lib.types.bool;
+        default = false;
+        description = "Whether to create this manifest file.";
+      };
+
       targetDir = lib.mkOption {
         type = lib.types.nonEmptyStr;
         example = lib.literalExpression "manifest.yaml";
@@ -172,25 +178,27 @@ let
       kube-apiserver-arg=oidc-groups-claim: groups
     '';
 
-    paas.manifests."cert-manager.yaml".content = ''
-      apiVersion: helm.cattle.io/v1
-      kind: HelmChart
-      metadata:
-        name: cert-manager
-        namespace: kube-system
-      spec:
-        name: cert-manager
-        targetNamespace: cert-manager
-        createNamespace: true
-        repo: https://charts.jetstack.io
-        chart: cert-manager
-        version: ${cert-manager.version}
-        backOffLimit: 200
-        timeout: 180s
-        valuesContent: |-
-          crds:
-            enabled: true
-    '';
-
+    paas.manifests."cert-manager.yaml" = {
+      enable = true;
+      content = ''
+        apiVersion: helm.cattle.io/v1
+        kind: HelmChart
+        metadata:
+          name: cert-manager
+          namespace: kube-system
+        spec:
+          name: cert-manager
+          targetNamespace: cert-manager
+          createNamespace: true
+          repo: https://charts.jetstack.io
+          chart: cert-manager
+          version: ${cert-manager.version}
+          backOffLimit: 200
+          timeout: 180s
+          valuesContent: |-
+            crds:
+              enabled: true
+      '';
+    };
   };
 }

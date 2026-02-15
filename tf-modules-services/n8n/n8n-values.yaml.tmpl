@@ -1,0 +1,49 @@
+main:
+  config:
+    db:
+      type: postgresdb
+      postgresdb:
+        host: "n8n-postgres"
+        database: "${postgres_db}"
+        user: "${postgres_user}"
+  secret:
+    db:
+      postgresdb:
+        password: "${postgres_password}"
+    n8n:
+      encryption_key: "${n8n_encryption_key}"
+
+  replicaCount: 1
+  deploymentStrategy:
+    type: Recreate
+  persistence:
+    enabled: true
+    type: "dynamic"
+    mountPath: "/home/node/.n8n"
+    size: 1Gi
+    accessModes:
+      - ReadWriteOnce
+    annotations:
+      helm.sh/resource-policy: keep
+
+valkey:
+  enabled: true
+  architecture: standalone
+
+ingress:
+  enabled: true
+  className: "nginx"
+  annotations:
+    kubernetes.io/ingress.class: "nginx"
+    cert-manager.io/cluster-issuer: ${cert_manager_cluster_issuer}
+    nginx.ingress.kubernetes.io/proxy-body-size: "50m"
+    nginx.ingress.kubernetes.io/backend-protocol: "HTTP"
+    nginx.ingress.kubernetes.io/ssl-redirect: "true"
+  hosts:
+    - host: ${n8n_hostname}
+      paths:
+        - "/"
+  tls:
+    - hosts:
+        - ${n8n_hostname}
+      secretName: n8n-${n8n_hostname}-tls

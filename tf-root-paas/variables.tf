@@ -3,7 +3,7 @@ variable "paas_subdomain" {
 }
 
 variable "paas_base_domain" {
-  default = "k8s.test"
+  default = "kube.test"
 }
 
 variable "cert_manager_letsencrypt_env" {
@@ -42,7 +42,7 @@ variable "github_organization" {
 
 variable "github_team" {
   type    = string
-  default = "ops-team"
+  default = "ops-team-staging"
 }
 
 variable "k3s_endpoint" {
@@ -83,7 +83,7 @@ variable "letsencrypt_envs" {
     prod    = string
   })
   default = {
-    local   = "https://localhost:14000/dir"
+    local   = "https://192.168.205.1:14000/dir"
     prod    = "https://acme-v02.api.letsencrypt.org/directory"
     staging = "https://acme-staging-v02.api.letsencrypt.org/directory"
   }
@@ -97,7 +97,7 @@ variable "letsencrypt_envs_ca_certs" {
     prod    = string
   })
   default = {
-    local   = "https://localhost:15000/roots/0"
+    local   = "https://192.168.205.1:15000/roots/0"
     staging = "https://letsencrypt.org/certs/staging/letsencrypt-stg-root-x1.pem"
     prod    = ""
   }
@@ -111,4 +111,16 @@ variable "metallb_ip_range" {
 
 variable "internal_network_ip" {
   default = "10.0.2.2"
+}
+
+variable "services_subdomains" {
+  default = [
+    "n8n",
+    "argocd",
+    "grafana",
+    "loki",
+    "promtail",
+    "prometheus",
+    "alertmanager"
+  ]
 }

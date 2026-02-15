@@ -5,7 +5,7 @@ variable "github_organization" {
 
 variable "github_team" {
   type    = string
-  default = "ops-team"
+  default = "ops-team-staging"
 }
 
 variable "github_token" {

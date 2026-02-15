@@ -49,3 +49,4 @@ output "k3s_config" {
     client_key = base64decode(local.user.client-key-data)
   }
 }
+
