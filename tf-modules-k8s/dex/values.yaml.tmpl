@@ -23,7 +23,8 @@ config:
   - id: "${dex_client_id}"
     redirectURIs:
     - http://127.0.0.1/oidc/callback
-    - 'https://${paas_hostname}/auth/oidc-callback'
+    - 'https://${paas_hostname}/callback'
+    - "http://localhost:8000"
     name: paas
     secret: "${dex_client_secret}"
 ingress:

@@ -145,8 +145,6 @@ make terragrunt/network/local
 make terragrunt/paas/local
 ```
 
-Then you have to do `make trust-ca` to trust paas internal CA on your system.
-
 ## Cheat Sheet
 
 ## Nix
@@ -216,6 +214,12 @@ openssl passwd -salt zizou -6 zizou420!
 ```
 
 ### Kubectl
+
+Login
+
+```bash
+kubectl oidc-login setup --oidc-issuer-url=dex.kube.test --oidc-client-id=CLIENT_ID --oidc-client-secret=YOUR_CLIENT_SECRET
+```
 
 Set context :
 

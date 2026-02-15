@@ -59,3 +59,8 @@ module "dex" {
 output "cert_manager_cluster_issuer" {
   value     = module.cert_manager.issuer
 }
+
+output "dex_client_secret" {
+  sensitive = true
+  value = module.dex.dex_client_secret
+}
