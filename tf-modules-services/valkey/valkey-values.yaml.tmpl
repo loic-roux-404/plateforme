@@ -1,0 +1,10 @@
+replicaCount: ${replica_count}
+
+dataStorage:
+  enabled: ${data_storage_enabled}
+  requestedSize: "${data_storage_requestedSize}"
+  className: "${data_storage_className}"
+  keepPvc: ${data_storage_keepPvc}
+
+service:
+  name: "${valkey_service_name}"

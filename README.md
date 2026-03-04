@@ -192,6 +192,10 @@ virsh -c qemu:///system pool-undefine libvirt-paas-nixos-pool
 Undefine vm to avoid conflicts :
 
 ```bash
+virsh -c qemu:///system destroy localhost-0
+
+# or if its not working run :
+
 virsh -c qemu:///system undefine --nvram localhost-0
 ```
 

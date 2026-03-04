@@ -33,4 +33,10 @@ provider "helm" {
     client_certificate     = var.k3s_config.client_certificate
     client_key             = var.k3s_config.client_key
   }
+
+  registry {
+    url      = "oci://ghcr.io"
+    username = "your-github-username"
+    password = var.github_token  # your PAT with read:packages
+  }
 }
