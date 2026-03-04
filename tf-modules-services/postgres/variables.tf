@@ -1,5 +1,9 @@
 variable "postgresql_version" {
-  default = "16.2.1"
+  default = "18.3.0"
+}
+
+variable "postgres_namespace" {
+  default = "postgresql"
 }
 
 variable "postgres_db" {

@@ -3,9 +3,10 @@ main:
     db:
       type: postgresdb
       postgresdb:
-        host: "n8n-postgres"
+        host: "${postgres_host}"
         database: "${postgres_db}"
         user: "${postgres_user}"
+
   secret:
     db:
       postgresdb:
@@ -17,18 +18,24 @@ main:
   deploymentStrategy:
     type: Recreate
   persistence:
-    enabled: true
-    type: "dynamic"
-    mountPath: "/home/node/.n8n"
-    size: 1Gi
-    accessModes:
-      - ReadWriteOnce
-    annotations:
-      helm.sh/resource-policy: keep
+    enabled: false
+    # type: "dynamic"
+    # mountPath: "/home/node/.n8n"
+    # size: 256Mi
+    # storageClass: "local-path"
+    # accessModes:
+    #   - ReadWriteOnce
 
 valkey:
+  enabled: false
+
+scaling:
   enabled: true
-  architecture: standalone
+  redis:
+    host: "${valkey_hostname}"
+    port: ${valkey_service_port}
+    password: "your-password"  # if set
+    db: 0  # optional
 
 ingress:
   enabled: true

@@ -34,3 +34,7 @@ variable "k3s_config" {
 variable "cert_manager_cluster_issuer" {
   type = string
 }
+
+variable "github_token" {
+  type = string
+}

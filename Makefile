@@ -36,4 +36,4 @@ TERRAGRUNT_FILES:=$(shell find terragrunt -type d -name '.*' -prune -o -name 'te
 $(TERRAGRUNT_FILES):
 	@cd $@ && terragrunt $(TF_CMD)
 
-.PHONY: fmt bootstrap nixos-local trust-ca $(TERRAGRUNT_FILES)
+.PHONY: fmt bootstrap nixos-local login $(TERRAGRUNT_FILES)

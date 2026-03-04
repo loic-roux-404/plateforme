@@ -200,5 +200,13 @@ let
               enabled: true
       '';
     };
+
+    paas.manifests."local-path-storage.yaml" = {
+      enable = true;
+      content = builtins.readFile (pkgs.fetchurl {
+        url = "https://raw.githubusercontent.com/rancher/local-path-provisioner/v0.0.34/deploy/local-path-storage.yaml";
+        hash = "sha256-+rjW6JM+RPivc5hgP7YxIuTqZJDwr4NUkQjWhkft2ek=";
+      });
+    };
   };
 }

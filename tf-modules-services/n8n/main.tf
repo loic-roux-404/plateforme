@@ -1,9 +1,38 @@
+# Kubernetes provider
+resource "kubernetes_namespace_v1" "n8n" {
+  metadata {
+    name = "n8n"
+  }
+}
+
+module "valkey" {
+  source = "../valkey"
+
+  valkey_namespace      = kubernetes_namespace_v1.n8n.metadata[0].name
+  valkey_helm_repo      = "https://valkey.io/valkey-helm"
+  replica_count         = 1
+
+  data_storage_enabled       = true
+  data_storage_requestedSize = "256Mi"
+  data_storage_className     = "local-path"
+  data_storage_keepPvc       = false
+}
+
 
 module "n8n_postgres" {
   source = "../postgres"
   postgres_db = "n8n"
   postgres_user = "n8n"
   postgres_service_name = "n8n-postgres"
+  postgres_namespace = kubernetes_namespace_v1.n8n.metadata[0].name
+}
+
+resource "random_password" "n8n_encryption_key" {
+  length  = 32
+  special = false
+  upper   = true
+  lower   = true
+  numeric = true
 }
 
 resource "helm_release" "n8n" {
@@ -11,13 +40,19 @@ resource "helm_release" "n8n" {
   repository = "oci://8gears.container-registry.com/library"
   chart      = "n8n"
   version    = var.n8n_version
-  namespace  = "n8n"
-  create_namespace = true
+  namespace        = kubernetes_namespace_v1.n8n.metadata[0].name
+  create_namespace = false
 
   values = [
     templatefile("${path.module}/n8n-values.yaml.tmpl", {
+      valkey_hostname        = "${module.valkey.valkey_service_name}.${kubernetes_namespace_v1.n8n.metadata[0].name}.svc.cluster.local"
+      valkey_service_port = module.valkey.valkey_service_port
+
       n8n_encryption_key = random_password.n8n_encryption_key.result
-      n8n_password = n8n_postgres.postgres_password
+      postgres_host = module.n8n_postgres.postgres_service_name
+      postgres_db = module.n8n_postgres.postgres_db
+      postgres_user = module.n8n_postgres.postgres_user
+      postgres_password = module.n8n_postgres.postgres_password
       cert_manager_cluster_issuer = var.cert_manager_cluster_issuer
       n8n_hostname = var.n8n_hostname
     })
@@ -32,18 +67,18 @@ output "n8n_encryption_key" {
 
 output "n8n_postgres_db" {
   description = "postgres db n8n (save this securely!)"
-  value       =  n8n_postgres.postgres_db
+  value       =  module.n8n_postgres.postgres_db
   sensitive   = true
 }
 
 output "n8n_postgres_user" {
   description = "postgres user n8n (save this securely!)"
-  value       =  n8n_postgres.postgres_user
+  value       =  module.n8n_postgres.postgres_user
   sensitive   = true
 }
 
 output "n8n_postgres_password" {
   description = "password for postgres user n8n (save this securely!)"
-  value       =  n8n_postgres.postgres_password
+  value       =  module.n8n_postgres.postgres_password
   sensitive   = true
 }

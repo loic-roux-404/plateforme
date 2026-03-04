@@ -9,7 +9,9 @@ locals {
 resource "libvirt_pool" "volumetmp" {
   name = "libvirt-paas-nixos-pool"
   type = "dir"
-  path = var.libvirt_pool_path
+  target {
+    path = var.libvirt_pool_path
+  }
 }
 
 resource "libvirt_volume" "nixos" {
