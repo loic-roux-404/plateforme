@@ -25,9 +25,10 @@ config:
   # grpc:
   #   tlsCert: /tls/tls.crt
   #   tlsKey: /tls/tls.key
+  #  % {~ if length(dex_extra_volume_mounts) > 0
+
   #   tlsClientCA: ${dex_extra_volume_mounts.0.mountPath}/ca.crt
 
-# todo
 # volumes: ${jsonencode(concat(dex_extra_volumes, dex_tls_volumes))}
 # volumeMounts: ${jsonencode(concat(dex_extra_volume_mounts, dex_tls_volume_mounts))}
 
