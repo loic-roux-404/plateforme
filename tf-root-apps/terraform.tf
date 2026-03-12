@@ -2,11 +2,11 @@ terraform {
   required_providers {
     helm = {
       source  = "hashicorp/helm"
-      version = "2.12.1"
+      version = "3.1.1"
     }
     kubernetes = {
       source  = "hashicorp/kubernetes"
-      version = "2.29.0"
+      version = "3.0.1"
     }
     random = {
       source  = "hashicorp/random"
@@ -27,16 +27,18 @@ provider "kubernetes" {
 }
 
 provider "helm" {
-  kubernetes {
+  kubernetes = {
     host                   = "https://${var.k3s_endpoint}:${var.k3s_port}"
     cluster_ca_certificate = var.k3s_config.cluster_ca_certificate
     client_certificate     = var.k3s_config.client_certificate
     client_key             = var.k3s_config.client_key
   }
+  registries = [
+    {
+      url      = "oci://ghcr.io"
+      username =  var.github_username
+      password = var.github_token
+    }
+  ]
 
-  registry {
-    url      = "oci://ghcr.io"
-    username = "your-github-username"
-    password = var.github_token  # your PAT with read:packages
-  }
 }

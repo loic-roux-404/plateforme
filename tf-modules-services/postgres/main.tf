@@ -22,7 +22,7 @@ resource "helm_release" "postgresql" {
   ]
 }
 
-data "kubernetes_service" "postgresql" {
+data "kubernetes_service_v1" "postgresql" {
   metadata {
     name      = var.postgres_service_name
     namespace = var.postgres_namespace
@@ -46,15 +46,15 @@ output "postgres_user" {
 
 output "postgres_service_name" {
   description = "Name of the Kubernetes Service exposing PostgreSQL"
-  value       = data.kubernetes_service.postgresql.metadata[0].name
+  value       = data.kubernetes_service_v1.postgresql.metadata[0].name
 }
 
 output "postgres_service_cluster_ip" {
   description = "ClusterIP of the PostgreSQL service"
-  value       = data.kubernetes_service.postgresql.spec[0].cluster_ip
+  value       = data.kubernetes_service_v1.postgresql.spec[0].cluster_ip
 }
 
 output "postgres_service_port" {
   description = "First service port for PostgreSQL"
-  value       = data.kubernetes_service.postgresql.spec[0].port[0].port
+  value       = data.kubernetes_service_v1.postgresql.spec[0].port[0].port
 }

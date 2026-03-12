@@ -45,6 +45,10 @@ variable "github_team" {
   default = "ops-team-staging"
 }
 
+variable "github_apps_team" {
+  default = "apps-team-staging"
+}
+
 variable "k3s_endpoint" {
   type = string
 }
@@ -103,16 +107,6 @@ variable "letsencrypt_envs_ca_certs" {
   }
 }
 
-variable "metallb_ip_range" {
-  type        = string
-  description = "value of the ip range"
-  default     = null
-}
-
-variable "internal_network_ip" {
-  default = "10.0.2.2"
-}
-
 variable "services_subdomains" {
   default = [
     "n8n",
@@ -121,6 +115,7 @@ variable "services_subdomains" {
     "loki",
     "promtail",
     "prometheus",
-    "alertmanager"
+    "alertmanager",
+    "oauth2"
   ]
 }
