@@ -8,8 +8,11 @@ config:
     oidc_issuer_url = "${issuer_url}"
     redirect_url = "${redirect_url}"
     scope = "openid email profile groups"
+
+    %{~ if length(oauth2_volume_mounts) > 0 ~}
     provider_ca_files = "${oauth2_volume_mounts.0.mountPath}/ca.crt"
-    
+    %{~ endif ~}
+
     # Restrict to GitHub org:team via Dex groups claim
     allowed_groups = ${jsonencode(allowed_groups)}
 
