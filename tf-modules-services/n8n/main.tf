@@ -55,6 +55,15 @@ resource "helm_release" "n8n" {
       postgres_password = module.n8n_postgres.postgres_password
       cert_manager_cluster_issuer = var.cert_manager_cluster_issuer
       n8n_hostname = var.n8n_hostname
+      ingress_class = var.k8s_ingress_class
+      ingress_annotations = merge({
+        "kubernetes.io/ingress.class"                    = var.k8s_ingress_class
+        "cert-manager.io/cluster-issuer"                 = var.cert_manager_cluster_issuer
+        "nginx.ingress.kubernetes.io/proxy-body-size"    = "50m"
+        #"nginx.ingress.kubernetes.io/backend-protocol"   = "HTTP"
+        "nginx.ingress.kubernetes.io/ssl-redirect"       = "true"
+        }, var.ingress_annotations
+      )
     })
   ]
 }

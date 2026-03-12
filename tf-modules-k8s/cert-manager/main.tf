@@ -43,10 +43,10 @@ resource "helm_release" "reflector" {
   wait_for_jobs = true
   atomic        = true
 
-  set {
+  set = [ {
     name  = "targetNamespace"
     value = data.kubernetes_namespace.cert-manager.metadata.0.name
-  }
+  } ]
 
 }
 
@@ -62,7 +62,7 @@ resource "kubernetes_config_map" "acme_internal_root_ca" {
   }
 
   data = {
-    "ca.crt" = indent(4, var.internal_acme_ca_content)
+    "ca.crt" = indent(0, var.internal_acme_ca_content)
   }
 }
 
@@ -71,7 +71,7 @@ output "issuer" {
 }
 
 output "reflector_metadata_name" {
-  value = helm_release.reflector.metadata.0.name
+  value = helm_release.reflector.metadata.name
 }
 
 output "root_ca_config_map_volume" {
@@ -89,7 +89,7 @@ output "root_ca_config_map_volume_mounts" {
   value = flatten([
     for config_map in kubernetes_config_map.acme_internal_root_ca : [{
       name = config_map.metadata[0].name
-      mountPath = "/etc/ssl/certs/ca-${config_map.metadata[0].name}.crt"
+      mountPath = "/etc/ssl/certs/"
       subPath   = "ca.crt"
       readOnly  = true
     }]

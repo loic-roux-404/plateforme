@@ -12,3 +12,13 @@ variable "github_token" {
   type      = string
   sensitive = true
 }
+
+variable "description" {
+  type = string
+  default = "Team" 
+}
+
+variable "roles" {
+  type = list(string)
+  default = ["admin", "member"]
+}

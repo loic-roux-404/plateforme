@@ -1,17 +1,13 @@
-resource "random_password" "dex_client_secret" {
-  length  = 24
-  special = false
-}
-
-locals {
-  dex_client_secret = random_password.dex_client_secret.result
+ resource "kubernetes_namespace_v1" "dex" {
+  metadata {
+    name = var.dex_namespace
+  }
 }
 
 resource "helm_release" "dex" {
   repository       = "https://charts.dexidp.io"
   name             = "dex"
-  namespace        = var.dex_namespace
-  create_namespace = true
+  namespace        = kubernetes_namespace_v1.dex.metadata[0].name
   chart            = "dex"
   timeout          = 180
   wait_for_jobs    = true
@@ -23,33 +19,37 @@ resource "helm_release" "dex" {
       github_client_id            = var.github_client_id,
       github_client_secret        = var.github_client_secret,
       dex_github_orgs             = jsonencode(var.dex_github_orgs),
-      dex_client_id               = var.dex_client_id,
-      paas_hostname               = var.paas_hostname,
-      dex_client_secret           = local.dex_client_secret,
-      k8s_ingress_class           = var.k8s_ingress_class
-      cert_manager_cluster_issuer = var.cert_manager_cluster_issuer
+      k8s_ingress_class           = var.k8s_ingress_class,
+      cert_manager_cluster_issuer = var.cert_manager_cluster_issuer,
+      dex_extra_volume_mounts      = var.dex_extra_volume_mounts,
+      dex_extra_volumes            = var.dex_extra_volumes,
+      dex_tls_volumes              = [{
+        name = "tls",
+        secret = {
+          "secretName" = "${var.dex_hostname}-tls"
+        }
+      }]
+      dex_tls_volume_mounts        = [{
+        name = "tls",
+        mountPath = "/tls",
+        readOnly = true
+      }]
+      static_clients = var.static_clients
     })
   ]
-}
-
-data "kubernetes_namespace" "dex" {
-  depends_on = [ helm_release.dex ]
-  metadata {
-    name = var.dex_namespace
-  }
 }
 
 data "kubernetes_service" "dex_service" {
   metadata {
     name      = "dex"
-    namespace = data.kubernetes_namespace.dex.metadata[0].name
+    namespace = kubernetes_namespace_v1.dex.metadata[0].name
   }
 }
 
 data "kubernetes_ingress" "dex_ingress" {
   metadata {
     name      = "dex"
-    namespace = data.kubernetes_namespace.dex.metadata[0].name
+    namespace = kubernetes_namespace_v1.dex.metadata[0].name
   }
 }
 
@@ -61,6 +61,12 @@ output "dex_service" {
   value = data.kubernetes_service.dex_service.id
 }
 
-output "dex_client_secret" {
-  value = local.dex_client_secret
+output "dex_hostname" {
+  value = data.kubernetes_ingress.dex_ingress.id != null ? var.dex_hostname : null
+}
+
+output "dex_clients" {
+  depends_on = [ data.kubernetes_service.dex_service ]
+  sensitive = true
+  value = var.static_clients
 }

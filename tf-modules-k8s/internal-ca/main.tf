@@ -55,3 +55,4 @@ resource "kubernetes_annotations" "coredns" {
 output "coredns_custom_id" {
   value = kubernetes_annotations.coredns.id
 }
+

@@ -1,0 +1,66 @@
+# Official oauth2-proxy Helm chart values [web:76]
+config:
+  clientID: "${client_id}"
+  clientSecret: "${client_secret}"
+  cookieSecret: "${cookie_secret}"
+  configFile: |-
+    provider = "oidc"
+    oidc_issuer_url = "${issuer_url}"
+    redirect_url = "${redirect_url}"
+    scope = "openid email profile groups"
+    provider_ca_files = "${oauth2_volume_mounts.0.mountPath}/ca.crt"
+    
+    # Restrict to GitHub org:team via Dex groups claim
+    allowed_groups = ${jsonencode(allowed_groups)}
+
+    # Session management
+    cookie_secure = true
+    cookie_httponly = true
+    cookie_samesite = "lax"
+    cookie_domains = ${jsonencode(cookie_domains)}
+    cookie_path = "/"
+    whitelist_domains = ${jsonencode(cookie_domains)}
+    
+    # Headers passed to upstream app
+    pass_user_headers = true
+    pass_access_token = true
+    set_xauthrequest = true
+    
+    # Healthcheck bypass
+    skip_auth_regex = "^/healthz"
+    
+    # Upstream static response (no app needed for auth endpoints)
+    upstreams = ["static://200"]
+
+    email_domains =  "*"
+
+extraVolumes: ${jsonencode(oauth2_volumes)}
+extraVolumeMounts: ${jsonencode(oauth2_volume_mounts)}
+
+ingress:
+  enabled: true
+  className: ${ingress_class}
+  hosts:
+    - ${oauth2_hostname}
+  path: /
+  pathType: ImplementationSpecific
+  annotations:
+    cert-manager.io/cluster-issuer: ${cert_manager_cluster_issuer}
+  tls:
+    - secretName: ${oauth2_hostname}-tls
+      hosts:
+        - ${oauth2_hostname}
+
+service:
+  type: ClusterIP
+  portNumber: 4180
+
+# Deployment tuning
+replicaCount: 1
+resources:
+  requests:
+    cpu: 100m
+    memory: 128Mi
+  limits:
+    cpu: 500m
+    memory: 256Mi

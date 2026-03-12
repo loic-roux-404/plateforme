@@ -1,6 +1,6 @@
 SHELL:=/usr/bin/env bash
 MAKEFLAGS += --no-builtin-rules --no-builtin-variables
-TF_CMD:=apply -auto-approve
+1:=apply -auto-approve
 VARIANT=builder
 TESTING_X86_URL=https://github.com/loic-roux-404/kube-paas/releases/download/nixos-testing/nixos.qcow2
 TARGET?=initial
@@ -34,6 +34,6 @@ pull-testing-x86:
 TERRAGRUNT_FILES:=$(shell find terragrunt -type d -name '.*' -prune -o -name 'terragrunt.hcl' -exec dirname {} \;)
 
 $(TERRAGRUNT_FILES):
-	@cd $@ && terragrunt $(TF_CMD)
+	@cd $@ && terragrunt $(1)
 
 .PHONY: fmt bootstrap nixos-local login $(TERRAGRUNT_FILES)

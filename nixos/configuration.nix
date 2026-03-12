@@ -76,12 +76,6 @@ in {
     };
   };
 
-  # deploy all netbird with nixos, configure dex idp with terraform network playbook
-  # Make a service doing like tailscale autoconnect netbird join ? maybe not needed as we are the control server ?
-  # https://docs.netbird.io/how-to/routing-peers-and-kubernetes
-
-  #services.netbird.enable = true;
-
   services.fail2ban.enable = true;
 
   programs.ssh.package = pkgs.openssh_hpn;

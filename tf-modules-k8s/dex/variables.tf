@@ -17,10 +17,15 @@ variable "github_client_secret" {
   type        = string
 }
 
-variable "dex_client_id" {
-  description = "Client ID for Dex OIDC Connector"
-  type        = string
-  default     = "dex-paas-org-404"
+variable "static_clients" {
+  type = list(object({
+    id           = string
+    redirectURIs = list(string)
+    name         = string
+    secret       = string
+  }))
+  sensitive = true
+  default = []
 }
 
 variable "dex_github_orgs" {
@@ -32,11 +37,6 @@ variable "dex_github_orgs" {
   default = []
 }
 
-variable "paas_hostname" {
-  description = "Hostname for paas"
-  type        = string
-}
-
 variable "k8s_ingress_class" {
   description = "ingress class"
   type        = string
@@ -45,4 +45,21 @@ variable "k8s_ingress_class" {
 
 variable "cert_manager_cluster_issuer" {
   description = "value of the cert-manager cluster issuer"
+}
+
+variable "dex_extra_volume_mounts" {
+  type = list(object({
+    name      = string
+    mountPath = string
+    readOnly  = bool
+  }))
+}
+
+variable "dex_extra_volumes" {
+  type = list(object({
+    name = string
+    configMap = object({
+      name = string
+    })
+  }))
 }

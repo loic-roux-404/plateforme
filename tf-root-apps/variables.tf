@@ -1,13 +1,22 @@
+variable "dex_namespace" {
+  default = "dex"
+}
+
+variable "k8s_ingress_class" {
+  type = string
+  default = "nginx"
+}
+
+variable "dex_hostname" {
+  default = "dex.kube.test"
+}
+
 variable "n8n_subdomain" {
   default = "n8n"
 }
 
 variable "n8n_base_domain" {
   default = "kube.test"
-}
-
-variable "n8n_version" {
-  default = "1.0.15"
 }
 
 variable "k3s_endpoint" {
@@ -20,6 +29,14 @@ variable "k3s_port" {
 
 variable "k3s_node_name" {
   type = string
+}
+
+variable "github_organization" {
+  default = "org-404"
+}
+
+variable "github_apps_team" {
+  default = "apps-team-staging"
 }
 
 variable "k3s_config" {
@@ -37,4 +54,13 @@ variable "cert_manager_cluster_issuer" {
 
 variable "github_token" {
   type = string
+}
+
+variable "github_username" {
+  type = string
+}
+
+variable "oauth2_proxy_ingress_annotations" {
+  type = map(string)
+  default = {}
 }
