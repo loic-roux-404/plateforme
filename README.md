@@ -231,7 +231,7 @@ openssl passwd -salt zizou -6 zizou420!
 
 ### Kubectl
 
-Login
+Login And run the given command by :
 
 ```bash
 kubectl oidc-login setup --oidc-issuer-url=dex.kube.test --oidc-client-id=CLIENT_ID --oidc-client-secret=YOUR_CLIENT_SECRET
@@ -240,8 +240,15 @@ kubectl oidc-login setup --oidc-issuer-url=dex.kube.test --oidc-client-id=CLIENT
 Set context :
 
 ```bash
-kubectl config set-cluster default --server=http://localhost-0:6443
-kubectl config default test-cluster
+export CA_CERT=$(terragrunt --working-dir terragrunt/network/contabo output -json k3s_config | jq -r '.cluster_ca_certificate' | base64 -w0)
+kubectl config set-cluster default --server=http://localhost:6443 
+kubectl config set clusters.default.certificate-authority-data "$CA_CERT"
+
+```
+
+```bash
+kubectl config set-context default --user=oidc
+kubectl config use-context default
 ```
 
 See all pods :

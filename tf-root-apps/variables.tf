@@ -15,7 +15,7 @@ variable "n8n_subdomain" {
   default = "n8n"
 }
 
-variable "n8n_base_domain" {
+variable "paas_base_domain" {
   default = "kube.test"
 }
 
