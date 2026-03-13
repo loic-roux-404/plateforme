@@ -1,5 +1,5 @@
 locals {
-  n8n_hostname = "${var.n8n_subdomain}.${var.n8n_base_domain}"
+  n8n_hostname = "${var.n8n_subdomain}.${var.paas_base_domain}"
 }
 
 module "n8n" {

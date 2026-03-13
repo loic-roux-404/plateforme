@@ -1,6 +1,3 @@
-variable "paas_subdomain" {
-  default = "paas"
-}
 
 variable "paas_base_domain" {
   default = "kube.test"

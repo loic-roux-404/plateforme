@@ -49,6 +49,7 @@ with config.paas;
       - "${kube.serviceIp}"
       - "${config.networking.hostName}"
       - "${config.sops.placeholder.nodeIp}"
+      - "${config.sops.placeholder.paasDomain}"
     kube-apiserver-arg=authorization-mode: Node,RBAC
     kube-apiserver-arg=oidc-issuer-url: https://dex.${config.sops.placeholder.paasDomain}
     kube-apiserver-arg=oidc-client-id: ${dex.dexClientId}
