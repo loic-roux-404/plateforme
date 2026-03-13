@@ -6,7 +6,9 @@ variable "machine" {
   })
 }
 
-### Gandi domain provider
+variable "github_team" {
+  type = string
+}
 
 variable "gandi_token" {
   type     = string
@@ -16,12 +18,6 @@ variable "gandi_token" {
 variable "paas_base_domain" {
   type    = string
   default = "kube.test"
-}
-
-variable "admin_password" {
-  type      = string
-  sensitive = true
-  default   = "$6$zizou$reVO3q7LFsUq.GT5P5pYFFcpxCo7eTRT5yJTD.gVoOy/FSzHEtXdofvZ7E04Rej.jiQHKaWJB0Qob5FHov1WU/"
 }
 
 variable "ssh_connection" {
