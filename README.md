@@ -8,12 +8,12 @@
 
 #### [Original tutorial (FR)](https://github.com/esgi-lyon/paas-tutorial/blob/main/docs/index.md)
 
-## Compatibility :
+## Work environment compatibility :
 
 | OS | Status |
 | --- | --- |
 | Darwin | OK |
-| Linux | NO |
+| Linux | not tested |
 
 ## New Nix system (beta)
 
@@ -89,6 +89,7 @@ cntb get instances
 
 - **`paas_base_domain`** : Order a domain on [gandi](https://www.gandi.net)
 - **`gandi_token`** : Generate a Personal Access Token on [gandi organization](https://admin.gandi.net/organizations/)
+- **`gandi_dnssec_public_key`** 
 
 > **Warn :** Delete `@` record for your domain on [gandi](https://admin.gandi.net/domain/)
 
@@ -98,11 +99,13 @@ WIP
 
 ### 4. Github (Authentication & users)
 
+**`github_username`** : Your github username for registry authentication.
 **`github_token`** : https://github.com/settings/tokens and create a token with scopes `repo`, `user` and `admin`.
 **`github_client_id`** : Create a new OAuth App.
 **`github_client_secret`** : On new OAuth App ask for a new client secret.
 **`github_organization` :** : Your github organization name.
-**`github_team` :** : Your github team id.
+**`github_team` :** : Your github admin team id.
+**`github_apps_team` :** : Your github apps team id.
 
 ### 5. Cert-manager (TLS)
 
@@ -128,6 +131,12 @@ make terragrunt/network/contabo
 make terragrunt/paas/contabo
 ```
 
+### apps
+
+```bash
+make terragrunt/apps/contabo
+```
+
 **Note** : Retrieve any config with :
 
 ```bash
@@ -142,7 +151,10 @@ Here is the command to set up the paas on a libvirt vm.
 ```bash
 make terragrunt/cloud/local
 make terragrunt/network/local
+sleep 180 # wait k8s boot 
 make terragrunt/paas/local
+make terragrunt/apps/local
+
 ```
 
 ## Cheat Sheet
