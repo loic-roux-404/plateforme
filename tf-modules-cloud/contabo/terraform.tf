@@ -18,3 +18,4 @@ provider "contabo" {
   oauth2_user          = var.contabo_credentials.oauth2_user
   oauth2_pass          = var.contabo_credentials.oauth2_pass
 }
+  
