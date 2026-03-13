@@ -38,7 +38,7 @@ module "deploy" {
   ssh_connection = var.ssh_connection
   nixos_transient_secrets = {
     nodeIp           = var.machine.node_ip
-    dexClientId      = "dex-client-id"
+    dexClientId      = var.github_team
     password         = "${random_password.admin_password.bcrypt_hash}"
     paasDomain       = "${var.paas_base_domain}"
   }

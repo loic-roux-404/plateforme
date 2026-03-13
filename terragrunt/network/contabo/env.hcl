@@ -5,6 +5,7 @@ locals {
   secret_vars = yamldecode(sops_decrypt_file(find_in_parent_folders("secrets/${local.env}.yaml")))
   flake_dir = dirname(find_in_parent_folders("flake.nix"))
   input_vars = {
+    github_team = local.secret_vars.github_team
     machine = local.dependencies.dependency.cloud.outputs
     paas_base_domain = local.secret_vars.paas_base_domain
     gandi_token = local.secret_vars.gandi_token

@@ -1,9 +1,9 @@
-{ config,  ... } : 
+{ lib, config,  ... } : 
 
 with config.paas;
 {
   networking.hostName = "localhost-0";
-  
+
   users.users.${user.name}.hashedPasswordFile = config.sops.secrets.password.path;
   users.users.root.hashedPasswordFile = config.sops.secrets.password.path;
 
@@ -14,7 +14,6 @@ with config.paas;
 
   sops.secrets = {
     nodeIp = {};
-    internalNodeIp = {};
     nodePrivateKey = {
       neededForUsers = true;
     };
@@ -22,18 +21,28 @@ with config.paas;
     password = { neededForUsers = true; };
   };
 
-  networking.firewall.allowedTCPPorts = [ 80 443 ];
+  paas.defaultKubeDistribConfigPath = lib.mkForce config.sops.templates."config.yaml".path;
 
-  services.rke2.configPath = config.sops.templates."config.yaml".path;
+  networking = {
+    useNetworkd = true;
+    nameservers = [ 
+      "1.1.1.1" 
+      "1.0.0.1"
+      "2606:4700:4700::1111" 
+      "2606:4700:4700::1001" 
+      "8.8.8.8" 
+      "8.8.4.4" 
+      "001:4860:4860::8844" 
+      "2001:4860:4860::8888"
+    ];
+  };
 
   sops.templates."config.yaml".content = ''
     with-node-id: true
-    cluster-domain: ${config.sops.placeholder.paasDomain}
     advertise-address: ${config.sops.placeholder.nodeIp}
     node-external-ip: "${config.sops.placeholder.nodeIp}"
     cluster-cidr: ${kube.podCIDR}
     service-cidr: ${kube.serviceCIDR}
-    cluster-dns: ${kube.clusterDns}
     node-taint:
       - "CriticalAddonsOnly=true:NoExecute"
     tls-san:

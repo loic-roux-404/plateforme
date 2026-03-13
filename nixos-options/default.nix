@@ -162,6 +162,7 @@ let
   config = with config.paas; {
     paas.defaultKubeDistribConfigPath = pkgs.writeText "server-config.yaml" ''
       with-node-id: true
+      cluster-domain: ${dns.name}
       advertise-address: ${kube.addr}
       node-external-ip: ${kube.addr}
       cluster-cidr: ${kube.podCIDR}
@@ -170,7 +171,6 @@ let
         - ${kube.serviceHost}
         - ${kube.serviceIp}
         - ${kube.addr}
-        - ${config.networking.hostName or "localhost"}
       kube-apiserver-arg=authorization-mode: Node,RBAC
       kube-apiserver-arg=oidc-issuer-url: https://dex.${dns.name}
       kube-apiserver-arg=oidc-client-id: ${dex.dexClientId}
