@@ -1,6 +1,4 @@
-# Result
-
-![result](images/result.png)
+# Plateforme
 
 ### Architecture
 

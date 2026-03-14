@@ -2,7 +2,7 @@
 
 ---
 
-This PaaS solution targets a contabo VPS or a local machine with libvirt. This one will be based on [kubernetes](https://kubernetes.io/fr/) for the containerization and [dex](https://dexidp.io/https://dexidp.io/) for the k8S accesses issuing an oauth proxy on hosted web apps.
+This PaaS solution targets a contabo VPS or a local machine with libvirt. This one will be based on [kubernetes](https://kubernetes.io/fr/) for the containerization and [dex](https://dexidp.io/https://dexidp.io/) for the k8S accesses and an oauth proxy for hosted web apps.
 
 The optics of this tooling will follow :
 
