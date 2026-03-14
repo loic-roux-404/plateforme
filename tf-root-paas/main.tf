@@ -90,6 +90,26 @@ module "dex" {
   }]
 }
 
+resource "kubernetes_cluster_role_binding_v1" "dex_github_cluster_admin" {
+  for_each = toset(["${var.github_organization}:${module.github_ops.team_name}"])
+
+  metadata {
+    name = "kubeapps-${replace(each.value, ":", "-")}-cluster-admin"
+  }
+
+  role_ref {
+    api_group = "rbac.authorization.k8s.io"
+    kind      = "ClusterRole"
+    name      = "cluster-admin"
+  }
+
+  subject {
+    kind      = "Group"
+    name      = each.value
+    api_group = "rbac.authorization.k8s.io"
+  }
+}
+
 module "oauth2_proxy_apps" {
   source        = "../tf-modules-k8s/oauth2-proxy"
   client_name   = module.dex.dex_clients[0].name
