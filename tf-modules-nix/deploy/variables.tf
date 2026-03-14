@@ -1,8 +1,3 @@
-variable "dex_client_id" {
-  type      = string
-  sensitive = true
-  default   = "dex-paas-org-404"
-}
 
 variable "node_address" {
   type = string
