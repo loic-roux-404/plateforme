@@ -28,7 +28,7 @@ resource "kubernetes_manifest" "issuer" {
   }
 }
 
-data "kubernetes_namespace" "cert-manager" {
+data "kubernetes_namespace_v1" "cert-manager" {
   metadata {
     name = var.cert_manager_namespace
   }
@@ -36,7 +36,7 @@ data "kubernetes_namespace" "cert-manager" {
 
 resource "helm_release" "reflector" {
   name          = "reflector"
-  namespace     = data.kubernetes_namespace.cert-manager.metadata.0.name
+  namespace     = data.kubernetes_namespace_v1.cert-manager.metadata.0.name
   repository    = "https://emberstack.github.io/helm-charts"
   chart         = "reflector"
   version       = "7.1.262"
@@ -45,16 +45,16 @@ resource "helm_release" "reflector" {
 
   set = [ {
     name  = "targetNamespace"
-    value = data.kubernetes_namespace.cert-manager.metadata.0.name
+    value = data.kubernetes_namespace_v1.cert-manager.metadata.0.name
   } ]
 
 }
 
-resource "kubernetes_config_map" "acme_internal_root_ca" {
+resource "kubernetes_config_map_v1" "acme_internal_root_ca" {
   count = var.letsencrypt_env == "local" ? 1 : 0
   metadata {
     name      = "acme-internal-root-ca"
-    namespace = data.kubernetes_namespace.cert-manager.metadata.0.name
+    namespace = data.kubernetes_namespace_v1.cert-manager.metadata.0.name
     annotations = {
       "reflector.v1.k8s.emberstack.com/reflection-allowed"      = "true"
       "reflector.v1.k8s.emberstack.com/reflection-auto-enabled" = "true"
@@ -76,7 +76,7 @@ output "reflector_metadata_name" {
 
 output "root_ca_config_map_volume" {
   value = flatten([
-    for config_map in kubernetes_config_map.acme_internal_root_ca : [{
+    for config_map in kubernetes_config_map_v1.acme_internal_root_ca : [{
       name = config_map.metadata[0].name
       configMap = {
         name = config_map.metadata[0].name
@@ -87,7 +87,7 @@ output "root_ca_config_map_volume" {
 
 output "root_ca_config_map_volume_mounts" {
   value = flatten([
-    for config_map in kubernetes_config_map.acme_internal_root_ca : [{
+    for config_map in kubernetes_config_map_v1.acme_internal_root_ca : [{
       name = config_map.metadata[0].name
       mountPath = "/etc/ssl/certs/"
       subPath   = "ca.crt"

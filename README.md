@@ -234,7 +234,7 @@ openssl passwd -salt zizou -6 zizou420!
 Login And run the given command by :
 
 ```bash
-kubectl oidc-login setup --oidc-issuer-url=dex.kube.test --oidc-client-id=CLIENT_ID --oidc-client-secret=YOUR_CLIENT_SECRET
+kubectl oidc-login setup --oidc-issuer-url=https://dex.kube.test --oidc-client-id=CLIENT_ID --oidc-client-secret=YOUR_CLIENT_SECRET
 ```
 
 Set context :
@@ -247,7 +247,7 @@ kubectl config set clusters.default.certificate-authority-data "$CA_CERT"
 ```
 
 ```bash
-kubectl config set-context default --user=oidc
+kubectl config set-context default --user=oidc --cluster=default
 kubectl config use-context default
 ```
 

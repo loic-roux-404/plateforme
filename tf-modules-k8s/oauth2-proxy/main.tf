@@ -37,7 +37,7 @@ resource "helm_release" "oauth2_proxy" {
 
 }
 
-data "kubernetes_service" "oauth2_proxy" {
+data "kubernetes_service_v1" "oauth2_proxy" {
   depends_on = [helm_release.oauth2_proxy]
 
   metadata {
@@ -56,7 +56,7 @@ output "ingress_annotations" {
   depends_on = [helm_release.oauth2_proxy]
   description = "nginx-ingress annotations to enforce Dex login via oauth2-proxy"
   value = {
-    "nginx.ingress.kubernetes.io/auth-url" = "http://${data.kubernetes_service.oauth2_proxy.metadata[0].name}.${var.dex_namespace}.svc.cluster.local:4180/oauth2/auth"
+    "nginx.ingress.kubernetes.io/auth-url" = "http://${data.kubernetes_service_v1.oauth2_proxy.metadata[0].name}.${var.dex_namespace}.svc.cluster.local:4180/oauth2/auth"
     "nginx.ingress.kubernetes.io/auth-signin" = "https://${var.oauth2_hostname}/oauth2/start?rd=$scheme://$host$escaped_request_uri"
     "nginx.ingress.kubernetes.io/auth-response-headers" = "X-Auth-Request-User,X-Auth-Request-Email,X-Auth-Request-Groups,Authorization"
   }

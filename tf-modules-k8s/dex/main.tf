@@ -39,14 +39,14 @@ resource "helm_release" "dex" {
   ]
 }
 
-data "kubernetes_service" "dex_service" {
+data "kubernetes_service_v1" "dex_service" {
   metadata {
     name      = "dex"
     namespace = kubernetes_namespace_v1.dex.metadata[0].name
   }
 }
 
-data "kubernetes_ingress" "dex_ingress" {
+data "kubernetes_ingress_v1" "dex_ingress" {
   metadata {
     name      = "dex"
     namespace = kubernetes_namespace_v1.dex.metadata[0].name
@@ -54,19 +54,19 @@ data "kubernetes_ingress" "dex_ingress" {
 }
 
 output "dex_ingress" {
-  value = data.kubernetes_ingress.dex_ingress.id
+  value = data.kubernetes_ingress_v1.dex_ingress.id
 }
 
 output "dex_service" {
-  value = data.kubernetes_service.dex_service.id
+  value = data.kubernetes_service_v1.dex_service.id
 }
 
 output "dex_hostname" {
-  value = data.kubernetes_ingress.dex_ingress.id != null ? var.dex_hostname : null
+  value = data.kubernetes_ingress_v1.dex_ingress.id != null ? var.dex_hostname : null
 }
 
 output "dex_clients" {
-  depends_on = [ data.kubernetes_service.dex_service ]
+  depends_on = [ data.kubernetes_service_v1.dex_service ]
   sensitive = true
   value = var.static_clients
 }

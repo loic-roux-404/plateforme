@@ -19,6 +19,7 @@ with config.paas;
     };
     paasDomain = {};
     password = { neededForUsers = true; };
+    dexClientId = {};
   };
 
   paas.defaultKubeDistribConfigPath = lib.mkForce config.sops.templates."config.yaml".path;
@@ -52,7 +53,7 @@ with config.paas;
       - "${config.sops.placeholder.paasDomain}"
     kube-apiserver-arg=authorization-mode: Node,RBAC
     kube-apiserver-arg=oidc-issuer-url: https://dex.${config.sops.placeholder.paasDomain}
-    kube-apiserver-arg=oidc-client-id: ${dex.dexClientId}
+    kube-apiserver-arg=oidc-client-id: ${config.sops.placeholder.dexClientId}
     kube-apiserver-arg=oidc-username-claim: email
     kube-apiserver-arg=oidc-groups-claim: groups
   '';
