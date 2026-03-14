@@ -234,7 +234,7 @@ openssl passwd -salt zizou -6 zizou420!
 Login And run the given command by :
 
 ```bash
-kubectl oidc-login setup --oidc-issuer-url=https://dex.kube.test --oidc-client-id=CLIENT_ID --oidc-client-secret=YOUR_CLIENT_SECRET
+kubectl oidc-login setup --oidc-issuer-url=https://dex.kube.test --oidc-client-id=CLIENT_ID --oidc-client-secret=YOUR_CLIENT_SECRET           --oidc-extra-scope=groups --oidc-extra-scope=email
 ```
 
 Set context :
