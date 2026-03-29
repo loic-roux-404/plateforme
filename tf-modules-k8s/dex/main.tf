@@ -12,6 +12,7 @@ resource "helm_release" "dex" {
   timeout          = 180
   wait_for_jobs    = true
   atomic           = true
+  take_ownership = true
 
   values = [
     templatefile("${path.module}/values.yaml.tmpl", {

@@ -34,6 +34,6 @@ pull-testing-x86:
 TERRAGRUNT_FILES:=$(shell find terragrunt -type d -name '.*' -prune -o -name 'terragrunt.hcl' -exec dirname {} \;)
 
 $(TERRAGRUNT_FILES):
-	@cd $@ && terragrunt $(1)
+	@terragrunt --working-dir $@ $(1)
 
 .PHONY: fmt bootstrap nixos-local login $(TERRAGRUNT_FILES)

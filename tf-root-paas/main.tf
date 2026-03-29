@@ -3,7 +3,7 @@ locals {
   cert_manager_acme_ca_cert_url = var.letsencrypt_envs_ca_certs[var.cert_manager_letsencrypt_env]
   dex_hostname                  = "dex.${var.paas_base_domain}"
   all_services_subdomains       = concat(["dex"], var.services_subdomains)
-  ingress_hosts_internals       = [for item in local.all_services_subdomains : "${item}.${var.paas_base_domain}"] 
+  ingress_hosts_internals       = [for item in local.all_services_subdomains : "${item}.${var.paas_base_domain}"]
 }
 
 data "http" "paas_internal_acme_ca" {
@@ -17,7 +17,7 @@ module "cluster_infos" {
 }
 
 module "cert_manager" {
-  depends_on               = [ module.cluster_infos ]
+  depends_on               = [module.cluster_infos]
   source                   = "../tf-modules-k8s/cert-manager"
   internal_acme_ca_content = length(data.http.paas_internal_acme_ca) > 0 ? data.http.paas_internal_acme_ca[0].response_body : null
   cert_manager_acme_url    = local.cert_manager_acme_url
@@ -25,11 +25,11 @@ module "cert_manager" {
   cert_manager_email       = var.cert_manager_email
 }
 
-module "internal_ca" { 
-   source                   = "../tf-modules-k8s/internal-ca"  
-   for_each                 = var.cert_manager_letsencrypt_env == "local" ? toset(["internal-ca"]) : toset([])  
-   ingress_hosts_internals  = local.ingress_hosts_internals  
-   ingress_controller_ip    = module.cluster_infos.ingress_controller_ip
+module "internal_ca" {
+  source                  = "../tf-modules-k8s/internal-ca"
+  for_each                = var.cert_manager_letsencrypt_env == "local" ? toset(["internal-ca"]) : toset([])
+  ingress_hosts_internals = local.ingress_hosts_internals
+  ingress_controller_ip   = module.cluster_infos.ingress_controller_ip
 }
 
 module "github_ops" {
@@ -72,16 +72,16 @@ module "dex" {
   }]
   k8s_ingress_class           = var.k8s_ingress_class
   cert_manager_cluster_issuer = module.cert_manager.issuer
-  dex_extra_volume_mounts = module.cert_manager.root_ca_config_map_volume_mounts
-  dex_extra_volumes = module.cert_manager.root_ca_config_map_volume
+  dex_extra_volume_mounts     = module.cert_manager.root_ca_config_map_volume_mounts
+  dex_extra_volumes           = module.cert_manager.root_ca_config_map_volume
   static_clients = [{
-    id = module.github_apps.team_name
-    name = module.github_apps.team_name
-    secret = random_password.github_ops_client_secret.result
-    redirectURIs = [ "https://oauth2.${var.paas_base_domain}/oauth2/callback"]
-  }, {
-    id           = module.github_ops.team_name
-    name         = module.github_ops.team_name
+    id           = module.github_apps.team_name
+    name         = module.github_apps.team_name
+    secret       = random_password.github_ops_client_secret.result
+    redirectURIs = ["https://oauth2.${var.paas_base_domain}/oauth2/callback"]
+    }, {
+    id   = module.github_ops.team_name
+    name = module.github_ops.team_name
     redirectURIs = [
       "http://127.0.0.1/oidc/callback",
       "http://localhost:8000"
@@ -111,30 +111,30 @@ resource "kubernetes_cluster_role_binding_v1" "dex_github_cluster_admin" {
 }
 
 module "oauth2_proxy_apps" {
-  source        = "../tf-modules-k8s/oauth2-proxy"
-  client_name   = module.dex.dex_clients[0].name
-  client_id     = module.dex.dex_clients[0].id
-  client_secret = module.dex.dex_clients[0].secret
-  dex_namespace = var.dex_namespace
-  dex_hostname = local.dex_hostname
-  cookie_domains = [".${var.paas_base_domain}"]
+  source                      = "../tf-modules-k8s/oauth2-proxy"
+  client_name                 = module.dex.dex_clients[0].name
+  client_id                   = module.dex.dex_clients[0].id
+  client_secret               = module.dex.dex_clients[0].secret
+  dex_namespace               = var.dex_namespace
+  dex_hostname                = local.dex_hostname
+  cookie_domains              = [".${var.paas_base_domain}"]
   cert_manager_cluster_issuer = module.cert_manager.issuer
-  oauth2_hostname  = "oauth2.${var.paas_base_domain}"
-  github_org    = var.github_organization
-  github_team   = var.github_apps_team
-  redirect_uris = module.dex.dex_clients[0].redirectURIs
-  oauth2_volume_mounts = module.cert_manager.root_ca_config_map_volume_mounts
-  oauth2_volumes = module.cert_manager.root_ca_config_map_volume
-  k8s_ingress_class = var.k8s_ingress_class
+  oauth2_hostname             = "oauth2.${var.paas_base_domain}"
+  github_org                  = var.github_organization
+  github_team                 = var.github_apps_team
+  redirect_uris               = module.dex.dex_clients[0].redirectURIs
+  oauth2_volume_mounts        = module.cert_manager.root_ca_config_map_volume_mounts
+  oauth2_volumes              = module.cert_manager.root_ca_config_map_volume
+  k8s_ingress_class           = var.k8s_ingress_class
 }
 
 output "cert_manager_cluster_issuer" {
-  value     = module.cert_manager.issuer
+  value = module.cert_manager.issuer
 }
 
 output "dex_clients" {
   sensitive = true
-  value = module.dex.dex_clients
+  value     = module.dex.dex_clients
 }
 
 output "dex_hostname" {
@@ -151,5 +151,37 @@ output "github_ops_team" {
 
 output "oauth2_proxy_ingress_annotations" {
   sensitive = true
-  value = module.oauth2_proxy_apps.ingress_annotations
+  value     = module.oauth2_proxy_apps.ingress_annotations
+}
+
+locals {
+  dex_client_ops = [
+    for client in module.dex.dex_clients :
+    client
+    if client.id == module.github_ops.team_name
+  ][0]
+}
+
+output "oidc_login_setup_command_ops" {
+  sensitive = true
+  value = <<EOF
+kubectl config set-credentials oidc \
+  --exec-api-version=client.authentication.k8s.io/v1 \
+  --exec-interactive-mode=Never \
+  --exec-command=kubectl \
+  --exec-arg=oidc-login \
+  --exec-arg=get-token \
+  --exec-arg="--oidc-issuer-url=https://dex.${var.paas_base_domain}" \
+  --exec-arg="--oidc-client-id=${local.dex_client_ops.id}" \
+  --exec-arg="--oidc-client-secret=${local.dex_client_ops.secret}" \
+  --exec-arg="--oidc-extra-scope=groups" \
+  --exec-arg="--oidc-extra-scope=email";
+
+kubectl config set-cluster plateforme --server=https://${var.paas_base_domain}:6443;
+kubectl config set clusters.plateforme.certificate-authority-data '${base64encode(var.k3s_config.cluster_ca_certificate)}';
+
+kubectl config set-context plateforme --user=oidc --cluster=plateforme;
+# Enable with
+kubectl config use-context plateforme;
+EOF
 }

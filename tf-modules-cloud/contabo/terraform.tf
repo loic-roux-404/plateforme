@@ -4,7 +4,8 @@ terraform {
 
   required_providers {
     contabo = {
-      source = "loic-roux-404/contabo"
+      source = "contabo/contabo"
+      version = "0.1.32"
     }
     time = {
       source = "hashicorp/time"
@@ -18,4 +19,3 @@ provider "contabo" {
   oauth2_user          = var.contabo_credentials.oauth2_user
   oauth2_pass          = var.contabo_credentials.oauth2_pass
 }
-  

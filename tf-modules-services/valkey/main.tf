@@ -5,7 +5,13 @@ resource "helm_release" "valkey" {
   version    = var.valkey_chart_version
 
   namespace        = var.valkey_namespace
-  create_namespace = true
+  create_namespace = false
+
+  timeout          = 120
+  wait_for_jobs    = true
+  atomic           = true
+  take_ownership = true
+  upgrade_install  = true
 
   values = [
     templatefile("${path.module}/valkey-values.yaml.tmpl", {
@@ -19,7 +25,7 @@ resource "helm_release" "valkey" {
   ]
 }
 
-data "kubernetes_service" "valkey" {
+data "kubernetes_service_v1" "valkey" {
   metadata {
     name      = var.valkey_service_name
     namespace = var.valkey_namespace
@@ -30,15 +36,15 @@ data "kubernetes_service" "valkey" {
 
 output "valkey_service_name" {
   description = "Name of the Kubernetes Service exposing Valkey"
-  value       = data.kubernetes_service.valkey.metadata[0].name
+  value       = data.kubernetes_service_v1.valkey.metadata[0].name
 }
 
 output "valkey_service_cluster_ip" {
   description = "ClusterIP of the Valkey service"
-  value       = data.kubernetes_service.valkey.spec[0].cluster_ip
+  value       = data.kubernetes_service_v1.valkey.spec[0].cluster_ip
 }
 
 output "valkey_service_port" {
   description = "First service port for Valkey"
-  value       = data.kubernetes_service.valkey.spec[0].port[0].port
+  value       = data.kubernetes_service_v1.valkey.spec[0].port[0].port
 }

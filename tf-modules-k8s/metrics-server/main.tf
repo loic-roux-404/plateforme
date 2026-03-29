@@ -5,6 +5,7 @@ resource "helm_release" "metrics_server" {
   version    = var.metrics_server_version
   namespace = "kube-system"
   atomic = true
+  take_ownership = true
   timeout = 60
 
   values = [

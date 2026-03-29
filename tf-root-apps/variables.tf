@@ -64,3 +64,27 @@ variable "oauth2_proxy_ingress_annotations" {
   type = map(string)
   default = {}
 }
+
+variable "smtp_main_username" {
+  description = "SMTP username"
+  type        = string
+  sensitive   = true
+}
+
+variable "smtp_main_password" {
+  description = "SMTP password"
+  type        = string
+  sensitive   = true
+}
+
+variable "n8n_persistence_size" {
+  default = "128Mi"
+}
+
+variable "n8n_postgres_persistence_size" {
+  default = "512Mi"
+}
+
+variable "smtp_relay_persistence_size" {
+  default = "128Mi"
+}
