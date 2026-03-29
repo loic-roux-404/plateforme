@@ -18,3 +18,11 @@ variable "postgres_user" {
 variable "postgres_service_name" {
   default = "postgresql"
 }
+
+variable "postgres_storage_class" {
+  default = "local-path"
+}
+
+variable "postgres_persistence_size" {
+  default = "512Mi"
+}

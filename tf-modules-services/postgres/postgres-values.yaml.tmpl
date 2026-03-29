@@ -8,6 +8,6 @@ auth:
 primary:
   persistence:
     enabled: true
-    size: 1Gi
-    storageClass: "local-path"
+    size: ${postgres_persistence_size}
+    storageClass: ${postgres_storage_class}
     resourcePolicy: delete

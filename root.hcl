@@ -14,4 +14,18 @@ remote_state {
   }
 }
 
+terraform {
+ exclude_from_copy = [
+    ".git",
+    "result/Library",
+    "result/darwin",
+    "result/Applications",
+    "result/patches",
+    "result/sw",
+    "result/user",
+    "*.nix",
+    ".direnv"
+  ]
+}
+
 inputs = local.env.locals.input_vars

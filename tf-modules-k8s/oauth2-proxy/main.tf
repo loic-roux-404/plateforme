@@ -19,7 +19,10 @@ resource "helm_release" "oauth2_proxy" {
   namespace        = var.dex_namespace
   create_namespace = false
   timeout          = 120
-
+  wait_for_jobs    = true
+  atomic           = true
+  take_ownership = true
+  
   values = [templatefile("${path.module}/oauth2-proxy-values.yaml.tmpl", {
     client_id       = var.client_id
     client_secret   = var.client_secret

@@ -49,6 +49,15 @@ Then we check with `kubectl cluster-info` which should give us the information o
 
 And there you have access to an interface to control your cluster directly from vscode. Use this `json` configuration as much as you want in your application repositories to have a production-like experience.
 
+
+### Terragrunt cache download issues
+
+```
+ error downloading 'file:///Users/loic/github.com/loic-roux-404/k3s-paas': open ../../../../../../.terragrunt-cache/Z69vkGsFyePH0e_F_c6nMmeBn8M/cyRBXgCPjBPxdp5zNnk4giC1NbU/result/Library/.terragrunt-source-manifest: permission denied
+```
+
+You've just initialized your nix darwin environment and `result/` folder is owned by root. You can delete this folder or force rights on `$USER` to fix this.
+
 ## Sources
 
 - [packer-kvm](https://github.com/goffinet/packer-kvm/blob/master/http/jammy/user-data)

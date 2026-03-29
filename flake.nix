@@ -202,7 +202,8 @@
               sops ssh-to-age libvirt qemu;
             };
             shellHook = ''
-              export DOCKER_HOST=tcp://127.0.0.1:2375
+              export DOCKER_HOST='tcp://127.0.0.1:2375'
+              echo 'Docker Builder configured in x86 mode'
             '' + builtins.readFile ./nix-flake/init-sops.sh;
           };
 
@@ -215,7 +216,8 @@
               set -e
               nix build .#darwinConfigurations.builder-docker.system
               ./result/sw/bin/darwin-rebuild switch --flake .#builder-docker
-              export DOCKER_HOST=tcp://127.0.0.1:2375
+              export DOCKER_HOST='tcp://127.0.0.1:2375'
+              echo 'Docker Builder configured in arm mode'
             '';
           };
 
