@@ -34,8 +34,8 @@ variable "appsmith_resources" {
     }))
   })
   default = {
-    requests = { cpu = "100m", memory = "256Mi" }
-    limits   = { cpu = "500m", memory = "1024Mi" }
+    requests = { cpu = "200m", memory = "512Mi" }
+    limits   = { cpu = "800m", memory = "1536Mi" }
   }
 }
 

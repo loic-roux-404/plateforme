@@ -2,7 +2,7 @@ variable "gandi_token" {
   type = string
 }
 
-variable "paas_base_domain" {
+variable "domain" {
   type    = string
 }
 

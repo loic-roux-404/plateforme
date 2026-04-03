@@ -20,6 +20,11 @@ variable "paas_base_domain" {
   default = "kube.test"
 }
 
+variable "additional_domains" {
+  type    = list(string)
+  default = []
+}
+
 variable "ssh_connection" {
   type = object({
     user        = string

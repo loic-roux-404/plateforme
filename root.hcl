@@ -23,6 +23,7 @@ terraform {
     "result/patches",
     "result/sw",
     "result/user",
+    "result/etc",
     "*.nix",
     ".direnv"
   ]

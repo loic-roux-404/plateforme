@@ -15,7 +15,7 @@ resource "terraform_data" "wait_ssh" {
 
 data "external" "k3s_config" {
   depends_on = [ terraform_data.wait_ssh ]
-  program = ["${path.module}/fetch-config.sh"]
+  program = ["bash", "${path.module}/fetch-config.sh"]
   query = {
     user   = var.ssh_connection.user
     host = var.node_hostname

@@ -96,8 +96,8 @@ locals {
         privateAccessToken = random_password.supabase_analytics_private_token.result
       }
       dashboard = {
-        username = "supabase"
-        password = "supabase"
+        username = "admin"
+        password = "admin"
       }
       s3 = {
         keyId     = random_password.supabase_s3_key_id.result
@@ -160,8 +160,8 @@ locals {
         # Base settings
         SUPABASE_PUBLIC_URL = "https://${var.domain}"
         SUPABASE_URL        = "https://${var.domain}"
-        NEXT_PUBLIC_ENABLE_LOGS : true
-        NEXT_ANALYTICS_BACKEND_PROVIDER : "postgres"
+        NEXT_PUBLIC_ENABLE_LOGS = true
+        NEXT_ANALYTICS_BACKEND_PROVIDER = "postgres"
 
         POSTGRES_HOST      = local.db_service_name
         POSTGRES_PORT      = "5432"

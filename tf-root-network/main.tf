@@ -6,13 +6,14 @@ locals {
     for cidr in local.private_ip_cidrs :
     cidr if can(regex(cidr, var.machine.node_ip))
   ]) > 0
+  all_domains = concat([var.paas_base_domain], var.additional_domains)
 }
 
 module "gandi_domain" {
-  count            = local.is_private_ip ? 0 : 1
+  for_each         = local.is_private_ip ? toset([]) : toset(local.all_domains)
   source           = "../tf-modules-cloud/gandi"
   gandi_token      = var.gandi_token
-  paas_base_domain = var.paas_base_domain
+  domain = each.value
   target_ip        = var.machine.node_ip
 }
 
