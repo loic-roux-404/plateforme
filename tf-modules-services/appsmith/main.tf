@@ -97,7 +97,9 @@ resource "helm_release" "appsmith" {
       ingress = {
         enabled          = true
         ingressClassName = var.k8s_ingress_class
-        hostname         = var.domain
+        hosts            = [{
+          host = var.domain
+        }]
 
         annotations = merge(
           var.k8s_ingress_annotations,
