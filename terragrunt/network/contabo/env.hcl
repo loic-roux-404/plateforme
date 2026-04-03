@@ -11,5 +11,6 @@ locals {
     gandi_token = local.secret_vars.gandi_token
     nix_flake = "${local.flake_dir}#deploy-contabo"
     nix_flake_reset = "${local.flake_dir}#initial-contabo"
+    additional_domains = local.secret_vars.additional_domains
   }
 }
