@@ -103,6 +103,7 @@ resource "helm_release" "appsmith" {
           var.k8s_ingress_annotations,
           {
             "cert-manager.io/cluster-issuer" = var.cert_manager_cluster_issuer
+            "nginx.ingress.kubernetes.io/rewrite-target" = "/"
           }
         )
 

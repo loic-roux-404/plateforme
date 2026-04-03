@@ -203,9 +203,9 @@ let
 
     paas.manifests."local-path-storage.yaml" = {
       enable = true;
-      content = builtins.readFile (pkgs.fetchurl {
+      content = builtins.readFile (builtins.fetchurl {
         url = "https://raw.githubusercontent.com/rancher/local-path-provisioner/v0.0.35/deploy/local-path-storage.yaml";
-        hash = "sha256-w0oRBGpVXvIsHkEloq2qCQoblUFYhA3hDkqNJ0FanPk=";
+        sha256 = "sha256-w0oRBGpVXvIsHkEloq2qCQoblUFYhA3hDkqNJ0FanPk=";
       });
     };
   };

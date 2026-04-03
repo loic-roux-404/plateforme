@@ -119,7 +119,7 @@ locals {
 
 data "external" "instantiate" {
   depends_on = [terraform_data.upload_secrets]
-  program    = ["${path.module}/instantiate.sh", local.real_flake]
+  program    = ["bash", "${path.module}/instantiate.sh", local.real_flake]
 }
 
 resource "terraform_data" "deploy" {
