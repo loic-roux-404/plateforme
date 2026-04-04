@@ -18,6 +18,19 @@ config:
       redirectURI: "https://${dex_hostname}/callback"
       orgs:
         ${dex_github_orgs}
+
+  - type: oidc
+    id: github-actions
+    name: github-actions
+    config:
+      issuer: https://token.actions.githubusercontent.com
+      scopes:
+        - openid
+        - groups
+      userNameKey: sub
+      claimMapping:
+        groups: repository_owner
+
   oauth2:
     skipApprovalScreen: true
   staticClients: ${jsonencode(static_clients)}

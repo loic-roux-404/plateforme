@@ -21,7 +21,7 @@ module "mail-relay" {
 module "supabase" {
   source = "../tf-modules-services/supabase"
   domain = "supabase.${var.paas_base_domain}"
-  
+
   smtp_host = module.mail-relay.smtp_infos.host
   smtp_port = module.mail-relay.smtp_infos.port
   smtp_user = var.smtp_main_username

@@ -23,6 +23,7 @@ variable "static_clients" {
     redirectURIs = list(string)
     name         = string
     secret       = string
+    public       = bool
   }))
   sensitive = true
   default = []
