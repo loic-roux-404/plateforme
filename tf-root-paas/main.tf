@@ -59,6 +59,11 @@ resource "random_password" "github_ops_client_secret" {
   special = false
 }
 
+resource "random_password" "github_action_client_secret" {
+  length  = 32
+  special = false
+}
+
 module "dex" {
   depends_on           = [module.cert_manager.reflector_metadata_name]
   source               = "../tf-modules-k8s/dex"
@@ -79,7 +84,8 @@ module "dex" {
     name         = module.github_apps.team_name
     secret       = random_password.github_ops_client_secret.result
     redirectURIs = ["https://oauth2.${var.paas_base_domain}/oauth2/callback"]
-    }, {
+    public = false
+  }, {
     id   = module.github_ops.team_name
     name = module.github_ops.team_name
     redirectURIs = [
@@ -87,6 +93,13 @@ module "dex" {
       "http://localhost:8000"
     ]
     secret = random_password.github_ops_client_secret.result
+    public = false
+  }, {
+      id  = "apps-github-actions"
+      name = "apps"
+      public = true
+      redirectURIs = []
+      secret = random_password.github_action_client_secret.result
   }]
 }
 
@@ -106,6 +119,27 @@ resource "kubernetes_cluster_role_binding_v1" "dex_github_cluster_admin" {
   subject {
     kind      = "Group"
     name      = each.value
+    api_group = "rbac.authorization.k8s.io"
+  }
+}
+
+resource "kubernetes_role_binding_v1" "dex_github_apps_deployer" {
+  for_each = toset(var.ci_authorized_namespaces)
+
+  metadata {
+    name      = "kubeapps-${module.github_apps.team_name}-deployer"
+    namespace = each.value
+  }
+
+  role_ref {
+    api_group = "rbac.authorization.k8s.io"
+    kind      = "ClusterRole"
+    name      = "edit"
+  }
+
+  subject {
+    kind      = "Group"
+    name      = var.github_organization
     api_group = "rbac.authorization.k8s.io"
   }
 }
@@ -181,7 +215,7 @@ kubectl config set-cluster plateforme --server=https://${var.paas_base_domain}:6
 kubectl config set clusters.plateforme.certificate-authority-data '${base64encode(var.k3s_config.cluster_ca_certificate)}';
 
 kubectl config set-context plateforme --user=oidc --cluster=plateforme;
-# Enable with
+
 kubectl config use-context plateforme;
 EOF
 }

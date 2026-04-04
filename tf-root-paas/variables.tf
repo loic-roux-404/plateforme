@@ -107,12 +107,19 @@ variable "letsencrypt_envs_ca_certs" {
 variable "services_subdomains" {
   default = [
     "n8n",
-    "argocd",
     "grafana",
     "loki",
     "promtail",
     "prometheus",
-    "alertmanager",
-    "oauth2"
+    "karma",
+    "oauth2",
+    "supabase",
+    "appsmith"
   ]
+}
+
+variable "ci_authorized_namespaces" {
+  type = list(string)
+  description = "List of namespaces that CI can access for deploying applications. These namespaces should be created beforehand."
+  default = ["default", "cms-hugo"]
 }
