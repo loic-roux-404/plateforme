@@ -32,6 +32,10 @@ variable "github_client_secret" {
   type = string
 }
 
+variable "github_action_client_id" {
+  default = "apps-github-actions-staging"
+}
+
 variable "github_organization" {
   type    = string
   default = "org-404"
@@ -65,10 +69,6 @@ variable "k3s_config" {
     client_certificate = string
     client_key = string
   })
-}
-
-variable "paas_namespace" {
-  default = "default"
 }
 
 variable "k8s_ingress_class" {

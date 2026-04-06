@@ -38,10 +38,11 @@ module "deploy" {
   nix_flake_reset = var.nix_flake_reset
   ssh_connection = var.ssh_connection
   nixos_transient_secrets = {
-    nodeIp           = var.machine.node_ip
-    dexClientId      = var.github_team
-    password         = "${random_password.admin_password.bcrypt_hash}"
-    paasDomain       = "${var.paas_base_domain}"
+    nodeIp                   = var.machine.node_ip
+    dexClientId              = var.github_team
+    password                 = random_password.admin_password.bcrypt_hash
+    paasDomain               = var.paas_base_domain
+    githubActionsDexClientId = var.github_action_client_id
   }
 }
 

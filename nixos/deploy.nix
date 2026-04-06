@@ -20,6 +20,7 @@ with config.paas;
     paasDomain = {};
     password = { neededForUsers = true; };
     dexClientId = {};
+    githubActionsDexClientId = {};
   };
 
   paas.defaultKubeDistribConfigPath = lib.mkForce config.sops.templates."config.yaml".path;
@@ -38,6 +39,25 @@ with config.paas;
     ];
   };
 
+  sops.templates."apiserver-auth-config.yaml".content = ''
+    apiVersion: apiserver.config.k8s.io/v1beta1
+    kind: AuthenticationConfiguration
+    jwt:
+      - issuer:
+          url: https://dex.${config.sops.placeholder.paasDomain}
+          audiences:
+            - ${config.sops.placeholder.dexClientId}
+            - ${config.sops.placeholder.githubActionsDexClientId}
+          audienceMatchPolicy: MatchAny
+        claimMappings:
+          username:
+            prefix: ""
+            claim: email
+          groups:
+            prefix: ""
+            claim: groups
+  '';
+
   sops.templates."config.yaml".content = ''
     with-node-id: true
     advertise-address: ${config.sops.placeholder.nodeIp}
@@ -51,10 +71,8 @@ with config.paas;
       - "${config.networking.hostName}"
       - "${config.sops.placeholder.nodeIp}"
       - "${config.sops.placeholder.paasDomain}"
-    kube-apiserver-arg=authorization-mode: Node,RBAC
-    kube-apiserver-arg=oidc-issuer-url: https://dex.${config.sops.placeholder.paasDomain}
-    kube-apiserver-arg=oidc-client-id: ${config.sops.placeholder.dexClientId}
-    kube-apiserver-arg=oidc-username-claim: email
-    kube-apiserver-arg=oidc-groups-claim: groups
+    kube-apiserver-extra-mount:
+       - '${config.sops.templates."apiserver-auth-config.yaml".path}:/etc/apiserver-auth-config.yaml:ro'
+    kube-apiserver-arg=authentication-config: "/etc/apiserver-auth-config.yaml"
   '';
 }

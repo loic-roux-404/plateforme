@@ -111,6 +111,7 @@ in {
       PAGER = "less -FirSwX";
       SYSTEMD_EDITOR = "vim";
       KUBECONFIG = config.paas.kube.config;
+      CRI_CONFIG_FILE = "/var/lib/rancher/rke2/agent/etc/crictl.yaml";
     };
     shellAliases = {
       k-ks = "kubectl -n kube-system";
@@ -130,6 +131,7 @@ in {
       jq
       wget
       srvosPackages.kubectl
+      srvosPackages.cri-tools
       kubernetes-helm
       hubble
       iptables

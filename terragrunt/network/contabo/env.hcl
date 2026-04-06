@@ -6,6 +6,7 @@ locals {
   flake_dir = dirname(find_in_parent_folders("flake.nix"))
   input_vars = {
     github_team = local.secret_vars.github_team
+    github_action_client_id = local.secret_vars.github_action_client_id
     machine = local.dependencies.dependency.cloud.outputs
     paas_base_domain = local.secret_vars.paas_base_domain
     gandi_token = local.secret_vars.gandi_token

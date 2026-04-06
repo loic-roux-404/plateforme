@@ -26,13 +26,16 @@ config:
       issuer: https://token.actions.githubusercontent.com
       scopes:
         - openid
-        - groups
-      userNameKey: sub
+        - repository
+        - profile
+      userNameKey: repository_owner
       claimMapping:
-        groups: repository_owner
+        email: repository_owner
+      insecureSkipEmailVerified: true
 
   oauth2:
     skipApprovalScreen: true
+
   staticClients: ${jsonencode(static_clients)}
 
 grpc:
