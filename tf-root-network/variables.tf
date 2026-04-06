@@ -8,6 +8,11 @@ variable "machine" {
 
 variable "github_team" {
   type = string
+  default = "ops-team-staging"
+}
+
+variable "github_action_client_id" {
+  default = "apps-github-actions-staging"
 }
 
 variable "gandi_token" {

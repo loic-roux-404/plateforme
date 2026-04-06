@@ -95,8 +95,8 @@ module "dex" {
     secret = random_password.github_ops_client_secret.result
     public = false
   }, {
-      id  = "apps-github-actions"
-      name = "apps"
+      id  = var.github_action_client_id
+      name = var.github_action_client_id
       public = true
       redirectURIs = []
       secret = random_password.github_action_client_secret.result
@@ -138,9 +138,8 @@ resource "kubernetes_role_binding_v1" "dex_github_apps_deployer" {
   }
 
   subject {
-    kind      = "Group"
-    name      = var.github_organization
-    api_group = "rbac.authorization.k8s.io"
+    kind = "User"
+    name = var.github_organization
   }
 }
 

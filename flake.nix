@@ -139,9 +139,15 @@
       packages.nixosConfigurations = let
         system = builtins.replaceStrings ["darwin"] ["linux"] baseSystem;
         oldLegacyPackages = import inputs.nixpkgs-legacy (nixpkgsDefaults // { inherit system; });
+        oldLegacyPackagesX64 = import inputs.nixpkgs-legacy (nixpkgsDefaults // { system = "x86_64-linux"; });
         srvosPackages = import inputs.nixpkgs-srvos (nixpkgsDefaults // { inherit system; });
+        srvosPackagesX64 = import inputs.nixpkgs-srvos (nixpkgsDefaults // { system = "x86_64-linux"; });
         specialArgs = { 
           inherit oldLegacyPackages srvosPackages; 
+        };
+        specialArgsX64 = { 
+          oldLegacyPackages = oldLegacyPackagesX64;
+          srvosPackages = srvosPackagesX64; 
         };
       in {
         ## Libvirt configurations
@@ -159,13 +165,13 @@
         ## Contabo-specific configurations
 
         initial-contabo = nixosSystem {
-          inherit specialArgs;
+          specialArgs = specialArgsX64;
           system = "x86_64-linux";
           modules = self.nixosAllModules.contabo;
         };
 
         deploy-contabo = nixosSystem {
-          inherit specialArgs;
+          specialArgs = specialArgsX64;
           system = "x86_64-linux";
           modules = self.nixosAllModules.deployContabo ++ [
             ./nixos/contabo-master-0.nix

@@ -157,6 +157,8 @@ make terragrunt/apps/local
 
 ```
 
+> **Warn** : network changes of rke2-server config needs manual restart of service with `sudo systemctl restart rke2-server`.
+
 ## Cheat Sheet
 
 ## Nix
