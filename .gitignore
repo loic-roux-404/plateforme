@@ -41,5 +41,8 @@ result
 .direnv
 keys
 
+# node
+node_modules
+
 secrets
 .sops.yaml

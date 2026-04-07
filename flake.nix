@@ -205,6 +205,7 @@
               docker-client docker-credential-helpers 
               pebble cntb kubectl kubelogin-oidc kubernetes-helm nix nil nix-tree nixos-rebuild;
               inherit (stablePkgs) terraform terragrunt
+              nodejs pnpm
               sops ssh-to-age libvirt qemu;
             };
             shellHook = ''
