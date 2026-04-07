@@ -1,0 +1,17 @@
+{
+  "name": "setup-kube-oidc",
+  "version": "1.0.0",
+  "description": "GitHub Action to get tokens and kubeconfig",
+  "main": "index.js",
+  "scripts": {
+    "build": "ncc build src/index.js -o ."
+  },
+  "dependencies": {
+    "@actions/core": "3.0.0"
+  },
+  "author": "loic-roux-404",
+  "license": "ISC",
+  "devDependencies": {
+    "@vercel/ncc": "^0.38.4"
+  }
+}
