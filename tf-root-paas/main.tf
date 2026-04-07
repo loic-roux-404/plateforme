@@ -33,7 +33,7 @@ module "internal_ca" {
 }
 
 module "github_ops" {
-  source              = "../tf-modules-k8s/github"
+  source              = "../tf-modules-github/team"
   github_token        = var.github_token
   github_organization = var.github_organization
   github_team         = var.github_team
@@ -42,7 +42,7 @@ module "github_ops" {
 }
 
 module "github_apps" {
-  source              = "../tf-modules-k8s/github"
+  source              = "../tf-modules-github/team"
   github_token        = var.github_token
   github_organization = var.github_organization
   github_team         = var.github_apps_team
@@ -84,8 +84,8 @@ module "dex" {
     name         = module.github_apps.team_name
     secret       = random_password.github_ops_client_secret.result
     redirectURIs = ["https://oauth2.${var.paas_base_domain}/oauth2/callback"]
-    public = false
-  }, {
+    public       = false
+    }, {
     id   = module.github_ops.team_name
     name = module.github_ops.team_name
     redirectURIs = [
@@ -94,12 +94,12 @@ module "dex" {
     ]
     secret = random_password.github_ops_client_secret.result
     public = false
-  }, {
-      id  = var.github_action_client_id
-      name = var.github_action_client_id
-      public = true
-      redirectURIs = []
-      secret = random_password.github_action_client_secret.result
+    }, {
+    id           = var.github_action_client_id
+    name         = var.github_action_client_id
+    public       = true
+    redirectURIs = []
+    secret       = random_password.github_action_client_secret.result
   }]
 }
 
@@ -123,8 +123,24 @@ resource "kubernetes_cluster_role_binding_v1" "dex_github_cluster_admin" {
   }
 }
 
+module "github_org_repos_config" {
+  source              = "../tf-modules-github/repos-config"
+  github_token        = var.github_token
+  github_organization = var.github_organization
+  repo_secrets = {
+    DEX_CLIENT_SECRET = random_password.github_action_client_secret.result
+    DEX_CLIENT_ID     = var.github_action_client_id
+    KUBE_CA           = var.k3s_config.cluster_ca_certificate
+  }
+
+  repo_variables = {
+    dex_url     = "https://${local.dex_hostname}"
+    k8s_api_url = "https://${var.paas_base_domain}:${var.k3s_port}"
+  }
+}
+
 resource "kubernetes_role_binding_v1" "dex_github_apps_deployer" {
-  for_each = toset(var.ci_authorized_namespaces)
+  for_each = toset(concat(var.ci_authorized_namespaces, module.github_org_repos_config.repositories))
 
   metadata {
     name      = "kubeapps-${module.github_apps.team_name}-deployer"
@@ -197,7 +213,7 @@ locals {
 
 output "oidc_login_setup_command_ops" {
   sensitive = true
-  value = <<EOF
+  value     = <<EOF
 kubectl config set-credentials oidc \
   --exec-api-version=client.authentication.k8s.io/v1 \
   --exec-interactive-mode=Never \

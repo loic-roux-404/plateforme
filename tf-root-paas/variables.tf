@@ -121,5 +121,5 @@ variable "services_subdomains" {
 variable "ci_authorized_namespaces" {
   type = list(string)
   description = "List of namespaces that CI can access for deploying applications. These namespaces should be created beforehand."
-  default = ["default", "cms-hugo"]
+  default = ["default"]
 }

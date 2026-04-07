@@ -161,7 +161,7 @@ make terragrunt/apps/local
 
 ## Github actions deployments
 
-Here is an example of a github action workflow to deploy to the cluster with Dex OIDC authentication.
+The Terraform module creates the required repository variables for all GitHub repos in the organization. Use them in the workflow as inputs to the custom action.
 
 ```yaml
 name: Deploy to production
@@ -186,8 +186,11 @@ jobs:
         id: tokens
         uses: loic-roux-404/plateforme/.github/actions/setup-kube-oidc@main
         with:
-          dex-client-secret: ${{ secrets.DEX_CLIENT_SECRET }}
-          kube-ca: ${{ secrets.KUBE_CA }}
+          dex-url: ${{ vars.DEX_URL }}
+          k8s-api-url: ${{ vars.K8S_API_URL }}
+          dex-client-id: ${{ vars.DEX_CLIENT_ID }}
+          dex-client-secret: ${{ vars.DEX_CLIENT_SECRET }}
+          kube-ca: ${{ vars.KUBE_CA }}
 
       # Do your build stuff
       # ...
@@ -203,6 +206,8 @@ jobs:
           # Your deployment commands here, e.g.:
           kubectl apply -f your-deployment.yaml
 ```
+
+When the Terraform module is applied, these variables are populated for each repo returned by the GitHub repos module.
 
 ## Cheat Sheet
 
