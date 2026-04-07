@@ -151,13 +151,58 @@ Here is the command to set up the paas on a libvirt vm.
 ```bash
 make terragrunt/cloud/local
 make terragrunt/network/local
-sleep 180 # wait k8s boot 
+sleep 180 # wait kube boot 
 make terragrunt/paas/local
 make terragrunt/apps/local
 
 ```
 
-> **Warn** : network changes of rke2-server config needs manual restart of service with `sudo systemctl restart rke2-server`.
+> **Warn** : terragrunt/network/<env> edits on rke2-server trigger a long service restart.
+
+## Github actions deployments
+
+Here is an example of a github action workflow to deploy to the cluster with Dex OIDC authentication.
+
+```yaml
+name: Deploy to production
+
+on:
+  push:
+    branches: [ main, 'ci/deploy' ]
+  workflow_dispatch: {}
+
+jobs:
+  build-and-sync:
+    runs-on: ubuntu-latest
+
+    permissions:
+      id-token: write
+      contents: read
+
+    steps:
+      - uses: actions/checkout@v6
+
+      - name: Get Tokens and Kubeconfig
+        id: tokens
+        uses: loic-roux-404/plateforme/.github/actions/setup-kube-oidc@main
+        with:
+          dex-client-secret: ${{ secrets.DEX_CLIENT_SECRET }}
+          kube-ca: ${{ secrets.KUBE_CA }}
+
+      # Do your build stuff
+      # ...
+
+      - name: Setup kubectl
+        run: |
+          mkdir -p ~/.kube
+          echo "${{ steps.tokens.outputs.kubeconfig-content }}" > ~/.kube/config
+          kubectl config current-context
+
+      - name: Deploy to cluster
+        run: |
+          # Your deployment commands here, e.g.:
+          kubectl apply -f your-deployment.yaml
+```
 
 ## Cheat Sheet
 
