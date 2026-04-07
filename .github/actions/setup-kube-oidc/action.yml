@@ -1,0 +1,26 @@
+name: 'Get Tokens and Kubeconfig'
+description: 'Retrieves OIDC token, exchanges for Dex token, and generates kubeconfig'
+inputs:
+  dex-url:
+    description: 'Dex URL'
+    default: 'https://dex.404-tools.xyz'
+  dex-client-id:
+    description: 'Dex client ID'
+    default: 'apps-github-actions'
+  dex-client-secret:
+    description: 'Dex client secret'
+    required: true
+  k8s-api-url:
+    description: 'Kubernetes API URL'
+    default: 'https://404-tools.xyz:6443'
+  kube-ca:
+    description: 'Kubernetes CA data'
+    required: true
+outputs:
+  dex-token:
+    description: 'The Dex token'
+  kubeconfig-content:
+    description: 'The kubeconfig YAML content'
+runs:
+  using: 'node24'
+  main: 'index.js'
