@@ -130,7 +130,7 @@ module "github_org_repos_config" {
   repo_secrets = {
     DEX_CLIENT_SECRET = random_password.github_action_client_secret.result
     DEX_CLIENT_ID     = var.github_action_client_id
-    KUBE_CA           = var.k3s_config.cluster_ca_certificate
+    KUBE_CA           = base64encode(var.k3s_config.cluster_ca_certificate)
   }
 
   repo_variables = {
