@@ -1,4 +1,6 @@
 import * as core from '@actions/core';
+import fs from 'fs';
+import path from 'path';
 
 async function run() {
   try {
@@ -8,6 +10,7 @@ async function run() {
     const clientSecret = core.getInput('dex-client-secret');
     const k8sApiUrl = core.getInput('k8s-api-url');
     const kubeCa = core.getInput('kube-ca');
+    const kubeconfigPathInput = core.getInput('kubeconfig-path') || '~/.kube/config';
 
     // Step 1: Get GitHub OIDC token
     const oidcToken = await core.getIDToken();
@@ -50,8 +53,8 @@ async function run() {
 apiVersion: v1
 clusters:
 - cluster:
-    certificate-authority-data: ${kubeCa}
-    server: ${k8sApiUrl}
+    certificate-authority-data: '${kubeCa}'
+    server: '${k8sApiUrl}'
   name: plateforme
 contexts:
 - context:
@@ -64,12 +67,23 @@ preferences: {}
 users:
 - name: github-action
   user:
-    token: ${dexToken}
+    token: '${dexToken}'
 `;
 
-    // Output the token and kubeconfig
+    const expandHomePath = (input) => {
+      if (input.startsWith('~/')) {
+        const home = process.env.HOME || process.cwd();
+        return path.join(home, input.slice(2));
+      }
+      return input;
+    };
+
+    const kubeconfigPath = expandHomePath(kubeconfigPathInput);
+    fs.mkdirSync(path.dirname(kubeconfigPath), { recursive: true });
+    fs.writeFileSync(kubeconfigPath, kubeconfig.trim() + '\n', 'utf8');
+
     core.setOutput('dex-token', dexToken);
-    core.setOutput('kubeconfig-content', kubeconfig.trim());
+    core.setOutput('kubeconfig-path', kubeconfigPath);
   } catch (error) {
     core.setFailed(error.message);
   }

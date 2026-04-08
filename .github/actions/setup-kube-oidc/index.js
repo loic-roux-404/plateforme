@@ -28031,6 +28031,18 @@ module.exports = require("util");
 /******/ 	}
 /******/ 	
 /************************************************************************/
+/******/ 	/* webpack/runtime/compat get default export */
+/******/ 	(() => {
+/******/ 		// getDefaultExport function for compatibility with non-harmony modules
+/******/ 		__nccwpck_require__.n = (module) => {
+/******/ 			var getter = module && module.__esModule ?
+/******/ 				() => (module['default']) :
+/******/ 				() => (module);
+/******/ 			__nccwpck_require__.d(getter, { a: getter });
+/******/ 			return getter;
+/******/ 		};
+/******/ 	})();
+/******/ 	
 /******/ 	/* webpack/runtime/create fake namespace object */
 /******/ 	(() => {
 /******/ 		var getProto = Object.getPrototypeOf ? (obj) => (Object.getPrototypeOf(obj)) : (obj) => (obj.__proto__);
@@ -28233,6 +28245,7 @@ function escapeProperty(s) {
 const external_crypto_namespaceObject = require("crypto");
 ;// CONCATENATED MODULE: external "fs"
 const external_fs_namespaceObject = require("fs");
+var external_fs_default = /*#__PURE__*/__nccwpck_require__.n(external_fs_namespaceObject);
 ;// CONCATENATED MODULE: ./node_modules/.pnpm/@actions+core@3.0.0/node_modules/@actions/core/lib/file-command.js
 // For internal use, subject to change.
 // We use any as a valid input type
@@ -28270,6 +28283,7 @@ function file_command_prepareKeyValueMessage(key, value) {
 //# sourceMappingURL=file-command.js.map
 ;// CONCATENATED MODULE: external "path"
 const external_path_namespaceObject = require("path");
+var external_path_default = /*#__PURE__*/__nccwpck_require__.n(external_path_namespaceObject);
 // EXTERNAL MODULE: external "http"
 var external_http_ = __nccwpck_require__(8611);
 var external_http_namespaceObject = /*#__PURE__*/__nccwpck_require__.t(external_http_, 2);
@@ -31049,6 +31063,8 @@ function getIDToken(aud) {
 ;// CONCATENATED MODULE: ./src/index.js
 
 
+
+
 async function run() {
   try {
     // Get inputs
@@ -31057,6 +31073,7 @@ async function run() {
     const clientSecret = getInput('dex-client-secret');
     const k8sApiUrl = getInput('k8s-api-url');
     const kubeCa = getInput('kube-ca');
+    const kubeconfigPathInput = getInput('kubeconfig-path') || '~/.kube/config';
 
     // Step 1: Get GitHub OIDC token
     const oidcToken = await getIDToken();
@@ -31099,8 +31116,8 @@ async function run() {
 apiVersion: v1
 clusters:
 - cluster:
-    certificate-authority-data: ${kubeCa}
-    server: ${k8sApiUrl}
+    certificate-authority-data: '${kubeCa}'
+    server: '${k8sApiUrl}'
   name: plateforme
 contexts:
 - context:
@@ -31113,12 +31130,23 @@ preferences: {}
 users:
 - name: github-action
   user:
-    token: ${dexToken}
+    token: '${dexToken}'
 `;
 
-    // Output the token and kubeconfig
+    const expandHomePath = (input) => {
+      if (input.startsWith('~/')) {
+        const home = process.env.HOME || process.cwd();
+        return external_path_default().join(home, input.slice(2));
+      }
+      return input;
+    };
+
+    const kubeconfigPath = expandHomePath(kubeconfigPathInput);
+    external_fs_default().mkdirSync(external_path_default().dirname(kubeconfigPath), { recursive: true });
+    external_fs_default().writeFileSync(kubeconfigPath, kubeconfig.trim() + '\n', 'utf8');
+
     setOutput('dex-token', dexToken);
-    setOutput('kubeconfig-content', kubeconfig.trim());
+    setOutput('kubeconfig-path', kubeconfigPath);
   } catch (error) {
     setFailed(error.message);
   }
