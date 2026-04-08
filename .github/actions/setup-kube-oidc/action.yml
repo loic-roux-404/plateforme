@@ -16,11 +16,15 @@ inputs:
   kube-ca:
     description: 'Kubernetes CA data'
     required: true
+  kubeconfig-path:
+    description: 'Path to write the generated kubeconfig file. Expand ~ to HOME; relative paths are resolved from the action working directory.'
+    required: false
+    default: '~/.kube/config'
 outputs:
   dex-token:
     description: 'The Dex token'
-  kubeconfig-content:
-    description: 'The kubeconfig YAML content'
+  kubeconfig-path:
+    description: 'Path to the written kubeconfig file'
 runs:
   using: 'node24'
   main: 'index.js'

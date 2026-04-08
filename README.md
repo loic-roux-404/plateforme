@@ -195,12 +195,6 @@ jobs:
       # Do your build stuff
       # ...
 
-      - name: Setup kubectl
-        run: |
-          mkdir -p ~/.kube
-          echo "${{ steps.tokens.outputs.kubeconfig-content }}" > ~/.kube/config
-          kubectl config current-context
-
       - name: Deploy to cluster
         run: |
           # Your deployment commands here, e.g.:
