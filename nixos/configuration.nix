@@ -49,7 +49,7 @@ in {
 
   i18n.defaultLocale = "en_US.UTF-8";
 
-  boot.kernelModules = [ "br_netfilter" "ip_conntrack" "ip_vs" "ip_vs_rr" "ip_vs_wrr" "ip_vs_sh" "overlay" ];  
+  boot.kernelModules = [ "br_netfilter" "ip_conntrack" "ip_vs" "ip_vs_rr" "ip_vs_wrr" "ip_vs_sh" "overlay" "iscsi_tcp" ];
 
   networking = {
     useNetworkd = true;
@@ -76,6 +76,11 @@ in {
     };
   };
 
+  services.openiscsi = {
+    enable = true;
+    name = "iqn.2026-04.com.open-iscsi:${config.networking.hostName}";
+  };
+
   services.fail2ban.enable = true;
 
   programs.ssh.package = pkgs.openssh_hpn;
@@ -99,10 +104,12 @@ in {
     configPath = lib.mkDefault defaultKubeDistribConfigPath;
   };
 
-  systemd.tmpfiles.rules = builtins.attrValues (
+  systemd.tmpfiles.rules = (builtins.attrValues (
     builtins.mapAttrs (name: manifest: 
     "C ${manifest.targetDir}/${name} 0640 - - - ${pkgs.writeText name manifest.content}") (lib.filterAttrs (n: v: v.enable) manifests)
-  );
+  )) ++ [ 
+    "L+ /usr/local/bin - - - - /run/current-system/sw/bin/" 
+  ];
 
   programs.vim.defaultEditor = true;
   environment = {
@@ -133,10 +140,10 @@ in {
       srvosPackages.kubectl
       srvosPackages.cri-tools
       kubernetes-helm
-      hubble
       iptables
       tcpdump
       ngrep
+      openiscsi
     ];
   };
 

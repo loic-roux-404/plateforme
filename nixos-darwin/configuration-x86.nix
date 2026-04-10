@@ -1,6 +1,6 @@
 {
-  pkgs, lib, ...
-}: {
+  pkgs, lib, config, ...
+}: with config.paas; {
   nix.settings.extra-platforms = [ "x86_64-linux" ];
   nix.linux-builder = {
     package = pkgs.darwin.linux-builder-x86_64;
@@ -20,6 +20,7 @@
       nixpkgs.hostPlatform = lib.mkForce "x86_64-linux";
       security.sudo.wheelNeedsPassword = false;
       users.users.builder.extraGroups = [ "wheel" ];
+      users.users.builder.openssh.authorizedKeys.keys = [ user.key ];
     });
   };
 }

@@ -188,9 +188,9 @@ jobs:
         with:
           dex-url: ${{ vars.DEX_URL }}
           k8s-api-url: ${{ vars.K8S_API_URL }}
-          dex-client-id: ${{ vars.DEX_CLIENT_ID }}
-          dex-client-secret: ${{ vars.DEX_CLIENT_SECRET }}
-          kube-ca: ${{ vars.KUBE_CA }}
+          dex-client-id: ${{ secrets.DEX_CLIENT_ID }}
+          dex-client-secret: ${{ secrets.DEX_CLIENT_SECRET }}
+          kube-ca: ${{ secrets.KUBE_CA }}
 
       # Do your build stuff
       # ...

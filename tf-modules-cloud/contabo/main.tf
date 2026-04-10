@@ -26,6 +26,16 @@ resource "contabo_instance" "k3s_paas_master" {
   }
 }
 
+data "contabo_object_storage" "main" {
+  id = var.object_storage_id
+}
+
+output "object_storage" {
+  value = merge({
+    s3_url = data.contabo_object_storage.main.s3_url }, var.object_storage
+  )
+}
+
 output "node_hostname" {
   depends_on = [contabo_instance.k3s_paas_master]
   value      = var.node_hostname
