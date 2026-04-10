@@ -6,7 +6,6 @@
 }:
 
 with config.paas;
-
 {
   system.stateVersion = 4;
 
@@ -39,6 +38,7 @@ with config.paas;
       StandardErrorPath = "/var/log/libvirt/libvirt-error.log";
     };
   };
+
   launchd.daemons.virtlogd = {
     serviceConfig = {
       KeepAlive = true;
@@ -49,6 +49,29 @@ with config.paas;
       StandardErrorPath = "/var/log/libvirt/virtlogd-error.log";
     };
   };
+
+  launchd.daemons.minio = {
+    script = ''
+      sudo mkdir -p /var/lib/minio || true
+
+      ${pkgs.minio}/bin/minio server /var/lib/minio \
+        --address "127.0.0.1:9000" \
+        --console-address "127.0.0.1:9001"
+    '';
+    serviceConfig = {
+      KeepAlive = true;
+      RunAtLoad = true;
+
+      WorkingDirectory = "/tmp";
+      StandardOutPath = "/var/log/minio.log";
+      StandardErrorPath = "/var/log/minio-error.log";
+      EnvironmentVariables = {
+        MINIO_ROOT_USER = "minioadmin";
+        MINIO_ROOT_PASSWORD = "minioadmin";
+      };
+    };
+  };
+
   launchd.daemons.pebble = {
     serviceConfig = {
       KeepAlive = true;
@@ -63,6 +86,11 @@ with config.paas;
   system.activationScripts.importPebbleCert.text = ''
     curl -k https://localhost:15000/intermediates/0 > /tmp/pebble-ca.pem;
     sudo security add-trusted-cert -d -r trustAsRoot -k /Library/Keychains/System.keychain /tmp/pebble-ca.pem;
+  '';
+  
+  system.activationScripts.fixSshBuilderKey.text = ''
+    sudo chown $USER:staff /etc/nix/builder_ed25519
+    sudo chmod 440 /etc/nix/builder_ed25519
   '';
 
   environment.etc."libvirt/libvirtd.conf".text = ''
@@ -94,15 +122,17 @@ with config.paas;
       externalAccountBindingRequired = false;
     };
   };
+
   nix.settings = {
-    trusted-users = [ "staff" "admin" "nixbld" ];
+    trusted-users = [ "@staff" "@nixbld" ];
     keep-derivations = true;
     keep-outputs = true;
     # https://github.com/NixOS/nix/issues/7273
     auto-optimise-store = false;
-    extra-platforms = [ "x86_64-linux" ];
+    extra-platforms = [ "aarch64-linux" ];
     allowed-uris = ["raw.githubusercontent.com"];
   };
+
   nix.gc = {
     automatic = true;
     interval = { Weekday = 0; Hour = 0; Minute = 0; };

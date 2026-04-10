@@ -237,6 +237,7 @@
               set -e
               nix build .#darwinConfigurations.''${VARIANT:-builder}.system
               sudo ./result/sw/bin/darwin-rebuild switch --flake .#''${VARIANT:-builder}
+              sudo chown $USER:staff /etc/nix/builder_ed25519
             '';
           };
         };

@@ -123,3 +123,16 @@ variable "ci_authorized_namespaces" {
   description = "List of namespaces that CI can access for deploying applications. These namespaces should be created beforehand."
   default = ["default"]
 }
+
+variable "object_storage" {
+  type = object({
+    access_key    = string
+    access_secret = string 
+    s3_url        = string
+  })
+  default = {
+    access_key = "minioadmin"
+    access_secret = "minioadmin"
+    s3_url = "http://localhost:9000"
+  }
+}

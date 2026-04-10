@@ -3,6 +3,17 @@ variable "contabo_instance" {
   type = string
 }
 
+variable "object_storage_id" {
+  type = string
+}
+
+variable "object_storage" {
+  type = object({
+    access_key    = string
+    access_secret = string 
+  })
+}
+
 variable "contabo_credentials" {
   type = object({
     oauth2_client_id     = string

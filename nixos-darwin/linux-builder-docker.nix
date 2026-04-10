@@ -1,4 +1,4 @@
-{ pkgs, ... }: {
+{ pkgs, config, ... }: with config.paas; {
   nix.linux-builder.package = pkgs.darwin.linux-builder;
   nix.linux-builder.ephemeral = false;
   nix.linux-builder.config = ({ lib, ... }: {
@@ -14,5 +14,6 @@
     ];
     security.sudo.wheelNeedsPassword = false;
     users.users.builder.extraGroups = lib.mkForce [ "docker" "wheel" ];
+    users.users.builder.openssh.authorizedKeys.keys = [ user.key ];
   });
 }

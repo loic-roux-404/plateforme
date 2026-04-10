@@ -2,7 +2,7 @@ locals {
   cert_manager_acme_url         = var.letsencrypt_envs[var.cert_manager_letsencrypt_env]
   cert_manager_acme_ca_cert_url = var.letsencrypt_envs_ca_certs[var.cert_manager_letsencrypt_env]
   dex_hostname                  = "dex.${var.paas_base_domain}"
-  all_services_subdomains       = concat(["dex"], var.services_subdomains)
+  all_services_subdomains       = concat(["dex", "longhorn"], var.services_subdomains)
   ingress_hosts_internals       = [for item in local.all_services_subdomains : "${item}.${var.paas_base_domain}"]
 }
 
@@ -23,6 +23,13 @@ module "cert_manager" {
   cert_manager_acme_url    = local.cert_manager_acme_url
   letsencrypt_env          = var.cert_manager_letsencrypt_env
   cert_manager_email       = var.cert_manager_email
+}
+
+module "longhorn" {
+  source                     = "../tf-modules-k8s/longhorn"
+  paas_base_domain           = var.paas_base_domain
+  k8s_ingress_class          = var.k8s_ingress_class
+  cert_manager_cluster_issuer = module.cert_manager.issuer
 }
 
 module "internal_ca" {
