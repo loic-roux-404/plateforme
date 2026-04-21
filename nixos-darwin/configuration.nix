@@ -123,7 +123,7 @@ with config.paas;
     keep-outputs = true;
     # https://github.com/NixOS/nix/issues/7273
     auto-optimise-store = false;
-    extra-platforms = [ "aarch64-linux" ];
+    extra-platforms = [ "x86_64-linux" ];
     allowed-uris = ["raw.githubusercontent.com"];
   };
 
@@ -138,6 +138,7 @@ with config.paas;
     package = lib.mkDefault pkgs.darwin.linux-builder;
     ephemeral = lib.mkDefault true;
   };
+  
   nix.enable = true;
   nix.settings.experimental-features = "nix-command flakes";
 }
