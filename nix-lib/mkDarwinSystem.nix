@@ -14,7 +14,7 @@ inputs.darwin.lib.darwinSystem {
   inherit specialArgs;
   modules = modules ++ extraModules ++ [
     ({ config, ... }: {
-      nix.nixPath.nixpkgs = "${inputs.nixpkgs-stable-darwin}";
+      nix.nixPath.nixpkgs = "${inputs.nixpkgs}";
     })
   ];
 }

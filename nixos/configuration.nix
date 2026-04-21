@@ -40,7 +40,7 @@ in {
   swapDevices = [ ];
   zramSwap.algorithm  = "zstd";
 
-  system.stateVersion = "25.05";
+  system.stateVersion = "25.11";
 
   time = {
     timeZone = lib.mkForce "Europe/Paris";

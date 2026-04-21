@@ -7,11 +7,10 @@
 
 with config.paas;
 {
-  system.stateVersion = 4;
+  system.stateVersion = 5;
 
   programs.fish.enable = true;
   programs.bash.enable = true;
-  programs.direnv.enable = true;
 
   services.dnsmasq = {
     enable = true;
@@ -87,11 +86,6 @@ with config.paas;
     curl -k https://localhost:15000/intermediates/0 > /tmp/pebble-ca.pem;
     sudo security add-trusted-cert -d -r trustAsRoot -k /Library/Keychains/System.keychain /tmp/pebble-ca.pem;
   '';
-  
-  system.activationScripts.fixSshBuilderKey.text = ''
-    sudo chown $USER:staff /etc/nix/builder_ed25519
-    sudo chmod 440 /etc/nix/builder_ed25519
-  '';
 
   environment.etc."libvirt/libvirtd.conf".text = ''
     mode = "direct"
@@ -124,7 +118,7 @@ with config.paas;
   };
 
   nix.settings = {
-    trusted-users = [ "@staff" "@nixbld" ];
+    trusted-users = [ "@admin" ];
     keep-derivations = true;
     keep-outputs = true;
     # https://github.com/NixOS/nix/issues/7273
@@ -140,7 +134,7 @@ with config.paas;
   };
   nix.linux-builder = {
     enable = true;
-    maxJobs = 8;
+    maxJobs = 2;
     package = lib.mkDefault pkgs.darwin.linux-builder;
     ephemeral = lib.mkDefault true;
   };
