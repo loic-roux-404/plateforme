@@ -4,14 +4,12 @@
   inputs = {
     # Package sets
     nixpkgs.url = "github:NixOS/nixpkgs/25.11";
-    nixpkgs-legacy.url = "github:NixOS/nixpkgs/23.11";
-    nixpkgs-stable-darwin.url = "github:NixOS/nixpkgs/nixpkgs-25.11-darwin";
     srvos.url = "github:numtide/srvos";
     nixpkgs-srvos.follows = "srvos/nixpkgs";
 
     # Environment/system management
-    darwin.url = "github:LnL7/nix-darwin/nix-darwin-25.11";
-    darwin.inputs.nixpkgs.follows = "nixpkgs-stable-darwin";
+    darwin.url = "github:nix-darwin/nix-darwin/nix-darwin-25.11";
+    darwin.inputs.nixpkgs.follows = "nixpkgs";
 
     home-manager = { 
       url = "github:nix-community/home-manager/master"; 
@@ -120,33 +118,18 @@
             linux-docker-builder = ./nixos-darwin/linux-builder-docker.nix;
           };
         };
-
-        # Config with small modifications needed/desired for CI with GitHub workflow
-        githubCI = self.darwinConfigurations.default.override {
-          system = "x86_64-darwin";
-          username = "runner";
-          nixConfigDirectory = "/Users/runner/work/nixpkgs/nixpkgs";
-          extraModules = singleton {
-            environment.etc.shells.enable = mkForce false;
-            environment.etc."nix/nix.conf".enable = mkForce false;
-            homebrew.enable = mkForce false;
-          };
-        };
       };
     }
     // flake-utils.lib.eachDefaultSystem (baseSystem:
     {
       packages.nixosConfigurations = let
         system = builtins.replaceStrings ["darwin"] ["linux"] baseSystem;
-        oldLegacyPackages = import inputs.nixpkgs-legacy (nixpkgsDefaults // { inherit system; });
-        oldLegacyPackagesX64 = import inputs.nixpkgs-legacy (nixpkgsDefaults // { system = "x86_64-linux"; });
         srvosPackages = import inputs.nixpkgs-srvos (nixpkgsDefaults // { inherit system; });
         srvosPackagesX64 = import inputs.nixpkgs-srvos (nixpkgsDefaults // { system = "x86_64-linux"; });
         specialArgs = { 
-          inherit oldLegacyPackages srvosPackages; 
+          inherit srvosPackages; 
         };
         specialArgsX64 = { 
-          oldLegacyPackages = oldLegacyPackagesX64;
           srvosPackages = srvosPackagesX64; 
         };
       in {
@@ -195,7 +178,6 @@
       devShells = let 
         system = baseSystem;
         pkgs = import inputs.nixpkgs-srvos (nixpkgsDefaults // { inherit system; });
-        stablePkgs = import inputs.nixpkgs (nixpkgsDefaults // { inherit system; });
        in
         {
           default = pkgs.mkShell {
@@ -203,14 +185,13 @@
             packages = attrValues {
               inherit (pkgs) bashInteractive grpcurl jq coreutils e2fsprogs
               docker-client docker-credential-helpers 
-              pebble cntb kubectl kubelogin-oidc kubernetes-helm nix nil nix-tree nixos-rebuild;
-              inherit (stablePkgs) terraform terragrunt
+              pebble cntb kubectl kubelogin-oidc kubernetes-helm nix nil nix-tree nixos-rebuild
+              terraform terragrunt
               nodejs pnpm
               sops ssh-to-age libvirt qemu;
             };
             shellHook = ''
               export DOCKER_HOST='tcp://127.0.0.1:2375'
-              echo 'Docker Builder configured in x86 mode'
             '' + builtins.readFile ./nix-flake/init-sops.sh;
           };
 
@@ -237,7 +218,6 @@
               set -e
               nix build .#darwinConfigurations.''${VARIANT:-builder}.system
               sudo ./result/sw/bin/darwin-rebuild switch --flake .#''${VARIANT:-builder}
-              sudo chown $USER:staff /etc/nix/builder_ed25519
             '';
           };
         };
