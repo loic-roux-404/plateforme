@@ -42,24 +42,6 @@
       "sourceType": "github",
       "skillPath": "skills/caveman-stats/SKILL.md",
       "computedHash": "47ce2de3d6cb39a75047b5c962e4eb3da15594e7397c94103e9a104d42626553"
-    },
-    "devops-engineer": {
-      "source": "jeffallan/claude-skills",
-      "sourceType": "github",
-      "skillPath": "skills/devops-engineer/SKILL.md",
-      "computedHash": "6de5e562151fe9c227234e81bdc1e647066d6b1822463eadf296a5344b47e35a"
-    },
-    "kubernetes-specialist": {
-      "source": "jeffallan/claude-skills",
-      "sourceType": "github",
-      "skillPath": "skills/kubernetes-specialist/SKILL.md",
-      "computedHash": "9c5eb68fc9d553ee29e745258bc6198563158c4b2c57436d63647e61010b5f0a"
-    },
-    "terraform-engineer": {
-      "source": "jeffallan/claude-skills",
-      "sourceType": "github",
-      "skillPath": "skills/terraform-engineer/SKILL.md",
-      "computedHash": "04e717ca5d883a2839863f371f8ebba8b3f89cde3b2292cf90a3186c30b2d24a"
     }
   }
 }
