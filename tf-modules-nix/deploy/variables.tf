@@ -33,7 +33,7 @@ variable "nix_ssh_options" {
 
 variable "nix_rebuild_arguments" {
   type    = list(string)
-  default = ["--use-remote-sudo"]
+  default = ["--sudo"]
 }
 
 variable "nixos_transient_secrets" {

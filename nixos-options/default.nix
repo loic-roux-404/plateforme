@@ -118,7 +118,7 @@ let
     };
 
     kube.addr = lib.mkOption {
-      default = "192.168.205.2";
+      default = "192.168.2.2";
       type = lib.types.str;
       description = "K8s service host";
     };

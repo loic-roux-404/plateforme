@@ -1,19 +1,37 @@
+module "cluster_infos" {
+  source = "../tf-modules-k8s/cluster-infos"
+}
+
 locals {
-  cert_manager_acme_url         = var.letsencrypt_envs[var.cert_manager_letsencrypt_env]
-  cert_manager_acme_ca_cert_url = var.letsencrypt_envs_ca_certs[var.cert_manager_letsencrypt_env]
   dex_hostname                  = "dex.${var.paas_base_domain}"
   all_services_subdomains       = concat(["dex", "longhorn"], var.services_subdomains)
   ingress_hosts_internals       = [for item in local.all_services_subdomains : "${item}.${var.paas_base_domain}"]
+  
+  gateway_ip = "${substr(module.cluster_infos.ingress_controller_ip, 0, length(module.cluster_infos.ingress_controller_ip) - 1)}1"
+  
+  # Dynamic local environment URLs using gateway IP
+  letsencrypt_envs_dynamic = merge(
+    var.letsencrypt_envs,
+    var.cert_manager_letsencrypt_env == "local" ? {
+      local = "https://${local.gateway_ip}:14000/dir"
+    } : {}
+  )
+  
+  letsencrypt_envs_ca_certs_dynamic = merge(
+    var.letsencrypt_envs_ca_certs,
+    var.cert_manager_letsencrypt_env == "local" ? {
+      local = "https://${local.gateway_ip}:15000/roots/0"
+    } : {}
+  )
+  
+  cert_manager_acme_url         = local.letsencrypt_envs_dynamic[var.cert_manager_letsencrypt_env]
+  cert_manager_acme_ca_cert_url = local.letsencrypt_envs_ca_certs_dynamic[var.cert_manager_letsencrypt_env]
 }
 
 data "http" "paas_internal_acme_ca" {
   count    = local.cert_manager_acme_ca_cert_url != "" ? 1 : 0
   url      = local.cert_manager_acme_ca_cert_url
   insecure = var.cert_manager_letsencrypt_env == "local"
-}
-
-module "cluster_infos" {
-  source = "../tf-modules-k8s/cluster-infos"
 }
 
 module "cert_manager" {
@@ -30,6 +48,7 @@ module "longhorn" {
   paas_base_domain           = var.paas_base_domain
   k8s_ingress_class          = var.k8s_ingress_class
   cert_manager_cluster_issuer = module.cert_manager.issuer
+  object_storage             = var.object_storage
 }
 
 module "internal_ca" {
@@ -141,13 +160,20 @@ module "github_org_repos_config" {
   }
 
   repo_variables = {
-    dex_url     = "https://${local.dex_hostname}"
-    k8s_api_url = "https://${var.paas_base_domain}:${var.k3s_port}"
+    "${var.repo_variables_prefix}dex_url"     = "https://${local.dex_hostname}"
+    "${var.repo_variables_prefix}k8s_api_url" = "https://${var.paas_base_domain}:${var.k3s_port}"
   }
 }
 
+data "kubernetes_all_namespaces" "cluster_namespaces" {}
+
 resource "kubernetes_role_binding_v1" "dex_github_apps_deployer" {
-  for_each = toset(concat(var.ci_authorized_namespaces, module.github_org_repos_config.repositories))
+  for_each = toset(
+    setintersection(
+      toset(concat(var.ci_authorized_namespaces, module.github_org_repos_config.repositories)),
+      toset(data.kubernetes_all_namespaces.cluster_namespaces.namespaces)
+    )
+  )
 
   metadata {
     name      = "kubeapps-${module.github_apps.team_name}-deployer"

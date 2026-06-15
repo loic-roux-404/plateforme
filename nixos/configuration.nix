@@ -3,6 +3,7 @@
   lib,
   pkgs,
   srvosPackages,
+  legacyPackages,
   ...
 }:
 
@@ -66,7 +67,19 @@ in {
     interfaces.enp0s9.useDHCP = true;
     firewall = {
       interfaces.enp0s9 = {
-        allowedTCPPorts = lib.mkDefault [ 80 443 22 4240 8472 2379 6443 ];
+        allowedTCPPorts = lib.mkDefault [
+          22
+          80
+          443
+          2379   # etcd server client API
+          2380   # etcd server peer API 
+          6443   # kube-apiserver
+          9345   # RKE2 supervisor / node registration
+          10250  # kubelet logs/metrics
+        ];
+        allowedUDPPorts = [
+          8472   # Canal/Flannel VXLAN
+        ];
       };
       checkReversePath = "loose";
       trustedInterfaces = [
@@ -96,7 +109,7 @@ in {
 
   services.rke2 = {
     enable = lib.mkDefault true;
-    package = pkgs.rke2_latest;
+    package = legacyPackages.rke2_latest;
     role = "server";
     cni = "canal";
     extraFlags = map (service: "--disable=${service}") kube.disableServices
@@ -137,7 +150,7 @@ in {
       dnsutils
       jq
       wget
-      srvosPackages.kubectl
+      legacyPackages.kubectl
       srvosPackages.cri-tools
       kubernetes-helm
       iptables

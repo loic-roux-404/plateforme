@@ -50,6 +50,10 @@ variable "github_apps_team" {
   default = "apps-team-staging"
 }
 
+variable "repo_variables_prefix" {
+  default = "staging_"
+}
+
 variable "k3s_endpoint" {
   type = string
 }
@@ -77,28 +81,24 @@ variable "k8s_ingress_class" {
 }
 
 variable "letsencrypt_envs" {
-  description = "Letsencrypt Envs"
+  description = "Letsencrypt Envs for staging and production"
   type = object({
-    local   = string
     staging = string
     prod    = string
   })
   default = {
-    local   = "https://192.168.205.1:14000/dir"
     prod    = "https://acme-v02.api.letsencrypt.org/directory"
     staging = "https://acme-staging-v02.api.letsencrypt.org/directory"
   }
 }
 
 variable "letsencrypt_envs_ca_certs" {
-  description = "Letsencrypt Envs CA Certs"
+  description = "Letsencrypt Envs CA Certs for staging and production"
   type = object({
-    local   = string
     staging = string
     prod    = string
   })
   default = {
-    local   = "https://192.168.205.1:15000/roots/0"
     staging = "https://letsencrypt.org/certs/staging/letsencrypt-stg-root-x1.pem"
     prod    = ""
   }

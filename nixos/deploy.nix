@@ -2,7 +2,7 @@
 
 with config.paas;
 {
-  networking.hostName = "localhost-0";
+  # networking.hostName = "localhost-0";
 
   users.users.${user.name}.hashedPasswordFile = config.sops.secrets.password.path;
   users.users.root.hashedPasswordFile = config.sops.secrets.password.path;
@@ -23,7 +23,7 @@ with config.paas;
     githubActionsDexClientId = {};
   };
 
-  paas.defaultKubeDistribConfigPath = lib.mkForce config.sops.templates."config.yaml".path;
+  services.rke2.configPath = lib.mkForce config.sops.templates."config.yaml".path;
 
   networking = {
     useNetworkd = true;
@@ -68,7 +68,7 @@ with config.paas;
       - "CriticalAddonsOnly=true:NoExecute"
     tls-san:
       - "${kube.serviceIp}"
-      - "${config.networking.hostName}"
+      # - "${config.networking.hostName}" perhaps re enable once wireguard is ready.
       - "${config.sops.placeholder.nodeIp}"
       - "${config.sops.placeholder.paasDomain}"
     kube-apiserver-extra-mount:

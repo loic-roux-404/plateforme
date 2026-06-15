@@ -1,6 +1,6 @@
 { lib, ... }: {
-  networking.hostName = lib.mkForce "contabo-master-0";
-  system.preSwitchChecks = lib.mkForce {};
+  # networking.hostName = lib.mkForce "contabo-master-0";
+  # system.preSwitchChecks = lib.mkForce {};
 
   networking = {
     interfaces.ens18.useDHCP = true;
