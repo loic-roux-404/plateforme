@@ -34,9 +34,25 @@ resource "tls_private_key" "machine_key" {
   algorithm = "ED25519"
 }
 
+resource "terraform_data" "node_id_tracker" {
+  input = var.node_id
+}
+
+resource "terraform_data" "node_address_tracker" {
+  input = var.node_address
+}
+
+resource "terraform_data" "nix_flake_tracker" {
+  input = var.nix_flake
+}
+
 resource "local_sensitive_file" "secured_machine_key" {
   content  = tls_private_key.machine_key.public_key_openssh
   filename = "${path.cwd}/${var.node_id}.pub"
+
+  lifecycle {
+    replace_triggered_by = [terraform_data.node_id_tracker]
+  }
 }
 
 data "external" "secured_machine_key_pub" {
@@ -53,6 +69,10 @@ resource "local_sensitive_file" "non_encrypted_secrets" {
     nodePrivateKey = tls_private_key.machine_key.private_key_openssh
   }))
   filename = "${path.cwd}/${var.node_id}.yaml"
+
+  lifecycle {
+    replace_triggered_by = [terraform_data.node_id_tracker, terraform_data.node_address_tracker, terraform_data.nix_flake_tracker]
+  }
 }
 
 locals {
@@ -65,6 +85,8 @@ locals {
 resource "terraform_data" "create_transient_secrets" {
   triggers_replace = {
     changed_secrets = local_sensitive_file.non_encrypted_secrets
+    changed_node    = var.node_id
+    changed_nix_flake = var.nix_flake
   }
   provisioner "local-exec" {
     environment = {
@@ -87,6 +109,7 @@ resource "terraform_data" "upload_secrets" {
   triggers_replace = {
     changed_secrets = data.local_sensitive_file.encrypted_secrets.content
     changed_node    = var.node_id
+    changed_nix_flake = var.nix_flake
   }
   connection {
     type        = "ssh"
@@ -109,7 +132,7 @@ locals {
   nix_rebuild_interpreter = concat(
     [
       "nixos-rebuild",
-      "--fast",
+      "--no-reexec",
       "--build-host", "${var.ssh_connection.user}@${var.node_address}",
       "--target-host", "${var.ssh_connection.user}@${var.node_address}"
     ],

@@ -30,8 +30,8 @@ resource "libvirt_volume" "nixos_worker" {
 
 resource "libvirt_domain" "machine" {
   name      = var.node_hostname
-  vcpu      = 2
-  memory    = 4096
+  vcpu      = 4
+  memory    = 6144
   type      = "hvf"
   autostart = true
   arch      = var.arch
@@ -72,7 +72,7 @@ data "external" "get_ip" {
   depends_on = [ libvirt_domain.machine ]
   program = ["bash", "${path.module}/get-ip.sh"]
   query = {
-    timeout = 90
+    timeout = 120
     mac = var.mac
   }
 }

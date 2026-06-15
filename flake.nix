@@ -4,6 +4,7 @@
   inputs = {
     # Package sets
     nixpkgs.url = "github:NixOS/nixpkgs/25.11";
+    nixpkgs-legacy.url = "github:NixOS/nixpkgs/25.05";
     srvos.url = "github:numtide/srvos";
     nixpkgs-srvos.follows = "srvos/nixpkgs";
 
@@ -126,11 +127,14 @@
         system = builtins.replaceStrings ["darwin"] ["linux"] baseSystem;
         srvosPackages = import inputs.nixpkgs-srvos (nixpkgsDefaults // { inherit system; });
         srvosPackagesX64 = import inputs.nixpkgs-srvos (nixpkgsDefaults // { system = "x86_64-linux"; });
+        legacyPackages = import inputs.nixpkgs-legacy (nixpkgsDefaults // { inherit system; });
+        legacyPackagesX64 = import inputs.nixpkgs-legacy (nixpkgsDefaults // { system = "x86_64-linux"; });
         specialArgs = { 
-          inherit srvosPackages; 
+          inherit srvosPackages legacyPackages; 
         };
         specialArgsX64 = { 
           srvosPackages = srvosPackagesX64; 
+          legacyPackages = legacyPackagesX64; 
         };
       in {
         ## Libvirt configurations
@@ -223,4 +227,3 @@
         };
     });
 }
-# vim: foldmethod=marker  

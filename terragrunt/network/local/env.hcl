@@ -6,8 +6,8 @@ locals {
   input_vars = {
     gandi_token              = ""
     machine                  = local.dependencies.dependency.cloud.outputs
-    nix_flake                = "${local.flake_dir}#initial"
+    nix_flake                = "${local.flake_dir}#deploy"
     nix_flake_reset          = "${local.flake_dir}#initial"
-    additional_domains = local.secret_vars.additional_domains
+    additional_domains       = local.secret_vars.additional_domains
   }
 }
