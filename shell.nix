@@ -1,5 +1,5 @@
 { system ? builtins.currentSystem }:
 let
-  d = import ./. { inherit system; src = ./.; };
+  d = import ./.;
 in
 d.devShells.${system}.default
