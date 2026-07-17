@@ -1,8 +1,8 @@
-{ 
+{
   pkgs,
   config,
   lib,
-  ... 
+  ...
 }:
 
 with config.paas;
@@ -11,26 +11,44 @@ with config.paas;
 
   programs.fish.enable = true;
   programs.bash.enable = true;
+  environment.defaultPackages = with pkgs; [
+    nodejs
+    pnpm
+    docker-client
+    docker-credential-helpers
+    gemini-cli
+  ];
 
   services.dnsmasq = {
     enable = true;
-    addresses = builtins.listToAttrs (builtins.map(value: {
-      name = ".${dns.name}"; inherit value; 
-    }) ([kube.addr]));
+    addresses = builtins.listToAttrs (
+      builtins.map (value: {
+        name = ".${dns.name}";
+        inherit value;
+      }) ([ kube.addr ])
+    );
   };
 
   environment.etc."resolver/${dns.name}".text = "${lib.concatMapStrings (destIp: ''
     nameserver ${destIp}
 
-  '') (dns.dest-ips ++ [kube.addr])}";
+  '') (dns.dest-ips ++ [ kube.addr ])}";
 
   launchd.daemons.libvirt = {
-    path = [ pkgs.gcc pkgs.qemu pkgs.dnsmasq pkgs.libvirt ];
+    path = [
+      pkgs.gcc
+      pkgs.qemu
+      pkgs.dnsmasq
+      pkgs.libvirt
+    ];
     serviceConfig = {
       KeepAlive = true;
       RunAtLoad = true;
-      ProgramArguments = [ 
-        "${pkgs.libvirt}/bin/libvirtd" "-f" "/etc/libvirt/libvirtd.conf" "-v"
+      ProgramArguments = [
+        "${pkgs.libvirt}/bin/libvirtd"
+        "-f"
+        "/etc/libvirt/libvirtd.conf"
+        "-v"
       ];
       WorkingDirectory = "/var/lib/libvirt";
       StandardOutPath = "/var/log/libvirt/libvirt.log";
@@ -43,7 +61,10 @@ with config.paas;
       KeepAlive = true;
       RunAtLoad = true;
       WorkingDirectory = "/var/lib/libvirt";
-      ProgramArguments = [ "${pkgs.libvirt}/bin/virtlogd" "-d" ];
+      ProgramArguments = [
+        "${pkgs.libvirt}/bin/virtlogd"
+        "-d"
+      ];
       StandardOutPath = "/var/log/libvirt/virtlogd.log";
       StandardErrorPath = "/var/log/libvirt/virtlogd-error.log";
     };
@@ -75,7 +96,11 @@ with config.paas;
     serviceConfig = {
       KeepAlive = true;
       RunAtLoad = true;
-      ProgramArguments = [ "${pkgs.pebble}/bin/pebble" "-config" "/etc/pebble/config.json" ];
+      ProgramArguments = [
+        "${pkgs.pebble}/bin/pebble"
+        "-config"
+        "/etc/pebble/config.json"
+      ];
       WorkingDirectory = "/tmp";
       StandardOutPath = "/var/log/pebble.log";
       StandardErrorPath = "/var/log/pebble-error.log";
@@ -124,21 +149,54 @@ with config.paas;
     # https://github.com/NixOS/nix/issues/7273
     auto-optimise-store = false;
     extra-platforms = [ "x86_64-linux" ];
-    allowed-uris = ["raw.githubusercontent.com"];
+    allowed-uris = [ "raw.githubusercontent.com" ];
+    experimental-features = "nix-command flakes";
   };
 
   nix.gc = {
     automatic = true;
-    interval = { Weekday = 0; Hour = 0; Minute = 0; };
+    interval = {
+      Weekday = 0;
+      Hour = 0;
+      Minute = 0;
+    };
     options = "--delete-older-than 30d";
   };
   nix.linux-builder = {
     enable = true;
     maxJobs = 2;
     package = lib.mkDefault pkgs.darwin.linux-builder;
-    ephemeral = lib.mkDefault true;
+    ephemeral = lib.mkDefault false;
+    config = (
+      { lib, ... }:
+      {
+        virtualisation.docker.enable = true;
+        virtualisation.docker.daemon.settings = {
+          hosts = [ "tcp://0.0.0.0:2375" ];
+        };
+        networking.firewall.enable = lib.mkForce false;
+        networking.firewall.allowedTCPPorts = [ 2375 ];
+        virtualisation.forwardPorts = lib.mkForce [
+          {
+            from = "host";
+            guest.port = 22;
+            host.port = 31022;
+          }
+          {
+            from = "host";
+            guest.port = 2375;
+            host.port = 2375;
+          }
+        ];
+        security.sudo.wheelNeedsPassword = false;
+        users.users.builder.extraGroups = lib.mkForce [
+          "docker"
+          "wheel"
+        ];
+        users.users.builder.openssh.authorizedKeys.keys = [ user.key ];
+      }
+    );
   };
-  
+
   nix.enable = true;
-  nix.settings.experimental-features = "nix-command flakes";
 }

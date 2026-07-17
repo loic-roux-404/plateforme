@@ -4,5 +4,12 @@
     "files.associations": {
         "*.y*ml.*": "yaml"
     },
-    "nixEnvSelector.nixFile": "${workspaceFolder}/shell.nix"
+    "nixEnvSelector.nixFile": "${workspaceFolder}/shell.nix",
+    "terminal.integrated.defaultProfile.osx": "fish",
+    "terminal.integrated.profiles.osx": {
+        "fish": {
+            "path": "/run/current-system/sw/bin/fish",
+            "args": []
+        }
+    }
 }

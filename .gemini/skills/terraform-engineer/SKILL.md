@@ -1,145 +1,131 @@
 ---
 name: terraform-engineer
-description: Use when implementing infrastructure as code with Terraform across AWS, Azure, or GCP. Invoke for module development (create reusable modules, manage module versioning), state management (migrate backends, import existing resources, resolve state conflicts), provider configuration, multi-environment workflows, and infrastructure testing.
-license: MIT
+description: >
+  Terraform engineering practices and conventions for loic-roux-404/plateforme.
+  Covers mono-repo module structure, local relative sources, tf-root-* composition,
+  standard module files, Contabo/Libvirt/GitHub/Kubernetes provider constraints,
+  inputs via Terragrunt env.hcl, local-only state management, SOPS-age secrets,
+  and local make orchestration.
 metadata:
-  author: https://github.com/Jeffallan
-  version: "1.1.0"
+  version: "2.0.0"
   domain: infrastructure
-  triggers: Terraform, infrastructure as code, IaC, terraform module, terraform state, AWS provider, Azure provider, GCP provider, terraform plan, terraform apply
-  role: specialist
+  triggers: >
+    terraform, terragrunt, tf-modules, tf-root, main.tf, variables.tf, outputs.tf,
+    contabo, dmacvicar/libvirt, github, kubernetes, helm, local state, backend.tf,
+    sops_decrypt_file, env.hcl, root.hcl, make terragrunt
+  role: infrastructure-engineer
   scope: implementation
   output-format: code
-  related-skills: cloud-architect, devops-engineer, kubernetes-specialist
 ---
 
-# Terraform Engineer
+## Module Structure (Mono-repo, Domain-prefixed)
 
-Senior Terraform engineer specializing in infrastructure as code across AWS, Azure, and GCP with expertise in modular design, state management, and production-grade patterns.
+All Terraform modules live as sibling directories inside the mono-repo, prefixed with `tf-modules-<domain>`:
 
-## Core Workflow
-
-1. **Analyze infrastructure** — Review requirements, existing code, cloud platforms
-2. **Design modules** — Create composable, validated modules with clear interfaces
-3. **Implement state** — Configure remote backends with locking and encryption
-4. **Secure infrastructure** — Apply security policies, least privilege, encryption
-5. **Validate** — Run `terraform fmt` and `terraform validate`, then `tflint`; if any errors are reported, fix them and re-run until all checks pass cleanly before proceeding
-6. **Plan and apply** — Run `terraform plan -out=tfplan`, review output carefully, then `terraform apply tfplan`; if the plan fails, see error recovery below
-
-### Error Recovery
-
-**Validation failures (step 5):** Fix reported errors → re-run `terraform validate` → repeat until clean. For `tflint` warnings, address rule violations before proceeding.
-
-**Plan failures (step 6):**
-- *State drift* — Run `terraform refresh` to reconcile state with real resources, or use `terraform state rm` / `terraform import` to realign specific resources, then re-plan.
-- *Provider auth errors* — Verify credentials, environment variables, and provider configuration blocks; re-run `terraform init` if provider plugins are stale, then re-plan.
-- *Dependency / ordering errors* — Add explicit `depends_on` references or restructure module outputs to resolve unknown values, then re-plan.
-
-After any fix, return to step 5 to re-validate before re-running the plan.
-
-## Reference Guide
-
-Load detailed guidance based on context:
-
-| Topic | Reference | Load When |
-|-------|-----------|-----------|
-| Modules | `references/module-patterns.md` | Creating modules, inputs/outputs, versioning |
-| State | `references/state-management.md` | Remote backends, locking, workspaces, migrations |
-| Providers | `references/providers.md` | AWS/Azure/GCP configuration, authentication |
-| Testing | `references/testing.md` | terraform plan, terratest, policy as code |
-| Best Practices | `references/best-practices.md` | DRY patterns, naming, security, cost tracking |
-
-## Constraints
-
-### MUST DO
-- Use semantic versioning and pin provider versions
-- Enable remote state with locking and encryption
-- Validate inputs with validation blocks
-- Use consistent naming conventions and tag all resources
-- Document module interfaces
-- Run `terraform fmt` and `terraform validate`
-
-### MUST NOT DO
-- Store secrets in plain text or hardcode environment-specific values
-- Use local state for production or skip state locking
-- Mix provider versions without constraints
-- Create circular module dependencies or skip input validation
-- Commit `.terraform` directories
-
-## Code Examples
-
-### Minimal Module Structure
-
-**`main.tf`**
-```hcl
-resource "aws_s3_bucket" "this" {
-  bucket = var.bucket_name
-  tags   = var.tags
-}
+```
+tf-modules-cloud/       # VPS/VM provisioning (Contabo provider)
+tf-modules-github/      # GitHub repo/OIDC variable configuration
+tf-modules-k8s/         # Kubernetes platform resources
+tf-modules-monitoring/  # Monitoring stack configuration
+tf-modules-nix/         # Nix-specific provisioning helpers
+tf-modules-services/    # Application-level services
 ```
 
-**`variables.tf`**
-```hcl
-variable "bucket_name" {
-  description = "Name of the S3 bucket"
-  type        = string
+Modules are **not versioned via Git tags** and **not consumed via remote `source` URLs**. They are consumed via **relative local paths** inside `terragrunt.hcl` `terraform.source` blocks. There is no module registry in use.
 
-  validation {
-    condition     = length(var.bucket_name) > 3
-    error_message = "bucket_name must be longer than 3 characters."
-  }
-}
+## Root Stacks (tf-root-\*)
 
-variable "tags" {
-  description = "Tags to apply to all resources"
-  type        = map(string)
-  default     = {}
-}
+Deployable units are prefixed `tf-root-<layer>`:
+
+```
+tf-root-apps/      # GitHub repo/OIDC wiring
+tf-root-network/   # k3s/RKE2 network, DNS
+tf-root-paas/      # Dex, cert-manager, platform services
 ```
 
-**`outputs.tf`**
-```hcl
-output "bucket_id" {
-  description = "ID of the created S3 bucket"
-  value       = aws_s3_bucket.this.id
-}
+These are **not invoked directly** with `terraform apply`. They are always driven through Terragrunt. Direct `terraform` invocations are only used for debugging.
+
+## Standard Module File Layout
+
+Every `tf-modules-*` and `tf-root-*` directory follows:
+
+```
+main.tf         # resources
+variables.tf    # input declarations (validation blocks optional but preferred)
+outputs.tf      # output values consumed by downstream layers
 ```
 
-### Remote Backend Configuration (S3 + DynamoDB)
+No `providers.tf` at module level — providers are configured at the Terragrunt-generated `backend.tf` layer. No `versions.tf` at module level — version constraints are absent from most modules.
+
+## Provider Usage
+
+The project uses non-HashiCorp providers matching its infrastructure choices:
+- **Contabo** provider for VPS provisioning (`tf-modules-cloud/`)
+- **Kubernetes/Helm** providers for cluster resources (`tf-modules-k8s/`)
+- **GitHub** provider for repository and OIDC variable management (`tf-modules-github/`)
+- **Libvirt** provider for local QEMU/KVM development VMs (`terragrunt/cloud/local/`)
+
+## Variable & Input Passing Convention
+
+Variables flow exclusively through the Terragrunt `inputs` block, fed from `env.hcl` locals:
 
 ```hcl
-terraform {
-  backend "s3" {
-    bucket         = "my-tf-state"
-    key            = "env/prod/terraform.tfstate"
-    region         = "us-east-1"
-    encrypt        = true
-    dynamodb_table = "terraform-lock"
+# env.hcl
+locals {
+  secret_vars = yamldecode(sops_decrypt_file(find_in_parent_folders("secrets/<env>.yaml")))
+  env         = "contabo"
+  input_vars  = {
+    node_ip       = local.secret_vars.node_ip
+    domain        = "example.com"
+    arch          = get_env("ARCH", "x86_64")
   }
 }
 ```
 
-### Provider Version Pinning
+`root.hcl` propagates `inputs = local.env.locals.input_vars` to all child modules. **No `.tfvars` files are used.** No `terraform.tfvars` or `*.auto.tfvars` exist in the codebase.
+
+## State Management
+
+State is **always local**, never remote. The backend is generated by Terragrunt:
 
 ```hcl
-terraform {
-  required_version = ">= 1.5.0"
-
-  required_providers {
-    aws = {
-      source  = "hashicorp/aws"
-      version = "~> 5.0"
-    }
-    azurerm = {
-      source  = "hashicorp/azurerm"
-      version = "~> 3.0"
-    }
+remote_state {
+  backend = "local"
+  config = {
+    path = "${get_parent_terragrunt_dir()}/.terragrunt/${local.env.locals.env}/${path_relative_to_include()}/terraform.tfstate"
+  }
+  generate = {
+    path      = "backend.tf"
+    if_exists = "overwrite"
   }
 }
 ```
 
-## Output Format
+State files land at `.terragrunt/<env>/<layer>/terraform.tfstate`. They are gitignored. **No state locking, no remote backend, no DynamoDB, no GCS bucket.** Back up state manually before destructive operations (`cp -r .terragrunt/ .terragrunt.bak/`).
 
-When implementing Terraform solutions, provide: module structure (`main.tf`, `variables.tf`, `outputs.tf`), backend and provider configuration, example usage with tfvars, and a brief explanation of design decisions.
+## Secrets Handling
 
-[Documentation](https://jeffallan.github.io/claude-skills/skills/infrastructure/terraform-engineer/)
+Secrets are managed with **SOPS + Age**, decrypted inline at plan/apply time:
+
+```hcl
+secret_vars = yamldecode(sops_decrypt_file(find_in_parent_folders("secrets/<env>.yaml")))
+```
+
+The `SOPS_AGE_KEY` environment variable must be present. It is only injected inside `nix develop` (via `.envrc` + `direnv`). **Never run `terragrunt apply` outside the nix devShell** — SOPS decryption will silently fail or error.
+
+Secrets live in `secrets/<env>.yaml` (SOPS-encrypted YAML). The Age private key is never committed.
+
+## CI/CD Integration
+
+The `.github/` directory exists. Terraform/Terragrunt runs are **primarily local**, driven by `make` targets. GitHub Actions may exist for linting or docs (MkDocs site), but apply workflows are manual and operator-driven, consistent with a single-operator platform.
+
+## Environment Management
+
+Environments map to cloud providers/targets, not lifecycle stages:
+
+```
+terragrunt/cloud/contabo/    # production VPS on Contabo
+terragrunt/cloud/local/      # local QEMU/libvirt dev VM
+```
+
+There is no `dev/staging/prod` branching strategy. The `env` key in `env.hcl` names the target (e.g., `"contabo"`, `"local"`), and the state path is scoped accordingly.
