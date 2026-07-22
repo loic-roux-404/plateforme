@@ -49,9 +49,11 @@ darwinSystem {
         {
           home-manager.useGlobalPkgs = true;
           home-manager.useUserPackages = true;
+          home-manager.backupFileExtension = "backup";
           home-manager.extraSpecialArgs = { inherit inputs; };
           home-manager.users.${user} = import ../nixos-darwin/home-manager.nix {
-            inputs = inputs;
+            inherit inputs;
+            unstablePkgs = inputs.nixpkgs-unstable;
           };
         }
       ]

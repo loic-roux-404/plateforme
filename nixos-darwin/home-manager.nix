@@ -1,4 +1,4 @@
-{ inputs, ... }:
+{ inputs, unstablePkgs, ... }:
 
 {
   config,
@@ -61,11 +61,17 @@ in
     jq
     tree
     watch
+    nil
+    nix-tree
+    grpcurl
+    coreutils
+    e2fsprogs
+    libvirt
+    qemu
 
     gopls
-    zigpkgs."0.15.2"
 
-    gemini-cli
+    antigravity-cli
 
     # Node is required for Copilot.vim
     nodejs
@@ -107,7 +113,7 @@ in
   # Programs
   #---------------------------------------------------------------------
 
-  programs.gpg.enable = false;
+  programs.gpg.enable = true;
 
   programs.bash = {
     enable = true;
@@ -163,6 +169,7 @@ in
     signing = {
       key = "D48109FA56B4BDCF";
       signByDefault = true;
+      format = null;
     };
     settings = {
       user.name = "Loic Roux";
@@ -178,6 +185,9 @@ in
         lg = "log --graph --pretty=format:'%Cred%h%Creset -%C(yellow)%d%Creset %s %Cgreen(r) %C(bold blue)<%an>%Creset' --abbrev-commit --date=relative";
         root = "rev-parse --show-toplevel";
       };
+    };
+    extraConfig = {
+      gpg.program = "${pkgs.gnupg}/bin/gpg2";
     };
   };
 
