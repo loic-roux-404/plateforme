@@ -1,15 +1,17 @@
 {
     "nix.enableLanguageServer": true,
-    "nix.serverPath": "nil", 
+    "nix.serverPath": "nil",
     "files.associations": {
         "*.y*ml.*": "yaml"
     },
-    "nixEnvSelector.nixFile": "${workspaceFolder}/shell.nix",
     "terminal.integrated.defaultProfile.osx": "fish",
     "terminal.integrated.profiles.osx": {
         "fish": {
             "path": "/run/current-system/sw/bin/fish",
             "args": []
         }
-    }
+    },
+    "nixEnvSelector.nixFile": "${workspaceFolder}/flake.nix",
+    "nixEnvSelector.useFlakes": true,
+    "nixEnvSelector.flakeShell": "default"
 }

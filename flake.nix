@@ -30,6 +30,9 @@
     flake-utils.url = "github:numtide/flake-utils";
 
     sops-nix.url = "github:Mic92/sops-nix";
+
+    theme-bobthefish.url = "github:oh-my-fish/theme-bobthefish/e3b4d4eafc23516e35f162686f08a42edf844e40";
+    theme-bobthefish.flake = false;
   };
 
   outputs =
@@ -45,7 +48,6 @@
       inherit (self.lib)
         attrValues
         makeOverridable
-        mkForce
         optionalAttrs
         singleton
         nixosSystem
@@ -185,7 +187,6 @@
           };
 
           ## Docker configurations
-
           container = nixosSystem {
             modules = self.nixosAllModules.default ++ [
               nixos-generators.nixosModules.docker
@@ -234,20 +235,6 @@
               export DOCKER_HOST='tcp://127.0.0.1:2375'
             ''
             + builtins.readFile ./nix-flake/init-sops.sh;
-          };
-
-          builder-docker = pkgs.mkShell {
-            name = "docker";
-            packages = attrValues {
-              inherit (pkgs) nil bashInteractive docker-client;
-            };
-            shellHook = ''
-              set -e
-              nix build .#darwinConfigurations.builder-docker.system
-              ./result/sw/bin/darwin-rebuild switch --flake .#builder-docker
-              export DOCKER_HOST='tcp://127.0.0.1:2375'
-              echo 'Docker Builder configured in arm mode'
-            '';
           };
 
           builder = pkgs.mkShell {

@@ -9,15 +9,52 @@ with config.paas;
 {
   system.stateVersion = 5;
 
+  environment.variables = {
+    DOCKER_HOST = "tcp://127.0.0.1:2375";
+  };
+
+  environment.pathsToLink = [ "/share/fish" ];
+
+  programs.zsh.enable = true;
+  programs.zsh.shellInit = ''
+    # Nix
+    if [ -e '/nix/var/nix/profiles/default/etc/profile.d/nix-daemon.sh' ]; then
+      . '/nix/var/nix/profiles/default/etc/profile.d/nix-daemon.sh'
+    fi
+    # End Nix
+  '';
+
   programs.fish.enable = true;
-  programs.bash.enable = true;
-  environment.defaultPackages = with pkgs; [
-    nodejs
-    pnpm
-    docker-client
-    docker-credential-helpers
-    gemini-cli
+  programs.fish.shellInit = ''
+    # Nix
+    if test -e '/nix/var/nix/profiles/default/etc/profile.d/nix-daemon.fish'
+      source '/nix/var/nix/profiles/default/etc/profile.d/nix-daemon.fish'
+    end
+    # End Nix
+  '';
+
+  environment.shells = with pkgs; [
+    bashInteractive
+    zsh
+    fish
   ];
+  environment.systemPackages = with pkgs; [
+    cachix
+  ];
+
+  users.users.loic = {
+    home = "/Users/loic";
+    shell = pkgs.fish;
+    openssh.authorizedKeys.keys = [ ];
+  };
+
+  users.groups = {
+    docker.members = [ "loic" ];
+    lxd.members = [ "loic" ];
+    wheel.members = [ "loic" ];
+  };
+
+  system.primaryUser = "loic";
 
   services.dnsmasq = {
     enable = true;
@@ -189,6 +226,9 @@ with config.paas;
           }
         ];
         security.sudo.wheelNeedsPassword = false;
+        environment.systemPackages = [
+          pkgs.htop
+        ];
         users.users.builder.extraGroups = lib.mkForce [
           "docker"
           "wheel"
