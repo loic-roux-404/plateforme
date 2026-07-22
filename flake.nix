@@ -5,6 +5,7 @@
     # Package sets
     nixpkgs.url = "github:NixOS/nixpkgs/25.11";
     nixpkgs-legacy.url = "github:NixOS/nixpkgs/25.05";
+    nixpkgs-unstable.url = "github:NixOS/nixpkgs/nixpkgs-unstable";
     srvos.url = "github:numtide/srvos";
     nixpkgs-srvos.follows = "srvos/nixpkgs";
 
@@ -209,26 +210,16 @@
             name = "default";
             packages = attrValues {
               inherit (pkgs)
-                bashInteractive
-                grpcurl
-                jq
-                coreutils
-                e2fsprogs
                 pebble
                 cntb
                 kubectl
                 kubelogin-oidc
                 kubernetes-helm
-                nix
-                nil
-                nix-tree
-                nixos-rebuild
+
                 terraform
                 terragrunt
                 sops
                 ssh-to-age
-                libvirt
-                qemu
                 ;
             };
             shellHook = ''
@@ -240,7 +231,7 @@
           builder = pkgs.mkShell {
             name = "builder";
             packages = attrValues {
-              inherit (pkgs) nil bashInteractive;
+              inherit (pkgs) bashInteractive nix;
             };
             shellHook = ''
               set -e
