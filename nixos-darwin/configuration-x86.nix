@@ -3,8 +3,8 @@
 }: with config.paas; {
   nix.settings.extra-platforms = [ "x86_64-linux" ];
   nix.linux-builder = {
-    package = pkgs.darwin.linux-builder-x86_64;
-    ephemeral = lib.mkDefault true;
+    package = lib.mkForce pkgs.darwin.linux-builder-x86_64;
+    ephemeral = lib.mkForce true;
     systems = ["x86_64-linux"];
     config = lib.mkDefault ({ lib, ... }: {
       virtualisation.docker.enable = true;
