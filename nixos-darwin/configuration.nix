@@ -2,12 +2,26 @@
   pkgs,
   config,
   lib,
+  currentSystemUser,
   ...
 }:
 
 with config.paas;
 {
   system.stateVersion = 5;
+
+  users.users.${currentSystemUser} = {
+    home = "/Users/${currentSystemUser}";
+    openssh.authorizedKeys.keys = [ ];
+  };
+
+  users.groups = {
+    docker.members = [ currentSystemUser ];
+    lxd.members = [ currentSystemUser ];
+    wheel.members = [ currentSystemUser ];
+  };
+
+  system.primaryUser = currentSystemUser;
 
   environment.variables = {
     DOCKER_HOST = "tcp://127.0.0.1:2375";
@@ -41,20 +55,6 @@ with config.paas;
   environment.systemPackages = with pkgs; [
     cachix
   ];
-
-  users.users.loic = {
-    home = "/Users/loic";
-    shell = pkgs.fish;
-    openssh.authorizedKeys.keys = [ ];
-  };
-
-  users.groups = {
-    docker.members = [ "loic" ];
-    lxd.members = [ "loic" ];
-    wheel.members = [ "loic" ];
-  };
-
-  system.primaryUser = "loic";
 
   services.dnsmasq = {
     enable = true;

@@ -15,7 +15,8 @@ let
       keys = [ user.key ];
     };
   };
-in {
+in
+{
 
   fileSystems."/" = {
     device = "/dev/disk/by-label/nixos";
@@ -39,7 +40,7 @@ in {
   boot.kernel.sysctl."net.ipv4.conf.all.forwarding" = 1;
 
   swapDevices = [ ];
-  zramSwap.algorithm  = "zstd";
+  zramSwap.algorithm = "zstd";
 
   system.stateVersion = "25.11";
 
@@ -50,18 +51,27 @@ in {
 
   i18n.defaultLocale = "en_US.UTF-8";
 
-  boot.kernelModules = [ "br_netfilter" "ip_conntrack" "ip_vs" "ip_vs_rr" "ip_vs_wrr" "ip_vs_sh" "overlay" "iscsi_tcp" ];
+  boot.kernelModules = [
+    "br_netfilter"
+    "ip_conntrack"
+    "ip_vs"
+    "ip_vs_rr"
+    "ip_vs_wrr"
+    "ip_vs_sh"
+    "overlay"
+    "iscsi_tcp"
+  ];
 
   networking = {
     useNetworkd = true;
-    nameservers = [ 
-      "1.1.1.1" 
+    nameservers = [
+      "1.1.1.1"
       "1.0.0.1"
-      "2606:4700:4700::1111" 
-      "2606:4700:4700::1001" 
-      "8.8.8.8" 
-      "8.8.4.4" 
-      "001:4860:4860::8844" 
+      "2606:4700:4700::1111"
+      "2606:4700:4700::1001"
+      "8.8.8.8"
+      "8.8.4.4"
+      "001:4860:4860::8844"
       "2001:4860:4860::8888"
     ];
     interfaces.enp0s9.useDHCP = true;
@@ -71,14 +81,14 @@ in {
           22
           80
           443
-          2379   # etcd server client API
-          2380   # etcd server peer API 
-          6443   # kube-apiserver
-          9345   # RKE2 supervisor / node registration
-          10250  # kubelet logs/metrics
+          2379 # etcd server client API
+          2380 # etcd server peer API
+          6443 # kube-apiserver
+          9345 # RKE2 supervisor / node registration
+          10250 # kubelet logs/metrics
         ];
         allowedUDPPorts = [
-          8472   # Canal/Flannel VXLAN
+          8472 # Canal/Flannel VXLAN
         ];
       };
       checkReversePath = "loose";
@@ -112,17 +122,19 @@ in {
     package = legacyPackages.rke2_latest;
     role = "server";
     cni = "canal";
-    extraFlags = map (service: "--disable=${service}") kube.disableServices
-      ++ kube.serverExtraArgs;
+    extraFlags = map (service: "--disable=${service}") kube.disableServices ++ kube.serverExtraArgs;
     configPath = lib.mkDefault defaultKubeDistribConfigPath;
   };
 
-  systemd.tmpfiles.rules = (builtins.attrValues (
-    builtins.mapAttrs (name: manifest: 
-    "C ${manifest.targetDir}/${name} 0640 - - - ${pkgs.writeText name manifest.content}") (lib.filterAttrs (n: v: v.enable) manifests)
-  )) ++ [ 
-    "L+ /usr/local/bin - - - - /run/current-system/sw/bin/" 
-  ];
+  systemd.tmpfiles.rules =
+    (builtins.attrValues (
+      builtins.mapAttrs (
+        name: manifest: "C ${manifest.targetDir}/${name} 0640 - - - ${pkgs.writeText name manifest.content}"
+      ) (lib.filterAttrs (n: v: v.enable) manifests)
+    ))
+    ++ [
+      "L+ /usr/local/bin - - - - /run/current-system/sw/bin/"
+    ];
 
   programs.vim.defaultEditor = true;
   environment = {
@@ -163,7 +175,7 @@ in {
   users = {
     defaultUserShell = pkgs.bashInteractive;
     allowNoPasswordLogin = true;
-    groups.readers = {};
+    groups.readers = { };
     users = {
       reader = {
         hashedPasswordFile = lib.mkDefault "${(pkgs.writeText "password" user.defaultPassword)}";
@@ -174,7 +186,10 @@ in {
       ${user.name} = {
         hashedPasswordFile = lib.mkDefault "${(pkgs.writeText "password" user.defaultPassword)}";
         isNormalUser = true;
-        extraGroups = [ "wheel" "networkmanager" ];
+        extraGroups = [
+          "wheel"
+          "networkmanager"
+        ];
         openssh = userSshConfig;
       };
       root = {
@@ -186,6 +201,7 @@ in {
   home-manager.useGlobalPkgs = true;
   home-manager.useUserPackages = true;
   home-manager.users.${config.paas.user.name} = {
+    home.homeDirectory = "/home/${config.paas.user.name}";
     xdg.enable = true;
     home.stateVersion = "25.05";
     home.sessionVariables = {
@@ -198,7 +214,10 @@ in {
     };
     programs.bash = {
       enable = true;
-      historyControl = [ "ignoredups" "ignorespace" ];
+      historyControl = [
+        "ignoredups"
+        "ignorespace"
+      ];
     };
   };
 
@@ -209,33 +228,38 @@ in {
   security.sudo.wheelNeedsPassword = false;
   security.sudo = {
     enable = true;
-    extraRules = [{
-      commands = map (cmd: {
-        command = cmd;
-        options = [ "NOPASSWD" ];
-      }) [
-        "${pkgs.systemd}/bin/systemctl status"
-        "${pkgs.systemd}/bin/systemctl show"
-        "${pkgs.systemd}/bin/systemctl list-units"
-        "${pkgs.systemd}/bin/systemctl list-machines"
-        "${pkgs.systemd}/bin/systemctl list-jobs"
-        "${pkgs.systemd}/bin/systemctl is-system-running"
-        "${pkgs.systemd}/bin/journalctl"
-        "${pkgs.kubectl}/bin/kubectl get"
-        "${pkgs.kubectl}/bin/kubectl describe"
-        "${pkgs.kubectl}/bin/kubectl explain"
-        "${pkgs.kubectl}/bin/kubectl logs"
-        "${pkgs.kubectl}/bin/kubectl diff"
-        "${pkgs.kubectl}/bin/kubectl events"
-        "${pkgs.kubectl}/bin/kubectl wait"
-        "${pkgs.kubectl}/bin/kubectl api-resources"
-        "${pkgs.kubectl}/bin/kubectl version"
-        "${pkgs.nettools}/bin/ifconfig"
-        "${pkgs.iproute2}/bin/ip"
-        "${pkgs.iptables}/bin/iptables"
-      ];
-      groups = [ "wheel" ];
-    }];
+    extraRules = [
+      {
+        commands =
+          map
+            (cmd: {
+              command = cmd;
+              options = [ "NOPASSWD" ];
+            })
+            [
+              "${pkgs.systemd}/bin/systemctl status"
+              "${pkgs.systemd}/bin/systemctl show"
+              "${pkgs.systemd}/bin/systemctl list-units"
+              "${pkgs.systemd}/bin/systemctl list-machines"
+              "${pkgs.systemd}/bin/systemctl list-jobs"
+              "${pkgs.systemd}/bin/systemctl is-system-running"
+              "${pkgs.systemd}/bin/journalctl"
+              "${pkgs.kubectl}/bin/kubectl get"
+              "${pkgs.kubectl}/bin/kubectl describe"
+              "${pkgs.kubectl}/bin/kubectl explain"
+              "${pkgs.kubectl}/bin/kubectl logs"
+              "${pkgs.kubectl}/bin/kubectl diff"
+              "${pkgs.kubectl}/bin/kubectl events"
+              "${pkgs.kubectl}/bin/kubectl wait"
+              "${pkgs.kubectl}/bin/kubectl api-resources"
+              "${pkgs.kubectl}/bin/kubectl version"
+              "${pkgs.nettools}/bin/ifconfig"
+              "${pkgs.iproute2}/bin/ip"
+              "${pkgs.iptables}/bin/iptables"
+            ];
+        groups = [ "wheel" ];
+      }
+    ];
   };
 
   nixpkgs = {

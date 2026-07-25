@@ -5,7 +5,8 @@ inputs:
 {
   name ? "builder",
   system ? "aarch64-darwin",
-  user ? "loic",
+  currentSystemUser ? "loic",
+  githubUser ? "loic-roux-404",
   overlays ? [ ],
   modules ? [ ],
   extraModules ? [ ],
@@ -51,9 +52,16 @@ darwinSystem {
           home-manager.useUserPackages = true;
           home-manager.backupFileExtension = "backup";
           home-manager.extraSpecialArgs = { inherit inputs; };
-          home-manager.users.${user} = import ../nixos-darwin/home-manager.nix {
+          home-manager.users.${currentSystemUser} = import ../nixos-darwin/home-manager.nix {
             inherit inputs;
-            unstablePkgs = inputs.nixpkgs-unstable;
+            unstablePkgs = import inputs.nixpkgs-unstable {
+              inherit system;
+              config.allowUnfree = true;
+            };
+            currentSystem = system;
+            currentSystemName = name;
+            currentSystemUser = currentSystemUser;
+            inherit githubUser;
           };
         }
       ]
@@ -66,8 +74,8 @@ darwinSystem {
       _module.args = {
         currentSystem = system;
         currentSystemName = name;
-        currentSystemUser = user;
-        inputs = inputs;
+        currentSystemUser = currentSystemUser;
+        inherit inputs;
       };
     }
   ]

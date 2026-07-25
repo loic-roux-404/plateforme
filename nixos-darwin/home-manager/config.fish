@@ -25,8 +25,6 @@ end
 set -g fish_user_paths "/usr/local/sbin" $fish_user_paths
 set -g fish_user_paths "/bin" $fish_user_paths
 
-export EDITOR="zed --wait"
-
 function envsource
   for line in (cat $argv | grep -v '^#')
     set item (string split -m 1 '=' $line)

@@ -1,34 +1,43 @@
-{ lib, pkgs, config, ... }:
+{
+  lib,
+  pkgs,
+  config,
+  ...
+}:
 
-let 
-  manifest = lib.types.submodule ({ ... }: {
-    options = {
-      enable = lib.mkOption {
-        type = lib.types.bool;
-        default = false;
-        description = "Whether to create this manifest file.";
-      };
+let
+  manifest = lib.types.submodule (
+    { ... }:
+    {
+      options = {
+        enable = lib.mkOption {
+          type = lib.types.bool;
+          default = false;
+          description = "Whether to create this manifest file.";
+        };
 
-      targetDir = lib.mkOption {
-        type = lib.types.nonEmptyStr;
-        example = lib.literalExpression "manifest.yaml";
-        default = "/var/lib/rancher/rke2/server/manifests";
-        description = ''
-          Name of the symlink (relative to {file}).
-          Defaults to the attribute name.
-        '';
-      };
+        targetDir = lib.mkOption {
+          type = lib.types.nonEmptyStr;
+          example = lib.literalExpression "manifest.yaml";
+          default = "/var/lib/rancher/rke2/server/manifests";
+          description = ''
+            Name of the symlink (relative to {file}).
+            Defaults to the attribute name.
+          '';
+        };
 
-      content = lib.mkOption {
-        type = lib.types.str;
-        default = null;
-        description = ''
-          The source `.yaml` file.
-        '';
+        content = lib.mkOption {
+          type = lib.types.str;
+          default = null;
+          description = ''
+            The source `.yaml` file.
+          '';
+        };
       };
-    };
-  }
-); in {
+    }
+  );
+in
+{
   options.paas = {
 
     certs = lib.mkOption {
@@ -76,7 +85,7 @@ let
     };
 
     kube.disableServices = lib.mkOption {
-      default = [];
+      default = [ ];
       type = lib.types.listOf lib.types.str;
       description = "Disable k8s services eg: traefik,servicelb";
     };
@@ -155,7 +164,7 @@ let
     manifests = lib.mkOption {
       type = lib.types.attrsOf manifest;
       description = "Manifests to apply";
-      default = {};
+      default = { };
     };
   };
 
@@ -203,10 +212,12 @@ let
 
     paas.manifests."local-path-storage.yaml" = {
       enable = true;
-      content = builtins.readFile (builtins.fetchurl {
-        url = "https://raw.githubusercontent.com/rancher/local-path-provisioner/v0.0.35/deploy/local-path-storage.yaml";
-        sha256 = "sha256-w0oRBGpVXvIsHkEloq2qCQoblUFYhA3hDkqNJ0FanPk=";
-      });
+      content = builtins.readFile (
+        builtins.fetchurl {
+          url = "https://raw.githubusercontent.com/rancher/local-path-provisioner/v0.0.35/deploy/local-path-storage.yaml";
+          sha256 = "sha256-w0oRBGpVXvIsHkEloq2qCQoblUFYhA3hDkqNJ0FanPk=";
+        }
+      );
     };
   };
 }

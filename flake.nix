@@ -114,6 +114,7 @@
 
       darwinModules = {
         config = ./nixos-options/default.nix;
+        baseUser = ./nixos-darwin/user-default.nix;
         os = ./nixos-darwin/configuration.nix;
       };
 

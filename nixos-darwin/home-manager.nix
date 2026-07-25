@@ -1,4 +1,10 @@
-{ inputs, unstablePkgs, ... }:
+{
+  inputs,
+  unstablePkgs,
+  currentSystemUser,
+  githubUser,
+  ...
+}:
 
 {
   config,
@@ -71,7 +77,7 @@ in
 
     gopls
 
-    antigravity-cli
+    unstablePkgs.antigravity-cli
 
     # Node is required for Copilot.vim
     nodejs
@@ -79,7 +85,6 @@ in
 
     docker-client
     docker-credential-helpers
-    zed-editor
   ];
 
   #---------------------------------------------------------------------
@@ -94,12 +99,10 @@ in
     LANG = "en_US.UTF-8";
     LC_CTYPE = "en_US.UTF-8";
     LC_ALL = "en_US.UTF-8";
-    EDITOR = "nvim";
+    EDITOR = "zed --wait";
     PAGER = "less -FirSwX";
     MANPAGER = "${manpager}/bin/manpager";
     DOCKER_HOST = "tcp://127.0.0.1:2375";
-
-    #OPENAI_API_KEY = "op://Private/OpenAPI_Personal/credential";
 
     # See: https://github.com/NixOS/nixpkgs/issues/390751
     DISPLAY = "nixpkgs-390751";
@@ -132,7 +135,7 @@ in
     config = {
       whitelist = {
         prefix = [
-          "$HOME/code/go/src/github.com/loic-roux-404"
+          "$HOME/code/go/src/github.com/${githubUser}"
         ];
 
         exact = [ "$HOME/.envrc" ];
@@ -150,6 +153,13 @@ in
         "source ${inputs.theme-bobthefish}/functions/fish_title.fish"
         (builtins.readFile ./home-manager/config.fish)
         "set -g SHELL ${pkgs.fish}/bin/fish"
+        ''
+          if test -x /opt/homebrew/bin/brew
+            eval (/opt/homebrew/bin/brew shellenv)
+          else if test -x /usr/local/bin/brew
+            eval (/usr/local/bin/brew shellenv)
+          end
+        ''
       ])
     );
 
@@ -172,12 +182,12 @@ in
       format = null;
     };
     settings = {
-      user.name = "Loic Roux";
+      user.name = currentSystemUser;
       branch.autosetuprebase = "always";
       color.ui = true;
       core.askPass = ""; # needs to be empty to use terminal for ask pass
       credential.helper = "store"; # want to make this more secure
-      github.user = "loic-roux-404";
+      github.user = githubUser;
       push.default = "tracking";
       init.defaultBranch = "main";
       aliases = {
@@ -186,7 +196,7 @@ in
         root = "rev-parse --show-toplevel";
       };
     };
-    extraConfig = {
+    settings = {
       gpg.program = "${pkgs.gnupg}/bin/gpg2";
     };
   };
@@ -195,7 +205,7 @@ in
     enable = true;
     env = {
       GOPATH = gopath;
-      GOPRIVATE = [ "github.com/loic-roux-404" ];
+      GOPRIVATE = [ "github.com/${githubUser}" ];
     };
   };
 
