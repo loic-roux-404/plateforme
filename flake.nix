@@ -223,10 +223,7 @@
                 ssh-to-age
                 ;
             };
-            shellHook = ''
-              export DOCKER_HOST='tcp://127.0.0.1:2375'
-            ''
-            + builtins.readFile ./nix-flake/init-sops.sh;
+            shellHook = builtins.readFile ./nix-flake/init-sops.sh;
           };
 
           builder = pkgs.mkShell {

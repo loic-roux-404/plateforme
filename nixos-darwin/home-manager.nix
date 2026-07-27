@@ -93,6 +93,7 @@ in
 
   home.sessionPath = [
     "${gopath}/bin"
+    "$HOME/.local/bin"
   ];
 
   home.sessionVariables = {
