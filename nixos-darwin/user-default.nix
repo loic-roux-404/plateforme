@@ -17,6 +17,7 @@
     casks = [
       "google-chrome"
       "antigravity-ide"
+      "antigravity"
       "zed"
     ];
 
