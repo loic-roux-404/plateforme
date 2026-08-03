@@ -33,7 +33,10 @@
     sops-nix.url = "github:Mic92/sops-nix";
 
 
-    nur.url = "github:nix-community/NUR";
+    nur = {
+      url = "github:nix-community/NUR";
+      inputs.nixpkgs.follows = "nixpkgs";
+    };
 
     theme-bobthefish.url = "github:oh-my-fish/theme-bobthefish/e3b4d4eafc23516e35f162686f08a42edf844e40";
     theme-bobthefish.flake = false;
@@ -92,7 +95,7 @@
               inherit (nixpkgsDefaults) config;
             };
           };
-
+        nur = nur.overlay;
         tweaks = _: _: {
           # Add temporary overrides here
         };
