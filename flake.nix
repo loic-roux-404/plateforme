@@ -34,7 +34,7 @@
 
 
     nur = {
-      url = "github:nix-community/NUR";
+      url = "github:charmbracelet/nur";
       inputs.nixpkgs.follows = "nixpkgs";
     };
 
@@ -119,11 +119,6 @@
         deployContabo = deploy ++ [ ./nixos/contabo.nix ];
       };
 
-      darwinHomeManagerModules = [
-        nur.modules.nixos.default
-        nur.repos.charmbracelet.modules.crush
-      ];
-
       darwinModules = {
         config = ./nixos-options/default.nix;
         baseUser = ./nixos-darwin/user-default.nix;
@@ -146,7 +141,7 @@
         builder = makeOverridable self.lib.mkDarwinSystem ({
           modules = attrValues self.darwinModules;
           extraModules = self.darwinDefaultExtraModules;
-          homeManagerModules = self.darwinHomeManagerModules;
+          homeManagerModules = nur.homeModules.crush;
         });
 
         builder-x86 = self.darwinConfigurations.builder.override {
