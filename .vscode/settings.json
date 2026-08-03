@@ -4,6 +4,13 @@
     "files.associations": {
         "*.y*ml.*": "yaml"
     },
+    "nix.serverSettings": {
+      "nil": {
+        "formatting": {
+          "command": ["nixfmt"]
+        }
+      }
+    },
     "terminal.integrated.defaultProfile.osx": "fish",
     "terminal.integrated.profiles.osx": {
         "fish": {

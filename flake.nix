@@ -32,6 +32,9 @@
 
     sops-nix.url = "github:Mic92/sops-nix";
 
+
+    nur.url = "github:nix-community/NUR";
+
     theme-bobthefish.url = "github:oh-my-fish/theme-bobthefish/e3b4d4eafc23516e35f162686f08a42edf844e40";
     theme-bobthefish.flake = false;
   };
@@ -43,6 +46,7 @@
       darwin,
       nixos-generators,
       flake-utils,
+      nur,
       ...
     }@inputs:
     let
@@ -112,6 +116,11 @@
         deployContabo = deploy ++ [ ./nixos/contabo.nix ];
       };
 
+      darwinHomeManagerModules = [
+        nur.modules.nixos.default
+        nur.repos.charmbracelet.modules.crush
+      ];
+
       darwinModules = {
         config = ./nixos-options/default.nix;
         baseUser = ./nixos-darwin/user-default.nix;
@@ -134,6 +143,7 @@
         builder = makeOverridable self.lib.mkDarwinSystem ({
           modules = attrValues self.darwinModules;
           extraModules = self.darwinDefaultExtraModules;
+          homeManagerModules = self.darwinHomeManagerModules;
         });
 
         builder-x86 = self.darwinConfigurations.builder.override {
@@ -210,7 +220,7 @@
           default = pkgs.mkShell {
             name = "default";
             packages = attrValues {
-              inherit (pkgs)
+              inherit (pkgs) nil nixfmt
                 pebble
                 cntb
                 kubectl

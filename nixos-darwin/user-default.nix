@@ -6,7 +6,7 @@
 
 # Opinionated default settings for an user
 #
-# Using antigravity-ide and zed as editors
+# Using visual-studio-code and zed as editors
 # Fish as default shell
 #
 
@@ -16,8 +16,7 @@
     enable = true;
     casks = [
       "google-chrome"
-      "antigravity-ide"
-      "antigravity"
+      "visual-studio-code"
       "zed"
     ];
 
