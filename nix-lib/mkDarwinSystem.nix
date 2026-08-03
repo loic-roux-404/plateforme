@@ -10,6 +10,7 @@ inputs:
   overlays ? [ ],
   modules ? [ ],
   extraModules ? [ ],
+  homeManagerModules ? [ ],
   specialArgs ? { },
 }:
 
@@ -47,6 +48,7 @@ darwinSystem {
     if (inputs ? home-manager) then
       [
         inputs.home-manager.darwinModules.home-manager
+        homeManagerModules
         {
           home-manager.useGlobalPkgs = true;
           home-manager.useUserPackages = true;
