@@ -48,7 +48,6 @@ darwinSystem {
     if (inputs ? home-manager) then
       [
         inputs.home-manager.darwinModules.home-manager
-        homeManagerModules
         {
           home-manager.useGlobalPkgs = true;
           home-manager.useUserPackages = true;
@@ -64,6 +63,7 @@ darwinSystem {
             currentSystemName = name;
             currentSystemUser = currentSystemUser;
             inherit githubUser;
+            inherit homeManagerModules;
           };
         }
       ]

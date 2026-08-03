@@ -141,7 +141,9 @@
         builder = makeOverridable self.lib.mkDarwinSystem ({
           modules = attrValues self.darwinModules;
           extraModules = self.darwinDefaultExtraModules;
-          homeManagerModules = nur.homeModules.crush;
+          homeManagerModules = nur.homeModules.crush ++ [
+            ./nixos-darwin/crush.nix
+          ];
         });
 
         builder-x86 = self.darwinConfigurations.builder.override {
