@@ -77,6 +77,7 @@ in
     libvirt
     qemu
 
+    # Common lsp
     gopls
     bash-language-server
     pyright
@@ -89,6 +90,17 @@ in
 
     docker-client
     docker-credential-helpers
+
+    fish-lsp
+    jdt-language-server
+
+    # misc lsp
+    taplo
+
+    vscode-langservers-extracted
+    dockerfile-language-server
+    helm-ls
+    marksman
   ];
 
   #---------------------------------------------------------------------
@@ -259,5 +271,4 @@ in
     enable = true;
   };
 
-  modules = homeManagerModules;
 }
