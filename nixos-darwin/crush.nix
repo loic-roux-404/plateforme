@@ -1,7 +1,7 @@
 {
   ...
-}: 
- {
+}:
+{
   programs.crush = {
     enable = true;
     settings = {
@@ -9,7 +9,7 @@
         hyper = {
           id = "hyper";
           name = "Hyper";
-          base_url = "https://hyper.charm.land/v1/";
+          base_url = "https://hyper.charm.land/v1/chat/completions";
           type = "openai-compat";
           models = [
             {
@@ -27,30 +27,62 @@
           ];
         };
       };
-      lsp = {
-        go = {
-          command = "gopls";
-          enabled = true;
+      mcp = {
+        chrome-devtools = {
+          type = "stdio";
+          command = "npx";
+          args = [
+            "-y"
+            "chrome-devtools-mcp@latest"
+            "--isolated"
+            "--experimentalPageIdRouting"
+            "--screenshotFormat=webp"
+            "--screenshotQuality=75"
+            "--screenshotMaxWidth=1600"
+            "--screenshotMaxHeight=1200"
+            "--memoryDebugging"
+          ];
         };
+      };
+      lsp = {
         nix = {
           command = "nil";
-          enabled = true;
         };
-        bash = {
-          command = "bash-language-server";
-          enabled = true;
+        fish = {
+          command = "fish-lsp";
+        };
+        go = {
+          command = "gopls";
+        };
+        java = {
+          command = "jdtls";
         };
         python = {
-          command = "pyright-langserver";
-          enabled = true;
+          command = "pyright";
         };
         terraform = {
           command = "terraform-ls";
-          enabled = true;
         };
         yaml = {
           command = "yaml-language-server";
-          enabled = true;
+        };
+        toml = {
+          command = "taplo";
+        };
+        bash = {
+          command = "bash-language-server";
+        };
+        json = {
+          command = "vscode-json-language-server";
+        };
+        docker = {
+          command = "docker-langserver";
+        };
+        helm = {
+          command = "helm-ls";
+        };
+        markdown = {
+          command = "marksman";
         };
       };
       options = {
@@ -62,4 +94,4 @@
       };
     };
   };
- }
+}
