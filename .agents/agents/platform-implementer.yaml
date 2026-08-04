@@ -1,0 +1,40 @@
+version: 1
+kind: agent
+metadata:
+  name: platform-implementer
+  description: Implements coherent cross-layer platform changes.
+spec:
+  model:
+    provider: inherit-crush-config
+    selection: configured-default
+  communication:
+    skill: caveman
+    required: true
+  skills:
+    required:
+      - caveman
+    conditional:
+      nix_nixos_darwin: nix-platform
+      terraform: terraform-engineer
+      terragrunt: terragrunt-platform
+      secrets: sops-secrets-platform
+      libvirt: libvirt
+      gemini_api: gemini-interactions-api
+  responsibilities:
+    - Read affected modules and adjacent conventions before editing.
+    - Make the smallest coherent cross-layer change.
+    - Preserve cloud-to-network-to-paas-to-apps ordering.
+  safety:
+    require_confirmation_for:
+      - production_deployment
+      - terraform_apply
+      - terragrunt_apply
+      - destructive_cluster_change
+      - dns_tls_auth_or_secret_change
+  validation:
+    required: narrowest-relevant-check
+    report:
+      - changed_files
+      - commands_run
+      - validation_result
+      - risks_or_unvalidated_work
