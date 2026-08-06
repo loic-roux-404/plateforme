@@ -28,6 +28,10 @@
       url = "github:edolstra/flake-compat";
       flake = false;
     };
+    secrets = {
+      url = "git+ssh://git@github.com/org-404/secrets";
+      flake = false;
+    };
     flake-utils.url = "github:numtide/flake-utils";
 
     sops-nix.url = "github:Mic92/sops-nix";
@@ -95,7 +99,7 @@
               inherit (nixpkgsDefaults) config;
             };
           };
-        nur = nur.overlay;
+        nur = nur.overlays.default;
         tweaks = _: _: {
           # Add temporary overrides here
         };
@@ -142,6 +146,7 @@
           modules = attrValues self.darwinModules;
           extraModules = self.darwinDefaultExtraModules;
           homeManagerModules = [
+              inputs.sops-nix.homeManagerModules.sops
               nur.homeModules.crush
               ./nixos-darwin/crush.nix
           ];
@@ -234,7 +239,19 @@
                 ssh-to-age
                 ;
             };
-            shellHook = builtins.readFile ./nix-flake/init-sops.sh;
+            shellHook = ''
+              # Initialize SOPS age env
+              ${builtins.readFile ./nix-flake/init-sops.sh}
+
+              # Point ./secrets at the pinned flake input (read-only store path).
+              # Terragrunt's find_in_parent_folders("secrets/<env>.yaml") use it
+              if [ -e ./secrets ] && [ ! -L ./secrets ]; then
+                echo "WARNING: ./secrets is not a symlink (old nested checkout?)."
+                echo "Remove it after pushing all changes: rm -rf ./secrets"
+              else
+                ln -sfn ${inputs.secrets} ./secrets
+              fi
+            '';
           };
 
           builder = pkgs.mkShell {
