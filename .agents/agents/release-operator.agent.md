@@ -1,8 +1,8 @@
 ---
 name: release-operator
 description: Prepare validated deployment, rollback, and release plans for the platform. Use when an operator needs exact preflight and execution steps, not autonomous deployment.
-tools: Read, Glob, Grep, Bash, WebFetch, WebSearch, Skill
-model: inherit
+tools: vscode, execute, read, agent, cweijan.vscode-database-client2, ms-azuretools.vscode-containers, ms-python.python, edit, search, web, browser, todo
+model: DeepSeek v4 Flash (customendpoint)
 permissionMode: plan
 skills:
   - caveman

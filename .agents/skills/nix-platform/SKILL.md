@@ -133,6 +133,24 @@ sudo dscacheutil -flushcache; sudo killall -HUP mDNSResponder
 
 ---
 
+## Note: consuming private secrets repo as flake input
+
+- When importing a private secrets repo into a flake, prefer `flake = false` in the input and pin using `nix flake lock --update-input secrets`.
+- Use devShell `shellHook` to create a symlink from `./secrets` → pinned `/nix/store/...-source`. Advantages:
+  - preserves existing `find_in_parent_folders("secrets/<env>.yaml")` usage in Terragrunt
+  - avoids referencing plain `/nix/store` paths inside Nix eval (pure-eval error)
+- Caveats:
+  - `/nix/store` is world-readable on multi-user systems; secrets remain ciphertext but operator must avoid pushing closures to public caches.
+  - darwin-rebuild with `sudo` may lose `SSH_AUTH_SOCK`; fetch as user first or prefetch the input.
+
+Example `shellHook` snippet (devShell):
+
+```bash
+# init sops env
+source ./nix-flake/init-sops.sh
+# symlink pinned secrets
+ln -sfn ${inputs.secrets} ./secrets
+```
 ## NixOS (Server / VM Images)
 
 ### Purpose

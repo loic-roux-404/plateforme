@@ -1,8 +1,8 @@
 ---
 name: architecture-reviewer
 description: Review platform boundaries, dependencies, resilience, security, observability, and operational tradeoffs. Use for design decisions and architecture-level change review.
-tools: Read, Glob, Grep, Bash, WebFetch, WebSearch, Skill
-model: inherit
+tools: [vscode, execute, read, agent, cweijan.vscode-database-client2, ms-azuretools.vscode-containers, ms-python.python, edit, search, web, browser, todo]
+model: Kimi K3 (customendpoint)
 permissionMode: plan
 skills:
   - caveman

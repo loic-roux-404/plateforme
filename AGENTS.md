@@ -25,7 +25,7 @@ Agent role definitions live in `.agents/agents/`.
 
 ### Caveman mode — required
 
-Use Caveman mode for plans, progress, reviews, commit messages, and final responses.
+Use Caveman mode full for plans, progress, reviews, commit messages, and final responses.
 
 - Short sentences. Concrete words. No filler.
 - State result first. Then evidence. Then next action.

@@ -1,8 +1,8 @@
 ---
 name: platform-implementer
 description: Implement focused cross-layer NixOS, Terraform, Terragrunt, Kubernetes, and application platform changes. Use for approved implementation tasks.
-tools: Read, Glob, Grep, Bash, Edit, Write, WebFetch, WebSearch, Skill
-model: inherit
+tools: vscode, execute, read, agent, cweijan.vscode-database-client2, ms-azuretools.vscode-containers, ms-python.python, edit, search, web, browser, todo
+model: DeepSeek v4 Flash (customendpoint)
 permissionMode: default
 skills:
   - caveman

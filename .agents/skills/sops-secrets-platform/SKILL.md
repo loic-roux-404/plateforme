@@ -35,6 +35,31 @@ This means:
 - Key rotation requires re-encrypting all secret files
 - There is no backup recipient — if `id_ed25519` is lost, all secrets are unrecoverable
 
+## Flake-input migration pattern (observed)
+
+- Use-case: consume private `org-404/secrets` repo as a flake input from another repo.
+- Prefer `flake = false` for secrets-only repos. Example input:
+
+```nix
+secrets = {
+  url = "git+ssh://git@github.com/org-404/secrets";
+  flake = false;
+};
+```
+
+- Workflow:
+  - Commit + push any local edits in `org-404/secrets` first.
+  - Run `nix flake lock --update-input secrets` in the consumer repo to pin rev.
+  - In `devShell` `shellHook`, symlink the pinned `/nix/store/...-source` to `./secrets` so existing `find_in_parent_folders("secrets/<env>.yaml")` calls continue to work.
+  - Keep `sops` decryption using the derived age key (via `init-sops.sh`).
+
+- Risks & mitigations:
+  - Do not push Nix store closures containing secrets to public binary caches (`nix copy` to public cache). Add CI guard.
+  - Document that contributors without SSH access cannot evaluate the flake; provide test overrides or separate docs.
+  - Pin the same rev that the vendored checkout used to avoid unexpected secret diffs causing infra redeploys.
+
+This pattern preserves reproducibility and allows Terragrunt `sops_decrypt_file(find_in_parent_folders("secrets/..."))` to keep working unchanged.
+
 ## Creating/Editing Secrets
 
 ```bash
