@@ -37,6 +37,91 @@ let
   );
 in
 {
+  #---------------------------------------------------------------------
+  # SOPS secrets — age key derived from ~/.ssh/id_ed25519 (same model as
+  # nix-flake/init-sops.sh, but declarative: sops-nix converts the SSH key
+  # itself at activation). Key must have no passphrase.
+  #---------------------------------------------------------------------
+
+  sops = {
+    age.sshKeyPaths = [ "${config.home.homeDirectory}/.ssh/id_ed25519" ];
+    defaultSopsFile = "${inputs.secrets}/darwin.yaml";
+    secrets = {
+      hyper_api_key = { };
+      opencode_api_key = { };
+    };
+    templates."chatLanguageModels.json" = {
+      path = "${config.home.homeDirectory}/Library/Application Support/Code/User/chatLanguageModels.json";
+      content = builtins.toJSON [
+
+        {
+          name = "OpenCode";
+          vendor = "customendpoint";
+          apiKey = config.sops.placeholder.opencode_api_key;
+          apiType = "chat-completions";
+          models = [
+            {
+              id = "kimi-k3";
+              name = "Kimi K3";
+              url = "https://opencode.ai/zen/go/v1/chat/completions";
+              toolCalling = true;
+              vision = true;
+              maxInputTokens = 1048576;
+              maxOutputTokens = 16000;
+              supportsReasoningEffort = [
+                "low"
+                "medium"
+              ];
+              modelOptions = {
+                temperature = 1;
+                top_p = 0.95;
+              };
+              requestHeaders = {
+                Authorization = "Bearer ${config.sops.placeholder.opencode_api_key}";
+              };
+            }
+            {
+              id = "kimi-k2.7-code";
+              name = "Kimi k2.7 Code";
+              supportsReasoningEffort = [
+                "low"
+                "medium"
+              ];
+              url = "https://opencode.ai/zen/go/v1/chat/completions";
+              toolCalling = true;
+              vision = false;
+              maxInputTokens = 262144;
+              maxOutputTokens = 16000;
+              modelOptions = {
+                temperature = 1;
+                top_p = 0.95;
+              };
+              requestHeaders = {
+                Authorization = "Bearer ${config.sops.placeholder.opencode_api_key}";
+              };
+            }
+            {
+              id = "deepseek-v4-flash";
+              name = "DeepSeek v4 Flash";
+              supportsReasoningEffort = [
+                "low"
+                "medium"
+              ];
+              url = "https://opencode.ai/zen/go/v1/chat/completions";
+              toolCalling = true;
+              vision = false;
+              maxInputTokens = 1048576;
+              maxOutputTokens = 16000;
+              requestHeaders = {
+                Authorization = "Bearer ${config.sops.placeholder.opencode_api_key}";
+              };
+            }
+          ];
+        }
+      ];
+    };
+  };
+
   # Home-manager 22.11 requires this be set. We never set it so we have
   # to use the old state version.
   home.stateVersion = "18.09";
@@ -90,6 +175,8 @@ in
 
     docker-client
     docker-credential-helpers
+
+    gh
 
     fish-lsp
     jdt-language-server

@@ -1,8 +1,8 @@
 ---
 name: iac-reviewer
 description: Review Terraform, Terragrunt, Nix, Helm, and Kubernetes plans or diffs for correctness, state impact, security, and operability. Use after infrastructure changes or before apply.
-tools: Read, Glob, Grep, Bash, WebFetch, WebSearch, Skill
-model: inherit
+tools: vscode, read, agent, cweijan.vscode-database-client2, ms-azuretools.vscode-containers, ms-python.python, edit, search, web, browser, todo
+model: Kimi k2.7 Code (customendpoint)
 permissionMode: plan
 skills:
   - caveman

@@ -1,8 +1,8 @@
 ---
 name: secret-guardian
 description: Review and safely guide SOPS, age, credentials, encrypted configuration, and runtime-secret wiring. Use for any task involving secrets or access material.
-tools: Read, Glob, Grep, Bash, WebFetch, WebSearch, Skill
-model: inherit
+tools: vscode, execute, read, agent, cweijan.vscode-database-client2, ms-azuretools.vscode-containers, ms-python.python, edit, search, web, browser, todo
+model: DeepSeek v4 Flash (customendpoint)
 permissionMode: plan
 skills:
   - caveman

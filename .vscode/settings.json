@@ -20,5 +20,11 @@
     },
     "nixEnvSelector.nixFile": "${workspaceFolder}/flake.nix",
     "nixEnvSelector.useFlakes": true,
-    "nixEnvSelector.flakeShell": "default"
+    "nixEnvSelector.flakeShell": "default",
+    "chat.agentFilesLocations": {
+      ".agents/agents": true
+    },
+    "chat.agentSkillsLocations": {
+      ".agents/skills": true
+    }
 }

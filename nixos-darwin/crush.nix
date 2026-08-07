@@ -1,6 +1,29 @@
 {
+  config,
   ...
 }:
+let
+  lowCostModels = [
+    {
+      id = "kimi-k3";
+      name = "Kimi K3";
+    }
+    {
+      id = "kimi-k2.7-code";
+      name = "Kimi k2.7 Code";
+    }
+    {
+      id = "deepseek-v4-flash";
+      name = "DeepSeek v4 Flash";
+    }
+  ];
+
+  # API keys come from sops-nix (secrets/darwin.yaml). Crush expands
+  # $(...) in config values at load time, so we shell out to cat the
+  # decrypted secret. No plaintext key ever reaches the Nix store.
+  hyperApiKey = "$(cat ${config.sops.secrets.hyper_api_key.path})";
+  opencodeApiKey = "$(cat ${config.sops.secrets.opencode_api_key.path})";
+in
 {
   programs.crush = {
     enable = true;
@@ -10,21 +33,18 @@
           id = "hyper";
           name = "Hyper";
           base_url = "https://hyper.charm.land/v1/chat/completions";
+          api_key = hyperApiKey;
           type = "openai-compat";
-          models = [
-            {
-              id = "kimi-k3";
-              name = "Kimi K3";
-            }
-            {
-              id = "kimi-k2.7-code";
-              name = "Kimi k2.7 Code";
-            }
-            {
-              id = "deepseek-v4-flash";
-              name = "DeepSeek v4 Flash";
-            }
-          ];
+          models = lowCostModels;
+        };
+
+        opencode = {
+          id = "opencode";
+          name = "OpenCode";
+          base_url = "https://opencode.ai/zen/go/v1/chat/completions";
+          api_key = opencodeApiKey;
+          type = "openai-compat";
+          models = lowCostModels;
         };
       };
       mcp = {
