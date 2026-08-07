@@ -36,7 +36,6 @@
 
     sops-nix.url = "github:Mic92/sops-nix";
 
-
     nur = {
       url = "github:charmbracelet/nur";
       inputs.nixpkgs.follows = "nixpkgs";
@@ -103,6 +102,9 @@
         tweaks = _: _: {
           # Add temporary overrides here
         };
+        agent-lsp = _: prev: {
+          agent-lsp = prev.callPackage ./nixpkgs/agent-lsp.nix { };
+        };
       };
 
       nixosModules = {
@@ -146,9 +148,9 @@
           modules = attrValues self.darwinModules;
           extraModules = self.darwinDefaultExtraModules;
           homeManagerModules = [
-              inputs.sops-nix.homeManagerModules.sops
-              nur.homeModules.crush
-              ./nixos-darwin/crush.nix
+            inputs.sops-nix.homeManagerModules.sops
+            nur.homeModules.crush
+            ./nixos-darwin/crush.nix
           ];
         });
 
@@ -221,12 +223,15 @@
         let
           system = baseSystem;
           pkgs = import inputs.nixpkgs-srvos (nixpkgsDefaults // { inherit system; });
+          agentLspPkg = pkgs.callPackage ./nixpkgs/agent-lsp.nix { };
         in
         {
           default = pkgs.mkShell {
             name = "default";
             packages = attrValues {
-              inherit (pkgs) nil nixfmt
+              inherit (pkgs)
+                nil
+                nixfmt
                 pebble
                 cntb
                 kubectl
@@ -238,6 +243,7 @@
                 sops
                 ssh-to-age
                 ;
+              inherit agentLspPkg;
             };
             shellHook = ''
               # Initialize SOPS age env

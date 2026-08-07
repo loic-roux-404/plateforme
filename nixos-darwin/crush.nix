@@ -29,15 +29,6 @@ in
     enable = true;
     settings = {
       providers = {
-        hyper = {
-          id = "hyper";
-          name = "Hyper";
-          base_url = "https://hyper.charm.land/v1/chat/completions";
-          api_key = hyperApiKey;
-          type = "openai-compat";
-          models = lowCostModels;
-        };
-
         opencode = {
           id = "opencode";
           name = "OpenCode";
@@ -46,6 +37,14 @@ in
           type = "openai-compat";
           models = lowCostModels;
         };
+        # hyper = {
+        #   id = "hyper";
+        #   name = "Hyper";
+        #   base_url = "https://hyper.charm.land/v1/chat/completions";
+        #   api_key = hyperApiKey;
+        #   type = "openai-compat";
+        #   models = lowCostModels;
+        # };
       };
       mcp = {
         chrome-devtools = {
@@ -64,45 +63,119 @@ in
           ];
         };
       };
+
       lsp = {
         nix = {
           command = "nil";
+          filetypes = [ "nix" ];
+          root_markers = [ "flake.nix" ];
         };
         fish = {
           command = "fish-lsp";
+          filetypes = [ "fish" ];
         };
         go = {
           command = "gopls";
+          filetypes = [
+            "go"
+            "mod"
+          ];
+          root_markers = [
+            "go.mod"
+            "go.work"
+          ];
+        };
+        typescript = {
+          command = "typescript-language-server";
+          args = [ "--stdio" ];
+          filetypes = [
+            "js"
+            "jsx"
+            "ts"
+            "tsx"
+          ];
+          root_markers = [
+            "package.json"
+            "tsconfig.json"
+          ];
         };
         java = {
           command = "jdtls";
+          filetypes = [ "java" ];
+          root_markers = [
+            "pom.xml"
+            "build.gradle"
+            "settings.gradle"
+          ];
         };
         python = {
-          command = "pyright";
+          command = "pyright-langserver";
+          args = [ "--stdio" ];
+          filetypes = [ "py" ];
+          root_markers = [
+            "pyproject.toml"
+            "requirements.txt"
+          ];
         };
         terraform = {
           command = "terraform-ls";
+          args = [ "serve" ];
+          filetypes = [
+            "tf"
+            "tfvars"
+          ];
+          root_markers = [ ".terraform" ];
         };
         yaml = {
           command = "yaml-language-server";
+          args = [ "--stdio" ];
+          filetypes = [
+            "yaml"
+            "yml"
+          ];
         };
         toml = {
           command = "taplo";
+          args = [
+            "lsp"
+            "stdio"
+          ];
+          filetypes = [ "toml" ];
         };
         bash = {
           command = "bash-language-server";
+          args = [ "start" ];
+          filetypes = [
+            "sh"
+            "bash"
+          ];
         };
         json = {
           command = "vscode-json-language-server";
+          args = [ "--stdio" ];
+          filetypes = [ "json" ];
         };
         docker = {
           command = "docker-langserver";
+          args = [ "--stdio" ];
+          filetypes = [ "dockerfile" ];
         };
         helm = {
           command = "helm-ls";
+          args = [ "serve" ];
+          filetypes = [
+            "helm"
+            "yaml"
+          ];
+          root_markers = [ "Chart.yaml" ];
         };
         markdown = {
           command = "marksman";
+          args = [ "server" ];
+          filetypes = [
+            "md"
+            "markdown"
+          ];
         };
       };
       options = {
