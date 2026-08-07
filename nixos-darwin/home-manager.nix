@@ -17,6 +17,8 @@
 let
   gopath = "${config.home.homeDirectory}/Developer/go";
 
+  agent-lsp = pkgs.callPackage ../nixpkgs/agent-lsp.nix { };
+
   shellAliases = {
     gco = "git checkout";
     gcoam = "git add . && git commit --amend && git push --force-with-lease";
@@ -50,6 +52,7 @@ in
       hyper_api_key = { };
       opencode_api_key = { };
     };
+
     templates."chatLanguageModels.json" = {
       path = "${config.home.homeDirectory}/Library/Application Support/Code/User/chatLanguageModels.json";
       content = builtins.toJSON [
@@ -68,6 +71,7 @@ in
               vision = true;
               maxInputTokens = 1048576;
               maxOutputTokens = 16000;
+              reasoningEffortFormat = "chat-completions";
               supportsReasoningEffort = [
                 "low"
                 "medium"
@@ -83,6 +87,7 @@ in
             {
               id = "kimi-k2.7-code";
               name = "Kimi k2.7 Code";
+              reasoningEffortFormat = "chat-completions";
               supportsReasoningEffort = [
                 "low"
                 "medium"
@@ -107,6 +112,7 @@ in
                 "low"
                 "medium"
               ];
+              reasoningEffortFormat = "chat-completions";
               url = "https://opencode.ai/zen/go/v1/chat/completions";
               toolCalling = true;
               vision = false;
@@ -171,6 +177,8 @@ in
     # Node is required for Copilot.vim
     nodejs
     nodePackages.yaml-language-server
+    nodePackages.typescript-language-server
+    typescript
     pnpm
 
     docker-client
@@ -188,6 +196,9 @@ in
     dockerfile-language-server
     helm-ls
     marksman
+
+    # Agent tooling
+    agent-lsp
   ];
 
   #---------------------------------------------------------------------
@@ -319,6 +330,15 @@ in
     };
   };
 
+  sops.secrets.email = { };
+  sops.templates."git-user-email.inc" = {
+    path = "${config.home.homeDirectory}/.config/git/user-email.inc";
+    content = ''
+      [user]
+      	email = ${config.sops.placeholder.email}
+    '';
+  };
+
   programs.git = {
     enable = true;
     signing = {
@@ -344,6 +364,9 @@ in
     settings = {
       gpg.program = "${pkgs.gnupg}/bin/gpg2";
     };
+    includes = [
+      { path = config.sops.templates."git-user-email.inc".path; }
+    ];
   };
 
   programs.go = {

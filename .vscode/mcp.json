@@ -1,0 +1,60 @@
+{
+  "servers": {
+    "kubernetes": {
+      "command": "npx",
+      "args": [
+        "-y",
+        "kubernetes-mcp-server@latest",
+        "--read-only",
+        "--kubeconfig",
+        "${env:KUBECONFIG}"
+      ]
+    },
+    "chrome-devtools": {
+      "command": "npx",
+      "args": [
+        "-y",
+        "chrome-devtools-mcp@latest",
+        "--isolated",
+        "--experimentalPageIdRouting",
+        "--screenshotFormat=webp",
+        "--screenshotQuality=75",
+        "--screenshotMaxWidth=1600",
+        "--screenshotMaxHeight=1200",
+        "--memoryDebugging"
+      ]
+    },
+    "terraform": {
+      "command": "docker",
+      "args": [
+        "run",
+        "--rm",
+        "-i",
+        "hashicorp/terraform-mcp-server:latest"
+      ]
+    },
+    "agent-lsp": {
+      "command": "agent-lsp",
+      "args": [
+        "nix:nil",
+        "terraform:terraform-ls,serve",
+        "yaml:yaml-language-server,--stdio",
+        "bash:bash-language-server,start",
+        "json:vscode-json-language-server,--stdio",
+        "dockerfile:docker-langserver,--stdio",
+        "helm:helm-ls,serve",
+        "markdown:marksman,server"
+      ]
+    },
+    "github": {
+      "command": "npx",
+      "args": [
+        "-y",
+        "@modelcontextprotocol/server-github@latest"
+      ],
+      "env": {
+        "GITHUB_PERSONAL_ACCESS_TOKEN": "${env:GITHUB_TOKEN}"
+      }
+    }
+  }
+}
