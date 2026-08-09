@@ -33,8 +33,8 @@ Defines custom options consumed by **both** NixOS and nix-darwin. Because the sa
 ### `nix-lib/` — flake-local Nix library helpers
 Pure helper functions or builders that are not modules. Typical example: a `mkDarwinSystem` wrapper that wires `nixpkgs.overlays`, `home-manager`, optional extra builders, and shared `_module.args`. Imported in `flake.nix` under `lib`.
 
-### `nix-flake/` — flake/dev-shell utilities
-Shell helpers and scripts that support the flake but are not Nix modules. Typical example: an `init-sops.sh` script that exports `SOPS_AGE_KEY` / `SOPS_AGE_RECIPIENTS` from an SSH key inside `nix develop`.
+### `nixpkgs/paas-secrets/` — dev-shell helpers package
+Single-folder package (nixpkgs convention): `default.nix` derivation co-located with its script sources (`init-sops.sh` exports `SOPS_AGE_KEY` / `SOPS_AGE_RECIPIENTS` from an SSH key inside `nix develop`; `link-secrets.sh` symlinks the pinned secrets input to `./secrets`). Scripts are baked with store paths via `substituteInPlace`; `init-sops` must be sourced, never `exec`-wrapped.
 
 ### `secrets/` — encrypted SOPS secrets
 Per-environment or per-scope secret files (e.g. `local.yaml`, `prod.yaml`, `darwin.yaml`). These files are **never** edited directly; use `sops <file>`. Nix code must access values via `sops-nix` (`config.sops.placeholder.<name>` or `config.sops.secrets.<name>.path`) so that plaintext secrets do not enter the Nix store.

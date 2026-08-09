@@ -1,6 +1,12 @@
 # Theme
 set -g theme_nerd_fonts yes
 
+# vscode 
+if test "$TERM_PROGRAM" = vscode
+  and type -q code
+  . (code --locate-shell-integration-path fish | psub)
+end
+
 # create functions
 function coam
 	git add .;

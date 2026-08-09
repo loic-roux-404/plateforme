@@ -224,6 +224,7 @@
           system = baseSystem;
           pkgs = import inputs.nixpkgs-srvos (nixpkgsDefaults // { inherit system; });
           agentLspPkg = pkgs.callPackage ./nixpkgs/agent-lsp.nix { };
+          paasSecretsPkg = pkgs.callPackage ./nixpkgs/paas-secrets { secrets = inputs.secrets; };
         in
         {
           default = pkgs.mkShell {
@@ -246,17 +247,11 @@
               inherit agentLspPkg;
             };
             shellHook = ''
-              # Initialize SOPS age env
-              ${builtins.readFile ./nix-flake/init-sops.sh}
+              source ${paasSecretsPkg}/bin/init-sops
 
               # Point ./secrets at the pinned flake input (read-only store path).
-              # Terragrunt's find_in_parent_folders("secrets/<env>.yaml") use it
-              if [ -e ./secrets ] && [ ! -L ./secrets ]; then
-                echo "WARNING: ./secrets is not a symlink (old nested checkout?)."
-                echo "Remove it after pushing all changes: rm -rf ./secrets"
-              else
-                ln -sfn ${inputs.secrets} ./secrets
-              fi
+              # Terragrunt's find_in_parent_folders("secrets/<env>.yaml") uses it.
+              ${paasSecretsPkg}/bin/link-secrets
             '';
           };
 

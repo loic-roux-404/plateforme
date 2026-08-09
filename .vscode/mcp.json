@@ -25,13 +25,7 @@
       ]
     },
     "terraform": {
-      "command": "docker",
-      "args": [
-        "run",
-        "--rm",
-        "-i",
-        "hashicorp/terraform-mcp-server:latest"
-      ]
+      "command": "terraform-mcp-server"
     },
     "agent-lsp": {
       "command": "agent-lsp",
@@ -42,8 +36,7 @@
         "bash:bash-language-server,start",
         "json:vscode-json-language-server,--stdio",
         "dockerfile:docker-langserver,--stdio",
-        "helm:helm-ls,serve",
-        "markdown:marksman,server"
+        "helm:helm_ls,serve"
       ]
     },
     "github": {
