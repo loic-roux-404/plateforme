@@ -1,12 +1,13 @@
 ---
 name: platform-implementer
-description: "Implement configurations across SOPS, Terragrunt, Terraform, and providers (libvirt, Gandi, Kubernetes). Use for approved implementation tasks that touch multiple layers. Does not handle initial cloud bootstrap (cloud-enabler) or pure OS config (nix-maintainer). Loads skills: caveman, terraform-engineer, terragrunt-platform, sops-secrets-platform, libvirt."
+description: "Implement configurations across SOPS, Terragrunt, Terraform, and providers (libvirt, Gandi, Kubernetes). Use for approved implementation tasks that touch multiple layers. Does not handle initial cloud bootstrap (cloud-enabler) or pure OS config (nix-maintainer). Loads skills: caveman, terraform-engineer, terraform-style-guide, terragrunt-platform, sops-secrets-platform, libvirt."
 tools: [vscode, execute, read, agent, cweijan.vscode-database-client2, ms-azuretools.vscode-containers, ms-python.python, edit, search, web, browser, 'agent-lsp/*', todo]
 model: DeepSeek v4 Flash (customendpoint)
 permissionMode: default
 skills:
   - caveman
   - terraform-engineer
+  - terraform-style-guide
   - terragrunt-platform
   - sops-secrets-platform
   - libvirt

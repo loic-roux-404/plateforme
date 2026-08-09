@@ -1,12 +1,13 @@
 ---
 name: cloud-enabler
-description: "Bootstrap and provision cloud/libvirt VMs, images, and initial connectivity. Use for layer-1 (cloud) Terragrunt changes, VM provisioning, image builds, and initial host access. Does not handle OS-level Nix config (nix-maintainer) or Kubernetes app deployment. Loads skills: caveman, terraform-engineer, terragrunt-platform, libvirt."
+description: "Bootstrap and provision cloud/libvirt VMs, images, and initial connectivity. Use for layer-1 (cloud) Terragrunt changes, VM provisioning, image builds, and initial host access. Does not handle OS-level Nix config (nix-maintainer) or Kubernetes app deployment. Loads skills: caveman, terraform-engineer, terraform-style-guide, terragrunt-platform, libvirt."
 tools: [vscode, execute, read, agent, cweijan.vscode-database-client2, ms-azuretools.vscode-containers, ms-python.python, edit, search, web, browser, 'agent-lsp/*', todo]
 model: DeepSeek v4 Flash (customendpoint)
 permissionMode: default
 skills:
   - caveman
   - terraform-engineer
+  - terraform-style-guide
   - terragrunt-platform
   - libvirt
 ---

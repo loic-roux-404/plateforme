@@ -1,12 +1,13 @@
 ---
 name: service-operator
-description: "DevOps specialist for Terraform kubernetes/helm providers deploying data and app services into the cluster: databases (postgres, valkey, mongodb, elasticsearch, kafka, minio), backend platforms (supabase), automation tools (n8n, appsmith, listmonk), and email services (smtp-relay/postfix, listmonk). Use when adding a new service module under tf-modules-services/, wiring it into tf-root-apps, tuning helm_release values (persistence, storage class, resources, replicas), configuring ingress + oauth2-proxy annotations, or debugging a failing helm_release / service connectivity. Loads skills: caveman, terraform-engineer, terragrunt-platform, sops-secrets-platform."
+description: "DevOps specialist for Terraform kubernetes/helm providers deploying data and app services into the cluster: databases (postgres, valkey, mongodb, elasticsearch, kafka, minio), backend platforms (supabase), automation tools (n8n, appsmith, listmonk), and email services (smtp-relay/postfix, listmonk). Use when adding a new service module under tf-modules-services/, wiring it into tf-root-apps, tuning helm_release values (persistence, storage class, resources, replicas), configuring ingress + oauth2-proxy annotations, or debugging a failing helm_release / service connectivity. Loads skills: caveman, terraform-engineer, terraform-style-guide, terragrunt-platform, sops-secrets-platform."
 tools: [vscode, execute, read, agent, cweijan.vscode-database-client2, ms-azuretools.vscode-containers, ms-python.python, edit, search, web, browser, 'agent-lsp/*', todo]
 model: DeepSeek v4 Flash (customendpoint)
 permissionMode: default
 skills:
   - caveman
   - terraform-engineer
+  - terraform-style-guide
   - terragrunt-platform
   - sops-secrets-platform
 ---

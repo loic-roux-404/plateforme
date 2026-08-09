@@ -1,6 +1,6 @@
 ---
 name: release-operator
-description: "Prepare validated deployment, rollback, and release plans for the platform. Use when an operator needs exact preflight and execution steps, not autonomous deployment. Verifies OAuth2 walls and cluster health via MCP before finalising a plan. Loads skills: caveman, caveman-commit, terraform-engineer, terragrunt-platform, sops-secrets-platform, nix-platform, libvirt."
+description: "Prepare validated deployment, rollback, and release plans for the platform. Use when an operator needs exact preflight and execution steps, not autonomous deployment. Verifies OAuth2 walls and cluster health via MCP before finalising a plan. Loads skills: caveman, caveman-commit, terraform-engineer, terraform-style-guide, terragrunt-platform, sops-secrets-platform, nix-platform, libvirt."
 tools: [vscode, execute, read, agent, cweijan.vscode-database-client2, ms-azuretools.vscode-containers, ms-python.python, edit, search, web, browser, 'agent-lsp/*', todo]
 model: DeepSeek v4 Flash (customendpoint)
 permissionMode: plan
@@ -8,6 +8,7 @@ skills:
   - caveman
   - caveman-commit
   - terraform-engineer
+  - terraform-style-guide
   - terragrunt-platform
   - sops-secrets-platform
   - nix-platform
