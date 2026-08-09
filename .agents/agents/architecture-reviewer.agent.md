@@ -1,6 +1,6 @@
 ---
 name: architecture-reviewer
-description: "Review platform boundaries, dependencies, resilience, security, observability, and operational tradeoffs. Use for design decisions and architecture-level change review. Can reach configured UIs to verify OAuth2 walls and ingress health. Loads skills: caveman, caveman-review, terraform-engineer, terragrunt-platform, sops-secrets-platform, libvirt, nix-platform."
+description: "Review platform boundaries, dependencies, resilience, security, observability, and operational tradeoffs. Use for design decisions and architecture-level change review. Can reach configured UIs to verify OAuth2 walls and ingress health. Loads skills: caveman, caveman-review, terraform-engineer, terraform-style-guide, terragrunt-platform, sops-secrets-platform, libvirt, nix-platform."
 tools: [vscode, execute, read, agent, cweijan.vscode-database-client2, ms-azuretools.vscode-containers, ms-python.python, search, web, browser, 'agent-lsp/*', todo]
 model: Kimi K3 (customendpoint)
 permissionMode: plan
@@ -8,6 +8,7 @@ skills:
   - caveman
   - caveman-review
   - terraform-engineer
+  - terraform-style-guide
   - terragrunt-platform
   - sops-secrets-platform
   - libvirt

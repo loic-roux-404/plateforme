@@ -36,7 +36,13 @@
         "bash:bash-language-server,start",
         "json:vscode-json-language-server,--stdio",
         "dockerfile:docker-langserver,--stdio",
-        "helm:helm_ls,serve"
+        "helm:helm_ls,serve",
+        "html:vscode-html-language-server,--stdio",
+        "css:vscode-css-language-server,--stdio",
+        "typescript:typescript-language-server,--stdio",
+        "typescriptreact:typescript-language-server,--stdio",
+        "javascript:vscode-eslint-language-server,--stdio",
+        "javascriptreact:vscode-eslint-language-server,--stdio",
       ]
     },
     "github": {
@@ -46,7 +52,7 @@
         "@modelcontextprotocol/server-github@latest"
       ],
       "env": {
-        "GITHUB_PERSONAL_ACCESS_TOKEN": "${env:GITHUB_TOKEN}"
+        "GITHUB_PERSONAL_ACCESS_TOKEN": "${env:GH_TOKEN}"
       }
     }
   }

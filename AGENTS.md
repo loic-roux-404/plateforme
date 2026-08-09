@@ -254,6 +254,7 @@ This repository has custom agents in `.agents/agents/`. Each agent has a focused
 
 | Agent | Role | When to use |
 |-------|------|-------------|
+| `orchestrator` | Default entry point: routes tasks to the right specialist; falls back to general work itself in caveman full mode | Start any task without a specialist pre-selected |
 | `cloud-enabler` | Bootstrap and provision cloud/libvirt VMs, images, and initial connectivity | Layer-1 (cloud) Terragrunt changes, VM provisioning, image builds |
 | `cloud-architect` | Plan cross-layer infrastructure and application architecture | New features, environment changes, ADRs, design docs |
 | `platform-implementer` | Implement configurations across SOPS, Terragrunt, Terraform, and providers | Approved implementation tasks that touch multiple layers |
@@ -262,6 +263,7 @@ This repository has custom agents in `.agents/agents/`. Each agent has a focused
 | `architecture-reviewer` | Review platform boundaries, dependencies, resilience, security, and tradeoffs | Design decisions and architecture-level change review |
 | `iac-reviewer` | Review Terraform, Terragrunt, Nix, Helm, Kubernetes, and SOPS secret-wiring plans or diffs | After infrastructure changes or before apply |
 | `nix-maintainer` | Maintain and debug Nix, nix-darwin, and NixOS configs | Nix evals, builds, store analysis, option lookups |
+| `ai-architect` | Design AI agentic systems: agents, skills, prompts, MCP servers, team workflows | Search/install/customize agentic assets, add MCP servers, design agent teams, self-test workflows |
 
 ## MCP Servers
 

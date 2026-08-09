@@ -148,6 +148,9 @@ in
   # per-project flakes sourced with direnv and nix-shell, so this is
   # not a huge list.
   home.packages = with pkgs; [
+    bashInteractive
+    zsh
+
     asciinema
     bat
     cachix
@@ -172,7 +175,13 @@ in
     gopls
     bash-language-server
     pyright
+
+    terraform
     terraform-ls
+
+    kubectl
+    kubelogin-oidc
+    kubernetes-helm
 
     # Node is required for Copilot.vim
     nodejs
@@ -210,6 +219,13 @@ in
     "$HOME/.local/bin"
   ];
 
+  sops.secrets.gh_token = { };
+
+  sops.templates."gh-token.env" = {
+    content = "export GH_TOKEN=${config.sops.placeholder.gh_token}";
+    path = "${config.home.homeDirectory}/.config/sops-nix/gh-token.env";
+  };
+
   home.sessionVariables = {
     LANG = "en_US.UTF-8";
     LC_CTYPE = "en_US.UTF-8";
@@ -240,7 +256,10 @@ in
       "ignoredups"
       "ignorespace"
     ];
-    initExtra = builtins.readFile ./home-manager/.bashrc;
+    initExtra = (builtins.readFile ./home-manager/.bashrc) + ''
+      # GitHub token from sops (rendered at activation, see home-manager.nix)
+      source ${config.sops.templates."gh-token.env".path};
+    '';
     shellAliases = shellAliases;
   };
 
@@ -263,6 +282,7 @@ in
     shellAliases = shellAliases;
     interactiveShellInit = lib.strings.concatStrings (
       lib.strings.intersperse "\n" ([
+        "source ${config.sops.templates."gh-token.env".path}"
         "source ${inputs.theme-bobthefish}/functions/fish_prompt.fish"
         "source ${inputs.theme-bobthefish}/functions/fish_right_prompt.fish"
         "source ${inputs.theme-bobthefish}/functions/fish_title.fish"
