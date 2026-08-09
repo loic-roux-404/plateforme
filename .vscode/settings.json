@@ -11,11 +11,15 @@
         }
       }
     },
-    "terminal.integrated.defaultProfile.osx": "fish",
+    "terminal.integrated.defaultProfile.osx": "bash (nix)",
     "terminal.integrated.profiles.osx": {
         "fish": {
             "path": "/run/current-system/sw/bin/fish",
-            "args": []
+            "args": ["--no-config"]
+        },
+        "bash (nix)": {
+            "path": "/run/current-system/sw/bin/bash",
+            "args": ["--login", "-i"]
         }
     },
     "nixEnvSelector.nixFile": "${workspaceFolder}/flake.nix",

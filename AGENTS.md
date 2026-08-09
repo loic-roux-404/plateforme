@@ -257,6 +257,7 @@ This repository has custom agents in `.agents/agents/`. Each agent has a focused
 | `cloud-enabler` | Bootstrap and provision cloud/libvirt VMs, images, and initial connectivity | Layer-1 (cloud) Terragrunt changes, VM provisioning, image builds |
 | `cloud-architect` | Plan cross-layer infrastructure and application architecture | New features, environment changes, ADRs, design docs |
 | `platform-implementer` | Implement configurations across SOPS, Terragrunt, Terraform, and providers | Approved implementation tasks that touch multiple layers |
+| `service-operator` | DevOps for helm-based services (databases, n8n, smtp-relay, supabase) | Add/tune/debug service modules under `tf-modules-services/` and `tf-root-apps` |
 | `release-operator` | Prepare validated deployment, rollback, and release plans | Operator needs exact preflight and execution steps |
 | `architecture-reviewer` | Review platform boundaries, dependencies, resilience, security, and tradeoffs | Design decisions and architecture-level change review |
 | `iac-reviewer` | Review Terraform, Terragrunt, Nix, Helm, Kubernetes, and SOPS secret-wiring plans or diffs | After infrastructure changes or before apply |

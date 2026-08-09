@@ -24,14 +24,14 @@ metadata:
 The project uses a **single operator key** derived from `~/.ssh/id_ed25519`:
 
 ```bash
-# Executed automatically in nix devShell (nix-flake/init-sops.sh)
+# Executed automatically in nix devShell (via the paas-secrets derivation, nixpkgs/paas-secrets/init-sops.sh)
 SOPS_AGE_KEY=$(ssh-to-age -private-key < ~/.ssh/id_ed25519)
 SOPS_AGE_RECIPIENTS=$(ssh-to-age < ~/.ssh/id_ed25519.pub)
 export SOPS_AGE_KEY SOPS_AGE_RECIPIENTS
 ```
 
 This means:
-- SOPS only works inside `nix develop` (or after manually sourcing init-sops.sh)
+- SOPS only works inside `nix develop` (or after manually sourcing the wrapped `init-sops` script)
 - Key rotation requires re-encrypting all secret files
 - There is no backup recipient — if `id_ed25519` is lost, all secrets are unrecoverable
 
@@ -50,8 +50,8 @@ secrets = {
 - Workflow:
   - Commit + push any local edits in `org-404/secrets` first.
   - Run `nix flake lock --update-input secrets` in the consumer repo to pin rev.
-  - In `devShell` `shellHook`, symlink the pinned `/nix/store/...-source` to `./secrets` so existing `find_in_parent_folders("secrets/<env>.yaml")` calls continue to work.
-  - Keep `sops` decryption using the derived age key (via `init-sops.sh`).
+  - In `devShell` `shellHook`, symlink the pinned `/nix/store/...-source` to `./secrets` (via the `paas-secrets` derivation's `link-secrets` script) so existing `find_in_parent_folders("secrets/<env>.yaml")` calls continue to work.
+  - Keep `sops` decryption using the derived age key (via the `paas-secrets` derivation's `init-sops` script).
 
 - Risks & mitigations:
   - Do not push Nix store closures containing secrets to public binary caches (`nix copy` to public cache). Add CI guard.

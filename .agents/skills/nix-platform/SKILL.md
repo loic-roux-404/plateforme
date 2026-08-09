@@ -16,7 +16,7 @@ metadata:
     nix, nixos, nix-darwin, flake.nix, nixosConfigurations, darwinConfigurations,
     nixos-generators, srvos, sops-nix, home-manager, paas, mkDarwinSystem,
     launchd, linux-builder, nix build, nix develop, nixos-rebuild, qcow2,
-    nix-flake, nixos-options, nixpkgs-srvos
+    paas-secrets, nixos-options, nixpkgs-srvos
   role: platform-engineer
   scope: implementation
   output-format: code
@@ -143,13 +143,19 @@ sudo dscacheutil -flushcache; sudo killall -HUP mDNSResponder
   - `/nix/store` is world-readable on multi-user systems; secrets remain ciphertext but operator must avoid pushing closures to public caches.
   - darwin-rebuild with `sudo` may lose `SSH_AUTH_SOCK`; fetch as user first or prefetch the input.
 
+The scripts live beside their derivation in `nixpkgs/paas-secrets/` (`default.nix`, `init-sops.sh`, `link-secrets.sh`) following the nixpkgs single-folder package convention:
+
+```nix
+paasSecretsPkg = pkgs.callPackage ./nixpkgs/paas-secrets { secrets = inputs.secrets; };
+```
+
 Example `shellHook` snippet (devShell):
 
 ```bash
-# init sops env
-source ./nix-flake/init-sops.sh
+# init sops env (exports SOPS_AGE_KEY / SOPS_AGE_RECIPIENTS)
+source ${paasEnvPkg}/bin/init-sops
 # symlink pinned secrets
-ln -sfn ${inputs.secrets} ./secrets
+${paasEnvPkg}/bin/link-secrets
 ```
 ## NixOS (Server / VM Images)
 
@@ -247,7 +253,7 @@ nix nil nix-tree nixos-rebuild
 nodejs pnpm
 ```
 
-The `shellHook` sets `DOCKER_HOST=tcp://127.0.0.1:2375` (for docker via nix-darwin linux-builder) and sources `init-sops.sh` to export `SOPS_AGE_KEY` / `SOPS_AGE_RECIPIENTS`.
+The `shellHook` sets `DOCKER_HOST=tcp://127.0.0.1:2375` (for docker via nix-darwin linux-builder) and sources the `paas-secrets` derivation's `init-sops` script (`nixpkgs/paas-secrets/init-sops.sh`) to export `SOPS_AGE_KEY` / `SOPS_AGE_RECIPIENTS`.
 
 **All platform operations must run inside `nix develop`.**
 

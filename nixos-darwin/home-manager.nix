@@ -41,7 +41,7 @@ in
 {
   #---------------------------------------------------------------------
   # SOPS secrets — age key derived from ~/.ssh/id_ed25519 (same model as
-  # nix-flake/init-sops.sh, but declarative: sops-nix converts the SSH key
+  # nixpkgs/paas-secrets/init-sops.sh, but declarative: sops-nix converts the SSH key
   # itself at activation). Key must have no passphrase.
   #---------------------------------------------------------------------
 
@@ -195,10 +195,10 @@ in
     vscode-langservers-extracted
     dockerfile-language-server
     helm-ls
-    marksman
 
     # Agent tooling
     agent-lsp
+    terraform-mcp-server
   ];
 
   #---------------------------------------------------------------------
@@ -379,6 +379,9 @@ in
 
   programs.oh-my-posh = {
     enable = true;
+    enableFishIntegration = true;
+    enableZshIntegration = false;
+    enableBashIntegration = false;
   };
 
 }
