@@ -54,9 +54,9 @@ resource "helm_release" "appsmith" {
   version          = var.chart_version
   create_namespace = false
 
-  timeout       = 240
+  timeout       = 600
   wait_for_jobs = true
-  atomic        = true
+  atomic        = false
 
   values = [
     yamlencode({

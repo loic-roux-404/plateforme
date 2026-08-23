@@ -5,26 +5,34 @@ resource "random_password" "postgres_password" {
 }
 
 resource "helm_release" "postgresql" {
-  name       = "postgresql"
-  repository = "oci://registry-1.docker.io/bitnamicharts"
-  chart      = "postgresql"
-  version    = var.postgresql_version
-  namespace  = var.postgres_namespace
+  name             = "postgresql"
+  repository       = "oci://registry-1.docker.io/bitnamicharts"
+  chart            = "postgresql"
+  version          = var.postgresql_version
+  namespace        = var.postgres_namespace
   create_namespace = true
 
   wait_for_jobs = true
-  wait = true
-  timeout = 120
-  atomic = true
+  wait          = true
+  timeout       = 300
+  atomic        = true
 
   values = [
-    templatefile("${path.module}/postgres-values.yaml.tmpl", {
-      postgres_password = random_password.postgres_password.result
-      postgres_db       = var.postgres_db
-      postgres_user     = var.postgres_user
-      service_name      = var.postgres_service_name
-      postgres_persistence_size = var.postgres_persistence_size
-      postgres_storage_class = var.postgres_storage_class
+    yamlencode({
+      fullnameOverride = var.postgres_service_name
+      auth = {
+        database = var.postgres_db
+        username = var.postgres_user
+        password = random_password.postgres_password.result
+      }
+      primary = {
+        persistence = {
+          enabled        = true
+          size           = var.postgres_persistence_size
+          storageClass   = var.postgres_storage_class
+          resourcePolicy = "delete"
+        }
+      }
     })
   ]
 }

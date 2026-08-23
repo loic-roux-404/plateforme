@@ -3,5 +3,8 @@ locals {
   dependencies = read_terragrunt_config(find_in_parent_folders("dependencies.hcl"))
   secret_vars  = yamldecode(sops_decrypt_file(find_in_parent_folders("secrets/${local.env}.yaml")))
   input_vars = merge(local.dependencies.dependency.network.outputs, 
-    local.dependencies.dependency.paas.outputs, local.secret_vars, {})
+    local.dependencies.dependency.paas.outputs, local.secret_vars, {
+      storage_class            = "longhorn"
+      smtp_relay_storage_class = "longhorn"
+    })
 }

@@ -17,8 +17,8 @@ locals {
 
       postfix = merge(
         {
-          RELAYHOST                     = var.relay_host
-          RELAYHOST_USERNAME            = var.relay_username
+          RELAYHOST                       = var.relay_host
+          RELAYHOST_USERNAME              = var.relay_username
           POSTFIX_smtp_tls_security_level = var.relay_tls_security_level
         },
         var.config_postfix_overrides
@@ -27,10 +27,10 @@ locals {
 
     # Persistence for postfix queue
     persistence = {
-      enabled       = true
-      accessModes   = ["ReadWriteOnce"]
-      size          = var.persistence_size
-      storageClass  = var.persistence_storage_class
+      enabled      = true
+      accessModes  = ["ReadWriteOnce"]
+      size         = var.persistence_size
+      storageClass = var.persistence_storage_class
     }
 
     # Restart pods on each upgrade as recommended
@@ -39,16 +39,16 @@ locals {
 }
 
 resource "helm_release" "smtp_relay" {
-  name       = "smtp-relay"
-  namespace  = kubernetes_namespace_v1.smtp_relay.metadata[0].name
+  name      = "smtp-relay"
+  namespace = kubernetes_namespace_v1.smtp_relay.metadata[0].name
 
   repository = "https://bokysan.github.io/docker-postfix"
   chart      = "mail"
   version    = var.chart_version
 
-  timeout          = 120
-  wait_for_jobs    = true
-    atomic           = true
+  timeout        = 300
+  wait_for_jobs  = true
+  atomic         = true
   take_ownership = true
 
   set_sensitive = [{
@@ -69,7 +69,7 @@ data "kubernetes_service_v1" "smtp" {
 }
 
 output "smtp_infos" {
-  depends_on = [ helm_release.smtp_relay ]
+  depends_on = [helm_release.smtp_relay]
   value = {
     host = data.kubernetes_service_v1.smtp.metadata[0].name
     port = data.kubernetes_service_v1.smtp.spec[0].port[0].port

@@ -54,9 +54,9 @@ locals {
       count = 1
 
       persistence = {
-        enabled = true
-        accessMode = "ReadWriteOnce"
-        size = var.n8n_persistence_size
+        enabled      = true
+        accessMode   = "ReadWriteOnce"
+        size         = var.n8n_persistence_size
         storageClass = var.storage_class
       }
       resources = var.n8n_resources
@@ -67,8 +67,8 @@ locals {
     }
 
     externalRedis = {
-      host     = "${module.valkey.valkey_service_name}.${kubernetes_namespace_v1.n8n.metadata[0].name}.svc.cluster.local"
-      port     = module.valkey.valkey_service_port
+      host = "${module.valkey.valkey_service_name}.${kubernetes_namespace_v1.n8n.metadata[0].name}.svc.cluster.local"
+      port = module.valkey.valkey_service_port
     }
 
     ingress = {
@@ -112,9 +112,9 @@ resource "helm_release" "n8n" {
   namespace        = kubernetes_namespace_v1.n8n.metadata[0].name
   create_namespace = false
 
-  timeout         = 180
-  wait_for_jobs   = true
-  atomic          = true
+  timeout       = 300
+  wait_for_jobs = true
+  atomic        = true
 
   values = [yamlencode(local.n8n_helm_values)]
 }

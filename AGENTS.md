@@ -175,7 +175,7 @@ make terragrunt/apps/local
 make terragrunt/apps/contabo
 
 # Get outputs (e.g., kubeconfig)
-make terragrunt/network/contabo TF_CMD='output -json k3s_config | yq -p json -o yaml'
+make terragrunt/network/contabo 1='output -json k3s_config | yq -p json -o yaml'
 
 # Login to the cluster (kubectl via Dex OIDC)
 make login                 # local env (default)

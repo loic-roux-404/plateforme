@@ -61,9 +61,12 @@ resource "helm_release" "longhorn" {
         host             = "longhorn.${var.paas_base_domain}"
         tls              = true
         tlsSecret        = "longhorn-${replace(var.paas_base_domain, ".", "-")}-tls"
-        annotations = {
-          "cert-manager.io/cluster-issuer" = var.cert_manager_cluster_issuer
-        }
+        annotations = merge(
+          {
+            "cert-manager.io/cluster-issuer" = var.cert_manager_cluster_issuer
+          },
+          var.ingress_annotations
+        )
       }
     })
   ]

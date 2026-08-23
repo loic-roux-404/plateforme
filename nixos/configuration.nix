@@ -33,7 +33,8 @@ in
   boot.loader.grub.device = lib.mkForce "/dev/sda";
   boot.tmp.useTmpfs = true;
   boot.tmp.cleanOnBoot = true;
-  boot.kernelPackages = pkgs.linuxPackages_latest;
+  # Pin to the 6.12 LTS kernel, known-good for the open_tree/move_mount file-bind path.
+  boot.kernelPackages = pkgs.linuxPackages_6_12;
   boot.loader.systemd-boot.consoleMode = "auto";
 
   boot.kernel.sysctl."net.ipv4.ip_forward" = 1;
@@ -123,6 +124,9 @@ in
     extraFlags = map (service: "--disable=${service}") kube.disableServices ++ kube.serverExtraArgs;
     configPath = lib.mkDefault defaultKubeDistribConfigPath;
   };
+
+  # currently a bug in latest kernel versions 6.12-lts and 7
+  systemd.services.rke2-server.environment.LIBMOUNT_FORCE_MOUNT2 = "always";
 
   systemd.tmpfiles.rules =
     (builtins.attrValues (
@@ -287,4 +291,5 @@ in
       keep-derivations = true
     '';
   };
+
 }
