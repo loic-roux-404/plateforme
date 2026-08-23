@@ -29,7 +29,7 @@ variable "dex_hostname" {
 }
 
 variable "cert_manager_cluster_issuer" {
-  type = string
+  type        = string
   description = "value of the cert-manager cluster issuer"
 }
 

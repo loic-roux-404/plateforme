@@ -2,8 +2,17 @@ variable "machine" {
   type = object({
     node_hostname = string
     node_id       = string
-    node_ip       = string
+    node_ip       = string  })
+}
+
+variable "object_storage" {
+  type = object({
+    access_key = string
+    secret_key = string
+    s3_url     = string
+    region     = optional(string, "eu2")
   })
+  sensitive   = true
 }
 
 variable "github_team" {

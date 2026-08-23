@@ -75,3 +75,8 @@ output "k3s_config" {
   sensitive = true
   value     = module.k3s_get_config.k3s_config
 }
+
+output "object_storage" {
+  value     = var.object_storage
+  sensitive = true
+}
