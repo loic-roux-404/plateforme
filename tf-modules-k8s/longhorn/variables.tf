@@ -12,11 +12,17 @@ variable "cert_manager_cluster_issuer" {
 
 variable "object_storage" {
   type = object({
-    access_key    = string
-    access_secret = string
-    s3_url        = string
+    access_key = string
+    secret_key = string
+    s3_url     = string
+    region     = optional(string, "eu2")
   })
   description = "S3 object storage configuration for Longhorn backups"
+}
+
+variable "backup_bucket" {
+  type        = string
+  description = "S3 bucket name used as the Longhorn backup target"
 }
 
 variable "longhorn_ui_replicas" {

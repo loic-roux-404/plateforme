@@ -70,8 +70,8 @@ variable "k3s_config" {
   sensitive = true
   type = object({
     cluster_ca_certificate = string
-    client_certificate = string
-    client_key = string
+    client_certificate     = string
+    client_key             = string
   })
 }
 
@@ -119,20 +119,30 @@ variable "services_subdomains" {
 }
 
 variable "ci_authorized_namespaces" {
-  type = list(string)
+  type        = list(string)
   description = "List of namespaces that CI can access for deploying applications. These namespaces should be created beforehand."
-  default = ["default"]
+  default     = ["default"]
 }
 
 variable "object_storage" {
   type = object({
-    access_key    = string
-    access_secret = string 
-    s3_url        = string
+    access_key = string
+    secret_key = string
+    s3_url     = string
+    region     = optional(string, "eu2")
   })
+  sensitive   = true
+  description = "S3-compatible object storage credentials (Contabo on prod, MinIO on local)"
   default = {
     access_key = "minioadmin"
-    access_secret = "minioadmin"
-    s3_url = "http://localhost:9000"
+    secret_key = "minioadmin"
+    s3_url     = "http://localhost:9000"
+    region     = "eu2"
   }
+}
+
+variable "bucket_prefix" {
+  type        = string
+  description = "Prefix for per-repo S3 bucket names (must be globally unique on Contabo)"
+  default     = "paas"
 }

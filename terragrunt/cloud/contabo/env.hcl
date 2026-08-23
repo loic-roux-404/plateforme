@@ -5,5 +5,7 @@ locals {
     contabo_credentials = local.secret_vars.contabo_credentials
     contabo_instance = local.secret_vars.contabo_instance
     node_hostname = "contabo-master-0"
+    object_storage = local.secret_vars.object_storage
+    object_storage_id = local.secret_vars.object_storage_id
   }
 }

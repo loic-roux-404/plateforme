@@ -31,6 +31,7 @@ data "contabo_object_storage" "main" {
 }
 
 output "object_storage" {
+  sensitive = true
   value = merge({
     s3_url = data.contabo_object_storage.main.s3_url }, var.object_storage
   )

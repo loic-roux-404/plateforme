@@ -4,8 +4,8 @@ terraform {
 
   required_providers {
     contabo = {
-      source = "contabo/contabo"
-      version = "0.1.32"
+      source = "loic-roux-404/contabo"
+      version = "0.1.27"
     }
     time = {
       source = "hashicorp/time"

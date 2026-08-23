@@ -5,5 +5,6 @@ locals {
   input_vars = merge(local.dependencies.dependency.network.outputs, local.secret_vars, {
     cert_manager_letsencrypt_env = local.env
     repo_variables_prefix = ""
+    object_storage = local.dependencies.dependency.network.outputs.object_storage
   })
 }
