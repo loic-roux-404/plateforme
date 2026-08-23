@@ -13,5 +13,6 @@ locals {
     nix_flake = "${local.flake_dir}#deploy-contabo"
     nix_flake_reset = "${local.flake_dir}#initial-contabo"
     additional_domains = local.secret_vars.additional_domains
+    object_storage = local.dependencies.dependency.cloud.outputs.object_storage
   }
 }

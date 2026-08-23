@@ -3,12 +3,19 @@ module "cluster_infos" {
 }
 
 locals {
-  dex_hostname                  = "dex.${var.paas_base_domain}"
-  all_services_subdomains       = concat(["dex", "longhorn"], var.services_subdomains)
-  ingress_hosts_internals       = [for item in local.all_services_subdomains : "${item}.${var.paas_base_domain}"]
-  
+  dex_hostname            = "dex.${var.paas_base_domain}"
+  all_services_subdomains = concat(["dex", "longhorn"], var.services_subdomains)
+  ingress_hosts_internals = [for item in local.all_services_subdomains : "${item}.${var.paas_base_domain}"]
+
+  # Bucket names must be lowercase, 3-63 chars, DNS-compliant.
+  # Derived here (composition layer) so the contabo-s3 module stays generic.
+  repo_bucket_names = {
+    for repo in module.github_org_repos_config.repositories :
+    repo => lower(substr("${var.bucket_prefix}-${replace(repo, "/[^a-z0-9-]/", "-")}", 0, 63))
+  }
+
   gateway_ip = "${substr(module.cluster_infos.ingress_controller_ip, 0, length(module.cluster_infos.ingress_controller_ip) - 1)}1"
-  
+
   # Dynamic local environment URLs using gateway IP
   letsencrypt_envs_dynamic = merge(
     var.letsencrypt_envs,
@@ -16,14 +23,14 @@ locals {
       local = "https://${local.gateway_ip}:14000/dir"
     } : {}
   )
-  
+
   letsencrypt_envs_ca_certs_dynamic = merge(
     var.letsencrypt_envs_ca_certs,
     var.cert_manager_letsencrypt_env == "local" ? {
       local = "https://${local.gateway_ip}:15000/roots/0"
     } : {}
   )
-  
+
   cert_manager_acme_url         = local.letsencrypt_envs_dynamic[var.cert_manager_letsencrypt_env]
   cert_manager_acme_ca_cert_url = local.letsencrypt_envs_ca_certs_dynamic[var.cert_manager_letsencrypt_env]
 }
@@ -44,11 +51,17 @@ module "cert_manager" {
 }
 
 module "longhorn" {
-  source                     = "../tf-modules-k8s/longhorn"
-  paas_base_domain           = var.paas_base_domain
-  k8s_ingress_class          = var.k8s_ingress_class
+  source                      = "../tf-modules-k8s/longhorn"
+  paas_base_domain            = var.paas_base_domain
+  k8s_ingress_class           = var.k8s_ingress_class
   cert_manager_cluster_issuer = module.cert_manager.issuer
-  object_storage             = var.object_storage
+  object_storage              = var.object_storage
+  backup_bucket               = module.contabo_s3_longhorn.bucket_name
+}
+
+module "contabo_s3_longhorn" {
+  source      = "../tf-modules-cloud/contabo-s3"
+  bucket_name = lower(substr("${var.bucket_prefix}-longhorn", 0, 63))
 }
 
 module "internal_ca" {
@@ -149,6 +162,12 @@ resource "kubernetes_cluster_role_binding_v1" "dex_github_cluster_admin" {
   }
 }
 
+module "contabo_s3" {
+  for_each    = local.repo_bucket_names
+  source      = "../tf-modules-cloud/contabo-s3"
+  bucket_name = each.value
+}
+
 module "github_org_repos_config" {
   source              = "../tf-modules-github/repos-config"
   github_token        = var.github_token
@@ -157,11 +176,19 @@ module "github_org_repos_config" {
     DEX_CLIENT_SECRET = random_password.github_action_client_secret.result
     DEX_CLIENT_ID     = var.github_action_client_id
     KUBE_CA           = base64encode(var.k3s_config.cluster_ca_certificate)
+    S3_ACCESS_KEY     = var.object_storage.access_key
+    S3_SECRET_KEY     = var.object_storage.secret_key
   }
 
   repo_variables = {
     "${var.repo_variables_prefix}dex_url"     = "https://${local.dex_hostname}"
     "${var.repo_variables_prefix}k8s_api_url" = "https://${var.paas_base_domain}:${var.k3s_port}"
+    "${var.repo_variables_prefix}s3_endpoint" = var.object_storage.s3_url != "" ? var.object_storage.s3_url : "https://${var.object_storage.region}.contabostorage.com"
+  }
+
+  per_repo_variables = {
+    for repo, bucket in local.repo_bucket_names :
+    repo => { "${var.repo_variables_prefix}s3_bucket" = bucket }
   }
 }
 

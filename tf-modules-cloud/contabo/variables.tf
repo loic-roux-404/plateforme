@@ -9,9 +9,10 @@ variable "object_storage_id" {
 
 variable "object_storage" {
   type = object({
-    access_key    = string
-    access_secret = string 
+    access_key = string
+    secret_key = string
   })
+  sensitive = true
 }
 
 variable "contabo_credentials" {

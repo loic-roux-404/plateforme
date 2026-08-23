@@ -36,4 +36,17 @@ TERRAGRUNT_FILES:=$(shell find terragrunt -type d -name '.*' -prune -o -name 'te
 $(TERRAGRUNT_FILES):
 	@terragrunt --working-dir $@ $(1)
 
-.PHONY: fmt bootstrap nixos-local login $(TERRAGRUNT_FILES)
+ENV?=local
+
+setup-login:
+	@terragrunt --working-dir terragrunt/paas/$(ENV) output -json oidc_login_setup_command_ops | jq -r .
+
+cntb-login:
+	@eval "$$(sops -d secrets/prod.yaml | yq -o shell '.contabo_credentials')" && \
+	cntb config set-credentials \
+		--oauth2-clientid "$$oauth2_client_id" \
+		--oauth2-client-secret "$$oauth2_client_secret" \
+		--oauth2-user "$$oauth2_user" \
+		--oauth2-password "$$oauth2_pass"
+
+.PHONY: fmt bootstrap nixos-local login cntb-login $(TERRAGRUNT_FILES)
