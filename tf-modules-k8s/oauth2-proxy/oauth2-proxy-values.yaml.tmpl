@@ -1,41 +1,20 @@
-# Official oauth2-proxy Helm chart values [web:76]
 config:
   clientID: "${client_id}"
   clientSecret: "${client_secret}"
   cookieSecret: "${cookie_secret}"
-  configFile: |-
-    provider = "oidc"
-    oidc_issuer_url = "${issuer_url}"
-    redirect_url = "${redirect_url}"
-    scope = "openid email profile groups"
+  # EMPTY -> legacy-config.mode = "no-config" (with forceLegacyConfig=false +
+  # alphaConfig.enabled=false). Chart then SKIPS the subPath mount of
+  # oauth2_proxy.cfg (configmain) and the --config arg.
+  # Config is fed via our own ConfigMap mounted full-dir (no subPath) + extraArgs --config.
+  configFile: ""
+  forceLegacyConfig: false
 
-    %{~ if length(oauth2_volume_mounts) > 0 ~}
-    provider_ca_files = "${oauth2_volume_mounts.0.mountPath}/ca.crt"
-    %{~ endif ~}
+alphaConfig:
+  enabled: false
 
-    # Restrict to GitHub org:team via Dex groups claim
-    allowed_groups = ${jsonencode(allowed_groups)}
-
-    # Session management
-    cookie_secure = true
-    cookie_httponly = true
-    cookie_samesite = "lax"
-    cookie_domains = ${jsonencode(cookie_domains)}
-    cookie_path = "/"
-    whitelist_domains = ${jsonencode(cookie_domains)}
-    
-    # Headers passed to upstream app
-    pass_user_headers = true
-    pass_access_token = true
-    set_xauthrequest = true
-    
-    # Healthcheck bypass
-    skip_auth_regex = "^/healthz"
-    
-    # Upstream static response (no app needed for auth endpoints)
-    upstreams = ["static://200"]
-
-    email_domains =  "*"
+# Point oauth2-proxy at the full-dir-mounted config file (NO subPath).
+extraArgs:
+  config: /etc/oauth2-proxy-config/oauth2_proxy.cfg
 
 extraVolumes: ${jsonencode(oauth2_volumes)}
 extraVolumeMounts: ${jsonencode(oauth2_volume_mounts)}
