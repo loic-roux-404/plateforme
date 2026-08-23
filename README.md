@@ -140,7 +140,7 @@ make terragrunt/apps/contabo
 **Note** : Retrieve any config with :
 
 ```bash
-make terragrunt/network/contabo TF_CMD='output -json k3s_config | yq -p json -o yaml'
+make terragrunt/network/contabo 1='output -json k3s_config | yq -p json -o yaml'
 
 ```
 

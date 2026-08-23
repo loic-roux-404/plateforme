@@ -24,8 +24,8 @@ variable "cert_manager_cluster_issuer" {
 
 variable "k8s_ingress_annotations" {
   description = "nginx-ingress annotations to enforce Dex login via oauth2-proxy"
-  type = map(string)
-  default = {}
+  type        = map(string)
+  default     = {}
 }
 
 variable "smtp_host" {
@@ -71,4 +71,37 @@ variable "persistence_size" {
   description = "Size of persistentVolumeClaims for Supabase components"
   type        = string
   default     = "256Mi"
+}
+
+variable "github_oauth_enabled" {
+  description = "Enable GitHub OAuth for Supabase app users via GoTrue"
+  type        = bool
+  default     = false
+  validation {
+    condition     = !var.github_oauth_enabled || (var.github_client_id != "" && var.github_client_secret != "")
+    error_message = "When github_oauth_enabled is true, both github_client_id and github_client_secret must be set."
+  }
+}
+
+variable "github_client_id" {
+  description = "GitHub OAuth app client ID (public, not secret)"
+  type        = string
+  default     = ""
+}
+
+variable "github_client_secret" {
+  description = "GitHub OAuth app client secret"
+  type        = string
+  default     = ""
+  sensitive   = true
+}
+
+variable "github_redirect_allow_list" {
+  description = "Extra allowed redirect origins as explicit globs (e.g. https://app.example.com/**). The module always prepends https://$${domain}/** itself."
+  type        = list(string)
+  default     = []
+  validation {
+    condition     = alltrue([for u in var.github_redirect_allow_list : startswith(u, "http://") || startswith(u, "https://")]) && !contains(var.github_redirect_allow_list, "*") && !contains(var.github_redirect_allow_list, "**")
+    error_message = "Each github_redirect_allow_list entry must start with http:// or https:// and must not be a bare '*' or '**'."
+  }
 }

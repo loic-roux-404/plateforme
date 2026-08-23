@@ -10,6 +10,12 @@ variable "cert_manager_cluster_issuer" {
   type = string
 }
 
+variable "ingress_annotations" {
+  description = "nginx-ingress annotations to enforce Dex login via oauth2-proxy"
+  type        = map(string)
+  default     = {}
+}
+
 variable "object_storage" {
   type = object({
     access_key = string

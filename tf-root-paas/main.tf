@@ -57,6 +57,7 @@ module "longhorn" {
   cert_manager_cluster_issuer = module.cert_manager.issuer
   object_storage              = var.object_storage
   backup_bucket               = module.contabo_s3_longhorn.bucket_name
+  ingress_annotations         = module.oauth2_proxy_apps.ingress_annotations
 }
 
 module "contabo_s3_longhorn" {

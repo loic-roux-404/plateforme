@@ -11,7 +11,7 @@ variable "postgres_db" {
 }
 
 variable "postgres_user" {
-  type = string
+  type    = string
   default = "app"
 }
 

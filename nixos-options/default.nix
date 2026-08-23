@@ -40,6 +40,20 @@ in
 {
   options.paas = {
 
+    autoRebootOnKernelChange = lib.mkOption {
+      type = lib.types.bool;
+      default = true;
+      description = ''
+        Automatically reboot the node after activation when the new system
+        generation boots a different kernel than the currently booted one
+        (/run/booted-system/kernel). Running a stale kernel after a deploy
+        breaks kernel-API-dependent workloads cluster-wide (e.g. kubelet
+        subPath bind mounts failing with EINVAL on move_mount). The reboot is
+        scheduled via a detached systemd unit after activation completes, so
+        it never interrupts activation itself. Consumed on NixOS only.
+      '';
+    };
+
     certs = lib.mkOption {
       default = [
         ../nixos-darwin/pebble/cert.crt

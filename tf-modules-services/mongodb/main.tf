@@ -12,8 +12,8 @@ resource "random_password" "mongodb_password" {
 }
 
 resource "random_password" "mongodb_replica_set_key" {
-  length           = 12
-  special          = false
+  length  = 12
+  special = false
 }
 
 resource "random_string" "mongodb_username" {
@@ -48,24 +48,24 @@ resource "helm_release" "mongodb" {
   version          = var.chart_version
   create_namespace = false
 
-  timeout          = 240
-  wait_for_jobs    = true
-  atomic           = true
+  timeout        = 300
+  wait_for_jobs  = true
+  atomic         = true
   take_ownership = true
 
   set_sensitive = [{
     name  = "auth.rootPassword"
     value = local.auth_root_password
-  }, {
+    }, {
     name  = "auth.usernames[0]"
     value = local.auth_username
-  }, {
+    }, {
     name  = "auth.passwords[0]"
     value = local.auth_password
-  }, {
+    }, {
     name  = "auth.databases[0]"
     value = local.auth_database
-  }, {
+    }, {
     name  = "auth.replicaSetKey"
     value = local.replica_set_key
   }]
@@ -144,6 +144,6 @@ output "replicaset_name" {
 }
 
 output "connection_string" {
-  value = "mongodb://${local.appsmith_db_user_enc}:${local.appsmith_db_password_enc}@${local.host}:${local.port}/${local.auth_database}?authSource=${local.auth_database}${local.appsmith_db_replica_set_query}"
+  value     = "mongodb://${local.appsmith_db_user_enc}:${local.appsmith_db_password_enc}@${local.host}:${local.port}/${local.auth_database}?authSource=${local.auth_database}${local.appsmith_db_replica_set_query}"
   sensitive = true
 }

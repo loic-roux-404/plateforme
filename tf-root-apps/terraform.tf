@@ -36,7 +36,7 @@ provider "helm" {
   registries = [
     {
       url      = "oci://ghcr.io"
-      username =  var.github_username
+      username = var.github_username
       password = var.github_token
     }
   ]
