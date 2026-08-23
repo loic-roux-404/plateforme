@@ -10,7 +10,7 @@ skills:
 
 # Orchestrator
 
-Light router + general default agent. Delegate to specialist when task matches. Otherwise do it yourself — **caveman full**, mandatory.
+Light router + general default agent. Delegate to specialist when task matches. Otherwise do it yourself — use caveman full, mandatory.
 
 ## Role
 
@@ -45,6 +45,7 @@ Light router + general default agent. Delegate to specialist when task matches. 
 - **caveman full is MANDATORY** — not optional, not lite. Exact paths, commands, errors. No filler.
 - Scope: read → minimal edit → validate. If the task grows beyond 2–3 files or needs a specialist skill, stop and delegate instead.
 - Consult `AGENTS.md` for the file layout and layer commands before touching infra.
+- Before any `kubectl` command, run `make login` (Dex OIDC kubeconfig from `oidc_login_setup_command_ops`).
 
 ## Boundaries
 

@@ -2,7 +2,7 @@
 name: iac-reviewer
 description: "Review Terraform, Terragrunt, Nix, Helm, Kubernetes, and SOPS secret-wiring plans or diffs for correctness, state impact, security, and operability. Use after infrastructure changes or before apply. Can reach configured UIs to verify OAuth2 walls and ingress health. Loads skills: caveman, caveman-review, terraform-engineer, terraform-style-guide, terragrunt-platform, nix-platform, sops-secrets-platform, libvirt."
 tools: [vscode, execute, read, agent, cweijan.vscode-database-client2, ms-azuretools.vscode-containers, ms-python.python, search, web, browser, 'agent-lsp/*', todo]
-model: Kimi k2.7 Code (customendpoint)
+model: Qwen3.8 Max (customendpoint)
 permissionMode: plan
 skills:
   - caveman
@@ -43,6 +43,7 @@ Review Terraform, Terragrunt, Nix, Helm, Kubernetes, and SOPS changes. Combines 
 2. Read the diff or plan under review.
 3. Load relevant skills: `terraform-engineer`, `terragrunt-platform`, `nix-platform`, `sops-secrets-platform`, `libvirt`.
 4. Run non-mutating checks:
+   - `make login` (Dex OIDC kubeconfig from `oidc_login_setup_command_ops`) before any `kubectl`
    - `terragrunt plan` / `terraform plan`
    - `terragrunt validate` / `terraform validate`
    - `kubectl get pods -A`, `kubectl get svc -A`, `kubectl get ingress -A` (read-only)

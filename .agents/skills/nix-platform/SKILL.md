@@ -1,7 +1,7 @@
 ---
 name: nix-platform
 description: >
-  Nix practices for loic-roux-404/plateforme split between nix-darwin (macOS dev workstation)
+  Nix practices for loic-roux-404/k3s-paas split between nix-darwin (macOS dev workstation)
   and NixOS (server/VM images). Covers flake structure, nixos-generators qcow2 builds,
   srvos base modules, paas.* option namespace, home-manager integration, sops-nix,
   nix-darwin libvirt/dnsmasq/pebble launchd daemons, linux-builder cross-compilation,
@@ -73,7 +73,6 @@ make bootstrap-contabo          # x86_64 cross-compile variant
 |---|---|
 | `builder` (default) | Standard Apple Silicon dev workstation |
 | `builder-x86` | Adds x86_64 cross-compilation support via `configuration-x86.nix` |
-| `builder-docker` | Adds Docker via Linux builder VM (nix develop .#builder-docker) |
 
 ### Key nix-darwin Options
 
@@ -128,7 +127,7 @@ sudo dscacheutil -flushcache; sudo killall -HUP mDNSResponder
 ### Shared paas.* Options in Darwin Context
 
 `nixos-options/default.nix` is included as `darwinModules.config`.
-`paas.dns.name` (default `kube.test`) and `paas.kube.addr` (default `192.168.205.2`) drive dnsmasq configuration.
+`paas.dns.name` (default `kube.test`) and `paas.kube.addr` (default `192.168.2.2`) drive dnsmasq configuration.
 `paas.certs` defaults to the Pebble cert path inside `nixos-darwin/pebble/` — this default is correct for Darwin, wrong for NixOS.
 
 ---
@@ -177,10 +176,10 @@ NixOS configs produce **bootable qcow2 disk images** via nixos-generators. These
 
 ```bash
 # aarch64-linux image (default for Apple Silicon dev)
-nix build .#nixosConfigurations.initial.config.formats.qcow
+nix build .#nixosConfigurations.initial.config.system.build.qcow
 
 # x86_64-linux image for Contabo
-nix build .#nixosConfigurations.initial-contabo.config.formats.qcow
+nix build .#nixosConfigurations.initial-contabo.config.system.build.qcow
 
 # Result symlinked to ./result/nixos.qcow2
 # This path is the input to terragrunt/cloud/local/env.hcl
@@ -246,14 +245,13 @@ They provide: hardened SSH config, basic system packages, journal settings, syst
 
 The `default` devShell provides the full platform toolchain:
 ```
-terraform terragrunt kubectl kubelogin-oidc kubernetes-helm
-sops ssh-to-age libvirt qemu
-cntb pebble grpcurl jq yq
-nix nil nix-tree nixos-rebuild
-nodejs pnpm
+terraform terragrunt sops ssh-to-age
+kubernetes-helm cntb pebble
+nil nixfmt nixos-rebuild
+agent-lsp
 ```
 
-The `shellHook` sets `DOCKER_HOST=tcp://127.0.0.1:2375` (for docker via nix-darwin linux-builder) and sources the `paas-secrets` derivation's `init-sops` script (`nixpkgs/paas-secrets/init-sops.sh`) to export `SOPS_AGE_KEY` / `SOPS_AGE_RECIPIENTS`.
+The `shellHook` sources the `paas-secrets` derivation's `init-sops` script (`nixpkgs/paas-secrets/init-sops.sh`) to export `SOPS_AGE_KEY` / `SOPS_AGE_RECIPIENTS`, and runs `link-secrets` to symlink the pinned secrets input to `./secrets`. `DOCKER_HOST` is set in home-manager session variables, not the devShell.
 
 **All platform operations must run inside `nix develop`.**
 
@@ -261,10 +259,10 @@ The `shellHook` sets `DOCKER_HOST=tcp://127.0.0.1:2375` (for docker via nix-darw
 
 ```bash
 # Show all derivations in a config
-nix derivation show -r '.#nixosConfigurations.initial.config.formats.qcow'
+nix derivation show -r '.#nixosConfigurations.initial.config.system.build.qcow'
 
 # Filter by name
-nix derivation show -r '.#nixosConfigurations.initial.config.formats.qcow' \
+nix derivation show -r '.#nixosConfigurations.initial.config.system.build.qcow' \
   | jq -r '.[] | select(.name | contains("rke2"))'
 
 # Interactive flake REPL

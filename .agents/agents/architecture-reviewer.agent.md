@@ -43,7 +43,7 @@ Review plans, ADRs, and diffs produced by `cloud-architect` or `platform-impleme
 1. Read `AGENTS.md` for the concrete file layout and layer commands.
 2. Read the plan, ADR, or diff under review.
 3. Load relevant skills: `terraform-engineer`, `terragrunt-platform`, `sops-secrets-platform`, `libvirt`, `nix-platform`.
-4. Run read-only checks: `terragrunt plan`, `terraform validate`, `kubectl get` (pods/svc/ingress).
+4. Run read-only checks: `make login` (Dex OIDC kubeconfig from `oidc_login_setup_command_ops`) before any `kubectl`, then `terragrunt plan`, `terraform validate`, `kubectl get` (pods/svc/ingress).
 5. Verify OAuth2 walls with `chrome-devtools` MCP when the change touches ingress or auth:
    - Derive URLs from Terragrunt outputs (`paas_base_domain`, `dex_hostname`, app subdomains) or `secrets/{env}.yaml`
    - Open the app URL; expect HTTP 401 or 302 to Dex

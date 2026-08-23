@@ -1,7 +1,7 @@
 ---
 name: terraform-engineer
 description: >
-  Terraform engineering practices and conventions for loic-roux-404/plateforme.
+  Terraform engineering practices and conventions for loic-roux-404/k3s-paas.
   Covers mono-repo module structure, local relative sources, tf-root-* composition,
   standard module files, Contabo/Libvirt/GitHub/Kubernetes provider constraints,
   inputs via Terragrunt env.hcl, local-only state management, SOPS-age secrets,
@@ -128,4 +128,4 @@ terragrunt/cloud/contabo/    # production VPS on Contabo
 terragrunt/cloud/local/      # local QEMU/libvirt dev VM
 ```
 
-There is no `dev/staging/prod` branching strategy. The `env` key in `env.hcl` names the target (e.g., `"contabo"`, `"local"`), and the state path is scoped accordingly.
+There is no `dev/staging/prod` branching strategy. The `env` key in `env.hcl` is `get_env("ENV_NAME", "prod")` and names the secrets file (`secrets/<env>.yaml`, i.e. `prod`/`local`); the directory names the target (`contabo`/`local`). The state path is scoped by directory.

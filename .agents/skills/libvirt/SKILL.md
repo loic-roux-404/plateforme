@@ -20,7 +20,7 @@ Senior Infrastructure Automation Engineer specialising in **terraform-provider-l
 
 ## Role Definition
 
-You design, debug, and optimise `libvirt_*` Terraform resources. You are equally comfortable with HCL module authoring, domain XML manipulation via XSLT, and `virsh` diagnostics. You understand the specific constraints of the plateforme project: **Terragrunt root modules**, NixOS images built from flakes, sops-age secret management, and nixos-rebuild remote deployment over SSH.
+You design, debug, and optimise `libvirt_*` Terraform resources. You are equally comfortable with HCL module authoring, domain XML manipulation via XSLT, and `virsh` diagnostics. You understand the specific constraints of the k3s-paas project: **Terragrunt root modules**, NixOS images built from flakes, sops-age secret management, and nixos-rebuild remote deployment over SSH.
 
 ***
 
@@ -65,11 +65,11 @@ Libvirt organises disks as `volumes` inside `pools`. Use **Copy-On-Write (CoW)**
 - Always set `format = "qcow2"` to enable snapshotting and CoW.
 
 ```hcl
-resource "libvirt_pool" "vms" {
-  name = "plateforme-vms"
+resource "libvirt_pool" "volumetmp" {
+  name = "libvirt-paas-nixos-pool"
   type = "dir"
   target {
-    path = pathexpand("~/.local/share/libvirt/plateforme")
+    path = var.libvirt_pool_path   # default "/var/lib/libvirt-pools/kube-paas-pool"
   }
 }
 
@@ -110,10 +110,10 @@ resource "libvirt_cloudinit_disk" "init" {
 }
 ```
 
-### 3. NixOS Images (plateforme pattern)
+### 3. NixOS Images (k3s-paas pattern)
 
 NixOS VMs do not use cloud-init. Instead:
-1. Build a `.qcow2` with `nix build .#nixosConfigurations.<name>.config.system.build.qemuImage` outside Terraform.
+1. Build a `.qcow2` with `nix build .#nixosConfigurations.<name>.config.system.build.qcow` outside Terraform.
 2. Upload the image into a `libvirt_volume` via `source`.
 3. Boot the VM — the NixOS config is already baked in.
 4. Hand off to the **`tf-modules-nix/deploy`** module for `nixos-rebuild switch` over SSH.
@@ -121,7 +121,7 @@ NixOS VMs do not use cloud-init. Instead:
 ```hcl
 # In a Terragrunt root that wires libvirt + nix-deploy together:
 module "vm" {
-  source         = "../../tf-modules-libvirt/node"   # new libvirt module
+  source         = "../../tf-modules-cloud/libvirt"   # libvirt module
   nixos_image    = "/nix/store/.../nixos.qcow2"
   node_name      = "dev-node-01"
   vcpus          = 4
@@ -212,7 +212,7 @@ Use the XSLT escape in the domain definition (see Terraform templates below).
 ### Full NixOS Node Module (Linux / `qemu:///system`)
 
 ```hcl
-# tf-modules-libvirt/node/main.tf
+# tf-modules-cloud/libvirt/main.tf
 
 variable "node_name"       {}
 variable "nixos_image"     {}
@@ -444,6 +444,6 @@ variable "share_nix_store" {
 
 - **Destroy order:** always destroy `libvirt_domain` before its `libvirt_volume` resources. Use `depends_on` in reverse or set `lifecycle { create_before_destroy = false }` where needed.
 - **Portability:** prefer `cpu { mode = "host-passthrough" }` for same-arch isolation; use `custom` models when VMs must be portable across different CPU generations.
-- **Plateforme convention:** libvirt modules live in `tf-modules-libvirt/`, Terragrunt root compositions in `tf-root-*/`. Wire VM provisioning module output (`ip_address`) into the `tf-modules-nix/deploy` module input (`node_address`).
+- **k3s-paas convention:** libvirt modules live in `tf-modules-cloud/libvirt/`, Terragrunt root compositions in `tf-root-*/`. Wire VM provisioning module output (`ip_address`) into the `tf-modules-nix/deploy` module input (`node_address`).
 - **Secrets:** never embed secrets in cloud-init user data in plaintext. Use sops-age to encrypt and the `tf-modules-nix/deploy` upload pattern.
 - **Image freshness:** track NixOS image changes via a `triggers_replace` on `libvirt_volume.base` referencing the image file hash: `sha256(filemd5(var.nixos_image_path))`.

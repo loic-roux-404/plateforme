@@ -1,7 +1,7 @@
 ---
 name: terragrunt-platform
 description: >
-  Terragrunt orchestration conventions for loic-roux-404/plateforme.
+  Terragrunt orchestration conventions for loic-roux-404/k3s-paas.
   Covers the four-layer apply sequence (cloud → network → paas → apps),
   env.hcl + root.hcl pattern, sops_decrypt_file() inline secret injection,
   local state backend, the ARCH env var pattern, and Makefile targets.
@@ -24,7 +24,7 @@ metadata:
 This is a **mono-repo** with clear separation between live config (`terragrunt/`) and reusable modules (`tf-modules-*`, `tf-root-*`):
 
 ```
-plateforme/
+k3s-paas/
 ├── root.hcl                    # global backend + input propagation
 ├── Makefile                    # primary operator interface
 ├── terragrunt/
@@ -33,9 +33,7 @@ plateforme/
 │   │   └── local/              # libvirt/QEMU local VM env
 │   ├── network/
 │   ├── paas/
-│   ├── apps/
-│   ├── environments/           # possibly shared env references
-│   └── profiles/               # possibly hardware/arch profiles
+│   └── apps/
 ├── tf-root-apps/
 ├── tf-root-network/
 ├── tf-root-paas/
@@ -46,8 +44,6 @@ plateforme/
 ├── tf-modules-nix/
 └── tf-modules-services/
 ```
-
-The `terraform/` directory at root is separate from `terragrunt/` — it likely holds standalone Terraform configs or scratch/bootstrap code outside the Terragrunt lifecycle.
 
 ## Four-Layer Apply Sequence
 
@@ -70,7 +66,7 @@ make terragrunt/paas/contabo
 make terragrunt/apps/contabo
 ```
 
-For local dev, substitute `contabo` → `local`. The `profiles/` and `environments/` directories suggest additional cross-cutting configuration that may be included via `find_in_parent_folders()`.
+For local dev, substitute `contabo` → `local`.
 
 ## `env.hcl` Structure (Canonical Pattern)
 
@@ -78,8 +74,8 @@ Every environment leaf directory contains exactly:
 
 ```hcl
 locals {
-  secret_vars = yamldecode(sops_decrypt_file(find_in_parent_folders("secrets/contabo.yaml")))
-  env         = "contabo"
+  env         = get_env("ENV_NAME", "prod")   # "prod" or "local"
+  secret_vars = yamldecode(sops_decrypt_file(find_in_parent_folders("secrets/${local.env}.yaml")))
   input_vars  = {
     # All Terraform inputs for this layer/env combination
     node_ip  = local.secret_vars.node_ip
@@ -150,26 +146,26 @@ cp -r .terragrunt.bak-<timestamp>/ .terragrunt/
 
 State path schema: `.terragrunt/<env>/<layer>/terraform.tfstate`
 
-## Adding a New Environment (e.g., `hetzner`)
+## Adding a New Environment (e.g., `prod`)
 
 ```bash
 # 1. Create layer configs
-mkdir -p terragrunt/cloud/hetzner
-cat > terragrunt/cloud/hetzner/env.hcl << 'EOF'
+mkdir -p terragrunt/cloud/prod
+cat > terragrunt/cloud/prod/env.hcl << 'EOF'
 locals {
-  secret_vars = yamldecode(sops_decrypt_file(find_in_parent_folders("secrets/hetzner.yaml")))
-  env         = "hetzner"
+  env         = get_env("ENV_NAME", "prod")
+  secret_vars = yamldecode(sops_decrypt_file(find_in_parent_folders("secrets/${local.env}.yaml")))
   input_vars  = { ... }
 }
 EOF
 
-cat > terragrunt/cloud/hetzner/terragrunt.hcl << 'EOF'
+cat > terragrunt/cloud/prod/terragrunt.hcl << 'EOF'
 include "root" { path = find_in_parent_folders("root.hcl") }
-terraform { source = "${get_repo_root()}//tf-root-cloud-hetzner" }
+terraform { source = "${get_repo_root()}//tf-root-cloud-prod" }
 EOF
 
 # 2. Create and encrypt secrets
-sops secrets/hetzner.yaml
+sops secrets/prod.yaml
 
 # 3. Repeat for network/, paas/, apps/ layers
 ```

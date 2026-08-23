@@ -1,7 +1,7 @@
 ---
 name: sops-secrets-platform
 description: >
-  SOPS + age secret management as practiced in loic-roux-404/plateforme.
+  SOPS + age secret management as practiced in loic-roux-404/k3s-paas.
   Covers ssh-to-age key derivation, devShell key export, sops_decrypt_file()
   in Terragrunt, per-VM re-encryption with two recipients (operator + VM host key),
   and the tf-modules-nix/deploy secret upload pattern.
