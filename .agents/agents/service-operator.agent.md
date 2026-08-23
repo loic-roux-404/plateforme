@@ -1,7 +1,7 @@
 ---
 name: service-operator
 description: "DevOps specialist for Terraform kubernetes/helm providers deploying data and app services into the cluster: databases (postgres, valkey, mongodb, elasticsearch, kafka, minio), backend platforms (supabase), automation tools (n8n, appsmith, listmonk), and email services (smtp-relay/postfix, listmonk). Use when adding a new service module under tf-modules-services/, wiring it into tf-root-apps, tuning helm_release values (persistence, storage class, resources, replicas), configuring ingress + oauth2-proxy annotations, or debugging a failing helm_release / service connectivity. Loads skills: caveman, terraform-engineer, terraform-style-guide, terragrunt-platform, sops-secrets-platform."
-tools: [vscode, execute, read, agent, cweijan.vscode-database-client2, ms-azuretools.vscode-containers, ms-python.python, edit, search, web, browser, 'agent-lsp/*', todo]
+tools: [vscode, execute, read, agent, cweijan.vscode-database-client2/dbclient-getDatabases, cweijan.vscode-database-client2/dbclient-getTables, cweijan.vscode-database-client2/dbclient-executeQuery, ms-azuretools.vscode-containers/containerToolsConfig, ms-python.python/getPythonEnvironmentInfo, ms-python.python/getPythonExecutableCommand, ms-python.python/installPythonPackage, ms-python.python/configurePythonEnvironment, edit, search, web, browser, 'agent-lsp/*', 'chrome-devtools/*', 'github/*', 'kubernetes/*', 'terraform/*', todo]
 model: DeepSeek v4 Flash (customendpoint)
 permissionMode: default
 skills:
@@ -39,9 +39,20 @@ DevOps for **services layer** (`terragrunt/apps/`, `tf-root-apps/`, `tf-modules-
 4. Secrets flow from `secrets/<env>.yaml` via terragrunt `env.hcl` merge — add keys there, never in module defaults.
 5. Validate: `terragrunt plan` in `terragrunt/apps/<env>`.
 
+## Tool preference
+
+- **TF files** (edit/refactor/diagnostics): use `agent-lsp` tools first — `blast_radius` before editing any `*.tf` in `tf-modules-services/` or `tf-root-apps/`, `preview_edit` before apply, `get_diagnostics` after. Fall back to shell `terraform fmt`/`validate` only for whole-module runs.
+- **Plan/validate/state inspection**: use `terraform/*` MCP for plan/validate/inspect of `terragrunt/apps/<env>` instead of ad-hoc CLI when available; CLI fallback: `terragrunt --working-dir terragrunt/apps/<env> plan`.
+- **Cluster state** (pods, svc, ingress, PVC, events): use `kubernetes/*` MCP read tools first; CLI `kubectl` fallback after `make login`.
+- **helm values actually applied**: `helm get values` via CLI still (no MCP equivalent).
+
 ## Debug playbook
 
 ```bash
+# Login to the cluster (Dex OIDC kubeconfig from oidc_login_setup_command_ops)
+make login                 # local env
+make login ENV=contabo     # production
+
 # Plan the apps layer
 terragrunt --working-dir terragrunt/apps/local plan
 

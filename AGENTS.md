@@ -38,7 +38,8 @@ Beyond the cluster itself, the **macOS host (nix-darwin)** used to set up and op
 │   ├── configuration.nix     # Base darwin config (libvirt, dnsmasq, shells)
 │   ├── configuration-x86.nix # x86_64 linux-builder config
 │   ├── home-manager.nix      # Home-manager env config (shells, git, editors, tools)
-│   ├── crush.nix             # Crush AI assistant config (AI stack: Crush + VS Code)
+│   ├── crush.nix             # Crush AI assistant config
+│   ├── vscode-agent.nix      # VS Code chat language models (SOPS secrets)
 │   └── user-default.nix      # Default user settings (homebrew, shell)
 ├── nixos-options/            # Custom NixOS option definitions (paas.*)
 ├── nix-lib/                  # Nix library functions
@@ -99,6 +100,38 @@ Beyond the cluster itself, the **macOS host (nix-darwin)** used to set up and op
 
 ## Build & Development Commands
 
+### Mandatory Self-Review Before Every Command
+
+Before ANY command:
+
+1. **Check Execution History**
+  - Review last 3 commands
+  - Flag same command (tool + args) 2+ times
+  - Flagged: propose alternative, no retry
+
+2. **Run Self-Critique Checklist**
+Answer explicitly:
+  - "What did I try in last iteration?"
+  - "How is this approach different?"
+  - "What evidence this works when previous failed?"
+  - "Making progress or just retrying?"
+
+3. **Document in Scratchpad**
+Write to `.agent/scratchpad.md`:
+Iteration {N} - {timestamp}
+  - Attempted: {command}
+  - Result: {success/failure + error}
+  - Similarity to previous: {unique/similar/identical}
+  - Next approach: {must be different if similar/identical}
+
+4. **Termination Conditions**
+
+Stop + escalate if:
+- Same command run 3 times without success
+- 3 consecutive iterations >90% similar output
+- No measurable progress in last 5 iterations
+- Token count >80% of limit without completion
+
 ### Nix / NixOS
 
 ```bash
@@ -143,7 +176,13 @@ make terragrunt/apps/contabo
 
 # Get outputs (e.g., kubeconfig)
 make terragrunt/network/contabo TF_CMD='output -json k3s_config | yq -p json -o yaml'
+
+# Login to the cluster (kubectl via Dex OIDC)
+make login                 # local env (default)
+make login ENV=contabo     # production
 ```
+
+> **kubectl access**: `make login` runs the Terraform-generated `oidc_login_setup_command_ops` output from `tf-root-paas` — it configures the `oidc` user (kubectl oidc-login exec plugin against `https://dex.<paas_base_domain>`), the `plateforme` cluster (`https://<paas_base_domain>:6443` + CA), and activates the `plateforme` context. Run it before any `kubectl` command. Requires the paas layer to be applied (state present).
 
 ### Secrets Management
 
@@ -189,6 +228,7 @@ The macOS host runs several `launchd` daemons (configured in `nixos-darwin/confi
 - **Module composition**: `tf-root-*` modules compose `tf-modules-*` into deployable stacks
 - **Helm releases**: Kubernetes apps deployed via `helm_release` with `atomic = true` and `take_ownership = true`
 - **Kubernetes provider**: Uses `kubernetes_*` resources (not `kubectl` provisioner)
+- **kubectl access**: Never look for or copy kubeconfig files manually. Cluster access is always via `make login` (or `make login ENV=contabo`) before any `kubectl` command. For debugging when OIDC auth fails, use the admin kubeconfig procedure in `/memories/repo/oauth2-proxy-subpath-bug.md`.
 
 ### Secrets
 
@@ -242,6 +282,7 @@ The macOS host runs several `launchd` daemons (configured in `nixos-darwin/confi
 
 This repository has custom skills in `.agents/skills/`:
 - `caveman*` - Token-efficient communication modes
+- `cntb` - Contabo info retrieval via the `cntb` CLI (single source of truth for Contabo subscription info; no Contabo API/web console)
 - `libvirt` - libvirt VM provisioning expertise
 - `nix-platform` - Nix/NixOS/nix-darwin practices
 - `sops-secrets-platform` - SOPS + age secrets management

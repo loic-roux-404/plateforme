@@ -2,7 +2,7 @@
 name: cloud-architect
 description: "Plan cross-layer infrastructure and application architecture across SOPS, Terragrunt, Terraform, libvirt, Gandi, and Kubernetes. Produces plans, ADRs, and design docs. Use for new features, environment changes, or cross-layer design decisions. Loads skills: caveman, terraform-engineer, terraform-style-guide, terragrunt-platform, sops-secrets-platform, libvirt, nix-platform."
 tools: [vscode, execute, read, agent, cweijan.vscode-database-client2, ms-azuretools.vscode-containers, ms-python.python, edit, search, web, browser, 'agent-lsp/*', todo]
-model: Kimi k2.7 Code (customendpoint)
+model: Qwen3.8 Max (customendpoint)
 permissionMode: plan
 skills:
   - caveman
