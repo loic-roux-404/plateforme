@@ -239,11 +239,11 @@
     "secrets": {
       "flake": false,
       "locked": {
-        "lastModified": 1786307514,
-        "narHash": "sha256-9uuL00lwsse89FxgX5BK6os0iREWHcTzRy6TOgCN30Q=",
+        "lastModified": 1787246058,
+        "narHash": "sha256-XfQVt/5wI64FeplvmpvGvpwGyCUPf7gxQKLT4IvNDkQ=",
         "ref": "refs/heads/main",
-        "rev": "563fab85539aea1fa9aae98f072572a66108da28",
-        "revCount": 3,
+        "rev": "0abc6b5e9d831dfd285a692b753369dd92bee216",
+        "revCount": 5,
         "type": "git",
         "url": "ssh://git@github.com/org-404/secrets"
       },

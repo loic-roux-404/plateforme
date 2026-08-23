@@ -50,81 +50,6 @@ in
     defaultSopsFile = "${inputs.secrets}/darwin.yaml";
     secrets = {
       hyper_api_key = { };
-      opencode_api_key = { };
-    };
-
-    templates."chatLanguageModels.json" = {
-      path = "${config.home.homeDirectory}/Library/Application Support/Code/User/chatLanguageModels.json";
-      content = builtins.toJSON [
-
-        {
-          name = "OpenCode";
-          vendor = "customendpoint";
-          apiKey = config.sops.placeholder.opencode_api_key;
-          apiType = "chat-completions";
-          models = [
-            {
-              id = "kimi-k3";
-              name = "Kimi K3";
-              url = "https://opencode.ai/zen/go/v1/chat/completions";
-              toolCalling = true;
-              vision = true;
-              maxInputTokens = 1048576;
-              maxOutputTokens = 16000;
-              reasoningEffortFormat = "chat-completions";
-              supportsReasoningEffort = [
-                "low"
-                "medium"
-              ];
-              modelOptions = {
-                temperature = 1;
-                top_p = 0.95;
-              };
-              requestHeaders = {
-                Authorization = "Bearer ${config.sops.placeholder.opencode_api_key}";
-              };
-            }
-            {
-              id = "kimi-k2.7-code";
-              name = "Kimi k2.7 Code";
-              reasoningEffortFormat = "chat-completions";
-              supportsReasoningEffort = [
-                "low"
-                "medium"
-              ];
-              url = "https://opencode.ai/zen/go/v1/chat/completions";
-              toolCalling = true;
-              vision = false;
-              maxInputTokens = 262144;
-              maxOutputTokens = 16000;
-              modelOptions = {
-                temperature = 1;
-                top_p = 0.95;
-              };
-              requestHeaders = {
-                Authorization = "Bearer ${config.sops.placeholder.opencode_api_key}";
-              };
-            }
-            {
-              id = "deepseek-v4-flash";
-              name = "DeepSeek v4 Flash";
-              supportsReasoningEffort = [
-                "low"
-                "medium"
-              ];
-              reasoningEffortFormat = "chat-completions";
-              url = "https://opencode.ai/zen/go/v1/chat/completions";
-              toolCalling = true;
-              vision = false;
-              maxInputTokens = 1048576;
-              maxOutputTokens = 16000;
-              requestHeaders = {
-                Authorization = "Bearer ${config.sops.placeholder.opencode_api_key}";
-              };
-            }
-          ];
-        }
-      ];
     };
   };
 
@@ -160,6 +85,7 @@ in
     gh
     htop
     jq
+    yq
     tree
     watch
     nil

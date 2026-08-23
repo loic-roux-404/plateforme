@@ -46,3 +46,7 @@ node_modules
 
 secrets
 .sops.yaml
+
+# Stored context files
+.crush
+.agent
