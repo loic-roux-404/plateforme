@@ -1,34 +1,76 @@
 {
-    "nix.enableLanguageServer": true,
-    "nix.serverPath": "nil",
-    "files.associations": {
-        "*.y*ml.*": "yaml"
-    },
-    "nix.serverSettings": {
-      "nil": {
-        "formatting": {
-          "command": ["nixfmt"]
-        }
+  "nix.enableLanguageServer": true,
+  "nix.serverPath": "nil",
+  "files.associations": {
+    "*.y*ml.*": "yaml"
+  },
+  "nix.serverSettings": {
+    "nil": {
+      "formatting": {
+        "command": [
+          "nixfmt"
+        ]
       }
-    },
-    "terminal.integrated.defaultProfile.osx": "bash (nix)",
-    "terminal.integrated.profiles.osx": {
-        "fish": {
-            "path": "/run/current-system/sw/bin/fish",
-            "args": ["--no-config"]
-        },
-        "bash (nix)": {
-            "path": "/run/current-system/sw/bin/bash",
-            "args": ["--login", "-i"]
-        }
-    },
-    "nixEnvSelector.nixFile": "${workspaceFolder}/flake.nix",
-    "nixEnvSelector.useFlakes": true,
-    "nixEnvSelector.flakeShell": "default",
-    "chat.agentFilesLocations": {
-      ".agents/agents": true
-    },
-    "chat.agentSkillsLocations": {
-      ".agents/skills": true
     }
+  },
+  "terminal.integrated.defaultProfile.osx": "bash (nix)",
+  "terminal.integrated.profiles.osx": {
+    "fish": {
+      "path": "/run/current-system/sw/bin/fish",
+      "args": [
+        "--no-config"
+      ]
+    },
+    "bash (nix)": {
+      "path": "/run/current-system/sw/bin/bash",
+      "args": [
+        "--login",
+        "-i"
+      ]
+    }
+  },
+  "nixEnvSelector.nixFile": "${workspaceFolder}/flake.nix",
+  "nixEnvSelector.useFlakes": true,
+  "nixEnvSelector.flakeShell": "default",
+  "chat.agentFilesLocations": {
+    ".agents/agents": true
+  },
+  "chat.agentSkillsLocations": {
+    ".agents/skills": true
+},
+  "chat.requestQueuing.defaultAction": "steer",
+  "chat.agent.thinking.collapsedTools": "off",
+  "chat.tools.autoExpandFailures": true,
+  "chat.useAgentSkills": true,
+  "chat.byokUtilityModelDefault": "mainAgent",
+  "chat.utilitySmallModel": "customendpoint/deepseek-v4-flash",
+  "chat.utilityModel": "customendpoint/deepseek-v4-flash",
+  "inlineChat.defaultModel": "DeepSeek v4 Flash (customendpoint)",
+  "search.useIgnoreFiles": true,
+  "search.useGlobalIgnoreFiles": false,
+  "search.useParentIgnoreFiles": false,
+  "search.exclude": {
+    "**/.terraform": true,
+    "**/.terragrunt-cache": true,
+    "**/.terragrunt": true,
+    "**/result": true,
+    "**/.direnv": true,
+    "**/node_modules": true,
+    "**/keys": true,
+    "**/secrets": true,
+    "**/.sops.yaml": true,
+    "**/.crush": true
+  },
+  "files.exclude": {
+    "**/.terraform": true,
+    "**/.terragrunt-cache": true,
+    "**/.terragrunt": true,
+    "**/result": true,
+    "**/.direnv": true,
+    "**/node_modules": true,
+    "**/keys": true,
+    "**/secrets": true,
+    "**/.sops.yaml": true,
+    "**/.crush": true
+  }
 }

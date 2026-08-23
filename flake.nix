@@ -151,6 +151,7 @@
             inputs.sops-nix.homeManagerModules.sops
             nur.homeModules.crush
             ./nixos-darwin/crush.nix
+            ./nixos-darwin/vscode-agent.nix
           ];
         });
 
@@ -233,10 +234,9 @@
               inherit (pkgs)
                 nil
                 nixfmt
+                nixos-rebuild
                 pebble
                 cntb
-                kubectl
-                kubelogin-oidc
                 kubernetes-helm
 
                 terraform
