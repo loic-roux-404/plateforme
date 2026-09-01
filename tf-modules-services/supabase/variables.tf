@@ -22,12 +22,6 @@ variable "cert_manager_cluster_issuer" {
   type = string
 }
 
-variable "k8s_ingress_annotations" {
-  description = "nginx-ingress annotations to enforce Dex login via oauth2-proxy"
-  type        = map(string)
-  default     = {}
-}
-
 variable "smtp_host" {
   description = "SMTP host service name"
   type        = string

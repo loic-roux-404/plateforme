@@ -230,6 +230,30 @@ The macOS host runs several `launchd` daemons (configured in `nixos-darwin/confi
 - **Kubernetes provider**: Uses `kubernetes_*` resources (not `kubectl` provisioner)
 - **kubectl access**: Never look for or copy kubeconfig files manually. Cluster access is always via `make login` (or `make login ENV=contabo`) before any `kubectl` command. For debugging when OIDC auth fails, use the admin kubeconfig procedure in `/memories/repo/oauth2-proxy-subpath-bug.md`.
 
+### Generated credentials & outputs
+
+Service modules (supabase, appsmith, listmonk, etc.) often need a generated admin/login credential that the operator must use to sign in. Follow these conventions so the operator never has to ask for them:
+
+- **Generate, don't hardcode**: Create admin/login credentials with `random_password` resources in the module, never inline literals. Wire them into the helm `values` / `kubernetes_secret` and re-expose them as `output ... { sensitive = true }` on the module, then thread matching sensitive outputs up through the `tf-root-*` composition module.
+- **Always surface after apply**: After any apply that creates or rotates such outputs, proactively print the exact retrieval command(s) for the operator — do not wait to be asked. Use the standard output one-liner:
+
+```bash
+# Retrieve a sensitive/generated output (e.g. a generated admin password)
+make terragrunt/apps/contabo 1='output -json <output_key>'
+make terragrunt/apps/contabo 1='output -json <output_key_2>'
+```
+
+- **Include the login entry point**: Alongside the creds, print the URL the operator should open (e.g. `https://<app>.<paas_base_domain>/`) and any gotcha that affects login (e.g. "browser may have a cached Dex redirect — use incognito", "Kong basic-auth: pod restart required after secret rotation").
+
+### Post-apply checklist for service modules
+
+When a service-module apply finishes, verify and report in this order before declaring done:
+
+1. Pods ready: `kubectl --context plateforme get pods -n <namespace>` — all `1/1 Running` (or expected count).
+2. Helm release healthy: `helm --kube-context plateforme list -n <namespace> -a` — status `deployed` (not `pending-install` / `failed`).
+3. Ingress reachable: `curl -sI -o /dev/null -w 'HTTP %{http_code}\n' https://<app>.<paas_base_domain>/` — expect a sane code (200/302/401 per the auth design), not a connection error.
+4. Surface login credentials + URL (see **Generated credentials & outputs** above).
+
 ### Secrets
 
 - **SOPS + age**: Secrets encrypted with age keys derived from SSH keys
@@ -297,10 +321,9 @@ This repository has custom agents in `.agents/agents/`. Each agent has a focused
 |-------|------|-------------|
 | `orchestrator` | Default entry point: routes tasks to the right specialist; falls back to general work itself in caveman full mode | Start any task without a specialist pre-selected |
 | `cloud-enabler` | Bootstrap and provision cloud/libvirt VMs, images, and initial connectivity | Layer-1 (cloud) Terragrunt changes, VM provisioning, image builds |
-| `cloud-architect` | Plan cross-layer infrastructure and application architecture | New features, environment changes, ADRs, design docs |
+| `cloud-architect` | Plan cross-layer infrastructure and application architecture, and prepare validated deployment, rollback, and release plans | New features, environment changes, ADRs, design docs, and exact preflight/execution steps for operators |
 | `platform-implementer` | Implement configurations across SOPS, Terragrunt, Terraform, and providers | Approved implementation tasks that touch multiple layers |
-| `service-operator` | DevOps for helm-based services (databases, n8n, smtp-relay, supabase) | Add/tune/debug service modules under `tf-modules-services/` and `tf-root-apps` |
-| `release-operator` | Prepare validated deployment, rollback, and release plans | Operator needs exact preflight and execution steps |
+| `service-deployer` | Deploy and operate helm-based Kubernetes services serving direct business cases (n8n, supabase, appsmith, listmonk, smtp-relay, postgres, valkey, mongodb, minio) | Add/tune/debug service modules under `tf-modules-services/` and `tf-root-apps`, layer-4 (apps) Terragrunt changes |
 | `architecture-reviewer` | Review platform boundaries, dependencies, resilience, security, and tradeoffs | Design decisions and architecture-level change review |
 | `iac-reviewer` | Review Terraform, Terragrunt, Nix, Helm, Kubernetes, and SOPS secret-wiring plans or diffs | After infrastructure changes or before apply |
 | `nix-maintainer` | Maintain and debug Nix, nix-darwin, and NixOS configs | Nix evals, builds, store analysis, option lookups |

@@ -148,7 +148,7 @@ in
   sops.secrets.gh_token = { };
 
   sops.templates."gh-token.env" = {
-    content = "export GH_TOKEN=${config.sops.placeholder.gh_token}";
+    content = "export GITHUB_PERSONAL_ACCESS_TOKEN=${config.sops.placeholder.gh_token}";
     path = "${config.home.homeDirectory}/.config/sops-nix/gh-token.env";
   };
 

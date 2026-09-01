@@ -89,6 +89,78 @@
                 Authorization = "Bearer ${config.sops.placeholder.opencode_api_key}";
               };
             }
+            {
+              id = "qwen3.8-flash";
+              name = "Qwen3.8 Flash";
+              supportsReasoningEffort = [
+                "low"
+                "medium"
+                "xhigh"
+              ];
+              reasoningEffortFormat = "chat-completions";
+              url = "https://opencode.ai/zen/go/v1/chat/completions";
+              toolCalling = true;
+              vision = true;
+              maxInputTokens = 1048576;
+              maxOutputTokens = 131072;
+              streaming = true;
+              thinking = true;
+              modelOptions = {
+                temperature = 1.0;
+                top_p = 0.95;
+              };
+              requestHeaders = {
+                Authorization = "Bearer ${config.sops.placeholder.opencode_api_key}";
+              };
+            }
+            {
+              id = "glm-5.3-flash";
+              name = "GLM-5.3 Flash";
+              supportsReasoningEffort = [
+                "low"
+                "high"
+                "max"
+              ];
+              reasoningEffortFormat = "chat-completions";
+              url = "https://opencode.ai/zen/go/v1/chat/completions";
+              toolCalling = true;
+              vision = true;
+              maxInputTokens = 1048576;
+              maxOutputTokens = 128000;
+              streaming = true;
+              thinking = true;
+              modelOptions = {
+                temperature = 1.0;
+                top_p = 0.95;
+              };
+              requestHeaders = {
+                Authorization = "Bearer ${config.sops.placeholder.opencode_api_key}";
+              };
+            }
+            {
+              id = "glm-5.3";
+              name = "GLM-5.3";
+              supportsReasoningEffort = [
+                "low"
+                "high"
+                "max"
+              ];
+              reasoningEffortFormat = "chat-completions";
+              url = "https://opencode.ai/zen/go/v1/chat/completions";
+              toolCalling = true;
+              vision = false;
+              maxInputTokens = 1048576;
+              maxOutputTokens = 128000;
+              streaming = true;
+              thinking = true;
+              modelOptions = {
+                temperature = 1.0;
+                top_p = 0.95;
+              };
+              requestHeaders = {
+                Authorization = "Bearer ${config.sops.placeholder.opencode_api_key}";
+              };
+            }
           ];
         }
       ];

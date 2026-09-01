@@ -195,29 +195,23 @@ module "github_org_repos_config" {
 
 data "kubernetes_all_namespaces" "cluster_namespaces" {}
 
-resource "kubernetes_role_binding_v1" "dex_github_apps_deployer" {
-  for_each = toset(
-    setintersection(
-      toset(concat(var.ci_authorized_namespaces, module.github_org_repos_config.repositories)),
-      toset(data.kubernetes_all_namespaces.cluster_namespaces.namespaces)
-    )
+# Reusable CI RBAC: aggregated "extended edit" ClusterRole (everything in the
+# upstream `edit` role + CRD/APIService/cluster-RBAC CRUD + ARC CRD group),
+# bound per CI namespace to the GitHub Actions Dex user.
+module "ci_rbac" {
+  source    = "../tf-modules-k8s/ci-rbac"
+  role_name = "ci-edit"
+
+  namespaces = setunion(
+    toset(var.ci_authorized_namespaces),
+    toset(module.github_org_repos_config.repositories),
+    toset([var.arc_namespace]),
   )
 
-  metadata {
-    name      = "kubeapps-${module.github_apps.team_name}-deployer"
-    namespace = each.value
-  }
-
-  role_ref {
-    api_group = "rbac.authorization.k8s.io"
-    kind      = "ClusterRole"
-    name      = "edit"
-  }
-
-  subject {
+  subjects = [{
     kind = "User"
     name = var.github_organization
-  }
+  }]
 }
 
 module "oauth2_proxy_apps" {

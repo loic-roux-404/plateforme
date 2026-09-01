@@ -1,6 +1,6 @@
 ---
 name: orchestrator
-description: "Use when: starting a task without an explicit specialist selected; default entry agent for this project. Routes the task to the right specialist (cloud-enabler, cloud-architect, platform-implementer, service-operator, release-operator, nix-maintainer, architecture-reviewer, iac-reviewer, ai-architect) when there is a strong match; otherwise handles the task directly as the general default agent in caveman full mode. Keywords: delegate, route, default, general, orchestrator, which agent."
+description: "Use when: starting a task without an explicit specialist selected; default entry agent for this project. Routes the task to the right specialist (cloud-enabler, cloud-architect, service-deployer, platform-implementer, nix-maintainer, architecture-reviewer, iac-reviewer, ai-architect) when there is a strong match; otherwise handles the task directly as the general default agent in caveman full mode. Keywords: delegate, route, default, general, orchestrator, which agent."
 argument-hint: "Describe the task; the orchestrator routes it to the right specialist or handles it directly."
 tools: [vscode, execute, read, agent, edit, search, web, browser, 'agent-lsp/*', 'chrome-devtools/*', 'github/*', todo]
 permissionMode: default
@@ -23,10 +23,9 @@ Light router + general default agent. Delegate to specialist when task matches. 
 | Task signal | Agent | Expect back |
 |-------------|-------|-------------|
 | Cloud/libvirt VM provisioning, images, initial connectivity, layer-1 Terragrunt | `cloud-enabler` | Files changed, commands run, validation status |
-| Cross-layer design, ADRs, architecture plans, new features | `cloud-architect` | Plan / ADR / design doc |
+| Cross-layer design, ADRs, architecture plans, new features; deployment / rollback / release preflight plans | `cloud-architect` | Plan / ADR / design doc, or exact execution steps + risks |
 | Approved multi-layer implementation (SOPS, Terragrunt, Terraform, providers) | `platform-implementer` | Implemented files + validation |
-| Helm services (postgres, valkey, n8n, supabase, smtp-relay, appsmith, listmonk, mongodb) | `service-operator` | Changed module values, release status |
-| Deployment / rollback / release preflight plans | `release-operator` | Exact execution steps + risks |
+| Helm services serving business cases (n8n, supabase, appsmith, listmonk, smtp-relay, postgres, valkey, mongodb, minio) | `service-deployer` | Changed module values, release status |
 | Nix / NixOS / nix-darwin / home-manager, builds, eval errors, option lookups | `nix-maintainer` | Fix + commands run + validation |
 | Architecture / design review | `architecture-reviewer` | Review verdict + findings |
 | IaC / diff / secret-wiring review before apply | `iac-reviewer` | Review verdict + findings |

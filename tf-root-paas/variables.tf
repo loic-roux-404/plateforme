@@ -124,6 +124,12 @@ variable "ci_authorized_namespaces" {
   default     = ["default"]
 }
 
+variable "arc_namespace" {
+  type        = string
+  default     = "arc-systems"
+  description = "Namespace where the GitHub Actions Runner Controller (ARC) is installed by CI."
+}
+
 variable "object_storage" {
   type = object({
     access_key = string

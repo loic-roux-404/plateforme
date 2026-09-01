@@ -29,7 +29,6 @@ module "supabase" {
   smtp_user                   = var.smtp_main_username
   smtp_pass                   = var.smtp_main_password
   cert_manager_cluster_issuer = var.cert_manager_cluster_issuer
-  k8s_ingress_annotations     = var.oauth2_proxy_ingress_annotations
   storage_class               = var.storage_class
 
   # GitHub OAuth for Supabase application users (GoTrue). Credentials come from
@@ -52,4 +51,16 @@ module "appsmith" {
 output "appsmith_mongodb_info" {
   value     = module.appsmith.mongodb_infos
   sensitive = true
+}
+
+output "supabase_dashboard_username" {
+  description = "Supabase Studio login (username) — printed after apply for the operator to test login"
+  value       = module.supabase.supabase_dashboard_username
+  sensitive   = true
+}
+
+output "supabase_dashboard_password" {
+  description = "Supabase Studio login (password) — printed after apply for the operator to test login"
+  value       = module.supabase.supabase_dashboard_password
+  sensitive   = true
 }
