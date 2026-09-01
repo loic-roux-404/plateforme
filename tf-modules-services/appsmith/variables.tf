@@ -1,7 +1,7 @@
 variable "k8s_ingress_annotations" {
   description = "nginx-ingress annotations to enforce Dex login via oauth2-proxy"
-  type = map(string)
-  default = {}
+  type        = map(string)
+  default     = {}
 }
 
 variable "cert_manager_cluster_issuer" {
@@ -9,7 +9,7 @@ variable "cert_manager_cluster_issuer" {
 }
 
 variable "k8s_ingress_class" {
-  type = string
+  type    = string
   default = "nginx"
 }
 
@@ -50,9 +50,8 @@ variable "postgres_persistence_size" {
 variable "appsmith_persistence_size" {
   default = "128Mi"
 }
-
 variable "appsmith_mongodb_persistence_size" {
-  default = "512Mi"
+  default = "1Gi" # minimum 1Gi for MongoDB to start
 }
 
 variable "appsmith_valkey_persistence_size" {

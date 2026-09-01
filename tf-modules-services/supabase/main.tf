@@ -59,6 +59,16 @@ resource "random_password" "supabase_minio_password" {
   special = false
 }
 
+resource "random_password" "supabase_dashboard_username" {
+  length  = 12
+  special = false
+}
+
+resource "random_password" "supabase_dashboard_password" {
+  length  = 24
+  special = true
+}
+
 resource "random_password" "supabase_s3_key_id" {
   length  = 32
   special = false
@@ -96,8 +106,8 @@ locals {
         privateAccessToken = random_password.supabase_analytics_private_token.result
       }
       dashboard = {
-        username = "admin"
-        password = "admin"
+        username = random_password.supabase_dashboard_username.result
+        password = random_password.supabase_dashboard_password.result
       }
       s3 = {
         keyId     = random_password.supabase_s3_key_id.result
@@ -186,9 +196,9 @@ locals {
 
     ingress = {
       enabled = true
-      annotations = merge(var.k8s_ingress_annotations, {
+      annotations = {
         "cert-manager.io/cluster-issuer" = var.cert_manager_cluster_issuer
-      })
+      }
       class = var.k8s_ingress_class
       tls = [
         {
@@ -214,56 +224,6 @@ locals {
         enabled          = true
         storageClassName = var.storage_class
         size             = var.persistence_size
-      }
-    }
-  }
-}
-
-# GoTrue public API paths must bypass the oauth2-proxy Dex wall so anonymous
-# clients and the GitHub OAuth callback (/auth/v1/callback) are reachable. The
-# chart ingress supports only a single block (all paths behind the wall), so this
-# dedicated ingress handles the public API routes with NO oauth2 annotations.
-#
-# Kong service name follows the chart convention used elsewhere in this module:
-# release name "supabase" + component "supabase-kong" -> "supabase-supabase-kong"
-# (mirrors the db_service_name local pattern "supabase-supabase-db"). Port 8000
-# is Kong's proxy port. ASSUMPTION: verify this name against the rendered chart
-# (helm get manifest) if the service is not found.
-resource "kubernetes_ingress_v1" "supabase_auth_bypass" {
-  metadata {
-    name      = "supabase-auth-bypass"
-    namespace = kubernetes_namespace_v1.supabase.metadata[0].name
-    annotations = {
-      "cert-manager.io/cluster-issuer" = var.cert_manager_cluster_issuer
-      "kubernetes.io/ingress.class"    = var.k8s_ingress_class
-    }
-  }
-
-  spec {
-    ingress_class_name = var.k8s_ingress_class
-    tls {
-      secret_name = "${var.domain}-tls"
-      hosts       = [var.domain]
-    }
-    rule {
-      host = var.domain
-      http {
-        dynamic "path" {
-          for_each = ["/auth/v1", "/rest/v1", "/realtime/v1", "/storage/v1", "/functions/v1"]
-          iterator = p
-          content {
-            path      = p.value
-            path_type = "Prefix"
-            backend {
-              service {
-                name = "supabase-supabase-kong"
-                port {
-                  number = 8000
-                }
-              }
-            }
-          }
-        }
       }
     }
   }
@@ -299,4 +259,16 @@ output "supabase_database_user" {
 
 output "supabase_db_service_name" {
   value = local.db_service_name
+}
+
+output "supabase_dashboard_username" {
+  description = "Supabase Studio (Kong basic-auth) username"
+  value       = random_password.supabase_dashboard_username.result
+  sensitive   = true
+}
+
+output "supabase_dashboard_password" {
+  description = "Supabase Studio (Kong basic-auth) password"
+  value       = random_password.supabase_dashboard_password.result
+  sensitive   = true
 }

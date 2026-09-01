@@ -2,10 +2,7 @@
     "recommendations": [
         "hashicorp.hcl",
         "ms-kubernetes-tools.vscode-kubernetes-tools",
-        "mindaro.mindaro",
         "HashiCorp.terraform",
-        "valentjn.vscode-ltex",
-        "ms-python.python",
         "pinage404.nix-extension-pack"
     ]
 }

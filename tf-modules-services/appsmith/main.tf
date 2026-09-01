@@ -97,14 +97,14 @@ resource "helm_release" "appsmith" {
       ingress = {
         enabled          = true
         ingressClassName = var.k8s_ingress_class
-        hosts            = [{
+        hosts = [{
           host = var.domain
         }]
 
         annotations = merge(
           var.k8s_ingress_annotations,
           {
-            "cert-manager.io/cluster-issuer" = var.cert_manager_cluster_issuer
+            "cert-manager.io/cluster-issuer"             = var.cert_manager_cluster_issuer
             "nginx.ingress.kubernetes.io/rewrite-target" = "/"
           }
         )
