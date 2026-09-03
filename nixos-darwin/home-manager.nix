@@ -134,6 +134,7 @@ in
     # Agent tooling
     agent-lsp
     terraform-mcp-server
+    unstablePkgs.rtk
   ];
 
   #---------------------------------------------------------------------
