@@ -2,8 +2,16 @@
   config,
   ...
 }:
-{
 
+let
+  # OpenCode Go requires a stable x-opencode-session header (microsoft/vscode#334186). Copilot Chat does
+  # copilot do not send one, so we inject a fixed UUID per host via requestHeaders.
+  # Not per-conversation, but a stable ID satisfies their routing needs.
+  opencodeSessionHeader = {
+    "x-opencode-session" = "6ec42e8b-cb86-4b6b-aff1-1788fc711004";
+  };
+in
+{
   sops = {
     secrets = {
       opencode_api_key = { };
@@ -41,7 +49,8 @@
               };
               requestHeaders = {
                 Authorization = "Bearer ${config.sops.placeholder.opencode_api_key}";
-              };
+              }
+              // opencodeSessionHeader;
             }
             {
               id = "qwen3.8-max";
@@ -64,7 +73,8 @@
               };
               requestHeaders = {
                 Authorization = "Bearer ${config.sops.placeholder.opencode_api_key}";
-              };
+              }
+              // opencodeSessionHeader;
             }
             {
               id = "deepseek-v4-flash";
@@ -87,7 +97,8 @@
               };
               requestHeaders = {
                 Authorization = "Bearer ${config.sops.placeholder.opencode_api_key}";
-              };
+              }
+              // opencodeSessionHeader;
             }
             {
               id = "qwen3.8-flash";
@@ -111,7 +122,8 @@
               };
               requestHeaders = {
                 Authorization = "Bearer ${config.sops.placeholder.opencode_api_key}";
-              };
+              }
+              // opencodeSessionHeader;
             }
             {
               id = "glm-5.3-flash";
@@ -135,7 +147,8 @@
               };
               requestHeaders = {
                 Authorization = "Bearer ${config.sops.placeholder.opencode_api_key}";
-              };
+              }
+              // opencodeSessionHeader;
             }
             {
               id = "glm-5.3";
@@ -159,7 +172,8 @@
               };
               requestHeaders = {
                 Authorization = "Bearer ${config.sops.placeholder.opencode_api_key}";
-              };
+              }
+              // opencodeSessionHeader;
             }
           ];
         }
