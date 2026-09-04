@@ -137,6 +137,26 @@ in
     unstablePkgs.rtk
   ];
 
+  home.file."Library/Application Support/rtk/config.toml".text = ''
+    [tracking]
+    enabled = true
+    history_days = 90
+
+    [display]
+    colors = true
+    emoji = true
+    max_width = 120
+
+    [telemetry]
+    enabled = false
+  '';
+
+  home.activation.rtkInit = lib.hm.dag.entryAfter [ "writeBoundary" ] ''
+    if printf 'N\n' | ${unstablePkgs.rtk}/bin/rtk init -g --auto-patch </dev/null; then
+      echo "rtk: global agent integration up to date"
+    fi
+  '';
+
   #---------------------------------------------------------------------
   # Env vars and dotfiles
   #---------------------------------------------------------------------
@@ -147,10 +167,16 @@ in
   ];
 
   sops.secrets.gh_token = { };
+  sops.secrets.parrallel_api_key = { };
 
   sops.templates."gh-token.env" = {
     content = "export GITHUB_PERSONAL_ACCESS_TOKEN=${config.sops.placeholder.gh_token}";
     path = "${config.home.homeDirectory}/.config/sops-nix/gh-token.env";
+  };
+
+  sops.templates."parallel-api-key.env" = {
+    content = "export PARALLEL_API_KEY=${config.sops.placeholder.parrallel_api_key}";
+    path = "${config.home.homeDirectory}/.config/sops-nix/parallel-api-key.env";
   };
 
   home.sessionVariables = {
@@ -164,6 +190,8 @@ in
 
     # See: https://github.com/NixOS/nixpkgs/issues/390751
     DISPLAY = "nixpkgs-390751";
+
+    RTK_TELEMETRY_DISABLED = "1";
   };
 
   home.file = {
@@ -184,8 +212,9 @@ in
       "ignorespace"
     ];
     initExtra = (builtins.readFile ./home-manager/.bashrc) + ''
-      # GitHub token from sops (rendered at activation, see home-manager.nix)
+      # Secrets from sops (rendered at activation, see home-manager.nix)
       source ${config.sops.templates."gh-token.env".path};
+      source ${config.sops.templates."parallel-api-key.env".path};
     '';
     shellAliases = shellAliases;
   };
@@ -210,6 +239,7 @@ in
     interactiveShellInit = lib.strings.concatStrings (
       lib.strings.intersperse "\n" ([
         "source ${config.sops.templates."gh-token.env".path}"
+        "source ${config.sops.templates."parallel-api-key.env".path}"
         "source ${inputs.theme-bobthefish}/functions/fish_prompt.fish"
         "source ${inputs.theme-bobthefish}/functions/fish_right_prompt.fish"
         "source ${inputs.theme-bobthefish}/functions/fish_title.fish"
