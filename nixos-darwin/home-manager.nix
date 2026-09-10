@@ -196,6 +196,11 @@ in
 
   home.file = {
     ".inputrc".source = ./home-manager/.inputrc;
+
+    # Global GitHub Copilot instructions (VS Code reads ~/.github/copilot-instructions.md
+    # in every project). Sourced from the ponytail repo so it stays in sync on flake update.
+    # NOTE: ~/.copilot/copilot-instructions.md is NOT managed here — it is owned by `rtk init -g`.
+    ".github/copilot-instructions.md".source = "${inputs.ponytail}/.github/copilot-instructions.md";
   };
 
   #---------------------------------------------------------------------
