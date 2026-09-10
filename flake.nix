@@ -43,6 +43,12 @@
 
     theme-bobthefish.url = "github:oh-my-fish/theme-bobthefish/e3b4d4eafc23516e35f162686f08a42edf844e40";
     theme-bobthefish.flake = false;
+
+    # Lazy-senior-dev ruleset for AI agents (Copilot Chat adapter: .github/copilot-instructions.md)
+    ponytail = {
+      url = "github:DietrichGebert/ponytail";
+      flake = false;
+    };
   };
 
   outputs =

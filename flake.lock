@@ -215,6 +215,22 @@
         "type": "github"
       }
     },
+    "ponytail": {
+      "flake": false,
+      "locked": {
+        "lastModified": 1788798420,
+        "narHash": "sha256-LPNMyHsri3+eeDmphEAKL1JgoRE4dLIPfZ4XZ+xu5UY=",
+        "owner": "DietrichGebert",
+        "repo": "ponytail",
+        "rev": "356918eba965ee1eac64bd3a7f0dd02108350de5",
+        "type": "github"
+      },
+      "original": {
+        "owner": "DietrichGebert",
+        "repo": "ponytail",
+        "type": "github"
+      }
+    },
     "root": {
       "inputs": {
         "darwin": "darwin",
@@ -230,6 +246,7 @@
         ],
         "nixpkgs-unstable": "nixpkgs-unstable",
         "nur": "nur",
+        "ponytail": "ponytail",
         "secrets": "secrets",
         "sops-nix": "sops-nix",
         "srvos": "srvos",
@@ -239,11 +256,11 @@
     "secrets": {
       "flake": false,
       "locked": {
-        "lastModified": 1788555606,
-        "narHash": "sha256-AJI1RnGy1LEyC5NNmxmQmBGN3QV5clF+aj04/lvfdrU=",
+        "lastModified": 1788699785,
+        "narHash": "sha256-97rG+96XRFjMD1KjaTDkn6MQkFHcH6zR5lQaharnCRo=",
         "ref": "refs/heads/main",
-        "rev": "1b6b44f168bf744a16e06d648219834e51869342",
-        "revCount": 8,
+        "rev": "0a8ce22d5342ed15a1c0d7fa6eea2fbe47fa2c26",
+        "revCount": 9,
         "type": "git",
         "url": "ssh://git@github.com/org-404/secrets"
       },
