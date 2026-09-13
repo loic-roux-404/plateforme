@@ -77,23 +77,49 @@ in
               // opencodeSessionHeader;
             }
             {
-              id = "deepseek-v4-flash";
-              name = "DeepSeek v4 Flash";
+              id = "deepseek-v4-flash-vision-exp";
+              name = "DeepSeek V4 Flash Vision Exp";
               supportsReasoningEffort = [
                 "low"
-                "medium"
+                "high"
+                "max"
               ];
               reasoningEffortFormat = "chat-completions";
               url = "https://opencode.ai/zen/go/v1/chat/completions";
               toolCalling = true;
-              vision = false;
+              vision = true;
               maxInputTokens = 1048576;
-              maxOutputTokens = 8192;
+              maxOutputTokens = 16384;
               streaming = true;
               thinking = true;
               modelOptions = {
                 temperature = 0.15;
                 top_p = 0.9;
+              };
+              requestHeaders = {
+                Authorization = "Bearer ${config.sops.placeholder.opencode_api_key}";
+              }
+              // opencodeSessionHeader;
+            }
+            {
+              id = "gemini-3.8-flash";
+              name = "Gemini 3.8 Flash";
+              supportsReasoningEffort = [
+                "low"
+                "medium"
+                "high"
+              ];
+              reasoningEffortFormat = "chat-completions";
+              url = "https://opencode.ai/zen/go/v1/chat/completions";
+              toolCalling = true;
+              vision = true;
+              maxInputTokens = 1048576;
+              maxOutputTokens = 65536;
+              streaming = true;
+              thinking = true;
+              modelOptions = {
+                temperature = 1.0;
+                top_p = 0.95;
               };
               requestHeaders = {
                 Authorization = "Bearer ${config.sops.placeholder.opencode_api_key}";
@@ -136,7 +162,7 @@ in
               reasoningEffortFormat = "chat-completions";
               url = "https://opencode.ai/zen/go/v1/chat/completions";
               toolCalling = true;
-              vision = true;
+              vision = false;
               maxInputTokens = 1048576;
               maxOutputTokens = 128000;
               streaming = true;

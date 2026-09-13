@@ -13,8 +13,12 @@ let
       name = "Qwen3.8 Max";
     }
     {
-      id = "deepseek-v4-flash";
-      name = "DeepSeek v4 Flash";
+      id = "deepseek-v4-flash-vision-exp";
+      name = "DeepSeek V4 Flash Vision Exp";
+    }
+    {
+      id = "gemini-3.8-flash";
+      name = "Gemini 3.8 Flash";
     }
   ];
 
