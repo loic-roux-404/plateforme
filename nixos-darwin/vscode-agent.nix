@@ -77,8 +77,8 @@ in
               // opencodeSessionHeader;
             }
             {
-              id = "deepseek-v4-flash-vision-exp";
-              name = "DeepSeek V4 Flash Vision Exp";
+              id = "deepseek-v4.1-flash";
+              name = "DeepSeek V4.1 Flash";
               supportsReasoningEffort = [
                 "low"
                 "high"
