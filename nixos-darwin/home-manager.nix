@@ -224,6 +224,16 @@ in
     shellAliases = shellAliases;
   };
 
+  programs.zsh = {
+    enable = true;
+    shellAliases = shellAliases;
+    initExtra = ''
+      # Secrets from sops (rendered at activation, see home-manager.nix)
+      source ${config.sops.templates."gh-token.env".path};
+      source ${config.sops.templates."parallel-api-key.env".path};
+    '';
+  };
+
   programs.direnv = {
     enable = true;
 
