@@ -50,3 +50,7 @@ secrets
 # Stored context files
 .crush
 .agent
+
+# Skills managed locally via `make skills-update`
+.agents/skills/
+.github/skills/

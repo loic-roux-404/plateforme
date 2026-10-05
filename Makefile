@@ -49,4 +49,7 @@ cntb-login:
 		--oauth2-user "$$oauth2_user" \
 		--oauth2-password "$$oauth2_pass"
 
-.PHONY: fmt bootstrap nixos-local login cntb-login $(TERRAGRUNT_FILES)
+skills-update:
+	@npx skills update -y && npx skills add ./.agents/local-skills -a '*' -y
+
+.PHONY: fmt bootstrap nixos-local login cntb-login skills-update $(TERRAGRUNT_FILES)
