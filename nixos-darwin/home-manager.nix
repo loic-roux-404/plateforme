@@ -148,9 +148,13 @@ in
     enabled = false
   '';
 
+  # rtk global integration is scoped to VS Code Copilot only (--copilot).
+  # Claude Code's rtk hook lives in claude-code.nix instead: ~/.claude/settings.json
+  # is a read-only home-manager store symlink, so `rtk init` cannot patch it.
+  # No sudo: rtk writes to the user-owned ~/.copilot directory.
   home.activation.rtkInit = lib.hm.dag.entryAfter [ "writeBoundary" ] ''
-    if printf 'N\n' | ${unstablePkgs.rtk}/bin/rtk init -g --auto-patch </dev/null; then
-      echo "rtk: global agent integration up to date"
+    if ${unstablePkgs.rtk}/bin/rtk init -g --copilot --auto-patch; then
+      echo "rtk: VS Code Copilot integration up to date"
     fi
   '';
 
@@ -224,7 +228,8 @@ in
   programs.zsh = {
     enable = true;
     shellAliases = shellAliases;
-    initExtra = ''
+    dotDir = config.home.homeDirectory;
+    initContent = ''
       # Secrets from sops (rendered at activation, see home-manager.nix)
       source ${config.sops.templates."gh-token.env".path};
       source ${config.sops.templates."parallel-api-key.env".path};

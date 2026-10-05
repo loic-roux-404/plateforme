@@ -49,6 +49,12 @@
       url = "github:DietrichGebert/ponytail";
       flake = false;
     };
+
+    # Ultra-compressed communication mode for Claude Code (plugin with hooks)
+    caveman = {
+      url = "github:JuliusBrussee/caveman";
+      flake = false;
+    };
   };
 
   outputs =
@@ -157,6 +163,7 @@
             inputs.sops-nix.homeManagerModules.sops
             nur.homeModules.crush
             ./nixos-darwin/crush.nix
+            ./nixos-darwin/claude-code.nix
             ./nixos-darwin/vscode-agent.nix
           ];
         });
