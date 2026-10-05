@@ -15,6 +15,7 @@ in
   sops = {
     secrets = {
       opencode_api_key = { };
+      zai_api_key = { };
     };
 
     templates."chatLanguageModels.json" = {
@@ -27,31 +28,6 @@ in
           apiKey = "\${input:chat.lm.secret.opencode}";
           apiType = "chat-completions";
           models = [
-            {
-              id = "kimi-k3";
-              name = "Kimi K3";
-              url = "https://opencode.ai/zen/go/v1/chat/completions";
-              toolCalling = true;
-              vision = true;
-              maxInputTokens = 1048576;
-              maxOutputTokens = 16384;
-              reasoningEffortFormat = "chat-completions";
-              supportsReasoningEffort = [
-                "low"
-                "medium"
-                "high"
-              ];
-              streaming = true;
-              thinking = true;
-              modelOptions = {
-                temperature = 0.1;
-                top_p = 0.95;
-              };
-              requestHeaders = {
-                Authorization = "Bearer ${config.sops.placeholder.opencode_api_key}";
-              }
-              // opencodeSessionHeader;
-            }
             {
               id = "qwen3.8-max";
               name = "Qwen3.8 Max";
@@ -102,31 +78,6 @@ in
               // opencodeSessionHeader;
             }
             {
-              id = "gemini-3.8-flash";
-              name = "Gemini 3.8 Flash";
-              supportsReasoningEffort = [
-                "low"
-                "medium"
-                "high"
-              ];
-              reasoningEffortFormat = "chat-completions";
-              url = "https://opencode.ai/zen/go/v1/chat/completions";
-              toolCalling = true;
-              vision = true;
-              maxInputTokens = 1048576;
-              maxOutputTokens = 65536;
-              streaming = true;
-              thinking = true;
-              modelOptions = {
-                temperature = 1.0;
-                top_p = 0.95;
-              };
-              requestHeaders = {
-                Authorization = "Bearer ${config.sops.placeholder.opencode_api_key}";
-              }
-              // opencodeSessionHeader;
-            }
-            {
               id = "qwen3.8-flash";
               name = "Qwen3.8 Flash";
               supportsReasoningEffort = [
@@ -152,7 +103,7 @@ in
               // opencodeSessionHeader;
             }
             {
-              id = "glm-5.3-flash";
+              id = "GLM-5.3-FLASH";
               name = "GLM-5.3 Flash";
               supportsReasoningEffort = [
                 "low"
@@ -160,7 +111,7 @@ in
                 "max"
               ];
               reasoningEffortFormat = "chat-completions";
-              url = "https://opencode.ai/zen/go/v1/chat/completions";
+              url = "https://api.z.ai/api/coding/paas/v4/chat/completions";
               toolCalling = true;
               vision = false;
               maxInputTokens = 1048576;
@@ -172,12 +123,11 @@ in
                 top_p = 0.95;
               };
               requestHeaders = {
-                Authorization = "Bearer ${config.sops.placeholder.opencode_api_key}";
-              }
-              // opencodeSessionHeader;
+                Authorization = "Bearer ${config.sops.placeholder.zai_api_key}";
+              };
             }
             {
-              id = "glm-5.3";
+              id = "GLM-5.3";
               name = "GLM-5.3";
               supportsReasoningEffort = [
                 "low"
@@ -185,7 +135,7 @@ in
                 "max"
               ];
               reasoningEffortFormat = "chat-completions";
-              url = "https://opencode.ai/zen/go/v1/chat/completions";
+              url = "https://api.z.ai/api/coding/paas/v4/chat/completions";
               toolCalling = true;
               vision = false;
               maxInputTokens = 1048576;
@@ -197,9 +147,8 @@ in
                 top_p = 0.95;
               };
               requestHeaders = {
-                Authorization = "Bearer ${config.sops.placeholder.opencode_api_key}";
-              }
-              // opencodeSessionHeader;
+                Authorization = "Bearer ${config.sops.placeholder.zai_api_key}";
+              };
             }
           ];
         }

@@ -1,6 +1,11 @@
 {
   "version": 1,
   "skills": {
+    "agent-designer": {
+      "source": "./.agents/local-skills",
+      "sourceType": "local",
+      "computedHash": "b70380d38715c9154c5b714d7b060e43d84b10142d4a23700681b4e825d04dc2"
+    },
     "cavecrew": {
       "source": "juliusbrussee/caveman",
       "sourceType": "github",
@@ -17,7 +22,7 @@
       "source": "juliusbrussee/caveman",
       "sourceType": "github",
       "skillPath": "skills/caveman-commit/SKILL.md",
-      "computedHash": "790a4eeace0be35c6691faf923518ba5bd50f1f1305d1101d09dd4971be94e00"
+      "computedHash": "b416cf134b0f33ddadeca7977aebdbb2d3db79a166d0fce2e1aabeec98132766"
     },
     "caveman-compress": {
       "source": "juliusbrussee/caveman",
@@ -29,13 +34,13 @@
       "source": "juliusbrussee/caveman",
       "sourceType": "github",
       "skillPath": "skills/caveman-help/SKILL.md",
-      "computedHash": "dd85267e76baad76995157e7b9f762dfa557cd58951ee92af0c283f48aa26537"
+      "computedHash": "b5757ca455c4c7af2c1a2abf2e55619e9cc7c085622058d0172c60cb658af90b"
     },
     "caveman-review": {
       "source": "juliusbrussee/caveman",
       "sourceType": "github",
       "skillPath": "skills/caveman-review/SKILL.md",
-      "computedHash": "fb7214a1c5793bae6ba8b1be4329e2e6f40dbec6dd911dfb335ad29f09c316a1"
+      "computedHash": "36a4007c5c0c6b90b5accfee1cd769a86e4963b651dece2ce5f17a223a0abb4b"
     },
     "caveman-stats": {
       "source": "juliusbrussee/caveman",
@@ -55,11 +60,40 @@
       "skillPath": "skills/karpathy-guidelines/SKILL.md",
       "computedHash": "41e8ca055bbde13d240776a14a076a59614057200340c243130a76ba4e64cac8"
     },
+    "libvirt-0.9-migration": {
+      "source": "./.agents/local-skills",
+      "sourceType": "local",
+      "computedHash": "632d5a8d8f0ae858f126f9d9bacc92c5a1a36646147f4e665ca880ccad174f43"
+    },
+    "nix-platform": {
+      "source": "./.agents/local-skills",
+      "sourceType": "local",
+      "computedHash": "bae45e681864711bf31a3c9901bdb819a0d0b56c33baa95bacd90784aca31956"
+    },
+    "sops-secrets-platform": {
+      "source": "./.agents/local-skills",
+      "sourceType": "local",
+      "computedHash": "a08fe922570611bf58c5687082e5b7bcf1afec61f5b6dd3a36d7516eb7135898"
+    },
+    "terraform-engineer": {
+      "source": "./.agents/local-skills",
+      "sourceType": "local",
+      "computedHash": "efedca24d93cc6e394cf3d81e392eba7116db96ac501dc8b8a69ee2d4fc7dce1"
+    },
+    "terraform-libvirt-specialist": {
+      "source": "./.agents/local-skills",
+      "sourceType": "local",
+      "computedHash": "56ba9b2e7b290eb5f44bbaec5352c4feece5b7457b2a0ff1cc882759aa9030d2"
+    },
     "terraform-style-guide": {
-      "source": "hashicorp/agent-skills",
-      "sourceType": "github",
-      "skillPath": "terraform/code-generation/skills/terraform-style-guide/SKILL.md",
+      "source": "./.agents/local-skills",
+      "sourceType": "local",
       "computedHash": "e7776668ff288f856a8f9bb8bb3301dd2c78c70102d81fb1027c059b01f6b07b"
+    },
+    "terragrunt-platform": {
+      "source": "./.agents/local-skills",
+      "sourceType": "local",
+      "computedHash": "d5255e54b465afb51158f1003fde1788b08716164c6c96e385cc27fd75ffa0d0"
     }
   }
 }

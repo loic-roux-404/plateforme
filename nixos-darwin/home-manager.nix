@@ -48,9 +48,6 @@ in
   sops = {
     age.sshKeyPaths = [ "${config.home.homeDirectory}/.ssh/id_ed25519" ];
     defaultSopsFile = "${inputs.secrets}/darwin.yaml";
-    secrets = {
-      hyper_api_key = { };
-    };
   };
 
   # Home-manager 22.11 requires this be set. We never set it so we have
@@ -175,7 +172,7 @@ in
   };
 
   sops.templates."parallel-api-key.env" = {
-    content = "export PARALLEL_API_KEY=${config.sops.placeholder.parrallel_api_key}";
+    content = "export PARALLEL_API_KEY='${config.sops.placeholder.parrallel_api_key}'";
     path = "${config.home.homeDirectory}/.config/sops-nix/parallel-api-key.env";
   };
 

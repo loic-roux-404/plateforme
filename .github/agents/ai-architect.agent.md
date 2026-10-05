@@ -2,7 +2,7 @@
 name: ai-architect
 description: "Use when: designing AI agentic systems for VS Code — search the web for existing agents/skills/prompts/MCP servers, design agentic team workflows with tools and MCP, download/customize/create .agent.md / SKILL.md / .prompt.md / .instructions.md from scratch, install and configure new MCP servers in .vscode/mcp.json, adapt skills/agents/prompts to use new MCP capabilities, and self-test the resulting workflow. Keywords: agent design, skill design, prompt design, mcp setup, agentic team, workflow test."
 argument-hint: "Describe the agentic team, MCP server, or customization (agent/skill/prompt) you want to design or install…"
-tools: [vscode, execute, read, agent, edit, search, web, browser, todo, 'github/*']
+tools: [vscode, execute, read, agent, edit, search, web, browser, 'github/*', 'parrallel-search/*', todo]
 permissionMode: default
 skills:
   - agent-designer

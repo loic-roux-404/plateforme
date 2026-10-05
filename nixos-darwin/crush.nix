@@ -5,10 +5,6 @@
 let
   lowCostModels = [
     {
-      id = "kimi-k3";
-      name = "Kimi K3";
-    }
-    {
       id = "qwen3.8-max";
       name = "Qwen3.8 Max";
     }
@@ -20,9 +16,18 @@ let
       id = "gemini-3.8-flash";
       name = "Gemini 3.8 Flash";
     }
+    {
+      id = "GLM-5.3";
+      name = "GLM 5.3";
+    }
+        {
+      id = "GLM-5.3-FLASH";
+      name = "GLM 5.3 Flash";
+    }
   ];
 
   opencodeApiKey = "$(cat ${config.sops.secrets.opencode_api_key.path})";
+  zaiApiKey = "$(cat ${config.sops.secrets.zai_api_key.path})";
 in
 {
   programs.crush = {
@@ -34,6 +39,14 @@ in
           name = "OpenCode";
           base_url = "https://opencode.ai/zen/go/v1";
           api_key = opencodeApiKey;
+          type = "openai-compat";
+          models = lowCostModels;
+        };
+        zai = {
+          id = "zai";
+          name = "ZAI";
+          base_url = "https://api.z.ai/api/coding/paas/v4/chat/completions";
+          api_key = zaiApiKey;
           type = "openai-compat";
           models = lowCostModels;
         };

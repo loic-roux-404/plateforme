@@ -2,7 +2,7 @@
 description: "Use when: working on Nix code — flake.nix, NixOS configs (nixos/), nix-darwin (nixos-darwin/), home-manager, nixos-generators images, paas.* options (nixos-options/), srvos/sops-nix/home-manager modules, or debugging Nix evals, builds, store, or option lookups. Also for adding devShell packages, qcow2 image builds, and linux-builder / cross-compilation questions. Loads skills: caveman, nix-platform, sops-secrets-platform."
 name: "Nix Maintainer"
 argument-hint: "Describe the Nix/NixOS/nix-darwin task or the derivation/option you want to debug…"
-tools: [vscode, execute, read, edit, search, web, browser, 'agent-lsp/*', todo]
+tools: [vscode, execute, read, edit, search, web, browser, 'agent-lsp/*', 'parrallel-search/*', todo]
 skills:
   - caveman
   - nix-platform

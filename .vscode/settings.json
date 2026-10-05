@@ -32,20 +32,12 @@
   "nixEnvSelector.nixFile": "${workspaceFolder}/flake.nix",
   "nixEnvSelector.useFlakes": true,
   "nixEnvSelector.flakeShell": "default",
-  "chat.agentFilesLocations": {
-    ".agents/agents": true
-  },
-  "chat.agentSkillsLocations": {
-    ".agents/skills": true
-},
   "chat.requestQueuing.defaultAction": "steer",
-  "chat.agent.thinking.collapsedTools": "off",
-  "chat.tools.autoExpandFailures": true,
   "chat.useAgentSkills": true,
   "chat.byokUtilityModelDefault": "copilot",
   "chat.agentHost.byokModels.enabled": true,
   "chat.utilitySmallModel": "customendpoint/deepseek-v4.1-flash",
-  "chat.utilityModel": "customendpoint/glm-5.3",
+  "chat.utilityModel": "customendpoint/GLM-5.3",
   "inlineChat.defaultModel": "DeepSeek V4.1 Flash (customendpoint)",
   "search.useIgnoreFiles": true,
   "search.useGlobalIgnoreFiles": false,
