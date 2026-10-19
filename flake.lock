@@ -164,11 +164,11 @@
     },
     "nixpkgs-unstable": {
       "locked": {
-        "lastModified": 1784555310,
-        "narHash": "sha256-/FCliTPgiuV1owejZFNx3Ch9irdvkOfOFl+HHZ+DrtM=",
+        "lastModified": 1791487292,
+        "narHash": "sha256-tqM7xDEsaeK1p6VvRygeZ9LkQRpUUkbRT02BHv6hnTM=",
         "owner": "NixOS",
         "repo": "nixpkgs",
-        "rev": "421eebfd0ec7bccd4abe826ce62d7e6e83129493",
+        "rev": "8edc0c72e3a38faf5434e40d1f19431125fe4b30",
         "type": "github"
       },
       "original": {
@@ -273,11 +273,11 @@
     "secrets": {
       "flake": false,
       "locked": {
-        "lastModified": 1791146144,
-        "narHash": "sha256-icheXZYBpVwadlIOfp7mGANKmqy2RaeepVTQX2r9Dx4=",
+        "lastModified": 1792438682,
+        "narHash": "sha256-mFzb2QZXEdxZ/qsj5EM9Ze1hhDiFwq3RICkb8TaWjqo=",
         "ref": "refs/heads/main",
-        "rev": "c0607a1c23625569cee4d83189c606286c73a502",
-        "revCount": 11,
+        "rev": "50faa4f4f608d72accbdcd572fc903760f56f710",
+        "revCount": 13,
         "type": "git",
         "url": "ssh://git@github.com/org-404/secrets"
       },

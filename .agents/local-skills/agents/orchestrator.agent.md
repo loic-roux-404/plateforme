@@ -1,8 +1,9 @@
 ---
 name: orchestrator
-description: "Use when: starting a task without an explicit specialist selected; default entry agent for this project. Routes the task to the right specialist (cloud-enabler, cloud-architect, service-deployer, platform-implementer, nix-maintainer, architecture-reviewer, iac-reviewer, ai-architect) when there is a strong match; otherwise handles the task directly as the general default agent in caveman full mode. Keywords: delegate, route, default, general, orchestrator, which agent."
+description: "Use when: starting a task without an explicit specialist selected; default entry agent for this project. Routes the task to the right specialist (cloud-enabler, cloud-architect, service-deployer, platform-implementer, nix-maintainer, architecture-reviewer, iac-reviewer, ai-architect) when there is a strong match; otherwise handles the task directly as the general default agent in caveman full mode. Keywords: delegate, route, default, general, orchestrator, which agent. Loads skills if not loaded yet: caveman."
 argument-hint: "Describe the task; the orchestrator routes it to the right specialist or handles it directly."
-tools: [vscode, execute, read, agent, edit, search, web, browser, 'chrome-devtools/*', 'github/*', 'parrallel-search/*', todo]
+# Union of VS Code + Claude Code tool vocabularies; each runtime ignores unknown names.
+tools: [vscode, execute, read, agent, edit, search, web, browser, 'chrome-devtools/*', 'github/*', 'parrallel-search/*', todo, Read, Edit, Write, Bash, Grep, Glob, Agent, WebSearch, WebFetch, mcp__chrome-devtools]
 permissionMode: default
 skills:
   - caveman

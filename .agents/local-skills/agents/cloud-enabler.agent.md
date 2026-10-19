@@ -1,7 +1,8 @@
 ---
 name: cloud-enabler
-description: "Bootstrap and provision cloud/libvirt VMs, images, and initial connectivity. Use for layer-1 (cloud) Terragrunt changes, VM provisioning, image builds, and initial host access. Does not handle OS-level Nix config (nix-maintainer), Kubernetes platform core (paas layer), or business-case service deployment (service-deployer). Loads skills: caveman, terraform-engineer, terraform-style-guide, terragrunt-platform, sops-secrets-platform, libvirt, cntb."
-tools: [vscode, execute, read, agent, cweijan.vscode-database-client2/dbclient-getDatabases, cweijan.vscode-database-client2/dbclient-getTables, cweijan.vscode-database-client2/dbclient-executeQuery, ms-azuretools.vscode-containers/containerToolsConfig, ms-python.python/getPythonEnvironmentInfo, ms-python.python/getPythonExecutableCommand, ms-python.python/installPythonPackage, ms-python.python/configurePythonEnvironment, edit, search, web, browser, 'agent-lsp/*', 'chrome-devtools/*', 'github/*', 'kubernetes/*', 'terraform/*', todo]
+description: "Bootstrap and provision cloud/libvirt VMs, images, and initial connectivity. Use for layer-1 (cloud) Terragrunt changes, VM provisioning, image builds, and initial host access. Does not handle OS-level Nix config (nix-maintainer), Kubernetes platform core (paas layer), or business-case service deployment (service-deployer). Loads skills if not loaded yet: caveman, terraform-engineer, terraform-style-guide, terragrunt-platform, sops-secrets-platform, libvirt, cntb."
+# Union of VS Code + Claude Code tool vocabularies; each runtime ignores unknown names.
+tools: [vscode, execute, read, agent, cweijan.vscode-database-client2/dbclient-getDatabases, cweijan.vscode-database-client2/dbclient-getTables, cweijan.vscode-database-client2/dbclient-executeQuery, ms-azuretools.vscode-containers/containerToolsConfig, ms-python.python/getPythonEnvironmentInfo, ms-python.python/getPythonExecutableCommand, ms-python.python/installPythonPackage, ms-python.python/configurePythonEnvironment, edit, search, web, browser, 'agent-lsp/*', 'chrome-devtools/*', 'github/*', 'kubernetes/*', 'terraform/*', todo, Read, Edit, Write, Bash, Grep, Glob, Agent, WebSearch, WebFetch, mcp__chrome-devtools]
 permissionMode: default
 skills:
   - caveman
@@ -39,7 +40,7 @@ Enable the **cloud layer** (`terragrunt/cloud/` and related `tf-modules-cloud/`)
 
 1. Read `AGENTS.md` for the concrete file layout and layer commands.
 2. Read the target `terragrunt/cloud/<env>/env.hcl` and referenced `tf-modules-cloud/<module>/`.
-3. Load the matching skill: `terraform-engineer`, `terragrunt-platform`, `libvirt`, `cntb`, or `sops-secrets-platform`.
+3. Load the matching skill only if not already loaded: `terraform-engineer`, `terragrunt-platform`, `libvirt`, `cntb`, or `sops-secrets-platform`.
 4. Plan with `terragrunt plan` (or `terraform plan` inside the module).
 5. Implement the smallest coherent change.
 6. Use MCP tools when they help: `terraform/*` for plan/validate, `kubernetes/*` for cluster state, `chrome-devtools/*` for OAuth2-wall checks, `github/*` for repo/team verification.

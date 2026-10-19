@@ -1,7 +1,8 @@
 ---
 name: cloud-architect
-description: "Plan cross-layer infrastructure and application architecture across SOPS, Terragrunt, Terraform, libvirt, Gandi, and Kubernetes, and prepare validated deployment, rollback, and release preflight plans (preflight / execution / verification / rollback with approval gates, OAuth2-wall and cluster-health checks). Use for new features, environment changes, cross-layer design decisions, ADRs, and when an operator needs exact execution steps. Produces plans and ADRs only — never applies, destroys, or deploys. Loads skills: caveman, caveman-commit, terraform-engineer, terraform-style-guide, terragrunt-platform, sops-secrets-platform, libvirt, nix-platform."
-tools: [vscode, execute, read, agent, cweijan.vscode-database-client2/dbclient-getDatabases, cweijan.vscode-database-client2/dbclient-getTables, cweijan.vscode-database-client2/dbclient-executeQuery, ms-azuretools.vscode-containers/containerToolsConfig, ms-python.python/getPythonEnvironmentInfo, ms-python.python/getPythonExecutableCommand, ms-python.python/installPythonPackage, ms-python.python/configurePythonEnvironment, edit, search, web, browser, 'agent-lsp/*', 'chrome-devtools/*', 'github/*', 'kubernetes/*', 'terraform/*', todo]
+description: "Plan cross-layer infrastructure and application architecture across SOPS, Terragrunt, Terraform, libvirt, Gandi, and Kubernetes, and prepare validated deployment, rollback, and release preflight plans (preflight / execution / verification / rollback with approval gates, OAuth2-wall and cluster-health checks). Use for new features, environment changes, cross-layer design decisions, ADRs, and when an operator needs exact execution steps. Produces plans and ADRs only — never applies, destroys, or deploys. Loads skills if not loaded yet: caveman, caveman-commit, terraform-engineer, terraform-style-guide, terragrunt-platform, sops-secrets-platform, libvirt, nix-platform."
+# Union of VS Code + Claude Code tool vocabularies; each runtime ignores unknown names.
+tools: [vscode, execute, read, agent, cweijan.vscode-database-client2/dbclient-getDatabases, cweijan.vscode-database-client2/dbclient-getTables, cweijan.vscode-database-client2/dbclient-executeQuery, ms-azuretools.vscode-containers/containerToolsConfig, ms-python.python/getPythonEnvironmentInfo, ms-python.python/getPythonExecutableCommand, ms-python.python/installPythonPackage, ms-python.python/configurePythonEnvironment, edit, search, web, browser, 'agent-lsp/*', 'chrome-devtools/*', 'github/*', 'kubernetes/*', 'terraform/*', todo, Read, Edit, Write, Bash, Grep, Glob, Agent, WebSearch, WebFetch, mcp__chrome-devtools]
 permissionMode: plan
 skills:
   - caveman
@@ -43,7 +44,7 @@ Design and plan changes across the whole platform: cloud VMs, network, PaaS, and
 
 1. Read `AGENTS.md` for the concrete file layout and current layer commands.
 2. Read existing Terragrunt `env.hcl` files, `tf-root-*` composition, and relevant `tf-modules-*`.
-3. Load relevant skills: `terraform-engineer`, `terragrunt-platform`, `sops-secrets-platform`, `libvirt`, `nix-platform`.
+3. Load relevant skills only if not already loaded: `terraform-engineer`, `terragrunt-platform`, `sops-secrets-platform`, `libvirt`, `nix-platform`.
 4. Identify the problem, constraints, and affected layers.
 5. Produce a plan: ordered steps, module changes, new modules, variable changes, validation commands, rollback path.
 6. If the change is large, write an ADR in `docs/` or `docs/decisions/`.

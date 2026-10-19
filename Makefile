@@ -52,4 +52,9 @@ cntb-login:
 skills-update:
 	@npx skills update -y && npx skills add ./.agents/local-skills -a '*' -y
 
-.PHONY: fmt bootstrap nixos-local login cntb-login skills-update $(TERRAGRUNT_FILES)
+agents-update:
+	@mkdir -p .github/agents .claude/agents
+	@cp .agents/local-skills/agents/*.agent.md .github/agents/
+	@cp .agents/local-skills/agents/*.agent.md .claude/agents/
+
+.PHONY: fmt bootstrap nixos-local login cntb-login skills-update agents-update $(TERRAGRUNT_FILES)

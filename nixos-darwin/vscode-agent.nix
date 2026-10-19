@@ -4,28 +4,28 @@
 }:
 
 let
-  # OpenCode Go requires a stable x-opencode-session header (microsoft/vscode#334186). Copilot Chat does
-  # copilot do not send one, so we inject a fixed UUID per host via requestHeaders.
-  # Not per-conversation, but a stable ID satisfies their routing needs.
-  opencodeSessionHeader = {
-    "x-opencode-session" = "6ec42e8b-cb86-4b6b-aff1-1788fc711004";
+  # All models are served by the local LiteLLM gateway (litellm.nix), which
+  # proxies OpenCode Zen and the Z.ai GLM coding plan. The proxy runs without
+  # a master key (localhost-only), so a static dummy bearer is enough; the
+  # real provider keys live in the litellm agent's environment.
+  #
+  # The former x-opencode-session header (microsoft/vscode#334186 workaround)
+  # is gone: VS Code now talks to litellm, not the zen gateway directly.
+  proxyUrl = "http://127.0.0.1:4000/v1/chat/completions";
+  proxyHeaders = {
+    Authorization = "Bearer litellm-local";
   };
 in
 {
   sops = {
-    secrets = {
-      opencode_api_key = { };
-      zai_api_key = { };
-    };
-
     templates."chatLanguageModels.json" = {
       path = "${config.home.homeDirectory}/Library/Application Support/Code/User/chatLanguageModels.json";
       content = builtins.toJSON [
 
         {
-          name = "OpenCode";
+          name = "LiteLLM";
           vendor = "customendpoint";
-          apiKey = "\${input:chat.lm.secret.opencode}";
+          apiKey = "litellm-local";
           apiType = "chat-completions";
           models = [
             {
@@ -36,7 +36,7 @@ in
                 "low"
                 "medium"
               ];
-              url = "https://opencode.ai/zen/go/v1/chat/completions";
+              url = proxyUrl;
               toolCalling = true;
               vision = true;
               maxInputTokens = 1048576;
@@ -47,10 +47,7 @@ in
                 temperature = 0.15;
                 top_p = 0.9;
               };
-              requestHeaders = {
-                Authorization = "Bearer ${config.sops.placeholder.opencode_api_key}";
-              }
-              // opencodeSessionHeader;
+              requestHeaders = proxyHeaders;
             }
             {
               id = "deepseek-v4.1-flash";
@@ -61,7 +58,7 @@ in
                 "max"
               ];
               reasoningEffortFormat = "chat-completions";
-              url = "https://opencode.ai/zen/go/v1/chat/completions";
+              url = proxyUrl;
               toolCalling = true;
               vision = true;
               maxInputTokens = 1048576;
@@ -72,10 +69,7 @@ in
                 temperature = 0.15;
                 top_p = 0.9;
               };
-              requestHeaders = {
-                Authorization = "Bearer ${config.sops.placeholder.opencode_api_key}";
-              }
-              // opencodeSessionHeader;
+              requestHeaders = proxyHeaders;
             }
             {
               id = "qwen3.8-flash";
@@ -86,7 +80,7 @@ in
                 "xhigh"
               ];
               reasoningEffortFormat = "chat-completions";
-              url = "https://opencode.ai/zen/go/v1/chat/completions";
+              url = proxyUrl;
               toolCalling = true;
               vision = true;
               maxInputTokens = 1048576;
@@ -97,10 +91,7 @@ in
                 temperature = 1.0;
                 top_p = 0.95;
               };
-              requestHeaders = {
-                Authorization = "Bearer ${config.sops.placeholder.opencode_api_key}";
-              }
-              // opencodeSessionHeader;
+              requestHeaders = proxyHeaders;
             }
             {
               id = "GLM-5.3-FLASH";
@@ -111,7 +102,7 @@ in
                 "max"
               ];
               reasoningEffortFormat = "chat-completions";
-              url = "https://api.z.ai/api/coding/paas/v4/chat/completions";
+              url = proxyUrl;
               toolCalling = true;
               vision = false;
               maxInputTokens = 1048576;
@@ -122,9 +113,7 @@ in
                 temperature = 1.0;
                 top_p = 0.95;
               };
-              requestHeaders = {
-                Authorization = "Bearer ${config.sops.placeholder.zai_api_key}";
-              };
+              requestHeaders = proxyHeaders;
             }
             {
               id = "GLM-5.3";
@@ -135,7 +124,7 @@ in
                 "max"
               ];
               reasoningEffortFormat = "chat-completions";
-              url = "https://api.z.ai/api/coding/paas/v4/chat/completions";
+              url = proxyUrl;
               toolCalling = true;
               vision = false;
               maxInputTokens = 1048576;
@@ -146,9 +135,7 @@ in
                 temperature = 1.0;
                 top_p = 0.95;
               };
-              requestHeaders = {
-                Authorization = "Bearer ${config.sops.placeholder.zai_api_key}";
-              };
+              requestHeaders = proxyHeaders;
             }
           ];
         }

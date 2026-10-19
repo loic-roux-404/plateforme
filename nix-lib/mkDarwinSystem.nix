@@ -48,25 +48,40 @@ darwinSystem {
     if (inputs ? home-manager) then
       [
         inputs.home-manager.darwinModules.home-manager
-        {
-          home-manager.useGlobalPkgs = true;
-          home-manager.useUserPackages = true;
-          home-manager.backupFileExtension = "backup";
-          home-manager.extraSpecialArgs = { inherit inputs; };
-          home-manager.sharedModules = homeManagerModules;
-          home-manager.users.${currentSystemUser} = import ../nixos-darwin/home-manager.nix {
-            inherit inputs;
-            unstablePkgs = import inputs.nixpkgs-unstable {
-              inherit system;
-              config.allowUnfree = true;
+        (
+          {
+            pkgs,
+            ...
+          }:
+          {
+            home-manager.useGlobalPkgs = true;
+            home-manager.useUserPackages = true;
+            # claude-code replaces home-manager's managed symlinks (e.g.
+            # known_marketplaces.json) with real files, so each switch must
+            # back the file up before re-linking. A fixed extension works
+            # once then aborts on collision; a timestamp never collides.
+            # nix flake switch can be blocked if no timestamp used
+            home-manager.backupCommand = toString (
+              pkgs.writeShellScript "hm-backup" ''
+                mv "$1" "$1.$(date +%Y%m%d-%H%M%S)"
+              ''
+            );
+            home-manager.extraSpecialArgs = { inherit inputs; };
+            home-manager.sharedModules = homeManagerModules;
+            home-manager.users.${currentSystemUser} = import ../nixos-darwin/home-manager.nix {
+              inherit inputs;
+              unstablePkgs = import inputs.nixpkgs-unstable {
+                inherit system;
+                config.allowUnfree = true;
+              };
+              currentSystem = system;
+              currentSystemName = name;
+              currentSystemUser = currentSystemUser;
+              inherit githubUser;
+              inherit homeManagerModules;
             };
-            currentSystem = system;
-            currentSystemName = name;
-            currentSystemUser = currentSystemUser;
-            inherit githubUser;
-            inherit homeManagerModules;
-          };
-        }
+          }
+        )
       ]
     else
       [ ]

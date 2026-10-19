@@ -1,5 +1,4 @@
 {
-  config,
   ...
 }:
 let
@@ -25,28 +24,19 @@ let
       name = "GLM 5.3 Flash";
     }
   ];
-
-  opencodeApiKey = "$(cat ${config.sops.secrets.opencode_api_key.path})";
-  zaiApiKey = "$(cat ${config.sops.secrets.zai_api_key.path})";
 in
 {
   programs.crush = {
     enable = true;
     settings = {
       providers = {
-        opencode = {
-          id = "opencode";
-          name = "OpenCode";
-          base_url = "https://opencode.ai/zen/go/v1";
-          api_key = opencodeApiKey;
-          type = "openai-compat";
-          models = lowCostModels;
-        };
-        zai = {
-          id = "zai";
-          name = "ZAI";
-          base_url = "https://api.z.ai/api/coding/paas/v4/chat/completions";
-          api_key = zaiApiKey;
+        # Local LiteLLM gateway (litellm.nix) fronting OpenCode Zen and the
+        # Z.ai GLM coding plan; no master key on localhost, dummy bearer.
+        litellm = {
+          id = "litellm";
+          name = "LiteLLM";
+          base_url = "http://127.0.0.1:4000/v1";
+          api_key = "litellm-local";
           type = "openai-compat";
           models = lowCostModels;
         };

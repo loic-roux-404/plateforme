@@ -162,6 +162,7 @@
           homeManagerModules = [
             inputs.sops-nix.homeManagerModules.sops
             nur.homeModules.crush
+            ./nixos-darwin/litellm.nix
             ./nixos-darwin/crush.nix
             ./nixos-darwin/claude-code.nix
             ./nixos-darwin/vscode-agent.nix

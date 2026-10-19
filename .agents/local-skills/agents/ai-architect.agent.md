@@ -1,8 +1,9 @@
 ---
 name: ai-architect
-description: "Use when: designing AI agentic systems for VS Code — search the web for existing agents/skills/prompts/MCP servers, design agentic team workflows with tools and MCP, download/customize/create .agent.md / SKILL.md / .prompt.md / .instructions.md from scratch, install and configure new MCP servers in .vscode/mcp.json, adapt skills/agents/prompts to use new MCP capabilities, and self-test the resulting workflow. Keywords: agent design, skill design, prompt design, mcp setup, agentic team, workflow test."
+description: "Use when: designing AI agentic systems for VS Code — search the web for existing agents/skills/prompts/MCP servers, design agentic team workflows with tools and MCP, download/customize/create .agent.md / SKILL.md / .prompt.md / .instructions.md from scratch, install and configure new MCP servers in .vscode/mcp.json, adapt skills/agents/prompts to use new MCP capabilities, and self-test the resulting workflow. Keywords: agent design, skill design, prompt design, mcp setup, agentic team, workflow test. Loads skills if not loaded yet: agent-designer, skill-search, prompt-search, agent-customization, caveman, karpathy-guidelines."
 argument-hint: "Describe the agentic team, MCP server, or customization (agent/skill/prompt) you want to design or install…"
-tools: [vscode, execute, read, agent, edit, search, web, browser, 'github/*', 'parrallel-search/*', todo]
+# Union of VS Code + Claude Code tool vocabularies; each runtime ignores unknown names.
+tools: [vscode, execute, read, agent, edit, search, web, browser, 'github/*', 'parrallel-search/*', todo, Read, Edit, Write, Bash, Grep, Glob, Agent, WebSearch, WebFetch]
 permissionMode: default
 skills:
   - agent-designer

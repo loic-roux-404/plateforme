@@ -1,8 +1,8 @@
 ---
 name: release-operator
-description: "Prepare validated deployment, rollback, and release plans for the platform. Use when an operator needs exact preflight and execution steps, not autonomous deployment. Verifies OAuth2 walls and cluster health via MCP before finalising a plan. Loads skills: caveman, caveman-commit, terraform-engineer, terraform-style-guide, terragrunt-platform, sops-secrets-platform, nix-platform, libvirt."
-tools: [vscode, execute, read, agent, cweijan.vscode-database-client2/dbclient-getDatabases, cweijan.vscode-database-client2/dbclient-getTables, cweijan.vscode-database-client2/dbclient-executeQuery, ms-azuretools.vscode-containers/containerToolsConfig, ms-python.python/getPythonEnvironmentInfo, ms-python.python/getPythonExecutableCommand, ms-python.python/installPythonPackage, ms-python.python/configurePythonEnvironment, edit, search, web, browser, 'agent-lsp/*', 'chrome-devtools/*', 'github/*', 'kubernetes/*', 'terraform/*', todo]
-model: DeepSeek V4.1 Flash (customendpoint)
+description: "Prepare validated deployment, rollback, and release plans for the platform. Use when an operator needs exact preflight and execution steps, not autonomous deployment. Verifies OAuth2 walls and cluster health via MCP before finalising a plan. Loads skills if not loaded yet: caveman, caveman-commit, terraform-engineer, terraform-style-guide, terragrunt-platform, sops-secrets-platform, nix-platform, libvirt."
+# Union of VS Code + Claude Code tool vocabularies; each runtime ignores unknown names.
+tools: [vscode, execute, read, agent, cweijan.vscode-database-client2/dbclient-getDatabases, cweijan.vscode-database-client2/dbclient-getTables, cweijan.vscode-database-client2/dbclient-executeQuery, ms-azuretools.vscode-containers/containerToolsConfig, ms-python.python/getPythonEnvironmentInfo, ms-python.python/getPythonExecutableCommand, ms-python.python/installPythonPackage, ms-python.python/configurePythonEnvironment, edit, search, web, browser, 'agent-lsp/*', 'chrome-devtools/*', 'github/*', 'kubernetes/*', 'terraform/*', todo, Read, Edit, Write, Bash, Grep, Glob, Agent, WebSearch, WebFetch, mcp__chrome-devtools]
 permissionMode: plan
 skills:
   - caveman

@@ -148,13 +148,16 @@ in
     enabled = false
   '';
 
-  # rtk global integration is scoped to VS Code Copilot only (--copilot).
-  # Claude Code's rtk hook lives in claude-code.nix instead: ~/.claude/settings.json
-  # is a read-only home-manager store symlink, so `rtk init` cannot patch it.
-  # No sudo: rtk writes to the user-owned ~/.copilot directory.
+  # rtk global integration for VS Code Copilot (--copilot) and Claude Code
+  # (default agent; refreshes ~/.claude/RTK.md, which is user-writable).
+  # --copilot scopes init to Copilot only, so Claude needs its own invocation.
   home.activation.rtkInit = lib.hm.dag.entryAfter [ "writeBoundary" ] ''
+
     if ${unstablePkgs.rtk}/bin/rtk init -g --copilot --auto-patch; then
       echo "rtk: VS Code Copilot integration up to date"
+    fi
+    if ${unstablePkgs.rtk}/bin/rtk init -g --agent claude --auto-patch; then
+      echo "rtk: Claude Code integration up to date"
     fi
   '';
 

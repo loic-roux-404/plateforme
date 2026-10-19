@@ -54,3 +54,7 @@ secrets
 # Skills managed locally via `make skills-update`
 .agents/skills/
 .github/skills/
+
+# Agents managed locally via `make agents-update`
+.claude/agents/
+.github/agents/

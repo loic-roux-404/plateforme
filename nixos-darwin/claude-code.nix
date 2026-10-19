@@ -1,25 +1,34 @@
 {
-  config,
   inputs,
   pkgs,
   ...
 }:
 
 let
-  # nixpkgs 25.11 ships claude-code 2.0.x which lacks plugin-based LSP
+  # nixpkgs 25.11 ships claude-code 2.0.x which lacks plugin-based LSP, so the
+  # package always comes from nixpkgs-unstable. Upstream releases move fast, so
+  # the *pinned revision* of that input (not the branch) decides the version:
+  # run `make claude-update` to bump the lock entry and pick up the newest one.
   unstablePkgs = import inputs.nixpkgs-unstable {
     system = pkgs.stdenv.system;
     config.allowUnfree = true;
   };
 
-  # GLM coding subscription, Anthropic-compatible endpoint (same plan as
-  # providers.zai in crush.nix / vscode-agent.nix, but /v1/messages flavoured).
-  # Model ids follow the official Z.ai Claude Code setup guide:
+  # Local LiteLLM gateway (litellm.nix) serving the /v1/messages Anthropic
+  # flavor for the GLM coding plan and OpenCode Zen models. Model ids follow
+  # the official Z.ai Claude Code setup guide:
   # https://docs.z.ai/devpack/overview — [1m] selects the 1M-context variant.
-  glmBaseUrl = "https://api.z.ai/api/anthropic";
+  glmBaseUrl = "http://127.0.0.1:4000";
 
   glmFlagship = "glm-5.3[1m]";
-  glmFlash = "glm-5.3-flash[1m]";
+  glmFlash = "glm-5.3-flash";
+
+  # OpenCode Zen id (litellm.nix zenModels) + Claude Code [1m] suffix. The
+  # gateway strips the suffix before the upstream call (litellm.nix
+  # deepseek1m), so Zen sees the plain id while Claude Code accounts a 1M
+  # window instead of its 200k default.
+  deepseekFlash = "deepseek-v4.1-flash[1m]";
+  deepseekFlash200k = "deepseek-v4.1-flash";
 in
 {
   programs.claude-code = {
@@ -28,27 +37,41 @@ in
     package = unstablePkgs.claude-code;
 
     settings = {
-      model = glmFlagship;
+      # "opusplan" alias: plan mode → Opus class, everything else → Sonnet
+      # class. Combined with the env remaps below: planning runs glm-5.3[1m],
+      # daily traffic runs deepseek-v4.1-flash (Zen) — it does most of the
+      # work.
+      model = "opusplan";
       fallbackModel = [ glmFlash ];
 
       env = {
         ANTHROPIC_BASE_URL = glmBaseUrl;
         # Map the /model aliases onto the GLM coding plan
         ANTHROPIC_DEFAULT_OPUS_MODEL = glmFlagship;
-        ANTHROPIC_DEFAULT_SONNET_MODEL = glmFlagship;
-        ANTHROPIC_DEFAULT_HAIKU_MODEL = glmFlash;
-        CLAUDE_CODE_SUBAGENT_MODEL = "glm-5.3-flash";
+        ANTHROPIC_DEFAULT_SONNET_MODEL = deepseekFlash;
+        ANTHROPIC_DEFAULT_HAIKU_MODEL = deepseekFlash200k;
+        CLAUDE_CODE_SUBAGENT_MODEL = deepseekFlash200k;
         # 1M-context plan settings from the Z.ai guide
         CLAUDE_CODE_AUTO_COMPACT_WINDOW = "1000000";
         CLAUDE_CODE_DISABLE_NONESSENTIAL_TRAFFIC = "1";
         API_TIMEOUT_MS = "3000000";
       };
 
-      # Credential read at runtime from the sops secret (never lands in the
-      # store). Output is sent as both Authorization: Bearer and x-api-key.
-      apiKeyHelper = "cat \"${config.sops.secrets.zai_api_key.path}\"";
+      # Proxy runs without a master key (localhost-only), so any non-empty
+      # credential is accepted; sent as both Authorization: Bearer and
+      # x-api-key.
+      apiKeyHelper = "echo litellm-local";
 
       includeCoAuthoredBy = false;
+
+      # Activated via plugin-id@marketplace-id (see marketplaces below). Works
+      # everywhere settings.json is read, including the VS Code extension —
+      # unlike the `plugins` option, whose --plugin-dir wrapper only applies
+      # when launching the wrapped CLI binary.
+      enabledPlugins = {
+        "caveman@caveman" = true;
+        "ponytail@ponytail" = true;
+      };
 
       # rtk token-optimizer hook. Declarative equivalent of the JSON that
       # `rtk init -g --auto-patch` injects into ~/.claude/settings.json —
@@ -203,11 +226,10 @@ in
       };
     };
 
-    marketplaces.ponytail = "${inputs.ponytail}";
-    plugins = [
-      "${inputs.ponytail}"
-      "${inputs.caveman}"
-    ];
+    marketplaces = {
+      ponytail = "${inputs.ponytail}";
+      caveman = "${inputs.caveman}";
+    };
 
     context = ''
       # Global context
