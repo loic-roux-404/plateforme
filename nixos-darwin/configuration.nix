@@ -54,6 +54,47 @@ with config.paas;
   ];
   environment.systemPackages = with pkgs; [
     cachix
+    # Print the Linux builder VM's `vmnet-shared` address (see
+    # ./configuration.nix). Its NIC uses a fixed MAC, so the DHCP lease
+    # on `bridge100` always maps back to the same guest.
+    #
+    # Reads the lease file first because macOS only populates the ARP entry
+    # once something has talked to the guest; falls back to ARP.
+    (writeShellScriptBin "linux-builder-ip" ''
+      set -eu
+      mac="de:ad:be:ef:aa:bb"
+      leases=/var/db/dhcpd_leases
+
+      ip=$(${pkgs.gawk}/bin/awk -v mac="''${mac}" '
+        /^\{/ { block = "" }
+        { block = block $0 "\n" }
+        /^\}/ {
+          if (index(block, "hw_address=1," mac)) {
+            n = split(block, lines, "\n")
+            for (i = 1; i <= n; i++) {
+              if (lines[i] ~ /^[[:space:]]*ip_address=/) {
+                sub(/.*ip_address=/, "", lines[i])
+                print lines[i]
+                exit
+              }
+            }
+          }
+        }
+      ' "''${leases}" 2>/dev/null || true)
+
+      if [ -z "''${ip}" ]; then
+        ip=$(arp -an | ${pkgs.gawk}/bin/awk -v m="''${mac}" \
+          'index($0, m) { gsub(/[()]/, "", $2); print $2; exit }')
+      fi
+
+      if [ -z "''${ip}" ]; then
+        echo "linux-builder-ip: no lease for ''${mac}; is the builder VM running?" >&2
+        echo "  sudo launchctl list | grep org.nixos.linux-builder" >&2
+        exit 1
+      fi
+
+      echo "''${ip}"
+    '')
   ];
 
   services.dnsmasq = {
@@ -207,10 +248,19 @@ with config.paas;
     config = (
       { lib, ... }:
       {
+
         virtualisation.docker.enable = true;
         virtualisation.docker.daemon.settings = {
           hosts = [ "tcp://0.0.0.0:2375" ];
         };
+        # vmnet shared networking
+        # Fix the lease to retrieve guest ip after with linux-builder-ip
+        virtualisation.qemu.networkingOptions = [
+          "-netdev"
+          "vmnet-shared,id=shared.0"
+          "-device"
+          "virtio-net-pci,netdev=shared.0,addr=0x9,mac=de:ad:be:ef:aa:bb"
+        ];
         networking.firewall.enable = lib.mkForce false;
         networking.firewall.allowedTCPPorts = [ 2375 ];
         virtualisation.forwardPorts = lib.mkForce [

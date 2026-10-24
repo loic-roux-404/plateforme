@@ -203,6 +203,75 @@ jobs:
 
 When the Terraform module is applied, these variables are populated for each repo returned by the GitHub repos module.
 
+## AI customisation
+
+The macOS control host runs a local AI stack. Every client — Claude Code, Crush, VS
+Code chat — talks to **one** gateway on `http://127.0.0.1:4000`, never to a provider
+directly:
+
+| Piece | File | What it does |
+| --- | --- | --- |
+| LiteLLM gateway | [litellm.nix](nixos-darwin/litellm.nix) | Fronts OpenCode Zen + the Z.ai GLM coding plan behind OpenAI (`/v1/chat/completions`) and Anthropic (`/v1/messages`) endpoints. The **only** proxy for provider endpoints. No auth (localhost trust). |
+| Claude Code models | [claude-code.nix](nixos-darwin/claude-code.nix) | Maps the three Claude tiers onto Zen models. |
+| Crush models | [crush.nix](nixos-darwin/crush.nix) | Same models, Crush provider format. |
+| VS Code chat models | [vscode-agent.nix](nixos-darwin/vscode-agent.nix) | Same models, `chatLanguageModels.json` format. |
+
+The gateway is a **user LaunchAgent** (it needs the user-scoped SOPS secrets), so it
+survives reboots without a login shell. Logs go to `~/Library/Logs/Litellm/`.
+
+```bash
+# restart the gateway after a rebuild
+launchctl kickstart -k gui/$(id -u)/org.nix-community.home.litellm
+```
+
+### Model tiers
+
+Claude Code exposes three aliases. They are assigned by measured behaviour, not by
+vendor naming:
+
+| Tier | Env var | Wants |
+| --- | --- | --- |
+| Frontier | `ANTHROPIC_DEFAULT_OPUS_MODEL` | complex planning, long reasoning — kept off the hot path via `opusplan` |
+| Workhorse | `ANTHROPIC_DEFAULT_SONNET_MODEL` | daily driver for implementation work |
+| Subagent / quick | `ANTHROPIC_DEFAULT_HAIKU_MODEL`, `CLAUDE_CODE_SUBAGENT_MODEL` | short commands, minimal reflection |
+
+For subagents, **low reflection beats raw capability**: a subagent re-reads its whole
+context per task, so a model that reasons for 10k tokens before answering is slower and
+more expensive than a weaker model that just replies.
+
+### Adding a model
+
+Never guess a model's capabilities from its name — the catalog and per-model protocol
+support change without notice. There are **two** catalogs and they disagree:
+
+```bash
+curl -s https://opencode.ai/zen/go/v1/models   # Go plan — what this repo can use
+curl -s https://opencode.ai/zen/v1/models      # full catalog
+```
+
+A model listed only in the full catalog is usually not reachable here. Use the
+`zen-model-onboarding` skill (`.agents/local-skills/zen-model-onboarding/`) — it wraps
+the probes and the wiring steps:
+
+```bash
+S=.agents/local-skills/zen-model-onboarding/scripts/zen-models.py
+$S configured   # catalog vs litellm.nix: missing + stale ids
+$S probe        # capability matrix for every catalog id
+$S gateway      # what the running gateway actually answers
+```
+
+Then wire the id into the gateway (`zenModels` / `glmModels`) and the three client
+files above, and run `make bootstrap`.
+
+### Responses-only models are not supported
+
+Some Zen models (`muse-*`, `grok-4.x`, `gpt-*-luna`, `claude-haiku-5-5`, …) speak **only**
+`/v1/responses`. LiteLLM 1.75.5 bridges Responses → chat for its own endpoint but never
+chat → Responses upstream, so those models cannot be served here. There is deliberately
+**no** translation layer in front of a provider: litellm is the single proxy, and a model
+that cannot be expressed as a chat-completions upstream is simply not used. Pick another
+id instead.
+
 ## Cheat Sheet
 
 ## Nix

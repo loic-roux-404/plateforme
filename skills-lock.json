@@ -94,6 +94,11 @@
       "source": "./.agents/local-skills",
       "sourceType": "local",
       "computedHash": "d5255e54b465afb51158f1003fde1788b08716164c6c96e385cc27fd75ffa0d0"
+    },
+    "zen-model-onboarding": {
+      "source": "./.agents/local-skills",
+      "sourceType": "local",
+      "computedHash": "64d5b9a736b470b3c361c7e73f5e402cb20fa7be597677ba9e5877d632dd8b6a"
     }
   }
 }

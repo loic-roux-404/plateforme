@@ -29,6 +29,28 @@ in
           apiType = "chat-completions";
           models = [
             {
+              id = "kimi-k3.1-pro";
+              name = "Kimi K3.1 Pro";
+              supportsReasoningEffort = [
+                "low"
+                "high"
+                "max"
+              ];
+              reasoningEffortFormat = "chat-completions";
+              url = proxyUrl;
+              toolCalling = true;
+              vision = false;
+              maxInputTokens = 1048576;
+              maxOutputTokens = 32768;
+              streaming = true;
+              thinking = true;
+              modelOptions = {
+                temperature = 0.15;
+                top_p = 0.9;
+              };
+              requestHeaders = proxyHeaders;
+            }
+            {
               id = "qwen3.8-max";
               name = "Qwen3.8 Max";
               reasoningEffortFormat = "chat-completions";

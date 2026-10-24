@@ -146,12 +146,16 @@ in
 
     [telemetry]
     enabled = false
+    consent_given = false
+    consent_date = "1970-01-01T00:00:00+00:00"
   '';
 
   # rtk global integration for VS Code Copilot (--copilot) and Claude Code
   # (default agent; refreshes ~/.claude/RTK.md, which is user-writable).
   # --copilot scopes init to Copilot only, so Claude needs its own invocation.
-  home.activation.rtkInit = lib.hm.dag.entryAfter [ "writeBoundary" ] ''
+  # To skip telemetry prompt it's ordered after linkGeneration 
+  # so the config.toml above is already symlinked when init reads it
+  home.activation.rtkInit = lib.hm.dag.entryAfter [ "writeBoundary" "linkGeneration" ] ''
 
     if ${unstablePkgs.rtk}/bin/rtk init -g --copilot --auto-patch; then
       echo "rtk: VS Code Copilot integration up to date"

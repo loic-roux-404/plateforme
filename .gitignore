@@ -58,3 +58,4 @@ secrets
 # Agents managed locally via `make agents-update`
 .claude/agents/
 .github/agents/
+.claude/skills

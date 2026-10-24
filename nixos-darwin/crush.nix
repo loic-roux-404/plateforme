@@ -2,24 +2,26 @@
   ...
 }:
 let
+  # Served by litellm.nix. Every id here was curl-probed for chat-completions
+  # + tool calling; see .agents/local-skills/zen-model-onboarding.
   lowCostModels = [
     {
-      id = "qwen3.8-max";
-      name = "Qwen3.8 Max";
+      id = "kimi-k3.1-pro";
+      name = "Kimi K3.1 Pro";
     }
     {
       id = "deepseek-v4.1-flash";
       name = "DeepSeek V4.1 Flash";
     }
     {
-      id = "gemini-3.8-flash";
-      name = "Gemini 3.8 Flash";
+      id = "qwen3.8-max";
+      name = "Qwen3.8 Max";
     }
     {
       id = "GLM-5.3";
       name = "GLM 5.3";
     }
-        {
+    {
       id = "GLM-5.3-FLASH";
       name = "GLM 5.3 Flash";
     }

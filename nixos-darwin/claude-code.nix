@@ -23,10 +23,26 @@ let
   glmFlagship = "glm-5.3[1m]";
   glmFlash = "glm-5.3-flash";
 
-  # OpenCode Zen id (litellm.nix zenModels) + Claude Code [1m] suffix. The
+  # OpenCode Zen ids (litellm.nix zenModels) + Claude Code [1m] suffix. The
   # gateway strips the suffix before the upstream call (litellm.nix
-  # deepseek1m), so Zen sees the plain id while Claude Code accounts a 1M
+  # zenAliases), so Zen sees the plain id while Claude Code accounts a 1M
   # window instead of its 200k default.
+  #
+  # Tiering, measured with .agents/local-skills/zen-model-onboarding:
+  #   frontier  kimi-k3.1-pro      — complex planning / reasoning ONLY.
+  #                                  Strongest reasoner measured, but it
+  #                                  thinks 60-240s and can burn a 16k budget
+  #                                  on reasoning alone, so it is reached only
+  #                                  through plan mode (model = "opusplan").
+  #   workhorse deepseek-v4.1-flash — most of the challenging work
+  #   subagent  deepseek-v4.1-flash — quick commands, raw output, minimal
+  #                                  reflection (subagents re-read context per
+  #                                  task, so fast+terse beats deep here).
+  #
+  # Only chat-completions models are reachable: litellm forwards that
+  # protocol upstream, so Responses-only ids (muse-*, grok-4.x, gpt-*-luna, …)
+  # cannot be served at all and are not in the gateway.
+  frontier = "kimi-k3.1-pro[1m]";
   deepseekFlash = "deepseek-v4.1-flash[1m]";
   deepseekFlash200k = "deepseek-v4.1-flash";
 in
@@ -38,16 +54,16 @@ in
 
     settings = {
       # "opusplan" alias: plan mode → Opus class, everything else → Sonnet
-      # class. Combined with the env remaps below: planning runs glm-5.3[1m],
-      # daily traffic runs deepseek-v4.1-flash (Zen) — it does most of the
-      # work.
+      # class. Combined with the env remaps below: planning/complex reasoning
+      # runs kimi-k3.1-pro, execution runs deepseek-v4.1-flash — the workhorse
+      # does most of the work and the slow reasoner stays off the hot path.
       model = "opusplan";
       fallbackModel = [ glmFlash ];
 
       env = {
         ANTHROPIC_BASE_URL = glmBaseUrl;
-        # Map the /model aliases onto the GLM coding plan
-        ANTHROPIC_DEFAULT_OPUS_MODEL = glmFlagship;
+        # Map the /model aliases onto the Zen + GLM tiers
+        ANTHROPIC_DEFAULT_OPUS_MODEL = frontier;
         ANTHROPIC_DEFAULT_SONNET_MODEL = deepseekFlash;
         ANTHROPIC_DEFAULT_HAIKU_MODEL = deepseekFlash200k;
         CLAUDE_CODE_SUBAGENT_MODEL = deepseekFlash200k;

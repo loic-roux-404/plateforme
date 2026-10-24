@@ -203,7 +203,7 @@ sops secrets/darwin.yaml
 - **srvos**: Uses `numtide/srvos` for server-optimized NixOS defaults
 - **nixos-generators**: Used for building qcow2 images
 - **nix-darwin**: macOS configuration with libvirt, dnsmasq, and home-manager
-- **linux-builder**: x86_64-linux cross-compilation via `nix.linux-builder` on Apple Silicon
+- **linux-builder**: x86_64-linux cross-compilation via `nix.linux-builder` on Apple Silicon. It serves double duty as a Docker host (`DOCKER_HOST=tcp://127.0.0.1:2375`); see [Linux builder VM networking](#linux-builder-vm-networking) below.
 
 ### nix-darwin (macOS control host)
 
@@ -213,7 +213,55 @@ The macOS host runs several `launchd` daemons (configured in `nixos-darwin/confi
 - **dnsmasq**: Resolves `*.${dns.name}` to the kube IP (`kube.addr`), giving stable hostnames for local ingress hosts.
 - **minio**: Local S3-compatible server on `127.0.0.1:9000` (console `:9001`, creds `minioadmin`/`minioadmin`). Used as the Longhorn backup target in the local environment: `tf-root-paas` passes it as `object_storage` → `tf-modules-k8s/longhorn` creates the `longhorn-s3-credentials` secret and sets `backupTarget = s3://...`.
 - **pebble**: Local ACME server used as the cert-manager issuer in the `local` Let's Encrypt environment. Its root CA is imported into the macOS system keychain on activation.
-- **litellm**: Local LLM gateway on `127.0.0.1:4000` exposing OpenCode Zen and the Z.ai GLM coding plan behind both OpenAI (`/v1/chat/completions`) and Anthropic-compatible (`/v1/messages`) endpoints. Unlike the daemons above it is a **user LaunchAgent managed by home-manager** (`launchd.agents.litellm` in `nixos-darwin/litellm.nix`, label `org.nix-community.home.litellm`), because it needs to read the user-scoped SOPS secrets; logs go to `~/Library/Logs/Litellm/`. No auth on the proxy (localhost trust); restart with `launchctl kickstart -k gui/$(id -u)/org.nix-community.home.litellm`. Claude Code, VS Code chat, and Crush all use it instead of direct provider APIs.
+- **litellm**: Local LLM gateway on `127.0.0.1:4000` exposing OpenCode Zen and the Z.ai GLM coding plan behind both OpenAI (`/v1/chat/completions`) and Anthropic-compatible (`/v1/messages`) endpoints. It is the **only** proxy for provider endpoints — no other adapter or translator sits in front of a provider. Unlike the daemons above it is a **user LaunchAgent managed by home-manager** (`launchd.agents.litellm` in `nixos-darwin/litellm.nix`, label `org.nix-community.home.litellm`), because it needs to read the user-scoped SOPS secrets; logs go to `~/Library/Logs/Litellm/`. No auth on the proxy (localhost trust); restart with `launchctl kickstart -k gui/$(id -u)/org.nix-community.home.litellm`. Claude Code, VS Code chat, and Crush all use it instead of direct provider APIs. Only chat-completions-capable model ids can be served: litellm forwards that protocol upstream, so Responses-only ids (`muse-*`, `grok-4.x`, `gpt-*-luna`, `claude-haiku-5-5`, …) are not available at all.
+
+#### Linux builder VM networking
+
+The Nix `linux-builder` VM runs as a root LaunchDaemon (`org.nixos.linux-builder`) and doubles as the Docker host for project dev stacks. It has **two** NICs:
+
+| NIC | Backend | Address | Reachable from macOS |
+|-----|---------|---------|----------------------|
+| `eth0` | SLiRP (`-netdev user`) | `10.0.2.15` (NAT) | Only the ports in `virtualisation.forwardPorts`: `31022` (SSH, used by `nix.buildMachines`) and `2375` (Docker API → `DOCKER_HOST`) |
+| `eth1` | `vmnet-shared` (`nixos-darwin/configuration.nix`) | `192.168.2.x` via DHCP on host `bridge100` | **Every port**, natively |
+
+SLiRP cannot forward arbitrary ports — `hostfwd` has no wildcard or range form, and QEMU refuses to start the whole VM if any one listed host port is already bound. The `vmnet-shared` NIC solves that: any service the guest listens on is reachable at its `bridge100` address, with no NixOS rebuild and no port list to maintain.
+
+- Find the guest address with `linux-builder-ip` (a `writeShellScriptBin` in `nixos-darwin/configuration.nix`; reads the DHCP lease for the fixed MAC `de:ad:be:ef:aa:bb`, falling back to `arp`).
+- Containers must publish on the guest's **wildcard** address — `"8787:8787"` in compose, *not* `"127.0.0.1:8787:8787"`. A loopback-bound container stays unreachable over vmnet even though the port is open.
+- Requires QEMU to run as root, which the LaunchDaemon already does.
+- Changing the NIC layout requires recreating the VM disk: `nix.linux-builder.ephemeral` is `false`, so `/var/lib/linux-builder/nixos.qcow2` is reused and the guest config would otherwise not be rebuilt.
+
+**Docker CLI plugins come from Nix, not `~/.docker/cli-plugins`.** The `docker-client` package in `nixos-darwin/home-manager.nix` wraps the CLI with `DOCKER_CLI_PLUGIN_DIRS` pointing at the `docker-plugins` symlink farm (`docker-buildx` + `docker-compose`). Docker's **user** plugin dir `~/.docker/cli-plugins` takes *precedence* over those, so a stale entry there silently shadows the working Nix plugin.
+
+This bit us once: two dead symlinks from a long-gone Rancher Desktop install (`~/.docker/cli-plugins/docker-{buildx,compose}` → `/Users/loic/.rd/bin/…`, dated Mar 2023) made *every* project fail at:
+
+```
+fork/exec /Users/loic/.docker/cli-plugins/docker-buildx: no such file or directory
+```
+
+Confusingly, `docker compose version` and `docker system info` still worked — the `compose` plugin itself resolved from Nix, but `docker compose build` shells out to `buildx`, which hit the dead user-level link. Diagnose and fix with:
+
+```bash
+docker system info --format '{{range .ClientInfo.Plugins}}{{.Name}} -> {{.Path}}{{"\n"}}{{end}}'
+for f in ~/.docker/cli-plugins/*; do [ -e "$(readlink "$f")" ] || echo "dangling: $f"; done
+```
+
+Delete any dangling entry under `~/.docker/cli-plugins` — the Nix plugin farm is already on the search path and needs no link there. Nothing in this repo recreates those links, so once removed they stay gone.
+
+**When `make bootstrap` restarts the builder — and when it does not.** `make bootstrap` runs `darwin-rebuild switch`, and nix-darwin only reloads a LaunchDaemon when its **plist content changes** (it diffs `/run/current-system/Library/LaunchDaemons/org.nixos.linux-builder.plist` against `/Library/LaunchDaemons/…`). The plist embeds the *store path* of `linux-builder-start`, so:
+
+| Change | Plist diff? | VM restarted? |
+|--------|-------------|---------------|
+| Anything inside `nix.linux-builder.config` (QEMU args, guest config, `forwardPorts`) | **yes** — new `linux-builder-start` path | yes |
+| `ephemeral`, `maxJobs`, `workingDirectory`, … | yes | yes |
+| Nothing / host-side files only | no | **no** — stays up, no downtime |
+
+So a stale VM after editing builder config was *not* a reload bug; the common trap is editing the config, then checking the VM without running `make bootstrap` at all — or having an earlier `darwin-rebuild` already consume the change, so the next bootstrap correctly finds nothing to do. Confirm a reload happened by watching for `reloading service org.nixos.linux-builder` in the output, and compare PIDs across the run:
+
+```bash
+sudo launchctl list | grep linux-builder          # first column = daemon PID
+sudo ps -Ao pid,command | grep '[q]emu-system'    # VM process
+```
 
 **Relation to `cert-manager` and `internal-ca` modules** (`tf-root-paas`, local env only):
 
@@ -285,6 +333,12 @@ When a service-module apply finishes, verify and report in this order before dec
 5. **x86_64 builds on Apple Silicon**: Use `make bootstrap-contabo` to start the linux-builder before building x86_64 images.
 
 6. **SOPS decryption failures**: Ensure `SOPS_AGE_KEY` and `SOPS_AGE_RECIPIENTS` are set (done automatically in `nix develop` shell via `nix-flake/init-sops.sh`).
+
+7. **Service in the linux-builder VM unreachable from macOS**: Two separate causes, both required. (a) SLiRP only forwards the `virtualisation.forwardPorts` list — use the guest's `vmnet-shared` address from `linux-builder-ip` instead of trying to add forwards. (b) A container published on `127.0.0.1:PORT:PORT` is bound to guest loopback and stays unreachable over vmnet; publish on the wildcard (`PORT:PORT`). See [Linux builder VM networking](#linux-builder-vm-networking).
+
+8. **`darwin-rebuild switch` fails with "path … does not exist" for a new `.nix` file**: the flake only sees git-tracked files. `git add` the new module before switching.
+
+9. **`docker compose build` fails with `fork/exec ~/.docker/cli-plugins/docker-buildx: no such file or directory`**: a dangling user-level plugin symlink is shadowing the Nix-provided plugin. Delete it — see [Docker CLI plugins come from Nix](#linux-builder-vm-networking).
 
 ## Environment Variables
 
