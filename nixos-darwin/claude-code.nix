@@ -55,7 +55,7 @@ in
       # runs kimi-k3.1-pro, execution runs deepseek-v4.1-flash — the workhorse
       # does most of the work and the slow reasoner stays off the hot path.
       model = "opusplan";
-      fallbackModel = [ glmFlagship glmFlash ];
+      fallbackModel = [ glmFlagship glmFlash deepseekFlash ];
 
       env = {
         ANTHROPIC_BASE_URL = glmBaseUrl;
