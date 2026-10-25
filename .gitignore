@@ -48,7 +48,6 @@ secrets
 .sops.yaml
 
 # Stored context files
-.crush
 .agent
 
 # Skills managed locally via `make skills-update`

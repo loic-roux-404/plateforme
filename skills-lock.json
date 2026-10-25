@@ -10,13 +10,13 @@
       "source": "juliusbrussee/caveman",
       "sourceType": "github",
       "skillPath": "skills/cavecrew/SKILL.md",
-      "computedHash": "c5527c994fbd4c22b36714e3b124a0f167a533d114ab164fb1d35e2123533917"
+      "computedHash": "2e122d819a812bef0e4958706f306e4346e78ecb5a4893997b99cbc19866f514"
     },
     "caveman": {
       "source": "juliusbrussee/caveman",
       "sourceType": "github",
       "skillPath": "skills/caveman/SKILL.md",
-      "computedHash": "d18cdf73a5f5c496d681a43a6846336b110223bdffa6817b8992529c57f1a815"
+      "computedHash": "71b600c88c8d1d36f18c4875db23b53c5d6cb9ba3195e19451d6b1bb67db07c4"
     },
     "caveman-commit": {
       "source": "juliusbrussee/caveman",
@@ -28,13 +28,13 @@
       "source": "juliusbrussee/caveman",
       "sourceType": "github",
       "skillPath": "skills/caveman-compress/SKILL.md",
-      "computedHash": "84517cd4cf7a49d8d2bc1baf00f61bc359306c6ad9389756b6937eff958bd374"
+      "computedHash": "9c8d35882a93e387a584cc4efaacb74433d379a2bd02e3e6f6ad4f7c30ff55ed"
     },
     "caveman-help": {
       "source": "juliusbrussee/caveman",
       "sourceType": "github",
       "skillPath": "skills/caveman-help/SKILL.md",
-      "computedHash": "b5757ca455c4c7af2c1a2abf2e55619e9cc7c085622058d0172c60cb658af90b"
+      "computedHash": "c7a73a8c6afb6f871690666449209106aba847b4a9b0698686648960ece80012"
     },
     "caveman-review": {
       "source": "juliusbrussee/caveman",
@@ -46,7 +46,7 @@
       "source": "juliusbrussee/caveman",
       "sourceType": "github",
       "skillPath": "skills/caveman-stats/SKILL.md",
-      "computedHash": "47ce2de3d6cb39a75047b5c962e4eb3da15594e7397c94103e9a104d42626553"
+      "computedHash": "cc9fcd21f2a30cff5596b3cbb197fe0f4b1b30b58084a864350853c217ad301a"
     },
     "gemini-interactions-api": {
       "source": "google-gemini/gemini-skills",
@@ -98,7 +98,7 @@
     "zen-model-onboarding": {
       "source": "./.agents/local-skills",
       "sourceType": "local",
-      "computedHash": "64d5b9a736b470b3c361c7e73f5e402cb20fa7be597677ba9e5877d632dd8b6a"
+      "computedHash": "5346b75d4b73c2e365aeee7e54da93b5cce9a8486e22696ccd1b5a438fc6405c"
     }
   }
 }

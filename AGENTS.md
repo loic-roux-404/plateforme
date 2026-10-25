@@ -19,7 +19,7 @@ The stack uses:
 
 Beyond the cluster itself, the **macOS host (nix-darwin)** used to set up and operate the PaaS is also configured in this repo:
 - **home-manager** environment config (shells, git, editors, tools)
-- **AI development stack** (Claude Code, Crush CLI assistant, VS Code chat) — all routed through the local LiteLLM gateway at `http://127.0.0.1:4000` (`nixos-darwin/litellm.nix`), which fronts OpenCode Zen and the Z.ai GLM coding plan behind OpenAI- and Anthropic-compatible endpoints
+- **AI development stack** (Claude Code, VS Code chat) — all routed through the local LiteLLM gateway at `http://127.0.0.1:4000` (`nixos-darwin/litellm.nix`), which fronts OpenCode Zen and the Z.ai GLM coding plan behind OpenAI- and Anthropic-compatible endpoints
 
 ## Repository Structure
 
@@ -38,7 +38,6 @@ Beyond the cluster itself, the **macOS host (nix-darwin)** used to set up and op
 │   ├── configuration.nix     # Base darwin config (libvirt, dnsmasq, shells)
 │   ├── configuration-x86.nix # x86_64 linux-builder config
 │   ├── home-manager.nix      # Home-manager env config (shells, git, editors, tools)
-│   ├── crush.nix             # Crush AI assistant config
 │   ├── litellm.nix           # Local LiteLLM LLM gateway LaunchAgent (OpenCode Zen + Z.ai GLM)
 │   ├── vscode-agent.nix      # VS Code chat language models (via local litellm proxy)
 │   └── user-default.nix      # Default user settings (homebrew, shell)
@@ -213,7 +212,7 @@ The macOS host runs several `launchd` daemons (configured in `nixos-darwin/confi
 - **dnsmasq**: Resolves `*.${dns.name}` to the kube IP (`kube.addr`), giving stable hostnames for local ingress hosts.
 - **minio**: Local S3-compatible server on `127.0.0.1:9000` (console `:9001`, creds `minioadmin`/`minioadmin`). Used as the Longhorn backup target in the local environment: `tf-root-paas` passes it as `object_storage` → `tf-modules-k8s/longhorn` creates the `longhorn-s3-credentials` secret and sets `backupTarget = s3://...`.
 - **pebble**: Local ACME server used as the cert-manager issuer in the `local` Let's Encrypt environment. Its root CA is imported into the macOS system keychain on activation.
-- **litellm**: Local LLM gateway on `127.0.0.1:4000` exposing OpenCode Zen and the Z.ai GLM coding plan behind both OpenAI (`/v1/chat/completions`) and Anthropic-compatible (`/v1/messages`) endpoints. It is the **only** proxy for provider endpoints — no other adapter or translator sits in front of a provider. Unlike the daemons above it is a **user LaunchAgent managed by home-manager** (`launchd.agents.litellm` in `nixos-darwin/litellm.nix`, label `org.nix-community.home.litellm`), because it needs to read the user-scoped SOPS secrets; logs go to `~/Library/Logs/Litellm/`. No auth on the proxy (localhost trust); restart with `launchctl kickstart -k gui/$(id -u)/org.nix-community.home.litellm`. Claude Code, VS Code chat, and Crush all use it instead of direct provider APIs. Only chat-completions-capable model ids can be served: litellm forwards that protocol upstream, so Responses-only ids (`muse-*`, `grok-4.x`, `gpt-*-luna`, `claude-haiku-5-5`, …) are not available at all.
+- **litellm**: Local LLM gateway on `127.0.0.1:4000` exposing OpenCode Zen and the Z.ai GLM coding plan behind both OpenAI (`/v1/chat/completions`) and Anthropic-compatible (`/v1/messages`) endpoints. It is the **only** proxy for provider endpoints — no other adapter or translator sits in front of a provider. Unlike the daemons above it is a **user LaunchAgent managed by home-manager** (`launchd.agents.litellm` in `nixos-darwin/litellm.nix`, label `org.nix-community.home.litellm`), because it needs to read the user-scoped SOPS secrets; logs go to `~/Library/Logs/Litellm/`. No auth on the proxy (localhost trust); restart with `launchctl kickstart -k gui/$(id -u)/org.nix-community.home.litellm`. Claude Code and VS Code chat both use it instead of direct provider APIs. Only chat-completions-capable model ids can be served: litellm forwards that protocol upstream, so Responses-only ids (`muse-*`, `grok-4.x`, `gpt-*-luna`, `claude-haiku-5-5`, …) are not available at all.
 
 #### Linux builder VM networking
 
@@ -373,7 +372,7 @@ This repository has custom skills in `.agents/skills/`:
 
 Custom agent sources live in `.agents/local-skills/agents/` (`.agent.md`, committed like the rest of `local-skills`). Each agent has a focused role and a minimal tool set. All agents load the `caveman` skill for token-efficient output; reviewers also load `caveman-review`.
 
-`make agents-update` copies them verbatim into two **gitignored mirrors**: `.github/agents/` (VS Code/Crush) and `.claude/agents/` (Claude Code). The `agents/` subdir is ignored by `npx skills add`, so `make skills-update` is unaffected. The same source file serves both runtimes, so the frontmatter is bilingual:
+`make agents-update` copies them verbatim into two **gitignored mirrors**: `.github/agents/` (VS Code) and `.claude/agents/` (Claude Code). The `agents/` subdir is ignored by `npx skills add`, so `make skills-update` is unaffected. The same source file serves both runtimes, so the frontmatter is bilingual:
 
 - `name` — kebab-case (Claude requirement, harmless in VS Code)
 - `tools` — union of both vocabularies: VS Code names (`read`, `execute`, `search`, `web`, `agent`, extension ids, `mcp-server/*`) + Claude names (`Read`, `Bash`, `Grep`, `Glob`, `Agent`, `WebSearch`, `WebFetch`, `mcp__chrome-devtools`); each runtime ignores names it doesn't know

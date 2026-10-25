@@ -51,8 +51,7 @@
     "**/node_modules": true,
     "**/keys": true,
     "**/secrets": true,
-    "**/.sops.yaml": true,
-    "**/.crush": true
+    "**/.sops.yaml": true
   },
   "files.exclude": {
     "**/.terraform": true,
@@ -63,7 +62,6 @@
     "**/node_modules": true,
     "**/keys": true,
     "**/secrets": true,
-    "**/.sops.yaml": true,
-    "**/.crush": true
+    "**/.sops.yaml": true
   }
 }

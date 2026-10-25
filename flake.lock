@@ -210,27 +210,6 @@
         "type": "github"
       }
     },
-    "nur": {
-      "inputs": {
-        "nixpkgs": [
-          "nixpkgs"
-        ],
-        "treefmt-nix": "treefmt-nix"
-      },
-      "locked": {
-        "lastModified": 1785605734,
-        "narHash": "sha256-wfQPXddQ6aoMOBmKQgWSn/fCAi2bg3QzTpMSA+PL3jQ=",
-        "owner": "charmbracelet",
-        "repo": "nur",
-        "rev": "cd337c925c6e414c124c934d3c32fa57b43dd6eb",
-        "type": "github"
-      },
-      "original": {
-        "owner": "charmbracelet",
-        "repo": "nur",
-        "type": "github"
-      }
-    },
     "ponytail": {
       "flake": false,
       "locked": {
@@ -262,7 +241,6 @@
           "nixpkgs"
         ],
         "nixpkgs-unstable": "nixpkgs-unstable",
-        "nur": "nur",
         "ponytail": "ponytail",
         "secrets": "secrets",
         "sops-nix": "sops-nix",
@@ -351,27 +329,6 @@
         "owner": "oh-my-fish",
         "repo": "theme-bobthefish",
         "rev": "e3b4d4eafc23516e35f162686f08a42edf844e40",
-        "type": "github"
-      }
-    },
-    "treefmt-nix": {
-      "inputs": {
-        "nixpkgs": [
-          "nur",
-          "nixpkgs"
-        ]
-      },
-      "locked": {
-        "lastModified": 1769353635,
-        "narHash": "sha256-J0G1ACrUK29M0THPAsz429eZX07GmR9Bs/b0pB3N0dQ=",
-        "owner": "numtide",
-        "repo": "treefmt-nix",
-        "rev": "f46bb205f239b415309f58166f8df6919fa88377",
-        "type": "github"
-      },
-      "original": {
-        "owner": "numtide",
-        "repo": "treefmt-nix",
         "type": "github"
       }
     }

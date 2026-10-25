@@ -57,7 +57,7 @@ Key rule: decrypted values are **never** written to the Nix store; use `config.s
 - `nil` (Nix LSP) and `nixfmt` should be available in the devShell / home-manager environment. Verify with `which nil nixfmt`.
 - This flake has **no** `formatter` output, so `nix fmt` is **not wired**. Use `nixfmt <file>` or `nixfmt -- <files>` directly and verify formatting before finishing edits.
 - `nix flake check` validates the whole flake (lock file, outputs, derivations that are cheap to evaluate).
-- When an editor like Crush/Zed/VS Code is configured in this repo, it usually registers `nil` as the LSP for `*.nix` (command: `nil`, filetypes: `nix`, root markers: `flake.nix`).
+- When an editor like Zed/VS Code is configured in this repo, it usually registers `nil` as the LSP for `*.nix` (command: `nil`, filetypes: `nix`, root markers: `flake.nix`).
 
 ## Documentation References (fetch with `web` when unsure)
 

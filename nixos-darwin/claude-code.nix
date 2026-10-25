@@ -131,7 +131,7 @@ in
       };
     };
 
-    # Same chrome-devtools MCP as crush.nix / .vscode/mcp.json
+    # Same chrome-devtools MCP as .vscode/mcp.json
     mcpServers = {
       chrome-devtools = {
         type = "stdio";
@@ -150,7 +150,7 @@ in
       };
     };
 
-    # Claude Code LSP is extension-driven (no root_markers like crush), so
+    # Claude Code LSP is extension-driven (no root_markers), so
     # helm-ls (would clash with yaml-language-server on .yaml) and
     # docker-langserver (Dockerfile has no dot-extension) are left out.
     lspServers = {

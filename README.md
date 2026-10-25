@@ -205,7 +205,7 @@ When the Terraform module is applied, these variables are populated for each rep
 
 ## AI customisation
 
-The macOS control host runs a local AI stack. Every client — Claude Code, Crush, VS
+The macOS control host runs a local AI stack. Every client — Claude Code, VS
 Code chat — talks to **one** gateway on `http://127.0.0.1:4000`, never to a provider
 directly:
 
@@ -213,7 +213,6 @@ directly:
 | --- | --- | --- |
 | LiteLLM gateway | [litellm.nix](nixos-darwin/litellm.nix) | Fronts OpenCode Zen + the Z.ai GLM coding plan behind OpenAI (`/v1/chat/completions`) and Anthropic (`/v1/messages`) endpoints. The **only** proxy for provider endpoints. No auth (localhost trust). |
 | Claude Code models | [claude-code.nix](nixos-darwin/claude-code.nix) | Maps the three Claude tiers onto Zen models. |
-| Crush models | [crush.nix](nixos-darwin/crush.nix) | Same models, Crush provider format. |
 | VS Code chat models | [vscode-agent.nix](nixos-darwin/vscode-agent.nix) | Same models, `chatLanguageModels.json` format. |
 
 The gateway is a **user LaunchAgent** (it needs the user-scoped SOPS secrets), so it

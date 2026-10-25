@@ -36,11 +36,6 @@
 
     sops-nix.url = "github:Mic92/sops-nix";
 
-    nur = {
-      url = "github:charmbracelet/nur";
-      inputs.nixpkgs.follows = "nixpkgs";
-    };
-
     theme-bobthefish.url = "github:oh-my-fish/theme-bobthefish/e3b4d4eafc23516e35f162686f08a42edf844e40";
     theme-bobthefish.flake = false;
 
@@ -64,7 +59,6 @@
       darwin,
       nixos-generators,
       flake-utils,
-      nur,
       ...
     }@inputs:
     let
@@ -110,7 +104,6 @@
               inherit (nixpkgsDefaults) config;
             };
           };
-        nur = nur.overlays.default;
         tweaks = _: _: {
           # Add temporary overrides here
         };
@@ -161,9 +154,7 @@
           extraModules = self.darwinDefaultExtraModules;
           homeManagerModules = [
             inputs.sops-nix.homeManagerModules.sops
-            nur.homeModules.crush
             ./nixos-darwin/litellm.nix
-            ./nixos-darwin/crush.nix
             ./nixos-darwin/claude-code.nix
             ./nixos-darwin/vscode-agent.nix
           ];

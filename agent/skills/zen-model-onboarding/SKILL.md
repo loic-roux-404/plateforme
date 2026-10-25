@@ -5,8 +5,8 @@ description: >
   Discovers the live catalog with curl, probes each id for the capabilities the
   clients actually need (chat-completions, tool calling, Responses API), picks a
   Claude Code tier (frontier / workhorse / subagent), then wires the model into
-  litellm.nix, claude-code.nix, crush.nix and vscode-agent.nix. Use when a new
-  Zen model appears, when `make gateway`/chat fails with "model not found" or
+  litellm.nix, claude-code.nix and vscode-agent.nix. Use when a new Zen model
+  appears, when `make gateway`/chat fails with "model not found" or
   "ModelProtocolUnsupported", when a model in vscode-agent.nix stops answering,
   or when re-tiering Claude Code aliases.
 metadata:
@@ -15,7 +15,7 @@ metadata:
   triggers: >
     opencode zen, zen model, new model, model catalog, litellm, model_list,
     zenModels, ANTHROPIC_DEFAULT_OPUS_MODEL, ANTHROPIC_DEFAULT_SONNET_MODEL,
-    ANTHROPIC_DEFAULT_HAIKU_MODEL, CLAUDE_CODE_SUBAGENT_MODEL, crush provider,
+    ANTHROPIC_DEFAULT_HAIKU_MODEL, CLAUDE_CODE_SUBAGENT_MODEL,
     chatLanguageModels.json, ModelProtocolUnsupported, model tier, opusplan
   role: ai-platform-engineer
   scope: implementation
@@ -26,7 +26,7 @@ metadata:
 The stack routes every client through one local LiteLLM gateway
 ([litellm.nix](../../../../nixos-darwin/litellm.nix)) fronting OpenCode Zen and the
 Z.ai GLM coding plan. Adding a model means: **probe it**, **tier it**, **wire it in
-four places**.
+three places**.
 
 Never guess a model's capabilities from its name. The catalog and per-model
 protocol support change without notice.
@@ -72,7 +72,7 @@ Three independent capabilities matter, and a model can have any combination:
 
 | Capability | Endpoint | Needed by |
 |---|---|---|
-| `chat=ok` | `POST /v1/chat/completions` | litellm, crush, VS Code chat, Claude Code |
+| `chat=ok` | `POST /v1/chat/completions` | litellm, VS Code chat, Claude Code |
 | `tools=ok` | tool_calls in the chat response | every agent surface |
 | `resp=ok` | `POST /v1/responses` | nothing in this repo — see below |
 
@@ -187,7 +187,7 @@ the dedicated alias bindings, not inside the `zenModels` list.
    routes duplicate `model_name` entries ambiguously — keep each name bound to exactly
    one upstream.
 
-## Step 4 — Wire all four clients
+## Step 4 — Wire all three clients
 
 **Claude Code** — [claude-code.nix](../../../../nixos-darwin/claude-code.nix):
 
@@ -204,9 +204,6 @@ subagent  = "glm-5.3-flash";
 
 Keep `model = "opusplan"` so plan mode gets the frontier model while execution runs on
 the workhorse. Update `fallbackModel` to something that is actually served.
-
-**Crush** — [crush.nix](../../../../nixos-darwin/crush.nix): add `{ id, name }` entries to
-`lowCostModels`.
 
 **VS Code** — [vscode-agent.nix](../../../../nixos-darwin/vscode-agent.nix): add a full
 object (id, name, reasoning flags, token limits, `url`, `requestHeaders`). Set
@@ -230,13 +227,13 @@ $S gateway                                      # every served id answers
 $S configured                                   # no missing / stale ids
 ```
 
-Then confirm in a client: `/model` in Claude Code, the model picker in VS Code, and
-`crush` startup. Check `~/Library/Logs/Litellm/stderr` for routing errors.
+Then confirm in a client: `/model` in Claude Code and the model picker in VS Code.
+Check `~/Library/Logs/Litellm/stderr` for routing errors.
 
 ## Removing or retiring a model
 
 `$S configured` prints ids that are served but **gone from the catalog** (stale). For
-each one: drop it from `zenModels`, `lowCostModels`, the VS Code model array, and
+each one: drop it from `zenModels`, the VS Code model array, and
 `.vscode/settings.json` — then re-run `$S gateway`. A stale model answers
 `Model is unavailable` from upstream, which reads like a gateway outage but is not.
 
@@ -246,7 +243,7 @@ each one: drop it from `zenModels`, `lowCostModels`, the VS Code model array, an
 |---|---|---|
 | `ModelProtocolUnsupported` | model is Responses-only | cannot be served; pick another id |
 | `400 MissingSessionID` | missing `x-opencode-session` | keep the header in `mkEntry` |
-| `Model is unavailable` | id retired upstream | remove it from all four places |
+| `Model is unavailable` | id retired upstream | remove it from all three places |
 | empty `content`, `finish_reason=length` | reasoning ate the budget | raise `max_tokens`, or pick a lower-reflection model |
 | `litellm.BadRequestError … Received Model Group=X` | id not in `model_list` | add to `zenModels`, rebuild |
 | routing flakiness / wrong upstream | duplicate `model_name` | give each provider a distinct name |

@@ -12,7 +12,7 @@ let
   # Local LiteLLM gateway: OpenCode Zen + Z.ai GLM coding plan behind one
   # OpenAI- (/v1/chat/completions) and Anthropic-compatible (/v1/messages)
   # endpoint on 127.0.0.1:4000. No auth (localhost trust, same model as the
-  # minio daemon). Clients: claude-code.nix, vscode-agent.nix, crush.nix.
+  # minio daemon). Clients: claude-code.nix, vscode-agent.nix.
   litellmPort = 4000;
 
   opencodeZenBase = "https://opencode.ai/zen/go/v1";
@@ -46,7 +46,7 @@ let
   mkAlias =
     upstream: alias: (mkEntry zaiCodingBase "ZAI_API_KEY" upstream) // { model_name = alias; };
 
-  # OpenCode Zen catalog (union of vscode-agent.nix + crush.nix).
+  # OpenCode Zen catalog (union of vscode-agent.nix + claude-code.nix).
   #
   # Every id here was verified with `curl` against
   # https://opencode.ai/zen/go/v1/chat/completions: chat-completions + tool
@@ -64,7 +64,7 @@ let
   ];
 
   # Z.ai coding catalog: exact-case ids referenced by .vscode/settings.json
-  # and crush.nix (case-sensitive).
+  # and vscode-agent.nix (case-sensitive).
   glmModels = [
     "GLM-5.3"
     "GLM-5.3-FLASH"
