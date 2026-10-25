@@ -1,6 +1,7 @@
 {
   inputs,
   pkgs,
+  unstablePkgs,
   ...
 }:
 
@@ -9,10 +10,6 @@ let
   # package always comes from nixpkgs-unstable. Upstream releases move fast, so
   # the *pinned revision* of that input (not the branch) decides the version:
   # run `make claude-update` to bump the lock entry and pick up the newest one.
-  unstablePkgs = import inputs.nixpkgs-unstable {
-    system = pkgs.stdenv.system;
-    config.allowUnfree = true;
-  };
 
   # Local LiteLLM gateway (litellm.nix) serving the /v1/messages Anthropic
   # flavor for the GLM coding plan and OpenCode Zen models. Model ids follow
@@ -58,13 +55,13 @@ in
       # runs kimi-k3.1-pro, execution runs deepseek-v4.1-flash — the workhorse
       # does most of the work and the slow reasoner stays off the hot path.
       model = "opusplan";
-      fallbackModel = [ glmFlash ];
+      fallbackModel = [ glmFlagship glmFlash ];
 
       env = {
         ANTHROPIC_BASE_URL = glmBaseUrl;
         # Map the /model aliases onto the Zen + GLM tiers
         ANTHROPIC_DEFAULT_OPUS_MODEL = frontier;
-        ANTHROPIC_DEFAULT_SONNET_MODEL = deepseekFlash;
+        ANTHROPIC_DEFAULT_SONNET_MODEL = glmFlagship;
         ANTHROPIC_DEFAULT_HAIKU_MODEL = deepseekFlash200k;
         CLAUDE_CODE_SUBAGENT_MODEL = deepseekFlash200k;
         # 1M-context plan settings from the Z.ai guide

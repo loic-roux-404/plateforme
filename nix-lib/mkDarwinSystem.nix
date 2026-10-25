@@ -16,6 +16,13 @@ inputs:
 
 let
   darwinSystem = inputs.darwin.lib.darwinSystem;
+
+  # Single nixpkgs-unstable import shared by every darwin module
+  # (_module.args) and home-manager.nix (explicit call argument).
+  unstablePkgs = import inputs.nixpkgs-unstable {
+    inherit system;
+    config.allowUnfree = true;
+  };
 in
 darwinSystem {
   inherit system;
@@ -66,14 +73,14 @@ darwinSystem {
                 mv "$1" "$1.$(date +%Y%m%d-%H%M%S)"
               ''
             );
-            home-manager.extraSpecialArgs = { inherit inputs; };
+            home-manager.extraSpecialArgs = {
+              inherit inputs;
+              inherit unstablePkgs;
+            };
             home-manager.sharedModules = homeManagerModules;
             home-manager.users.${currentSystemUser} = import ../nixos-darwin/home-manager.nix {
               inherit inputs;
-              unstablePkgs = import inputs.nixpkgs-unstable {
-                inherit system;
-                config.allowUnfree = true;
-              };
+              inherit unstablePkgs;
               currentSystem = system;
               currentSystemName = name;
               currentSystemUser = currentSystemUser;
@@ -93,6 +100,7 @@ darwinSystem {
         currentSystem = system;
         currentSystemName = name;
         currentSystemUser = currentSystemUser;
+        unstablePkgs = unstablePkgs;
         inherit inputs;
       };
     }
