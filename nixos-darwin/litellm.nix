@@ -113,11 +113,8 @@ let
     set -euo pipefail
     export ZAI_API_KEY="$(cat ${config.sops.secrets.zai_api_key.path})"
     export OPENCODE_API_KEY="$(cat ${config.sops.secrets.opencode_api_key.path})"
-    # litellm's default aiohttp transport swallows mid-stream connection
-    # drops, truncating responses under concurrency ("Part of the response
-    # never arrived"). Stock httpx propagates them so clients can retry.
-    export DISABLE_AIOHTTP_TRANSPORT="True"
-    exec ${unstablePkgs.litellm}/bin/litellm \
+
+    exec ${pkgs.litellm}/bin/litellm \
       --config ${litellmConfig} \
       --host 127.0.0.1 \
       --port ${toString litellmPort}

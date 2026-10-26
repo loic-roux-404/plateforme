@@ -68,12 +68,12 @@
     "nix-platform": {
       "source": "./.agents/local-skills",
       "sourceType": "local",
-      "computedHash": "bae45e681864711bf31a3c9901bdb819a0d0b56c33baa95bacd90784aca31956"
+      "computedHash": "3a4e66378a04ed87881c60e6a4a4d02be8b37d8df5ba84e6f4f220b7afc6b33b"
     },
     "sops-secrets-platform": {
       "source": "./.agents/local-skills",
       "sourceType": "local",
-      "computedHash": "a08fe922570611bf58c5687082e5b7bcf1afec61f5b6dd3a36d7516eb7135898"
+      "computedHash": "960fae68603eaeb8d25bf09819be6f212e9d0fcecb11f43e6397789af5a83e25"
     },
     "terraform-engineer": {
       "source": "./.agents/local-skills",

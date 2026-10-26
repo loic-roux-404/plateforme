@@ -24,7 +24,7 @@ metadata:
 The project uses a **single operator key** derived from `~/.ssh/id_ed25519`:
 
 ```bash
-# Executed automatically in nix devShell (via the paas-secrets derivation, nixpkgs/paas-secrets/init-sops.sh)
+# Executed automatically in nix devShell (via the plateforme-secrets derivation, nixpkgs/plateforme-secrets/init-sops.sh)
 SOPS_AGE_KEY=$(ssh-to-age -private-key < ~/.ssh/id_ed25519)
 SOPS_AGE_RECIPIENTS=$(ssh-to-age < ~/.ssh/id_ed25519.pub)
 export SOPS_AGE_KEY SOPS_AGE_RECIPIENTS
@@ -48,10 +48,10 @@ secrets = {
 ```
 
 - Workflow:
-  - Commit + push any local edits in `org-404/secrets` first.
-  - Run `nix flake lock --update-input secrets` in the consumer repo to pin rev.
-  - In `devShell` `shellHook`, symlink the pinned `/nix/store/...-source` to `./secrets` (via the `paas-secrets` derivation's `link-secrets` script) so existing `find_in_parent_folders("secrets/<env>.yaml")` calls continue to work.
-  - Keep `sops` decryption using the derived age key (via the `paas-secrets` derivation's `init-sops` script).
+  - Author secrets ONLY in `../secrets` (org-404/secrets — the wrapper repo beside k3s-paas). One commit there, nothing else: no lockfile bump in k3s-paas anymore (k3s-paas takes no secrets input).
+  - In `devShell` `shellHook`, `plateforme-secrets`' `link-secrets` symlinks `../secrets` into `./secrets` so existing `find_in_parent_folders("secrets/<env>.yaml")` calls continue to work.
+  - Keep `sops` decryption using the derived age key (via the `plateforme-secrets` derivation's `init-sops` script).
+  - darwin builds: `make bootstrap` in k3s-paas delegates to the `../secrets` wrapper, which injects the real `darwin.yaml` via `secretsSopsFile` on `mkDarwinSystem` and overrides the `k3s-paas` input to the sibling working tree.
 
 - Risks & mitigations:
   - Do not push Nix store closures containing secrets to public binary caches (`nix copy` to public cache). Add CI guard.

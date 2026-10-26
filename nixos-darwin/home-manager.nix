@@ -4,6 +4,10 @@
   currentSystemUser,
   githubUser,
   homeManagerModules,
+  # Path to the darwin sops file. Defaults to the example placeholder file
+  # (sops-defaults/darwin.yaml) so standalone builds work; the private
+  # wrapper flake (../secrets) overrides it with the real darwin.yaml.
+  secretsSopsFile ? null,
   ...
 }:
 
@@ -41,13 +45,16 @@ in
 {
   #---------------------------------------------------------------------
   # SOPS secrets — age key derived from ~/.ssh/id_ed25519 (same model as
-  # nixpkgs/paas-secrets/init-sops.sh, but declarative: sops-nix converts the SSH key
+  # nixpkgs/plateforme-secrets/init-sops.sh, but declarative: sops-nix converts the SSH key
   # itself at activation). Key must have no passphrase.
   #---------------------------------------------------------------------
 
   sops = {
     age.sshKeyPaths = [ "${config.home.homeDirectory}/.ssh/id_ed25519" ];
-    defaultSopsFile = "${inputs.secrets}/darwin.yaml";
+    # Real file comes from the ../secrets wrapper flake (secretsSopsFile).
+    # Standalone builds (no wrapper) use the tracked example placeholder —
+    # decrypts fine with the operator key but values are fake.
+    defaultSopsFile = if secretsSopsFile != null then secretsSopsFile else ../sops-defaults/darwin.yaml;
   };
 
   # Home-manager 22.11 requires this be set. We never set it so we have

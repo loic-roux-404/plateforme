@@ -242,26 +242,9 @@
         ],
         "nixpkgs-unstable": "nixpkgs-unstable",
         "ponytail": "ponytail",
-        "secrets": "secrets",
         "sops-nix": "sops-nix",
         "srvos": "srvos",
         "theme-bobthefish": "theme-bobthefish"
-      }
-    },
-    "secrets": {
-      "flake": false,
-      "locked": {
-        "lastModified": 1792438682,
-        "narHash": "sha256-mFzb2QZXEdxZ/qsj5EM9Ze1hhDiFwq3RICkb8TaWjqo=",
-        "ref": "refs/heads/main",
-        "rev": "50faa4f4f608d72accbdcd572fc903760f56f710",
-        "revCount": 13,
-        "type": "git",
-        "url": "ssh://git@github.com/org-404/secrets"
-      },
-      "original": {
-        "type": "git",
-        "url": "ssh://git@github.com/org-404/secrets"
       }
     },
     "sops-nix": {

@@ -17,7 +17,7 @@ metadata:
     nix, nixos, nix-darwin, flake.nix, nixosConfigurations,
     darwinConfigurations, nixos-generators, srvos, sops-nix, home-manager, paas,
     mkDarwinSystem, launchd, linux-builder, nix build, nix develop,
-    nixos-rebuild, qcow2, paas-secrets, nixos-options, nixpkgs-srvos
+    nixos-rebuild, qcow2, plateforme-secrets, nixos-options, nixpkgs-srvos
   role: platform-engineer
   scope: implementation
   output-format: code
@@ -142,19 +142,21 @@ sudo dscacheutil -flushcache; sudo killall -HUP mDNSResponder
   - `/nix/store` is world-readable on multi-user systems; secrets remain ciphertext but operator must avoid pushing closures to public caches.
   - darwin-rebuild with `sudo` may lose `SSH_AUTH_SOCK`; fetch as user first or prefetch the input.
 
-The scripts live beside their derivation in `nixpkgs/paas-secrets/` (`default.nix`, `init-sops.sh`, `link-secrets.sh`) following the nixpkgs single-folder package convention:
+The scripts live beside their derivation in `nixpkgs/plateforme-secrets/` (`default.nix`, `init-sops.sh`, `link-secrets.sh`) following the nixpkgs single-folder package convention:
 
 ```nix
-paasSecretsPkg = pkgs.callPackage ./nixpkgs/paas-secrets { secrets = inputs.secrets; };
+plateformeSecretsPkg = pkgs.callPackage ./nixpkgs/plateforme-secrets { };
 ```
+
+`link-secrets` symlinks `./secrets -> ../secrets` (the private wrapper repo, authoring copy of all SOPS files and host of the wrapper flake). The old store-path pin (`secrets = inputs.secrets`) is gone — k3s-paas takes no secrets input; the wrapper flake passes the real `darwin.yaml` via `secretsSopsFile` on `mkDarwinSystem`.
 
 Example `shellHook` snippet (devShell):
 
 ```bash
 # init sops env (exports SOPS_AGE_KEY / SOPS_AGE_RECIPIENTS)
-source ${paasEnvPkg}/bin/init-sops
-# symlink pinned secrets
-${paasEnvPkg}/bin/link-secrets
+source ${plateformeSecretsPkg}/bin/init-sops
+# symlink ../secrets into ./secrets for terragrunt find_in_parent_folders
+${plateformeSecretsPkg}/bin/link-secrets
 ```
 ## NixOS (Server / VM Images)
 
@@ -251,7 +253,7 @@ nil nixfmt nixos-rebuild
 agent-lsp
 ```
 
-The `shellHook` sources the `paas-secrets` derivation's `init-sops` script (`nixpkgs/paas-secrets/init-sops.sh`) to export `SOPS_AGE_KEY` / `SOPS_AGE_RECIPIENTS`, and runs `link-secrets` to symlink the pinned secrets input to `./secrets`. `DOCKER_HOST` is set in home-manager session variables, not the devShell.
+The `shellHook` sources the `plateforme-secrets` derivation's `init-sops` script (`nixpkgs/plateforme-secrets/init-sops.sh`) to export `SOPS_AGE_KEY` / `SOPS_AGE_RECIPIENTS`, and runs `link-secrets` to symlink `../secrets` (authoring repo + wrapper flake) into `./secrets` for terragrunt. `DOCKER_HOST` is set in home-manager session variables, not the devShell.
 
 **All platform operations must run inside `nix develop`.**
 

@@ -12,6 +12,10 @@ inputs:
   extraModules ? [ ],
   homeManagerModules ? [ ],
   specialArgs ? { },
+  # SOPS file for home-manager secrets (darwin.yaml). Passed by the private
+  # wrapper flake (../secrets) — the real file. Standalone builds fall back
+  # to sops-defaults/darwin.yaml (placeholder values, see flake.nix).
+  secretsSopsFile ? null,
 }:
 
 let
@@ -86,6 +90,7 @@ darwinSystem {
               currentSystemUser = currentSystemUser;
               inherit githubUser;
               inherit homeManagerModules;
+              inherit secretsSopsFile;
             };
           }
         )

@@ -43,13 +43,13 @@ Beyond the cluster itself, the **macOS host (nix-darwin)** used to set up and op
 │   └── user-default.nix      # Default user settings (homebrew, shell)
 ├── nixos-options/            # Custom NixOS option definitions (paas.*)
 ├── nix-lib/                  # Nix library functions
-│   └── mkDarwinSystem.nix    # Darwin system builder
-├── nix-flake/                # Flake utilities
-│   └── init-sops.sh          # SOPS age key setup script
-├── secrets/                  # SOPS-encrypted secrets
-│   ├── local.yaml            # Local environment secrets
-│   ├── prod.yaml             # Production secrets
-│   └── darwin.yaml           # Darwin/macOS secrets
+│   └── mkDarwinSystem.nix    # Darwin system builder (takes secretsSopsFile param)
+├── sops-defaults/            # Example encrypted sops file (placeholders) so
+│   └── darwin.yaml           #   standalone k3s-paas darwin eval/build works
+├── secrets -> ../secrets     # SYMLINK (gitignored): authoring repo org-404/secrets
+│                              #   also hosts the private wrapper flake (bootstrap)
+├── nixpkgs/plateforme-secrets/ # Dev-shell helpers: init-sops (age env),
+│                              #   link-secrets (./secrets -> ../secrets)
 ├── terragrunt/               # Terragrunt environment configs
 │   ├── cloud/                # Layer 1: VM provisioning
 │   │   ├── contabo/          # Contabo VPS
@@ -144,7 +144,8 @@ nix build .#nixosConfigurations.default --system aarch64-linux
 # Build for x86_64 (Contabo)
 nix build .#nixosConfigurations.default --system x86_64-linux
 
-# Build and switch darwin configuration
+# Build and switch darwin configuration (delegates to ../secrets wrapper —
+# real darwin.yaml + sibling working-tree override; see Secrets conventions)
 make bootstrap          # aarch64-darwin mac os platform
 make bootstrap-contabo  # x86_64-darwin (for Contabo builds)
 
@@ -188,6 +189,10 @@ make login ENV=contabo     # production
 
 ```bash
 # Edit secrets (SOPS + age, uses ssh-to-age from default flake shell)
+# Edit secrets (SOPS + age, uses ssh-to-age from default flake shell)
+# ./secrets is a symlink to ../secrets (org-404/secrets) — author THERE,
+# or equivalently run sops from inside ../secrets. Rotation = 1 commit in
+# ../secrets; no k3s-paas lockfile bump (k3s-paas takes no secrets input).
 sops secrets/prod.yaml
 sops secrets/local.yaml
 sops secrets/darwin.yaml
@@ -305,10 +310,13 @@ When a service-module apply finishes, verify and report in this order before dec
 
 ### Secrets
 
+- **Wrapper inversion (2026-01)**: the private `../secrets` repo (org-404/secrets) is the *main flake* — it pins k3s-paas as a flake input and hosts the wrapper `flake.nix`/`Makefile`. k3s-paas is the public product and takes **no secrets input**. `make bootstrap` in k3s-paas delegates to `../secrets`, which (a) injects the real `darwin.yaml` via `secretsSopsFile` on `mkDarwinSystem`, and (b) adds `--override-input k3s-paas path:../k3s-paas` when the sibling checkout exists so the *working tree* is validated, not the lock pin.
 - **SOPS + age**: Secrets encrypted with age keys derived from SSH keys
 - **Two recipients**: Operator key + VM host key (for NixOS deployment)
-- **Per-environment files**: `secrets/local.yaml`, `secrets/prod.yaml`, `secrets/darwin.yaml`
+- **Per-environment files**: `local.yaml`, `prod.yaml`, `darwin.yaml` — authored in `../secrets` only; `./secrets` is a symlink created by the dev shell (`plateforme-secrets` → `link-secrets`)
+- **Standalone darwin eval**: `sops-defaults/darwin.yaml` (tracked placeholders) keeps `nix eval/build .#darwinConfigurations.*` working without `../secrets` — values are fake by design
 - **Runtime secrets**: NixOS deploy module creates transient secrets on the VM via SOPS
+- **Pin hygiene**: wrapper `flake.lock` = last-known-good; bump with `make -C ../secrets update` only after a green `make bootstrap`
 
 ### Kubernetes Platform
 
@@ -331,7 +339,9 @@ When a service-module apply finishes, verify and report in this order before dec
 
 5. **x86_64 builds on Apple Silicon**: Use `make bootstrap-contabo` to start the linux-builder before building x86_64 images.
 
-6. **SOPS decryption failures**: Ensure `SOPS_AGE_KEY` and `SOPS_AGE_RECIPIENTS` are set (done automatically in `nix develop` shell via `nix-flake/init-sops.sh`).
+6. **SOPS decryption failures**: Ensure `SOPS_AGE_KEY` and `SOPS_AGE_RECIPIENTS` are set (done automatically in `nix develop` shell via `nixpkgs/plateforme-secrets/init-sops.sh`).
+
+6b. **Never `darwin-rebuild switch` from k3s-paas standalone**: without the wrapper, `mkDarwinSystem` falls back to `sops-defaults/darwin.yaml` — *placeholder* values that would activate fake API keys onto the real machine. Always bootstrap via `make bootstrap` (delegates to `../secrets`, which injects the real `darwin.yaml` via `secretsSopsFile` and builds the sibling working tree via `--override-input`). Likewise never author secrets under `./secrets` — it is a symlink to `../secrets`, the single authoring copy.
 
 7. **Service in the linux-builder VM unreachable from macOS**: Two separate causes, both required. (a) SLiRP only forwards the `virtualisation.forwardPorts` list — use the guest's `vmnet-shared` address from `linux-builder-ip` instead of trying to add forwards. (b) A container published on `127.0.0.1:PORT:PORT` is bound to guest loopback and stays unreachable over vmnet; publish on the wildcard (`PORT:PORT`). See [Linux builder VM networking](#linux-builder-vm-networking).
 

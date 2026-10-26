@@ -1,14 +1,18 @@
 name: 'Test Terraform'
 
+# fmt-only by design: terragrunt validate/plan can never run here — every
+# env.hcl calls sops_decrypt_file(find_in_parent_folders("secrets/<env>.yaml"))
+# at parse time, and ./secrets is a gitignored symlink to the private
+# org-404/secrets repo. Shipping SOPS_AGE_KEY to a public runner is not an
+# option. Full validation is `make bootstrap` + `terragrunt plan` locally.
 on:
   pull_request:
     branches:
       - main
     paths:
-      - 'terraform/**.hcl'
-      - 'terraform/**.tf'
-      - 'terraform/**.tfvars'
-      - 'terraform/**.tmpl'
+      - 'tf-modules-*/**'
+      - 'tf-root-*/**'
+      - 'terragrunt/**.hcl'
       - .github/workflows/test-terraform.yml
 
 permissions:
@@ -19,39 +23,8 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
-        uses: actions/checkout@v3
-        with:
-          fetch-depth: 0
-      - uses: hashicorp/setup-terraform@v1
+        uses: actions/checkout@v4
+      - uses: hashicorp/setup-terraform@v2
       - name: Terraform fmt
         id: fmt
-        run: terraform fmt -check -diff
-
-  tf-test:
-    strategy:
-      matrix:
-        project: [cloud/local, network/local, paas/local]
-    runs-on: ubuntu-latest
-    steps:
-      - name: Checkout
-        uses: actions/checkout@v3
-        with:
-          fetch-depth: 0
-      - uses: hashicorp/setup-terraform@v2
-      - name: Configure Terraform plugin cache
-        run: |
-          echo "TF_PLUGIN_CACHE_DIR=$HOME/.terraform.d/plugin-cache" >>"$GITHUB_ENV"
-          mkdir --parents "$HOME/.terraform.d/plugin-cache"
-      - name: Cache Terraform
-        uses: actions/cache@v4
-        with:
-          path: |
-            ~/.terraform.d/plugin-cache
-          key: terraform-${{ runner.os }}-${{ hashFiles('**/.terraform.lock.hcl') }}
-          restore-keys: |
-            terraform-${{ runner.os }}-
-
-      - name: Terraform Validate
-        working-directory: terragrunt/${{ matrix.project }}
-        id: validate
-        run: terragrunt validate
+        run: terraform fmt -check -diff -recursive

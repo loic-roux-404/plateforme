@@ -28,10 +28,6 @@
       url = "github:edolstra/flake-compat";
       flake = false;
     };
-    secrets = {
-      url = "git+ssh://git@github.com/org-404/secrets";
-      flake = false;
-    };
     flake-utils.url = "github:numtide/flake-utils";
 
     sops-nix.url = "github:Mic92/sops-nix";
@@ -230,7 +226,7 @@
           system = baseSystem;
           pkgs = import inputs.nixpkgs-srvos (nixpkgsDefaults // { inherit system; });
           agentLspPkg = pkgs.callPackage ./nixpkgs/agent-lsp.nix { };
-          paasSecretsPkg = pkgs.callPackage ./nixpkgs/paas-secrets { secrets = inputs.secrets; };
+          plateformeSecretsPkg = pkgs.callPackage ./nixpkgs/plateforme-secrets { };
         in
         {
           default = pkgs.mkShell {
@@ -252,11 +248,13 @@
               inherit agentLspPkg;
             };
             shellHook = ''
-              source ${paasSecretsPkg}/bin/init-sops
+              # SOPS age env from the operator SSH key.
+              source ${plateformeSecretsPkg}/bin/init-sops
 
-              # Point ./secrets at the pinned flake input (read-only store path).
-              # Terragrunt's find_in_parent_folders("secrets/<env>.yaml") uses it.
-              ${paasSecretsPkg}/bin/link-secrets
+              # ./secrets -> ../secrets so terragrunt's
+              # find_in_parent_folders("secrets/<env>.yaml") resolves.
+              # ../secrets is the authoring repo (also the wrapper flake).
+              ${plateformeSecretsPkg}/bin/link-secrets
             '';
           };
 
@@ -266,9 +264,12 @@
               inherit (pkgs) bashInteractive nix;
             };
             shellHook = ''
-              set -e
-              nix build .#darwinConfigurations.''${VARIANT:-builder}.system
-              sudo ./result/sw/bin/darwin-rebuild switch --flake .#''${VARIANT:-builder}
+              # Bootstrap moved to the ../secrets wrapper (real secrets via
+              # secretsSopsFile + working-tree override). Never switch from
+              # here: this repo standalone would activate sops-defaults
+              # placeholders. Run: make bootstrap (delegates to ../secrets).
+              echo "builder shell: bootstrap is 'make bootstrap' (../secrets wrapper)."
+              echo "See Makefile target bootstrap for details."
             '';
           };
         };

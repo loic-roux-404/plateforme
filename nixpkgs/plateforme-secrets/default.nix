@@ -2,12 +2,11 @@
   lib,
   stdenv,
   ssh-to-age,
-  secrets,
 }:
 
 stdenv.mkDerivation {
-  pname = "paas-secrets";
-  version = "0.1.0";
+  pname = "plateforme-secrets";
+  version = "0.2.0";
 
   # Package sources live beside this file (init-sops.sh, link-secrets.sh).
   # Fileset keeps the rebuild scope to exactly the two scripts, so editing
@@ -30,22 +29,17 @@ stdenv.mkDerivation {
     install -m 0755 init-sops.sh $out/bin/init-sops
     install -m 0755 link-secrets.sh $out/bin/link-secrets
 
-    # Bake store paths in so both scripts are self-contained:
-    # - init-sops must be SOURCED (it exports env vars), so we cannot use
-    #   makeWrapper (its `exec` would replace the parent shell). Instead we
-    #   rewrite the bare `ssh-to-age` name to the full store path.
+    # init-sops must be SOURCED (it exports env vars), so we cannot use
+    # makeWrapper (its `exec` would replace the parent shell). Instead we
+    # rewrite the bare `ssh-to-age` name to the full store path.
     substituteInPlace $out/bin/init-sops \
       --replace 'ssh-to-age' '${ssh-to-age}/bin/ssh-to-age'
-
-    # - link-secrets symlinks the pinned secrets input into ./secrets.
-    substituteInPlace $out/bin/link-secrets \
-      --replace '@SECRETS_SRC@' '${secrets}'
 
     runHook postInstall
   '';
 
   meta = {
-    description = "Dev shell helpers: SOPS age env init + pinned secrets symlink";
+    description = "Dev shell helpers: SOPS age env init + ../secrets symlink";
     license = lib.licenses.mit;
     platforms = lib.platforms.unix;
   };

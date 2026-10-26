@@ -6,11 +6,6 @@
 }:
 
 let
-  # nixpkgs 25.11 ships claude-code 2.0.x which lacks plugin-based LSP, so the
-  # package always comes from nixpkgs-unstable. Upstream releases move fast, so
-  # the *pinned revision* of that input (not the branch) decides the version:
-  # run `make claude-update` to bump the lock entry and pick up the newest one.
-
   # Local LiteLLM gateway (litellm.nix) serving the /v1/messages Anthropic
   # flavor for the GLM coding plan and OpenCode Zen models. Model ids follow
   # the official Z.ai Claude Code setup guide:
@@ -24,21 +19,6 @@ let
   # gateway strips the suffix before the upstream call (litellm.nix
   # zenAliases), so Zen sees the plain id while Claude Code accounts a 1M
   # window instead of its 200k default.
-  #
-  # Tiering, measured with .agents/local-skills/zen-model-onboarding:
-  #   frontier  kimi-k3.1-pro      — complex planning / reasoning ONLY.
-  #                                  Strongest reasoner measured, but it
-  #                                  thinks 60-240s and can burn a 16k budget
-  #                                  on reasoning alone, so it is reached only
-  #                                  through plan mode (model = "opusplan").
-  #   workhorse deepseek-v4.1-flash — most of the challenging work
-  #   subagent  deepseek-v4.1-flash — quick commands, raw output, minimal
-  #                                  reflection (subagents re-read context per
-  #                                  task, so fast+terse beats deep here).
-  #
-  # Only chat-completions models are reachable: litellm forwards that
-  # protocol upstream, so Responses-only ids (muse-*, grok-4.x, gpt-*-luna, …)
-  # cannot be served at all and are not in the gateway.
   frontier = "kimi-k3.1-pro[1m]";
   deepseekFlash = "deepseek-v4.1-flash[1m]";
   deepseekFlash200k = "deepseek-v4.1-flash";
@@ -55,7 +35,7 @@ in
       # runs kimi-k3.1-pro, execution runs deepseek-v4.1-flash — the workhorse
       # does most of the work and the slow reasoner stays off the hot path.
       model = "opusplan";
-      fallbackModel = [ glmFlagship glmFlash deepseekFlash ];
+      fallbackModel = [ glmFlash ];
 
       env = {
         ANTHROPIC_BASE_URL = glmBaseUrl;
