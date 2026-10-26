@@ -111,8 +111,19 @@ in
       };
     };
 
-    # Same chrome-devtools MCP as .vscode/mcp.json
+    # chrome-devtools: same MCP as .vscode/mcp.json. context7: up-to-date
+    # library docs lookup for agents. Unauthenticated = rate-limited;
+    # pass --api-key <CONTEXT7_API_KEY> for higher limits.
     mcpServers = {
+      context7 = {
+        type = "stdio";
+        command = "npx";
+        args = [
+          "-y"
+          "@upstash/context7-mcp"
+        ];
+      };
+
       chrome-devtools = {
         type = "stdio";
         command = "npx";
