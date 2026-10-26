@@ -115,8 +115,8 @@ in
 
     # Node is required for Copilot.vim
     nodejs
-    nodePackages.yaml-language-server
-    nodePackages.typescript-language-server
+    yaml-language-server
+    typescript-language-server
     typescript
     pnpm
 
