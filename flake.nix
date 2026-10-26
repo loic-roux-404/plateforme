@@ -3,14 +3,14 @@
 
   inputs = {
     # Package sets
-    nixpkgs.url = "github:NixOS/nixpkgs/25.11";
+    nixpkgs.url = "github:NixOS/nixpkgs/26.05";
     nixpkgs-legacy.url = "github:NixOS/nixpkgs/25.05";
     nixpkgs-unstable.url = "github:NixOS/nixpkgs/nixpkgs-unstable";
     srvos.url = "github:numtide/srvos";
     nixpkgs-srvos.follows = "srvos/nixpkgs";
 
     # Environment/system management
-    darwin.url = "github:nix-darwin/nix-darwin/nix-darwin-25.11";
+    darwin.url = "github:nix-darwin/nix-darwin/nix-darwin-26.05";
     darwin.inputs.nixpkgs.follows = "nixpkgs";
 
     home-manager = {
