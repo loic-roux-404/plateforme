@@ -116,7 +116,7 @@ with config.paas;
     script = ''
       sudo mkdir -p /var/lib/minio || true
 
-      ${pkgs.minio}/bin/minio server /var/lib/minio \
+      ${pkgs.silo}/bin/minio server /var/lib/minio \
         --address "127.0.0.1:9000" \
         --console-address "127.0.0.1:9001"
     '';
