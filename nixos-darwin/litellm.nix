@@ -31,7 +31,7 @@ let
   mkEntry = apiBase: apiKeyEnv: model: {
     model_name = model;
     litellm_params = {
-      model = "openai/${model}";
+      model = "custom_openai/${model}";
       api_base = apiBase;
       api_key = "os.environ/${apiKeyEnv}";
     }
@@ -103,7 +103,15 @@ let
       ++ map (mkEntry zaiCodingBase "ZAI_API_KEY") glmModels
       ++ glmAliases
       ++ zenAliases;
-    litellm_settings.drop_params = true;
+    litellm_settings = {
+      drop_params = true;
+      # Don't reserve budget for in-flight requests: single-user gateway,
+      # reservation only causes false 403s on concurrent calls.
+      disable_budget_reservation = true;
+      # We don't need this in local context
+      safeguards = false;
+      safeguards_classifier_model = "deepseek-v4.1-flash";
+    };
     # Deliberately no general_settings.master_key: localhost-only, no auth.
   };
 
@@ -111,13 +119,15 @@ let
   # `script` option and EnvironmentVariables is not shell-evaluated).
   litellmStart = pkgs.writeShellScript "litellm-start" ''
     set -euo pipefail
+    export DISABLE_ADMIN_UI="True"
     export ZAI_API_KEY="$(cat ${config.sops.secrets.zai_api_key.path})"
     export OPENCODE_API_KEY="$(cat ${config.sops.secrets.opencode_api_key.path})"
+    export LITELLM_DANGEROUSLY_PERMIT_WEAK_OR_UNSET_MASTER_KEY=true
     # litellm's default aiohttp transport swallows mid-stream connection
     # drops, truncating responses under concurrency ("Part of the response
     # never arrived"). Stock httpx propagates them so clients can retry.
     export DISABLE_AIOHTTP_TRANSPORT="True"
-    exec ${pkgs.litellm}/bin/litellm \
+    exec ${unstablePkgs.litellm}/bin/litellm \
       --config ${litellmConfig} \
       --host 127.0.0.1 \
       --port ${toString litellmPort}

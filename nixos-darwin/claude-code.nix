@@ -1,4 +1,5 @@
 {
+  config,
   inputs,
   pkgs,
   unstablePkgs,
@@ -22,6 +23,34 @@ let
   frontier = "kimi-k3.1-pro[1m]";
   deepseekFlash = "deepseek-v4.1-flash[1m]";
   deepseekFlash200k = "deepseek-v4.1-flash";
+
+  # settings.json lives in the world-readable nix store, so the context7 API
+  # key must never be an mcpServers env/arg literal. Same pattern as
+  # litellm-start: read the sops render at spawn time, exec with it exported.
+  context7McpStart = pkgs.writeShellScript "context7-mcp-start" ''
+    set -euo pipefail
+    export CONTEXT7_API_KEY="$(cat ${config.sops.secrets.context7_api_key.path})"
+    exec ${pkgs.nodejs}/bin/npx -y @upstash/context7-mcp
+  '';
+
+  # github MCP: same secret-at-spawn pattern, token from sops gh_token
+  # (same secret the shells source via gh-token.env).
+  githubMcpStart = pkgs.writeShellScript "github-mcp-start" ''
+    set -euo pipefail
+    export GITHUB_PERSONAL_ACCESS_TOKEN="$(cat ${config.sops.secrets.gh_token.path})"
+    exec ${pkgs.nodejs}/bin/npx -y @modelcontextprotocol/server-github@latest
+  '';
+
+  # parallel-search: http MCP, bridged to stdio by mcp-remote so the Bearer
+  # key stays out of any config file and out of argv (mcp-remote expands
+  # ${VAR} inside --header values itself; ''${ escapes Nix interpolation).
+  parallelSearchMcpStart = pkgs.writeShellScript "parallel-search-mcp-start" ''
+    set -euo pipefail
+    export PARALLEL_API_KEY="$(cat ${config.sops.secrets.parrallel_api_key.path})"
+    exec ${pkgs.nodejs}/bin/npx -y mcp-remote https://search.parallel.ai/mcp \
+      --header 'Authorization: Bearer ''${PARALLEL_API_KEY}'
+  '';
+
 in
 {
   programs.claude-code = {
@@ -35,7 +64,7 @@ in
       # runs kimi-k3.1-pro, execution runs deepseek-v4.1-flash — the workhorse
       # does most of the work and the slow reasoner stays off the hot path.
       model = "opusplan";
-      fallbackModel = [ glmFlash ];
+      fallbackModel = [ glmFlash deepseekFlash ];
 
       env = {
         ANTHROPIC_BASE_URL = glmBaseUrl;
@@ -112,17 +141,13 @@ in
     };
 
     # chrome-devtools: same MCP as .vscode/mcp.json. context7: up-to-date
-    # library docs lookup for agents. Unauthenticated = rate-limited;
-    # pass --api-key <CONTEXT7_API_KEY> for higher limits.
+    # library docs lookup for agents. Authenticated via sops secret
+    # context7_api_key (darwin.yaml) — unauthenticated is rate-limited.
     mcpServers = {
-      context7 = {
-        type = "stdio";
-        command = "npx";
-        args = [
-          "-y"
-          "@upstash/context7-mcp"
-        ];
-      };
+      # context7 = {
+      #   type = "stdio";
+      #   command = "${context7McpStart}";
+      # };
 
       chrome-devtools = {
         type = "stdio";
@@ -139,6 +164,14 @@ in
           "--memoryDebugging"
         ];
       };
+      parallel-search = {
+        type = "stdio";
+        command = "${parallelSearchMcpStart}";
+      };
+      # github = {
+      #   type = "stdio";
+      #   command = "${githubMcpStart}";
+      # };
     };
 
     # Claude Code LSP is extension-driven (no root_markers), so

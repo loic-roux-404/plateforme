@@ -310,7 +310,7 @@ When a service-module apply finishes, verify and report in this order before dec
 
 ### Secrets
 
-- **Wrapper inversion (2026-01)**: the private `../secrets` repo (org-404/secrets) is the *main flake* — it pins k3s-paas as a flake input and hosts the wrapper `flake.nix`/`Makefile`. k3s-paas is the public product and takes **no secrets input**. `make bootstrap` in k3s-paas delegates to `../secrets`, which (a) injects the real `darwin.yaml` via `secretsSopsFile` on `mkDarwinSystem`, and (b) adds `--override-input k3s-paas path:../k3s-paas` when the sibling checkout exists so the *working tree* is validated, not the lock pin.
+- **Wrapper inversion (2026-01)**: the private `./secrets` repo (org-404/secrets) is the *main flake* — it pins plateforme (this repo) as a flake input and hosts the wrapper `flake.nix`/`Makefile`. plateforme is the public product and takes **no secrets input**. `make bootstrap` in plateforme delegates to `./secrets`, which (a) injects the real `darwin.yaml` via `secretsSopsFile` on `mkDarwinSystem`, and (b) accepts `PLATFORM_DIR=<path>` to add `--override-input plateforme path:<path>` so that checkout's *working tree* is validated instead of the lock pin (default: no override, pure pin).
 - **SOPS + age**: Secrets encrypted with age keys derived from SSH keys
 - **Two recipients**: Operator key + VM host key (for NixOS deployment)
 - **Per-environment files**: `local.yaml`, `prod.yaml`, `darwin.yaml` — authored in `../secrets` only; `./secrets` is a symlink created by the dev shell (`plateforme-secrets` → `link-secrets`)

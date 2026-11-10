@@ -27,6 +27,24 @@
     "terraform": {
       "command": "terraform-mcp-server"
     },
+
+    "github": {
+      "command": "npx",
+      "args": [
+        "-y",
+        "@modelcontextprotocol/server-github@latest"
+      ],
+      "env": {
+        "GITHUB_PERSONAL_ACCESS_TOKEN": "${env:GITHUB_PERSONAL_ACCESS_TOKEN}"
+      }
+    },
+    "parallel-search": {
+      "type": "http",
+      "url": "https://search.parallel.ai/mcp",
+      "headers": {
+        "Authorization": "Bearer ${env:PARALLEL_API_KEY}"
+      }
+    },
     "agent-lsp": {
       "command": "agent-lsp",
       "args": [
@@ -45,22 +63,5 @@
         "javascriptreact:vscode-eslint-language-server,--stdio"
       ]
     },
-    "github": {
-      "command": "npx",
-      "args": [
-        "-y",
-        "@modelcontextprotocol/server-github@latest"
-      ],
-      "env": {
-        "GITHUB_PERSONAL_ACCESS_TOKEN": "${env:GITHUB_PERSONAL_ACCESS_TOKEN}"
-      }
-    },
-    "parallel-search": {
-      "type": "http",
-      "url": "https://search.parallel.ai/mcp",
-      "headers": {
-        "Authorization": "Bearer ${env:PARALLEL_API_KEY}"
-      }
-    }
   }
 }

@@ -183,6 +183,7 @@ in
 
   sops.secrets.gh_token = { };
   sops.secrets.parrallel_api_key = { };
+  sops.secrets.context7_api_key = { };
 
   sops.templates."gh-token.env" = {
     content = "export GITHUB_PERSONAL_ACCESS_TOKEN=${config.sops.placeholder.gh_token}";
