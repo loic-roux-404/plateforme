@@ -40,6 +40,17 @@ in
 {
   options.paas = {
 
+    aiStack.enable = lib.mkOption {
+      type = lib.types.bool;
+      default = true;
+      description = ''
+        Deploy the local AI dev stack home-manager modules (litellm gateway,
+        claude-code, vscode chat models). Requires the matching keys in the
+        darwin sops file (opencode_api_key, zai_api_key). Disable to bootstrap
+        without those providers — the example wrapper does (see example/).
+      '';
+    };
+
     autoRebootOnKernelChange = lib.mkOption {
       type = lib.types.bool;
       default = true;

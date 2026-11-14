@@ -1,8 +1,8 @@
 {
-  config,
   inputs,
-  pkgs,
   unstablePkgs,
+  lib,
+  osConfig,
   ...
 }:
 
@@ -24,35 +24,9 @@ let
   deepseekFlash = "deepseek-v4.1-flash[1m]";
   deepseekFlash200k = "deepseek-v4.1-flash";
 
-  # settings.json lives in the world-readable nix store, so the context7 API
-  # key must never be an mcpServers env/arg literal. Same pattern as
-  # litellm-start: read the sops render at spawn time, exec with it exported.
-  context7McpStart = pkgs.writeShellScript "context7-mcp-start" ''
-    set -euo pipefail
-    export CONTEXT7_API_KEY="$(cat ${config.sops.secrets.context7_api_key.path})"
-    exec ${pkgs.nodejs}/bin/npx -y @upstash/context7-mcp
-  '';
-
-  # github MCP: same secret-at-spawn pattern, token from sops gh_token
-  # (same secret the shells source via gh-token.env).
-  githubMcpStart = pkgs.writeShellScript "github-mcp-start" ''
-    set -euo pipefail
-    export GITHUB_PERSONAL_ACCESS_TOKEN="$(cat ${config.sops.secrets.gh_token.path})"
-    exec ${pkgs.nodejs}/bin/npx -y @modelcontextprotocol/server-github@latest
-  '';
-
-  # parallel-search: http MCP, bridged to stdio by mcp-remote so the Bearer
-  # key stays out of any config file and out of argv (mcp-remote expands
-  # ${VAR} inside --header values itself; ''${ escapes Nix interpolation).
-  parallelSearchMcpStart = pkgs.writeShellScript "parallel-search-mcp-start" ''
-    set -euo pipefail
-    export PARALLEL_API_KEY="$(cat ${config.sops.secrets.parrallel_api_key.path})"
-    exec ${pkgs.nodejs}/bin/npx -y mcp-remote https://search.parallel.ai/mcp \
-      --header 'Authorization: Bearer ''${PARALLEL_API_KEY}'
-  '';
-
 in
-{
+# paas.aiStack.enable gate — see litellm.nix.
+lib.mkIf (osConfig.paas.aiStack.enable or true) {
   programs.claude-code = {
     enable = true;
 
@@ -64,7 +38,10 @@ in
       # runs kimi-k3.1-pro, execution runs deepseek-v4.1-flash — the workhorse
       # does most of the work and the slow reasoner stays off the hot path.
       model = "opusplan";
-      fallbackModel = [ glmFlash deepseekFlash ];
+      fallbackModel = [
+        glmFlash
+        deepseekFlash
+      ];
 
       env = {
         ANTHROPIC_BASE_URL = glmBaseUrl;
@@ -141,13 +118,23 @@ in
     };
 
     # chrome-devtools: same MCP as .vscode/mcp.json. context7: up-to-date
-    # library docs lookup for agents. Authenticated via sops secret
-    # context7_api_key (darwin.yaml) — unauthenticated is rate-limited.
+    # library docs lookup for agents. context7/github/parallel-search auth
+    # comes from the shell env: home-manager.nix sources sops-rendered
+    # *-env files (CONTEXT7_API_KEY, GITHUB_PERSONAL_ACCESS_TOKEN,
+    # PARALLEL_API_KEY) in every shell, and MCP children inherit claude's
+    # env. settings.json lives in the world-readable nix store, so keys must
+    # never appear as mcpServers env/arg literals — plain commands only.
+    # mcp-remote expands ${VAR} inside --header itself (''${ escapes Nix
+    # interpolation), keeping the Bearer key out of argv literals too.
     mcpServers = {
-      # context7 = {
-      #   type = "stdio";
-      #   command = "${context7McpStart}";
-      # };
+      context7 = {
+        type = "stdio";
+        command = "npx";
+        args = [
+          "-y"
+          "@upstash/context7-mcp"
+        ];
+      };
 
       chrome-devtools = {
         type = "stdio";
@@ -166,17 +153,25 @@ in
       };
       parallel-search = {
         type = "stdio";
-        command = "${parallelSearchMcpStart}";
+        command = "npx";
+        args = [
+          "-y"
+          "mcp-remote"
+          "https://search.parallel.ai/mcp"
+          "--header"
+          "Authorization: Bearer \${PARALLEL_API_KEY}"
+        ];
       };
-      # github = {
-      #   type = "stdio";
-      #   command = "${githubMcpStart}";
-      # };
+      github = {
+        type = "stdio";
+        command = "npx";
+        args = [
+          "-y"
+          "@modelcontextprotocol/server-github@latest"
+        ];
+      };
     };
 
-    # Claude Code LSP is extension-driven (no root_markers), so
-    # helm-ls (would clash with yaml-language-server on .yaml) and
-    # docker-langserver (Dockerfile has no dot-extension) are left out.
     lspServers = {
       nix = {
         command = "nil";

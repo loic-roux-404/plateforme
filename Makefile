@@ -1,27 +1,18 @@
 SHELL:=/usr/bin/env bash
 MAKEFLAGS += --no-builtin-rules --no-builtin-variables
-VARIANT=builder
 TESTING_X86_URL=https://github.com/loic-roux-404/kube-paas/releases/download/nixos-testing/nixos.qcow2
 TARGET?=initial
 
 #### Nix
 
-BUILDER_EXEC:=
-NIXOS_CONFIG:=qcow
+# Bootstrap (darwin switch) lives in the ../secrets wrapper Makefile — the
+# only place with the real darwin.yaml. PLATFORM_DIR pins the wrapper build
+# to THIS working tree instead of its flake.lock pin.
+bootstrap bootstrap-contabo:
+	@test -e secrets/Makefile || { echo "no secrets/ wrapper next to this repo — see docs/3-example.md" >&2; exit 1; }
+	@$(MAKE) -C secrets PLATFORM_DIR=$(CURDIR) $@
 
-ifeq ($(shell uname -s),Darwin)
-   BUILDER_EXEC:=nix --extra-experimental-features "nix-command flakes" develop .\#builder --command
-endif
-
-bootstrap:
-	@$(BUILDER_EXEC) echo "Started default build environment"
-
-bootstrap-contabo:
-	@VARIANT=builder-x86 $(BUILDER_EXEC) echo "Started x86 environment"
-	@echo "Waiting builder to start..."
-	@sleep 15
-
-nixos-local: bootstrap build
+nixos-local: build
 
 # NixOS image build — output goes to IMAGE_DIR (default ./result), which is
 # what terraform consumes as libvirt_qcow_source (see terragrunt/*/env.hcl).

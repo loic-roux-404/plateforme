@@ -160,7 +160,7 @@ in
   # rtk global integration for VS Code Copilot (--copilot) and Claude Code
   # (default agent; refreshes ~/.claude/RTK.md, which is user-writable).
   # --copilot scopes init to Copilot only, so Claude needs its own invocation.
-  # To skip telemetry prompt it's ordered after linkGeneration 
+  # To skip telemetry prompt it's ordered after linkGeneration
   # so the config.toml above is already symlinked when init reads it
   home.activation.rtkInit = lib.hm.dag.entryAfter [ "writeBoundary" "linkGeneration" ] ''
 
@@ -193,6 +193,13 @@ in
   sops.templates."parallel-api-key.env" = {
     content = "export PARALLEL_API_KEY='${config.sops.placeholder.parrallel_api_key}'";
     path = "${config.home.homeDirectory}/.config/sops-nix/parallel-api-key.env";
+  };
+
+  # Exported in every shell; claude-code.nix MCP servers (context7) inherit
+  # it from the env instead of a spawn-time wrapper.
+  sops.templates."context7-api-key.env" = {
+    content = "export CONTEXT7_API_KEY='${config.sops.placeholder.context7_api_key}'";
+    path = "${config.home.homeDirectory}/.config/sops-nix/context7-api-key.env";
   };
 
   home.sessionVariables = {
@@ -236,6 +243,7 @@ in
       # Secrets from sops (rendered at activation, see home-manager.nix)
       source ${config.sops.templates."gh-token.env".path};
       source ${config.sops.templates."parallel-api-key.env".path};
+      source ${config.sops.templates."context7-api-key.env".path};
     '';
     shellAliases = shellAliases;
   };
@@ -248,6 +256,7 @@ in
       # Secrets from sops (rendered at activation, see home-manager.nix)
       source ${config.sops.templates."gh-token.env".path};
       source ${config.sops.templates."parallel-api-key.env".path};
+      source ${config.sops.templates."context7-api-key.env".path};
     '';
   };
 
@@ -272,6 +281,7 @@ in
       lib.strings.intersperse "\n" ([
         "source ${config.sops.templates."gh-token.env".path}"
         "source ${config.sops.templates."parallel-api-key.env".path}"
+        "source ${config.sops.templates."context7-api-key.env".path}"
         "source ${inputs.theme-bobthefish}/functions/fish_prompt.fish"
         "source ${inputs.theme-bobthefish}/functions/fish_right_prompt.fish"
         "source ${inputs.theme-bobthefish}/functions/fish_title.fish"

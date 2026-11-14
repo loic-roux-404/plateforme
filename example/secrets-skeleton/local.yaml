@@ -1,0 +1,13 @@
+# local.yaml skeleton — local libvirt environment secrets.
+#
+# Same encrypt flow as darwin.yaml. Read by terragrunt/*/local/env.hcl via
+# sops_decrypt_file() through plateforme's ./secrets symlink (→ this repo).
+#
+# additional_domains is dereferenced directly by network/local/env.hcl —
+# keep the key even when empty.
+additional_domains: []
+# Optional: supabase GitHub OAuth (tf-root-apps). Empty/unset = OAuth off.
+# supabase:
+#   github:
+#     client_id: ""
+#     client_secret: ""

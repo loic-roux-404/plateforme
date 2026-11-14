@@ -1,0 +1,17 @@
+# darwin.yaml skeleton — macOS home-manager secrets.
+#
+# Setup (after .sops.yaml carries your recipient):
+#   cp secrets-skeleton/darwin.yaml darwin.yaml
+#   sops encrypt -i darwin.yaml
+#   sops darwin.yaml   # edit values from now on, never plaintext
+#
+# Every consumer tolerates empty strings, so dummy values bootstrap fine.
+# Required always (home-manager.nix):
+email: jane@example.com
+gh_token: ""
+parrallel_api_key: ""
+context7_api_key: ""
+# Required only with paas.aiStack.enable = true (litellm.nix) — the example
+# flake ships it disabled; re-enable there before filling these:
+# opencode_api_key: ""
+# zai_api_key: ""

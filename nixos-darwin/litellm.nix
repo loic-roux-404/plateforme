@@ -4,6 +4,7 @@
   pkgs,
   inputs,
   unstablePkgs,
+  osConfig,
   ...
 }:
 
@@ -97,12 +98,26 @@ let
         "kimi-k3.1-pro"
       ];
 
+  fallbackPairs = [
+    # Z.ai groups -> OpenCode Zen
+    [ "glm-5.3" "deepseek-v4.1-flash" ]
+    [ "glm-5.3[1m]" "deepseek-v4.1-flash" ]
+    [ "GLM-5.3" "deepseek-v4.1-flash" ]
+    [ "glm-5.3-flash" "qwen3.8-flash" ]
+    # Zen groups -> Z.ai
+    [ "kimi-k3.1-pro" "glm-5.3" ]
+    [ "kimi-k3.1-pro[1m]" "glm-5.3" ]
+    [ "deepseek-v4.1-flash" "glm-5.3-flash" ]
+    [ "deepseek-v4.1-flash[1m]" "glm-5.3-flash" ]
+  ];
+
   litellmConfig = (pkgs.formats.yaml { }).generate "litellm-config.yaml" {
     model_list =
       map (mkEntry opencodeZenBase "OPENCODE_API_KEY") zenModels
       ++ map (mkEntry zaiCodingBase "ZAI_API_KEY") glmModels
       ++ glmAliases
       ++ zenAliases;
+    fallbacks = map (p: { ${lib.head p} = [ (lib.elemAt p 1) ]; }) fallbackPairs;
     litellm_settings = {
       drop_params = true;
       # Don't reserve budget for in-flight requests: single-user gateway,
@@ -113,6 +128,17 @@ let
       safeguards_classifier_model = "deepseek-v4.1-flash";
     };
     # Deliberately no general_settings.master_key: localhost-only, no auth.
+  };
+
+  # nixpkgs-unstable 2026-11: a2a-sdk 0.3.26 pytest fails (2 e2e errors,
+  # `Can't get local object 'FastAPI.setup.<locals>.openapi'`), blocking the
+  # whole litellm closure. Tests are irrelevant for our proxy-only use.
+  # Scope override keeps the rebuild to a2a-sdk + litellm; everything else
+  # substitutes from cache. Drop when upstream a2a-sdk tests pass again.
+  litellmPkg = unstablePkgs.litellm.override {
+    python3Packages = unstablePkgs.python3Packages.overrideScope (_: ps: {
+      a2a-sdk = ps.a2a-sdk.overridePythonAttrs (_: { doCheck = false; });
+    });
   };
 
   # Secrets only ever exist in env vars of this wrapper (HM launchd has no
@@ -127,13 +153,16 @@ let
     # drops, truncating responses under concurrency ("Part of the response
     # never arrived"). Stock httpx propagates them so clients can retry.
     export DISABLE_AIOHTTP_TRANSPORT="True"
-    exec ${unstablePkgs.litellm}/bin/litellm \
+    exec ${litellmPkg}/bin/litellm \
       --config ${litellmConfig} \
       --host 127.0.0.1 \
       --port ${toString litellmPort}
   '';
 in
-{
+# paas.aiStack.enable gate (nixos-options): external users of the example
+# wrapper bootstrap without opencode/zai provider keys — no gateway, no
+# sops keys required. `or true` keeps standalone HM evals working.
+lib.mkIf (osConfig.paas.aiStack.enable or true) {
   # Consumed by litellm-start (moved here from vscode-agent.nix)
   sops.secrets.zai_api_key = { };
   sops.secrets.opencode_api_key = { };
@@ -157,4 +186,10 @@ in
   home.activation.litellmLogDir = lib.hm.dag.entryBefore [
     "setupLaunchAgents"
   ] "mkdir -p \"${config.home.homeDirectory}/Library/Logs/Litellm\"";
+
+  home.activation.litellmRestart = lib.hm.dag.entryAfter [ "sops-nix" "setupLaunchAgents" ] ''
+    /bin/launchctl kickstart -k gui/$(/usr/bin/id -u)/org.nix-community.home.litellm \
+      && echo "litellm: gateway restarted" \
+      || echo "litellm: kickstart failed; rerun: launchctl kickstart -k gui/\$(/usr/bin/id -u)/org.nix-community.home.litellm" >&2
+  '';
 }

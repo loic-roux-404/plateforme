@@ -1,5 +1,7 @@
 {
   config,
+  lib,
+  osConfig,
   ...
 }:
 
@@ -16,7 +18,8 @@ let
     Authorization = "Bearer litellm-local";
   };
 in
-{
+# paas.aiStack.enable gate — see litellm.nix.
+lib.mkIf (osConfig.paas.aiStack.enable or true) {
   sops = {
     templates."chatLanguageModels.json" = {
       path = "${config.home.homeDirectory}/Library/Application Support/Code/User/chatLanguageModels.json";

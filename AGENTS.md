@@ -95,6 +95,8 @@ Beyond the cluster itself, the **macOS host (nix-darwin)** used to set up and op
 │   ├── tf-root-network/      # Network layer composition
 │   ├── tf-root-paas/         # PaaS layer composition
 │   └── tf-root-apps/         # Apps layer composition
+├── example/                  # Template of the private wrapper repo (secrets
+│                              #   model): users copy it out to bootstrap
 └── docs/                     # MkDocs documentation
 ```
 
@@ -365,6 +367,7 @@ When a service-module apply finishes, verify and report in this order before dec
 - [README.md](README.md) - Setup and usage instructions
 - [docs/1-install.md](docs/1-install.md) - Installation guide
 - [docs/2-help.md](docs/2-help.md) - FAQ and troubleshooting
+- [docs/3-example.md](docs/3-example.md) - New-user bootstrap via the example wrapper template
 - [docs/index.md](docs/index.md) - Architecture overview
 
 ## Related Skills
