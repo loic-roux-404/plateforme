@@ -14,14 +14,12 @@ let
   glmBaseUrl = "http://127.0.0.1:4000";
 
   glmFlagship = "glm-5.3[1m]";
-  glmFlash = "glm-5.3-flash";
 
   # OpenCode Zen ids (litellm.nix zenModels) + Claude Code [1m] suffix. The
   # gateway strips the suffix before the upstream call (litellm.nix
   # zenAliases), so Zen sees the plain id while Claude Code accounts a 1M
   # window instead of its 200k default.
   frontier = "kimi-k3.1-pro[1m]";
-  deepseekFlash = "deepseek-v4.1-flash[1m]";
   deepseekFlash200k = "deepseek-v4.1-flash";
 
 in
@@ -34,18 +32,13 @@ lib.mkIf (osConfig.paas.aiStack.enable or true) {
 
     settings = {
       # "opusplan" alias: plan mode → Opus class, everything else → Sonnet
-      # class. Combined with the env remaps below: planning/complex reasoning
-      # runs kimi-k3.1-pro, execution runs deepseek-v4.1-flash — the workhorse
-      # does most of the work and the slow reasoner stays off the hot path.
+      # class. Both classes remap to kimi-k3.1-pro; provider-level failover
+      # lives in litellm.nix fallbacks, not here.
       model = "opusplan";
-      fallbackModel = [
-        glmFlash
-        deepseekFlash
-      ];
 
       env = {
         ANTHROPIC_BASE_URL = glmBaseUrl;
-        # Map the /model aliases onto the Zen + GLM tiers
+        # Map the /model class aliases onto the gateway tiers
         ANTHROPIC_DEFAULT_OPUS_MODEL = frontier;
         ANTHROPIC_DEFAULT_SONNET_MODEL = glmFlagship;
         ANTHROPIC_DEFAULT_HAIKU_MODEL = deepseekFlash200k;
