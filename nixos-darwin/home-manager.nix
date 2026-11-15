@@ -167,9 +167,6 @@ in
     if ${unstablePkgs.rtk}/bin/rtk init -g --copilot --auto-patch; then
       echo "rtk: VS Code Copilot integration up to date"
     fi
-    if ${unstablePkgs.rtk}/bin/rtk init -g --agent claude --auto-patch; then
-      echo "rtk: Claude Code integration up to date"
-    fi
   '';
 
   #---------------------------------------------------------------------

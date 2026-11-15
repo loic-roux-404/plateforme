@@ -1,0 +1,199 @@
+#!/usr/bin/env bash
+# paas — plateforme deployment entrypoint (wrapper side).
+#
+# One pin drives everything: the wrapper flake.lock (input `plateforme`).
+#   PLATFORM_DIR set   → that plateforme checkout (working tree) everywhere:
+#                        nix `path:` ref + local-path terragrunt sources
+#   PLATFORM_DIR unset → GitHub: nix uses github:…/$REV (tarball), terragrunt
+#                        uses git::https://…?ref=$REV (terraform fetches the
+#                        modules itself — no local clone step)
+#
+# Commands:
+#   paas build [TARGET]     NixOS qcow2 → result/nixos.qcow2
+#                           TARGET ∈ initial|deploy|initial-contabo|deploy-contabo
+#   paas tg <layer> [args]  terragrunt in terragrunt/<layer>, inside the
+#                           plateforme devShell (terraform/terragrunt/sops + key)
+#   paas doctor             OK/FAIL gates; non-zero exit on any FAIL
+#   paas reset              destroy cloud → build initial → cloud → network
+#   paas login              kubectl OIDC setup (needs the paas layer — milestone 2)
+# Every command works through nix too (run from the wrapper dir):
+#   nix run github:loic-roux-404/plateforme#paas -- tg cloud/local apply -auto-approve
+#   nix run ../#paas -- doctor        # local working-tree plateforme
+#   nix run …#paas -- init <dest>     # installs/refreshes the wrapper template
+# The nix-run script version = the plateforme rev you run it from; the local
+# ./paas copy (kept fresh by `paas init`) is the same script.
+set -Eeuo pipefail
+
+# TEMPLATE_ROOT = where this script (and the template tree) lives — nix store
+# when run via `nix run …#paas`, example/ in a checkout.
+TEMPLATE_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+
+# Ops commands (tg/build/doctor/reset) run against the WRAPPER repo:
+#   PAAS_ROOT env  >  cwd if it looks like a wrapper (terragrunt/ + flake.lock)  >  script dir
+# `init` always copies FROM TEMPLATE_ROOT, so refresh-from-anywhere works.
+if [[ -n ${PAAS_ROOT:-} ]]; then
+  ROOT="$PAAS_ROOT"
+elif [[ -d terragrunt && -f flake.lock ]]; then
+  ROOT="$(pwd)"
+else
+  ROOT="$TEMPLATE_ROOT"
+fi
+LOCK="$ROOT/flake.lock"
+LOGS="$ROOT/.agent/logs"
+REPO="loic-roux-404/plateforme"
+NIX=(nix --extra-experimental-features "nix-command flakes")
+# global convention: route nix through rtk when installed
+command -v rtk >/dev/null 2>&1 && NIX=(rtk nix --extra-experimental-features "nix-command flakes")
+
+die() { echo "paas: $*" >&2; exit 1; }
+log() { printf '== %s\n' "$*"; }
+
+rev() { jq -r '.nodes.plateforme.locked.rev' "$LOCK"; }
+
+nix_ref() {
+  if [[ -n ${PLATFORM_DIR:-} ]]; then echo "path:$PLATFORM_DIR"
+  else echo "github:$REPO/$(rev)"; fi
+}
+
+# Export the pin for the terragrunt tree (see terragrunt/root.hcl)
+export_pin() {
+  export PLATEFORME_REF
+  PLATEFORME_REF="$(nix_ref)"
+  if [[ -z ${PLATFORM_DIR:-} ]]; then
+    export PLATEFORME_REV
+    PLATEFORME_REV="$(rev)"
+  fi
+}
+
+cmd_build() {
+  local target="${1:-initial}"
+  if [[ -n ${PLATFORM_DIR:-} ]] && [[ -n $(git -C "$PLATFORM_DIR" status --porcelain 2>/dev/null || true) ]]; then
+    log "note: PLATFORM_DIR has uncommitted changes — path: flakes see only git-tracked files (git add new files)"
+  fi
+  log "nix build $target (ref: $(nix_ref)) → result/"
+  "${NIX[@]}" build -o "$ROOT/result" "$(nix_ref)#nixosConfigurations.$target.config.formats.qcow"
+  nix_ref > "$ROOT/.paas-image"  # pin marker for doctor (store mtimes are meaningless: cached paths keep old dates)
+  log "image: $ROOT/result/nixos.qcow2"
+}
+
+cmd_tg() {
+  [[ $# -ge 1 ]] || die "usage: paas tg <layer> [terragrunt args…]   e.g. paas tg cloud/local plan"
+  local layer="$1"; shift
+  [[ -f "$ROOT/terragrunt/$layer/terragrunt.hcl" ]] || die "no unit at terragrunt/$layer"
+  export_pin
+  # env is inherited even if the devShell shellHook is skipped
+  if [[ -z ${SOPS_AGE_KEY:-} ]] && command -v ssh-to-age >/dev/null 2>&1; then
+    export SOPS_AGE_KEY
+    SOPS_AGE_KEY="$(ssh-to-age -private-key < ~/.ssh/id_ed25519)"
+  fi
+  log "terragrunt $layer $*"
+  "${NIX[@]}" develop "$(nix_ref)#default" --command \
+    terragrunt --working-dir "$ROOT/terragrunt/$layer" "$@"
+}
+
+cmd_login() {
+  die "login needs the paas layer (milestone 2): paas tg paas/local output -json oidc_login_setup_command_ops"
+}
+
+gate() {  # gate <name> <ok|warn|FAIL> [detail] — only FAIL blocks
+  printf '%-22s %s %s\n' "$1" "$2" "${3:-}"
+  [[ $2 == FAIL ]] && FAILED=1 || true
+}
+
+port_listens() { lsof -nP -iTCP:"$1" -sTCP:LISTEN >/dev/null 2>&1; }
+
+cmd_doctor() {
+  local FAILED=0 image="$ROOT/result/nixos.qcow2" s
+  command -v nix  >/dev/null 2>&1 && gate nix ok || gate nix FAIL "not on PATH"
+  command -v jq   >/dev/null 2>&1 && gate jq ok  || gate jq FAIL "not on PATH"
+  command -v sops >/dev/null 2>&1 && gate sops ok || gate sops FAIL "not on PATH"
+  [[ -f $LOCK ]] && gate "flake.lock rev" ok "$(rev)" || { gate "flake.lock" FAIL "missing"; return 1; }
+  if [[ -n ${PLATFORM_DIR:-} ]]; then
+    [[ -f $PLATFORM_DIR/flake.nix ]] \
+      && gate pin ok "PLATFORM_DIR=$PLATFORM_DIR (working tree)" \
+      || gate pin FAIL "no flake.nix at PLATFORM_DIR"
+  else
+    gate pin ok "github rev $(rev) (terragrunt: git::…?ref)"
+  fi
+  sops filestatus "$ROOT/local.yaml" >/dev/null 2>&1 \
+    && gate "sops local.yaml" ok || gate "sops local.yaml" FAIL "your key cannot open it"
+  if [[ -f $image ]]; then
+    if [[ -f $ROOT/.paas-image ]]; then
+      if [[ $(cat "$ROOT/.paas-image") == "$(nix_ref)" ]]; then
+        gate image ok "pin matches"
+      else
+        gate image FAIL "built from a different pin — rebuild: paas build"
+      fi
+    else
+      gate image warn "no pin marker — paas build records it"
+    fi
+  else
+    gate image FAIL "result/nixos.qcow2 missing — run: paas build"
+  fi
+  # local-env daemons — system launchd daemons are invisible to plain
+  # `launchctl list` (user domain only), so check processes + sockets
+  for s in libvirtd virtlogd dnsmasq; do
+    pgrep -x "$s" >/dev/null 2>&1 && gate "$s" ok || gate "$s" FAIL "not running (make bootstrap)"
+  done
+  virsh -c qemu:///system uri >/dev/null 2>&1 && gate libvirt ok || gate libvirt FAIL "virsh cannot reach qemu:///system"
+  # milestone-2 services (longhorn backups / local ACME) — warn, not block
+  port_listens 9000  && gate minio ok || gate minio warn "nothing on :9000 (milestone 2 — make bootstrap)"
+  port_listens 14000 && gate pebble ok || gate pebble warn "nothing on :14000 (milestone 2 — make bootstrap)"
+  # x86 builds (contabo targets) additionally need the linux-builder VM:
+  # run `linux-builder-ip` and check reachability — not gated here (aarch64 local env)
+  [[ $FAILED -eq 0 ]] && log "doctor: all gates OK" || die "doctor: FAIL — fix the gates above"
+}
+
+cmd_reset() {
+  mkdir -p "$LOGS"
+  local ts lg
+  ts="$(date +%Y%m%d-%H%M%S)"
+  if [[ -f "$ROOT/terragrunt/.terragrunt/local/cloud/local/terraform.tfstate" ]]; then
+    lg="$LOGS/$ts-destroy.log"; log "destroy cloud (log $lg)"
+    cmd_tg cloud/local destroy -auto-approve 2>&1 | tee "$lg"
+  else
+    log "no cloud state — skip destroy"
+  fi
+  lg="$LOGS/$ts-build.log";   log "build initial image (log $lg)"; cmd_build initial 2>&1 | tee "$lg"
+  lg="$LOGS/$ts-cloud.log";   log "apply cloud (log $lg)";         cmd_tg cloud/local apply -auto-approve 2>&1 | tee "$lg"
+  lg="$LOGS/$ts-network.log"; log "apply network (log $lg)";       cmd_tg network/local apply -auto-approve 2>&1 | tee "$lg"
+  log "reset complete — logs: $LOGS/$ts-*.log"
+}
+
+cmd_init() {
+  ROOT="$TEMPLATE_ROOT"  # always install from the template, never a live wrapper
+  local dest="${1:?usage: paas init <dest>}"
+  [[ -e $dest ]] || die "dest does not exist: $dest (mkdir it / git init your wrapper repo first)"
+  [[ $(cd "$dest" && pwd) != "$ROOT" ]] || die "dest is the template itself"
+  # always refresh the deployment assets
+  cp "$ROOT/paas" "$dest/paas" && chmod +x "$dest/paas"
+  mkdir -p "$dest/terragrunt"
+  cp -R "$ROOT/terragrunt/." "$dest/terragrunt/"
+  # NOTE: never touch $dest/terragrunt/.terragrunt (terraform STATE) or cache
+  # here — re-running init on a live wrapper must keep its state.
+  # first init: bring the rest of the wrapper template; NEVER overwrite files
+  # that already exist (live wrapper values stay untouched)
+  local f
+  for f in .gitignore flake.nix Makefile .sops.yaml README.md test.sh; do
+    [[ -e "$ROOT/$f" ]] || continue   # not tracked → absent from the nix package
+    [[ -e "$dest/$f" ]] || cp -R "$ROOT/$f" "$dest/$f"
+  done
+  [[ -d "$dest/secrets-skeleton" ]] || cp -R "$ROOT/secrets-skeleton" "$dest/secrets-skeleton"
+  local gi="$dest/.gitignore" entry
+  for entry in result/ .terragrunt/ .agent/ .paas-image; do
+    grep -qxF "$entry" "$gi" 2>/dev/null || printf '%s\n' "$entry" >> "$gi"
+  done
+  log "initialized $dest — fresh template: edit flake.nix identity + encrypt skeletons (README); existing wrapper: paas doctor && paas reset"
+}
+
+usage() { sed -n 's/^# \{0,1\}//p' "${BASH_SOURCE[0]}" | sed -n '2,19p'; }
+
+case "${1:-help}" in
+  build)  shift; cmd_build "$@" ;;
+  tg)     shift; cmd_tg "$@" ;;
+  login)  shift; cmd_login "$@" ;;
+  doctor) shift; cmd_doctor "$@" ;;
+  reset)  shift; cmd_reset "$@" ;;
+  init)   shift; cmd_init "$@" ;;
+  *) usage ;;
+esac

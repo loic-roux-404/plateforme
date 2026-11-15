@@ -53,6 +53,17 @@ nix build .#nixosConfigurations.default --system x86_64-linux
 ./result/sw/bin/darwin-uninstaller
 ```
 
+## Distribution (wrapper-driven deployment)
+
+Deployment orchestration lives in a **private wrapper repo** initialized from
+[example/](example/) — values + secrets only, driving everything through one
+`paas` script (`paas doctor / build / tg <layer> / reset`). The wrapper's
+`flake.lock` pins the plateforme revision for the darwin bootstrap, the nix
+image builds and the terragrunt module tree (`PLATFORM_DIR` overrides to any
+working tree). Consumer guide: [docs/4-distribution.md](docs/4-distribution.md).
+
+The `terragrunt/` tree in THIS repo stays as the integration test bed.
+
 ## Terraform project secrets
 
 You have to create a secrets file utilising following sops command :

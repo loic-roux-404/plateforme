@@ -16,8 +16,10 @@ $(error PLATFORM_DIR="$(PLATFORM_DIR)" has no flake.nix — not a plateforme che
 endif
 PAAS_OVERRIDE:=--override-input plateforme path:$(PLATFORM_DIR)
 endif
+# propagate to ./paas (terragrunt sources + nix refs)
+export PLATFORM_DIR
 
-.PHONY: bootstrap bootstrap-contabo update doctor
+.PHONY: bootstrap bootstrap-contabo update doctor build reset tg
 
 bootstrap:
 	@nix --extra-experimental-features "nix-command flakes" \
@@ -32,7 +34,16 @@ bootstrap-contabo:
 update:
 	@nix --extra-experimental-features "nix-command flakes" flake update plateforme
 
-# Decrypt nothing, just prove your key can open darwin.yaml.
+# Deploy-side delegation into ./paas (same pin contract):
+#   make build / make reset / make doctor
+#   make tg LAYER=cloud/local ARGS='apply -auto-approve'
+build reset:
+	@./paas $@
+
+tg:
+	@./paas tg $(LAYER) $(ARGS)
+
+# Your sops key + the deploy gates
 doctor:
 	@sops filestatus darwin.yaml
-	@echo "wrapper OK"
+	@./paas doctor

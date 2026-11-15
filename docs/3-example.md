@@ -16,8 +16,9 @@ your-dir/
 └── secrets/      # copy of example/, your private wrapper repo
 ```
 
-1. **Clone plateforme**, copy `example/` out to a sibling `secrets/` private
-   repo (`git init`).
+1. **Create the wrapper**: `mkdir secrets && cd secrets && git init`, then
+   `nix run github:loic-roux-404/plateforme#paas -- init .` (installs this
+   template from the flake — no plateforme checkout needed).
 2. **Age key**: `ssh-to-age < ~/.ssh/id_ed25519.pub` → put the recipient in
    `secrets/.sops.yaml`.
 3. **Identity**: set `user` / `githubUser` in `secrets/flake.nix`.
@@ -25,10 +26,10 @@ your-dir/
    darwin.yaml` (dummy values bootstrap fine; the AI stack is disabled by
    default — see the README to re-enable it).
 5. **macOS host**: `make bootstrap` in `secrets/`.
-6. **NixOS image**: `nix develop && make build` in `plateforme/` →
-   `result/nixos.qcow2`.
-7. **Local env**: `make terragrunt/cloud/local` → `network/local` →
-   `paas/local` → `apps/local`, then `make login`.
+6. **Deploy from the wrapper**: `./paas doctor`, `./paas build`, then
+   `./paas tg cloud/local` → `./paas tg network/local` (paas/apps layers =
+   milestone 2). See [4-distribution.md](4-distribution.md) for the full
+   `paas` reference and the pin/override contract.
 
 ## Why a wrapper repo
 

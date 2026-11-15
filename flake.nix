@@ -164,7 +164,23 @@
         };
       };
     }
-    // flake-utils.lib.eachDefaultSystem (baseSystem: {
+    // flake-utils.lib.eachDefaultSystem (
+      baseSystem:
+      let
+        pkgs = import inputs.nixpkgs-srvos (nixpkgsDefaults // { system = baseSystem; });
+        # paas CLI + example wrapper template (nixpkgs/paas-cli.nix).
+        # `nix run …#paas -- init <dir>` bootstraps a wrapper — no plateforme
+        # checkout needed (see docs/4-distribution.md).
+        paasCli = pkgs.callPackage ./nixpkgs/paas-cli.nix { };
+      in
+      {
+      apps.paas = {
+        type = "app";
+        program = "${paasCli}/paas";
+      };
+
+      packages.paasCli = paasCli;
+
       packages.nixosConfigurations =
         let
           system = builtins.replaceStrings [ "darwin" ] [ "linux" ] baseSystem;
@@ -227,7 +243,6 @@
           system = baseSystem;
           pkgs = import inputs.nixpkgs-srvos (nixpkgsDefaults // { inherit system; });
           agentLspPkg = pkgs.callPackage ./nixpkgs/agent-lsp.nix { };
-          plateformeSecretsPkg = pkgs.callPackage ./nixpkgs/plateforme-secrets { };
         in
         {
           default = pkgs.mkShell {
@@ -249,13 +264,10 @@
               inherit agentLspPkg;
             };
             shellHook = ''
-              # SOPS age env from the operator SSH key.
-              source ${plateformeSecretsPkg}/bin/init-sops
-
-              # ./secrets -> ../secrets so terragrunt's
-              # find_in_parent_folders("secrets/<env>.yaml") resolves.
-              # ../secrets is the authoring repo (also the wrapper flake).
-              ${plateformeSecretsPkg}/bin/link-secrets
+              # SOPS age env from the operator SSH key (ex-platforme-secrets/init-sops;
+              # ssh-to-age is a package of this shell).
+              export SOPS_AGE_KEY=$(ssh-to-age -private-key < ~/.ssh/id_ed25519)
+              export SOPS_AGE_RECIPIENTS=$(ssh-to-age < ~/.ssh/id_ed25519.pub)
             '';
           };
 

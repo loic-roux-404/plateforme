@@ -14,6 +14,8 @@ with real values.
 ```
 ├── flake.nix               # wrapper: pin plateforme + inject darwin.yaml + your identity
 ├── Makefile                # bootstrap / update / doctor
+├── paas                    # deployment entrypoint: fetch / build / tg / doctor / reset / init
+├── terragrunt/             # cloud + network units (paas/apps = milestone 2)
 ├── .sops.yaml              # creation rules — YOUR age recipient
 ├── secrets-skeleton/       # plaintext skeletons; you encrypt copies of these
 │   ├── darwin.yaml         # macOS home-manager secrets
@@ -21,28 +23,26 @@ with real values.
 └── test.sh                 # one-shot validation (throwaway key, no switch)
 ```
 
+Generated at runtime (gitignored): `result/` (built qcow2), `.terragrunt/`
+(state + module cache), `.agent/logs/` (reset step logs). Terraform fetches
+the plateforme modules itself from GitHub — no local clone step.
+
 ## 0. Prerequisites
 
 - macOS, Apple Silicon (Intel: use `VARIANT=builder-x86` everywhere)
 - [Nix with flakes](https://install.determinate.systems/nix) (`curl --proto '=https' --tlsv1.2 -sSf -L https://install.determinate.systems/nix | sh`)
 - An **ed25519 SSH key without passphrase** at `~/.ssh/id_ed25519`
   (`ssh-keygen -t ed25519` if you have none)
-- Sibling checkouts — plateforme's dev shell expects the wrapper repo to sit
-  next to it **named `secrets`**:
-
-```
-your-dir/
-├── plateforme/   # git clone git@github.com:loic-roux-404/plateforme.git
-└── secrets/      # this template, copied out (private repo)
-```
+- No plateforme checkout needed — everything below runs from the flake
 
 ## 1. Create your wrapper repo
 
 ```bash
 cd your-dir
-git clone git@github.com:loic-roux-404/plateforme.git
-cp -r plateforme/example secrets
-cd secrets && git init
+mkdir secrets && cd secrets && git init
+# from the flake — no plateforme checkout needed:
+nix run github:loic-roux-404/plateforme#paas -- init .
+# (dev override: nix run path:/path/to/plateforme#paas -- init .)
 ```
 
 ## 2. Derive your age key and wire the recipient
@@ -89,28 +89,35 @@ PLATFORM_DIR=../plateforme make bootstrap   # builds the working tree
 make update                                  # bump the pin, only after green
 ```
 
-## 6. Build the NixOS VM image
+## 6. Deploy from the wrapper — no plateforme checkout needed
+
+The wrapper drives everything through `./paas` (or the Makefile). One pin
+(your `flake.lock` `plateforme` input) selects the plateforme revision for
+the nix builds and the terragrunt module tree:
+
+- `PLATFORM_DIR` unset (default): nix builds use `github:loic-roux-404/plateforme/<rev>`,
+  terragrunt sources `git::https://github.com/loic-roux-404/plateforme.git//<module>?ref=<rev>`
+  (terraform fetches the modules itself)
+- `PLATFORM_DIR=/path/to/plateforme`: everything uses that working tree
+  (new files must be `git add`-ed — path flakes see only tracked files)
 
 ```bash
-cd ../plateforme
-nix develop            # sops env + ./secrets symlink, terraform, terragrunt
-make build             # TARGET=initial (default) → result/nixos.qcow2
+./paas doctor                  # gates: pin, sops key, image, libvirt, minio, pebble
+./paas build                   # result/nixos.qcow2 (initial image)
+./paas tg cloud/local apply -auto-approve     # provision the local VM
+./paas tg network/local apply -auto-approve   # DNS, Nix deploy, fetch kubeconfig
+./paas reset                   # one-shot: destroy → build → cloud → network (logs in .agent/logs/)
+# Makefile equivalents (same pin contract):
+make doctor && make build && make reset
+make tg LAYER=cloud/local ARGS='apply -auto-approve'
 ```
 
-`result/nixos.qcow2` is what the libvirt layer consumes; terragrunt fails the
-apply if it is missing.
+paas/apps layers and `paas login` (kubectl via Dex OIDC) land in milestone 2,
+same `paas tg <layer>` shape. Any terragrunt subcommand works:
+`./paas tg network/local output -json k3s_config`.
 
-## 7. Bring up the local libvirt environment
-
-From the plateforme dev shell, apply the four layers in order:
-
-```bash
-make terragrunt/cloud/local     # provision the local VM
-make terragrunt/network/local   # DNS, Nix deploy, fetch kubeconfig
-make terragrunt/paas/local      # cert-manager, dex, longhorn, ...
-make terragrunt/apps/local      # n8n, supabase, ...
-make login                      # kubectl via Dex OIDC
-```
+Existing wrapper repo predating the template? `./paas init <dest>` copies
+`paas` + `terragrunt/` into it.
 
 ## 8. Re-enable the AI stack (optional)
 

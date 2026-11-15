@@ -19,3 +19,5 @@ Follow the steps in [README.md](https://github.com/loic-roux-404/kube-paas/blob/
 
 - [1. Install](1-install.md)
 - [2. Help](2-help.md)
+- [3. Example wrapper](3-example.md)
+- [4. Distribution](4-distribution.md)

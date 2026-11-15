@@ -241,6 +241,25 @@ with config.paas;
           }
         ];
         security.sudo.wheelNeedsPassword = false;
+        # shortcut: no timesyncd module in this eval — sync clock via HTTP
+        # Date header instead; guest clock drifts ~days behind after host sleep
+        systemd.services.vm-time-sync = {
+          after = [ "network-online.target" ];
+          wants = [ "network-online.target" ];
+          serviceConfig.Type = "oneshot";
+          # plain HTTP on purpose: TLS fails while the clock is still wrong
+          script = ''
+            d=$(curl -fsI --max-time 10 http://captive.apple.com | sed -n 's/^[Dd]ate: //p' | tr -d '\r')
+            [ -n "$d" ] && date -s "$d"
+          '';
+        };
+        systemd.timers.vm-time-sync = {
+          wantedBy = [ "timers.target" ];
+          timerConfig = {
+            OnBootSec = "1min";
+            OnUnitActiveSec = "1h";
+          };
+        };
         environment.systemPackages = [
           pkgs.htop
         ];

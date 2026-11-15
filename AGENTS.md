@@ -46,10 +46,10 @@ Beyond the cluster itself, the **macOS host (nix-darwin)** used to set up and op
 │   └── mkDarwinSystem.nix    # Darwin system builder (takes secretsSopsFile param)
 ├── sops-defaults/            # Example encrypted sops file (placeholders) so
 │   └── darwin.yaml           #   standalone k3s-paas darwin eval/build works
-├── secrets -> ../secrets     # SYMLINK (gitignored): authoring repo org-404/secrets
-│                              #   also hosts the private wrapper flake (bootstrap)
-├── nixpkgs/plateforme-secrets/ # Dev-shell helpers: init-sops (age env),
-│                              #   link-secrets (./secrets -> ../secrets)
+├── secrets/                  # GITIGNORED real dir (nested clone of org-404/secrets):
+│                              #   the private wrapper repo — authoring copy for
+│                              #   secrets + wrapper flake (bootstrap)
+├── nixpkgs/paas-cli.nix      # paas CLI + example wrapper template (packaged)
 ├── terragrunt/               # Terragrunt environment configs
 │   ├── cloud/                # Layer 1: VM provisioning
 │   │   ├── contabo/          # Contabo VPS
@@ -96,7 +96,9 @@ Beyond the cluster itself, the **macOS host (nix-darwin)** used to set up and op
 │   ├── tf-root-paas/         # PaaS layer composition
 │   └── tf-root-apps/         # Apps layer composition
 ├── example/                  # Template of the private wrapper repo (secrets
-│                              #   model): users copy it out to bootstrap
+│                              #   model): users copy it out to bootstrap —
+│                              #   includes `paas` script + terragrunt/ units
+│                              #   (cloud+network; paas/apps = milestone 2)
 └── docs/                     # MkDocs documentation
 ```
 
@@ -160,6 +162,15 @@ nix build .#nixosConfigurations.deploy-contabo   # deploy contabo image
 
 ### Terragrunt (4-layer apply sequence)
 
+> **Wrapper-first (2026-11)**: canonical deployment runs from the **private
+> wrapper repo** via its `paas` script (`paas build|tg <layer>|doctor|reset|init`)
+> or Makefile targets, pinned by the wrapper `flake.lock`. Terragrunt sources
+> the modules from `git::https://github.com/loic-roux-404/plateforme.git//<module>?ref=<locked rev>`
+> (terraform fetches them itself); `PLATFORM_DIR` overrides everything to a
+> plateforme working tree. See `docs/4-distribution.md` and the
+> `paas-debug-loop` skill. The in-repo `terragrunt/` tree below stays as the
+> integration test bed.
+
 ```bash
 # Layer 1: Cloud - provision VM
 make terragrunt/cloud/local      # local libvirt
@@ -190,11 +201,10 @@ make login ENV=contabo     # production
 ### Secrets Management
 
 ```bash
-# Edit secrets (SOPS + age, uses ssh-to-age from default flake shell)
-# Edit secrets (SOPS + age, uses ssh-to-age from default flake shell)
-# ./secrets is a symlink to ../secrets (org-404/secrets) — author THERE,
-# or equivalently run sops from inside ../secrets. Rotation = 1 commit in
-# ../secrets; no k3s-paas lockfile bump (k3s-paas takes no secrets input).
+# Edit secrets (SOPS + age, uses ssh-to-age from default flake shell).
+# ./secrets IS the wrapper repo (private clone) — author secrets there;
+# rotation = 1 commit in the wrapper, no k3s-paas lockfile bump
+# (k3s-paas takes no secrets input).
 sops secrets/prod.yaml
 sops secrets/local.yaml
 sops secrets/darwin.yaml
@@ -316,7 +326,7 @@ When a service-module apply finishes, verify and report in this order before dec
 - **Wrapper inversion (2026-01)**: the private `./secrets` repo (org-404/secrets) is the *main flake* — it pins plateforme (this repo) as a flake input and hosts the wrapper `flake.nix`/`Makefile`. plateforme is the public product and takes **no secrets input**. `make bootstrap` in plateforme delegates to `./secrets`, which (a) injects the real `darwin.yaml` via `secretsSopsFile` on `mkDarwinSystem`, and (b) accepts `PLATFORM_DIR=<path>` to add `--override-input plateforme path:<path>` so that checkout's *working tree* is validated instead of the lock pin (default: no override, pure pin).
 - **SOPS + age**: Secrets encrypted with age keys derived from SSH keys
 - **Two recipients**: Operator key + VM host key (for NixOS deployment)
-- **Per-environment files**: `local.yaml`, `prod.yaml`, `darwin.yaml` — authored in `../secrets` only; `./secrets` is a symlink created by the dev shell (`plateforme-secrets` → `link-secrets`)
+- **Per-environment files**: `local.yaml`, `prod.yaml`, `darwin.yaml` — authored in the wrapper repo (`./secrets`, a nested clone) only
 - **Standalone darwin eval**: `sops-defaults/darwin.yaml` (tracked placeholders) keeps `nix eval/build .#darwinConfigurations.*` working without `../secrets` — values are fake by design
 - **Runtime secrets**: NixOS deploy module creates transient secrets on the VM via SOPS
 - **Pin hygiene**: wrapper `flake.lock` = last-known-good; bump with `make -C ../secrets update` only after a green `make bootstrap`
@@ -342,7 +352,7 @@ When a service-module apply finishes, verify and report in this order before dec
 
 5. **x86_64 builds on Apple Silicon**: Use `make bootstrap-contabo` to start the linux-builder before building x86_64 images.
 
-6. **SOPS decryption failures**: Ensure `SOPS_AGE_KEY` and `SOPS_AGE_RECIPIENTS` are set (done automatically in `nix develop` shell via `nixpkgs/plateforme-secrets/init-sops.sh`).
+6. **SOPS decryption failures**: Ensure `SOPS_AGE_KEY` and `SOPS_AGE_RECIPIENTS` are set (exported automatically in `nix develop` shellHook from `~/.ssh/id_ed25519` via `ssh-to-age`; `paas tg` also derives them itself).
 
 6b. **Never `darwin-rebuild switch` from k3s-paas standalone**: without the wrapper, `mkDarwinSystem` falls back to `sops-defaults/darwin.yaml` — *placeholder* values that would activate fake API keys onto the real machine. Always bootstrap via `make bootstrap` (delegates to `../secrets`, which injects the real `darwin.yaml` via `secretsSopsFile` and builds the sibling working tree via `--override-input`). Likewise never author secrets under `./secrets` — it is a symlink to `../secrets`, the single authoring copy.
 
@@ -378,6 +388,7 @@ This repository has custom skills in `.agents/skills/`:
 - `cntb` - Contabo info retrieval via the `cntb` CLI (single source of truth for Contabo subscription info; no Contabo API/web console)
 - `libvirt` - libvirt VM provisioning expertise
 - `nix-platform` - Nix/NixOS/nix-darwin practices
+- `paas-debug-loop` - wrapper `paas` deploy loop: doctor gates, per-layer verification, bounded-retry failure protocol, browser fallback
 - `sops-secrets-platform` - SOPS + age secrets management
 - `terraform-engineer` - Terraform conventions
 - `terragrunt-platform` - Terragrunt orchestration
