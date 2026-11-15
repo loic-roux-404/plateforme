@@ -48,6 +48,9 @@ lib.mkIf (osConfig.paas.aiStack.enable or true) {
         # 1M-context plan settings from the Z.ai guide
         CLAUDE_CODE_AUTO_COMPACT_WINDOW = "1000000";
         CLAUDE_CODE_DISABLE_NONESSENTIAL_TRAFFIC = "1";
+        # rtk-proxy/litellm upstream (Zen/GLM) can't run Anthropic server-side
+        # auto-mode checks; opt out so the classifier-billing notice never shows
+        CLAUDE_CODE_AUTO_MODE_SERVER = "0";
         API_TIMEOUT_MS = "3000000";
       };
 
