@@ -7,11 +7,13 @@
 }:
 
 let
-  # Local LiteLLM gateway (litellm.nix) serving the /v1/messages Anthropic
-  # flavor for the GLM coding plan and OpenCode Zen models. Model ids follow
-  # the official Z.ai Claude Code setup guide:
-  # https://docs.z.ai/devpack/overview — [1m] selects the 1M-context variant.
-  glmBaseUrl = "http://127.0.0.1:4000";
+  # Claude Code → rtk-proxy (rtk-proxy.nix, 127.0.0.1:8080: normalises tool
+  # output, cache-align) → litellm gateway (litellm.nix, 127.0.0.1:4000)
+  # serving the /v1/messages Anthropic flavor for the GLM coding plan and
+  # OpenCode Zen models. Model ids follow the official Z.ai Claude Code
+  # setup guide: https://docs.z.ai/devpack/overview — [1m] selects the
+  # 1M-context variant.
+  glmBaseUrl = "http://127.0.0.1:8080";
 
   glmFlagship = "glm-5.3[1m]";
 

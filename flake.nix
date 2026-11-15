@@ -151,6 +151,7 @@
           homeManagerModules = [
             inputs.sops-nix.homeManagerModules.sops
             ./nixos-darwin/litellm.nix
+            ./nixos-darwin/rtk-proxy.nix
             ./nixos-darwin/claude-code.nix
             ./nixos-darwin/vscode-agent.nix
           ];
