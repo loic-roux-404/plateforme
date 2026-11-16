@@ -37,8 +37,8 @@ variable "nix_rebuild_arguments" {
 }
 
 variable "nixos_transient_secrets" {
-  type    = map(string)
-  default = {}
+  type      = map(string)
+  default   = {}
   sensitive = true
 }
 
@@ -81,7 +81,7 @@ variable "nix_flake" {
 }
 
 variable "nix_flake_reset" {
-  type = string
-  default = null
+  type     = string
+  default  = null
   nullable = true
 }

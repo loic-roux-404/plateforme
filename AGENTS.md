@@ -368,6 +368,8 @@ When a service-module apply finishes, verify and report in this order before dec
 
 12. **`cluster-domain` must stay explicit in the rendered rke2 config**: the initial image boots rke2 with `cluster-domain: <dns.name>`; if the deploy template omits it the apiserver falls back to `cluster.local` while kube-controller-manager keeps minting tokens with `svc.<dns.name>` → `invalid bearer token` for every pod (CNI sandboxes stuck `ContainerCreating`).
 
+13. **NixOS deploy may need a reboot (switchInhibitors)**: some generation changes refuse a live `switch-to-configuration` — e.g. dbus→broker (nixpkgs 26.11) fails the pre-switch `switchInhibitors` check. `tf-modules-nix/deploy` handles this automatically: on switch failure it retries via `nixos-rebuild boot` + remote reboot + wait-for-ssh + a confirming no-op switch. Expect ~5 min node downtime (single-node cluster down) the first time such a generation lands in an env; the local env will hit the same dbus cutover as contabo did.
+
 ## Environment Variables
 
 | Variable | Purpose | Default |

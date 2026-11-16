@@ -60,12 +60,12 @@ data "external" "secured_machine_key_pub" {
   program    = ["bash", "${path.module}/key-to-age.sh"]
 
   query = {
-    key  = pathexpand(local_sensitive_file.secured_machine_key.filename)
+    key = pathexpand(local_sensitive_file.secured_machine_key.filename)
   }
 }
 
 resource "local_sensitive_file" "non_encrypted_secrets" {
-  content  = yamlencode(merge(var.nixos_transient_secrets, {
+  content = yamlencode(merge(var.nixos_transient_secrets, {
     nodePrivateKey = tls_private_key.machine_key.private_key_openssh
   }))
   filename = "${path.cwd}/${var.node_id}.yaml"
@@ -84,13 +84,13 @@ locals {
 
 resource "terraform_data" "create_transient_secrets" {
   triggers_replace = {
-    changed_secrets = local_sensitive_file.non_encrypted_secrets
-    changed_node    = var.node_id
+    changed_secrets   = local_sensitive_file.non_encrypted_secrets
+    changed_node      = var.node_id
     changed_nix_flake = var.nix_flake
   }
   provisioner "local-exec" {
     environment = {
-      SOPS_AGE_KEY        = data.external.deploy_key.result.key
+      SOPS_AGE_KEY = data.external.deploy_key.result.key
       SOPS_AGE_RECIPIENTS = join(",", [
         for each in local.all_recipients : each if each != ""
       ])
@@ -107,8 +107,8 @@ data "local_sensitive_file" "encrypted_secrets" {
 
 resource "terraform_data" "upload_secrets" {
   triggers_replace = {
-    changed_secrets = data.local_sensitive_file.encrypted_secrets.content
-    changed_node    = var.node_id
+    changed_secrets   = data.local_sensitive_file.encrypted_secrets.content
+    changed_node      = var.node_id
     changed_nix_flake = var.nix_flake
   }
   connection {
@@ -150,30 +150,59 @@ resource "terraform_data" "deploy" {
     derivation = data.external.instantiate.result["path"]
   }
 
+  # switch first; on failure (typically switchInhibitors, e.g. a dbus
+  # implementation change refuses live switch) fall back to boot + reboot and
+  # re-run switch on the booted system so terraform records a clean success.
   provisioner "local-exec" {
-    interpreter = concat(local.nix_rebuild_interpreter, ["--flake", var.nix_flake])
-    environment = { NIX_SSHOPTS = var.nix_ssh_options }
-    command = "switch"
+    interpreter = ["bash", "-c"]
+    environment = {
+      NIX_SSHOPTS = var.nix_ssh_options
+      REBUILD     = join(" ", concat(local.nix_rebuild_interpreter, ["--flake", var.nix_flake]))
+      TARGET      = "${var.ssh_connection.user}@${var.node_address}"
+    }
+    command = <<-EOT
+      set -euo pipefail
+      if $REBUILD switch; then
+        exit 0
+      fi
+      echo "paas-deploy: switch failed (switchInhibitors?) — retrying via boot + reboot" >&2
+      $REBUILD boot
+      ssh $NIX_SSHOPTS "$TARGET" 'sudo reboot' || true
+      # wait for the node to go down (bounded: if reboot never happened, the
+      # final switch below re-surfaces the real error)
+      down_deadline=$((SECONDS + 180))
+      while ssh -o ConnectTimeout=5 $NIX_SSHOPTS "$TARGET" true 2>/dev/null; do
+        [[ $SECONDS -lt $down_deadline ]] || break
+        sleep 10
+      done
+      # wait for it to come back
+      up_deadline=$((SECONDS + 600))
+      until ssh -o ConnectTimeout=5 $NIX_SSHOPTS "$TARGET" true 2>/dev/null; do
+        [[ $SECONDS -lt $up_deadline ]] || { echo "node did not come back after reboot" >&2; exit 1; }
+        sleep 10
+      done
+      $REBUILD switch
+    EOT
   }
 }
 
 resource "terraform_data" "reset" {
   count = var.nix_flake_reset != null ? 1 : 0
   input = {
-    nix_flake_reset = var.nix_flake_reset
+    nix_flake_reset         = var.nix_flake_reset
     nix_rebuild_interpreter = local.nix_rebuild_interpreter
-    nix_ssh_options = var.nix_ssh_options
+    nix_ssh_options         = var.nix_ssh_options
   }
 
   provisioner "local-exec" {
-    when = destroy
+    when       = destroy
     on_failure = continue
     interpreter = concat(
-      self.input.nix_rebuild_interpreter, 
+      self.input.nix_rebuild_interpreter,
       ["--flake", self.input.nix_flake_reset]
     )
     environment = { NIX_SSHOPTS = self.input.nix_ssh_options }
-    command = "switch"
+    command     = "switch"
   }
 
   lifecycle {
@@ -185,6 +214,6 @@ output "config" {
   depends_on = [terraform_data.deploy]
   value = merge(var.config, {
     node_address = var.node_address
-    node_id = var.node_id
+    node_id      = var.node_id
   })
 }
