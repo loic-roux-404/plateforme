@@ -87,15 +87,16 @@ resource "kubernetes_cluster_role_v1" "aggregated" {
 
 # --- Namespaces + per-namespace bindings ---
 
-data "kubernetes_all_namespaces" "all" {}
-
+# for_each must be the full stable namespace set, NOT the diff against the
+# cluster: a `missing`-keyed for_each drops each key right after creating it,
+# so every later apply destroys and the one after recreates (endless churn).
+# Declaring an existing namespace is a no-op read for the provider.
 locals {
-  existing = toset(data.kubernetes_all_namespaces.all.namespaces)
-  missing  = var.create_namespaces ? setsubtract(toset(var.namespaces), local.existing) : toset([])
+  managed = var.create_namespaces ? toset(var.namespaces) : toset([])
 }
 
 resource "kubernetes_namespace_v1" "ci" {
-  for_each = local.missing
+  for_each = local.managed
 
   metadata {
     name = each.value
