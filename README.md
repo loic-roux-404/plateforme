@@ -13,36 +13,81 @@
 | OS | Status |
 | --- | --- |
 | Darwin | OK |
-| Linux | not tested |
+| Linux | NO support |
 
-## New Nix system (beta)
+## Quick start — one nix command bootstraps everything
 
-### Setup (Darwin)
-
-Nix installation :
+The packaged `paas` CLI embeds the whole distribution: `nix run` it once and
+it installs the [example wrapper](example/) — the private repo template that
+sets up your **nix-darwin control host** and drives the platform. No
+plateforme checkout needed, everything runs from your flake pin.
 
 ```bash
+# prerequisites: Nix with flakes, ed25519 ssh key without passphrase
 curl --proto '=https' --tlsv1.2 -sSf -L https://install.determinate.systems/nix | sh -s -- install
+ssh-keygen -t ed25519                 # only if ~/.ssh/id_ed25519 is missing
 
-echo '. /nix/var/nix/profiles/default/etc/profile.d/nix-daemon.fish' >> ~/.config/fish/config.fish
+# 1. create your wrapper repo and install the template
+mkdir secrets && cd secrets && git init
+nix run github:loic-roux-404/plateforme#paas -- init .
+
+# 2. wire your sops age recipient (derived from your ssh key) in .sops.yaml
+nix shell nixpkgs#ssh-to-age -c ssh-to-age < ~/.ssh/id_ed25519.pub
+
+# 3. set your identity (user, githubUser in flake.nix), then encrypt the skeletons
+nix shell nixpkgs#sops -c sh -c '\
+  cp secrets-skeleton/darwin.yaml darwin.yaml && sops encrypt -i darwin.yaml && \
+  cp secrets-skeleton/local.yaml local.yaml && sops encrypt -i local.yaml'
+
+# 4. build + switch the macOS control host
+make doctor && make bootstrap
 ```
 
-### Build
+You get: home-manager environment (shells, git, editors, k8s/terraform
+tooling), libvirt + dnsmasq + minio launchd daemons, and the dev shells.
+Dummy secret values are fine for the first bootstrap — every consumer
+tolerates empty strings. Real credentials: see
+[Terraform project secrets](#terraform-project-secrets) below (Contabo,
+Gandi, GitHub, cert-manager). `paas init` only refreshes `paas` +
+`terragrunt/` — an existing wrapper never loses its values.
 
-Set up nixos-darwin :
+## Spin up, then manage your platform
+
+Same `./paas` entrypoint for the whole life cycle. One pin — your
+`flake.lock` `plateforme` input — selects the revision for the darwin
+bootstrap, the NixOS image builds and the terragrunt module tree:
 
 ```bash
-make bootstrap
+./paas doctor                                # OK/FAIL gates: pin, sops key, image, libvirt, minio, pebble
+./paas reset                                 # one-shot: destroy → build image → cloud → network
+# or step by step:
+./paas build                                 # NixOS qcow2 → result/nixos.qcow2
+./paas tg cloud/local apply -auto-approve    # provision the local libvirt VM
+./paas tg network/local apply -auto-approve  # DNS, NixOS deploy, fetch kubeconfig
 ```
 
-> **Note** : `make bootstrap-x86` for cnotabo build and deployment.
+Day-2 management:
+
+```bash
+./paas tg network/local output -json k3s_config    # any terragrunt subcommand, any layer
+make bootstrap                                     # re-switch the control host after edits
+make update                                        # bump the plateforme pin (only after green bootstrap)
+./paas login                                       # kubectl via Dex OIDC (needs the paas layer)
+```
+
+Failures land per-step in `.agent/logs/` — see the `paas-debug-loop` skill.
+Consumer guide: [docs/4-distribution.md](docs/4-distribution.md), template
+walkthrough: [example/README.md](example/README.md). The `terragrunt/` tree
+in THIS repo stays as the integration test bed.
+
+## Dev: from a plateforme checkout
 
 Build an image between available nixos configuration `contabo` and `qcow2` :
 
 > Supported systems are `aarch64-linux`, `x86_64-linux`, `aarch64-darwin` and `x86_64-darwin`.
-    
+
 ```bash
-nix build .#nixosConfigurations.default --system x86_64-linux
+make bootstrap-contabo && nix build .#nixosConfigurations.default --system x86_64-linux
 ```
 
 ### Uninstall on Darwin:
@@ -52,17 +97,6 @@ nix build .#nixosConfigurations.default --system x86_64-linux
 ```bash
 ./result/sw/bin/darwin-uninstaller
 ```
-
-## Distribution (wrapper-driven deployment)
-
-Deployment orchestration lives in a **private wrapper repo** initialized from
-[example/](example/) — values + secrets only, driving everything through one
-`paas` script (`paas doctor / build / tg <layer> / reset`). The wrapper's
-`flake.lock` pins the plateforme revision for the darwin bootstrap, the nix
-image builds and the terragrunt module tree (`PLATFORM_DIR` overrides to any
-working tree). Consumer guide: [docs/4-distribution.md](docs/4-distribution.md).
-
-The `terragrunt/` tree in THIS repo stays as the integration test bed.
 
 ## Terraform project secrets
 
