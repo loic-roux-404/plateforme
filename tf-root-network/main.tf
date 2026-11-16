@@ -7,6 +7,10 @@ locals {
     cidr if can(regex(cidr, var.machine.node_ip))
   ]) > 0
   all_domains = concat([var.paas_base_domain], var.additional_domains)
+  # vmnet-shared bridge host (last octet .1) — runs pebble (:14000/:15000) and
+  # minio (:9000) on the local env. Regex, not substr: multi-digit last octets
+  # (e.g. static .100) must collapse to .1, not .101.
+  gateway_ip = replace(var.machine.node_ip, "/\\.[0-9]+$/", ".1")
 }
 
 module "gandi_domain" {

@@ -42,6 +42,7 @@ resource "helm_release" "reflector" {
   version       = "7.1.262"
   wait_for_jobs = true
   atomic        = true
+  timeout       = 600 # cold-cluster image pull exceeds the 300s default
 
   set = [ {
     name  = "targetNamespace"

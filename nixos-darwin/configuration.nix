@@ -11,6 +11,11 @@ with config.paas;
 {
   system.stateVersion = 5;
 
+  # Static lease of the local libvirt VM (nixos/local.nix pins the same
+  # address on the guest). Kills the per-reset DHCP churn that desynced the
+  # dnsmasq wildcard, arp lookups and pebble/minio gateway reachability.
+  paas.kube.addr = "192.168.2.100";
+
   users.users.${currentSystemUser} = {
     home = "/Users/${currentSystemUser}";
     openssh.authorizedKeys.keys = [ ];
@@ -118,7 +123,7 @@ with config.paas;
       sudo mkdir -p /var/lib/minio || true
 
       ${unstablePkgs.silo}/bin/minio server /var/lib/minio \
-        --address "127.0.0.1:9000" \
+        --address "192.168.2.1:9000" \
         --console-address "127.0.0.1:9001"
     '';
     serviceConfig = {

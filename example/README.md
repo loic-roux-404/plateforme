@@ -102,11 +102,11 @@ the nix builds and the terragrunt module tree:
   (new files must be `git add`-ed — path flakes see only tracked files)
 
 ```bash
-./paas doctor                  # gates: pin, sops key, image, libvirt, minio, pebble
-./paas build                   # result/nixos.qcow2 (initial image)
-./paas tg cloud/local apply -auto-approve     # provision the local VM
-./paas tg network/local apply -auto-approve   # DNS, Nix deploy, fetch kubeconfig
-./paas reset                   # one-shot: destroy → build → cloud → network (logs in .agent/logs/)
+nix run ../#paas -- doctor                  # gates: pin, sops key, image, libvirt, minio, pebble
+nix run ../#paas -- build                   # result/nixos.qcow2 (initial image)
+nix run ../#paas -- tg cloud/local apply -auto-approve     # provision the local VM
+nix run ../#paas -- tg network/local apply -auto-approve   # DNS, Nix deploy, fetch kubeconfig
+nix run ../#paas -- reset                   # one-shot: destroy → build → cloud → network (logs in .agent/logs/)
 # Makefile equivalents (same pin contract):
 make doctor && make build && make reset
 make tg LAYER=cloud/local ARGS='apply -auto-approve'

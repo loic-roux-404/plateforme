@@ -15,7 +15,11 @@
 #                           plateforme devShell (terraform/terragrunt/sops + key)
 #   paas doctor             OK/FAIL gates; non-zero exit on any FAIL
 #   paas reset              destroy cloud → build initial → cloud → network
+#                          (bootstrap, no apiserver oidc) → [paas → network
+#                          (apiserver oidc on) when terragrunt/paas/local exists]
 #   paas login              kubectl OIDC setup (needs the paas layer — milestone 2)
+#   paas ssh [env] [args…]  ssh admin@<node_ip> from the cloud/<env> state
+#                           (env ∈ local|contabo, default local; args pass to ssh)
 # Every command works through nix too (run from the wrapper dir):
 #   nix run github:loic-roux-404/plateforme#paas -- tg cloud/local apply -auto-approve
 #   nix run ../#paas -- doctor        # local working-tree plateforme
@@ -51,7 +55,11 @@ log() { printf '== %s\n' "$*"; }
 rev() { jq -r '.nodes.plateforme.locked.rev' "$LOCK"; }
 
 nix_ref() {
-  if [[ -n ${PLATFORM_DIR:-} ]]; then echo "path:$PLATFORM_DIR"
+  # git+file (not path:): path: copies the WHOLE working dir into the store on
+  # every nix call — including the gitignored nested ./secrets wrapper and its
+  # ~1G terragrunt caches, which refills /nix within a few commands. git+file
+  # honours .gitignore and only ships tracked + staged files.
+  if [[ -n ${PLATFORM_DIR:-} ]]; then echo "git+file://$PLATFORM_DIR"
   else echo "github:$REPO/$(rev)"; fi
 }
 
@@ -92,7 +100,25 @@ cmd_tg() {
 }
 
 cmd_login() {
-  die "login needs the paas layer (milestone 2): paas tg paas/local output -json oidc_login_setup_command_ops"
+  [[ -f "$ROOT/terragrunt/paas/local/terragrunt.hcl" ]] \
+    || die "login needs the paas layer (terragrunt/paas/local unit missing)"
+  local cmd
+  cmd="$(cmd_tg paas/local output -json oidc_login_setup_command_ops | jq -r .)"
+  [[ -n $cmd ]] || die "no oidc_login_setup_command_ops output — apply the paas layer first"
+  log "configuring kubectl context plateforme (oidc)"
+  eval "$cmd"
+}
+
+cmd_ssh() {
+  local env=local
+  if [[ ${1:-} == local || ${1:-} == contabo ]]; then env="$1"; shift; fi
+  local state="$ROOT/terragrunt/.terragrunt/$env/cloud/$env/terraform.tfstate"
+  [[ -f $state ]] || die "no cloud/$env state — run: paas tg cloud/$env apply"
+  local ip
+  ip="$(jq -r '.outputs.node_ip.value // empty' "$state")"
+  [[ -n $ip ]] || die "no node_ip output in cloud/$env state — rerun: paas tg cloud/$env apply"
+  log "ssh admin@$ip ($env)"
+  exec ssh "admin@${ip}" "$@"
 }
 
 gate() {  # gate <name> <ok|warn|FAIL> [detail] — only FAIL blocks
@@ -154,9 +180,23 @@ cmd_reset() {
   else
     log "no cloud state — skip destroy"
   fi
-  lg="$LOGS/$ts-build.log";   log "build initial image (log $lg)"; cmd_build initial 2>&1 | tee "$lg"
-  lg="$LOGS/$ts-cloud.log";   log "apply cloud (log $lg)";         cmd_tg cloud/local apply -auto-approve 2>&1 | tee "$lg"
-  lg="$LOGS/$ts-network.log"; log "apply network (log $lg)";       cmd_tg network/local apply -auto-approve 2>&1 | tee "$lg"
+  lg="$LOGS/$ts-build.log"; log "build initial image (log $lg)"; cmd_build initial 2>&1 | tee "$lg"
+  lg="$LOGS/$ts-cloud.log"; log "apply cloud (log $lg)"; cmd_tg cloud/local apply -auto-approve 2>&1 | tee "$lg"
+  # phase 1: bootstrap WITHOUT apiserver structured authn — the oidc issuer
+  # (dex) only exists after the paas layer; a failing oidc authenticator breaks
+  # pod token authn (canal CrashLoop, node NotReady). See nixos/deploy.nix.
+  lg="$LOGS/$ts-network.log"; log "apply network — bootstrap, no apiserver oidc (log $lg)"
+  NIX_FLAKE_ATTR=deploy-bootstrap cmd_tg network/local apply -auto-approve 2>&1 | tee "$lg"
+  if [[ -f "$ROOT/terragrunt/paas/local/terragrunt.hcl" ]]; then
+    lg="$LOGS/$ts-paas.log"; log "apply paas (log $lg)"
+    cmd_tg paas/local apply -auto-approve 2>&1 | tee "$lg"
+    # phase 2: re-deploy nix with apiserver oidc on (dex now up + trusted via
+    # the pebble root CA) — long rke2 restart expected
+    lg="$LOGS/$ts-network2.log"; log "apply network — enable apiserver oidc (log $lg)"
+    cmd_tg network/local apply -auto-approve 2>&1 | tee "$lg"
+  else
+    log "no paas/local unit — skip phase 2 (apiserver oidc stays off)"
+  fi
   log "reset complete — logs: $LOGS/$ts-*.log"
 }
 
@@ -186,12 +226,13 @@ cmd_init() {
   log "initialized $dest — fresh template: edit flake.nix identity + encrypt skeletons (README); existing wrapper: paas doctor && paas reset"
 }
 
-usage() { sed -n 's/^# \{0,1\}//p' "${BASH_SOURCE[0]}" | sed -n '2,19p'; }
+usage() { sed -n 's/^# \{0,1\}//p' "${BASH_SOURCE[0]}" | sed -n '2,21p'; }
 
 case "${1:-help}" in
   build)  shift; cmd_build "$@" ;;
   tg)     shift; cmd_tg "$@" ;;
   login)  shift; cmd_login "$@" ;;
+  ssh)    shift; cmd_ssh "$@" ;;
   doctor) shift; cmd_doctor "$@" ;;
   reset)  shift; cmd_reset "$@" ;;
   init)   shift; cmd_init "$@" ;;

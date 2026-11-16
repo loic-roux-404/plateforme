@@ -23,6 +23,14 @@ terraform {
   }
 }
 
+# GitHub org management — configured at the root so the github_* modules
+# stay count/for_each-capable (module-local providers forbid it). Empty token
+# + owner when enable_github_integration = false is fine: no resources exist.
+provider "github" {
+  owner = var.github_organization
+  token = var.github_token != "" ? var.github_token : null
+}
+
 # Contabo S3-compatible object storage via the AWS provider.
 provider "aws" {
   region     = var.object_storage.region

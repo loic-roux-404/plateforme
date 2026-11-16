@@ -103,7 +103,8 @@ resource "kubernetes_namespace_v1" "ci" {
 }
 
 resource "kubernetes_role_binding_v1" "ci_edit" {
-  for_each = toset(var.namespaces)
+  for_each   = toset(var.namespaces)
+  depends_on = [kubernetes_namespace_v1.ci]
 
   metadata {
     name      = "${var.role_name}-ci"

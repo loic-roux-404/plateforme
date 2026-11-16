@@ -75,9 +75,9 @@ same 4-line unit shape once local is green.
 ## Deploy loop
 
 ```bash
-./paas doctor
-./paas reset                     # or step by step: build → tg cloud/local → tg network/local
-./paas tg network/local output -json k3s_config    # kubeconfig
+nix run ../#paas -- doctor
+nix run ../#paas -- reset                     # or step by step: build → tg cloud/local → tg network/local
+nix run ../#paas -- tg network/local output -json k3s_config    # kubeconfig
 ```
 
 Failures: see the `paas-debug-loop` skill (per-layer gates, bounded-retry

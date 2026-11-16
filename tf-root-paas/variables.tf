@@ -12,7 +12,8 @@ variable "cert_manager_namespace" {
 }
 
 variable "cert_manager_email" {
-  type = string
+  type    = string
+  default = ""
 }
 
 variable "dex_namespace" {
@@ -22,14 +23,18 @@ variable "dex_namespace" {
 variable "github_token" {
   sensitive = true
   type      = string
+  # empty when enable_github_integration = false (local)
+  default   = ""
 }
 
 variable "github_client_id" {
-  type = string
+  type    = string
+  default = ""
 }
 
 variable "github_client_secret" {
-  type = string
+  type    = string
+  default = ""
 }
 
 variable "github_action_client_id" {
@@ -151,4 +156,16 @@ variable "bucket_prefix" {
   type        = string
   description = "Prefix for per-repo S3 bucket names (must be globally unique on Contabo)"
   default     = "paas"
+}
+
+variable "enable_github_integration" {
+  type        = bool
+  description = <<-EOT
+    Manage the GitHub org (teams, repo variables/secrets, per-repo buckets,
+    dex github connector). Prod (contabo) keeps it on. Local must disable it:
+    the wrapper points at the same real org, and an unprefixed local apply
+    would clobber prod repo secrets/variables. github_* inputs are ignored
+    when false (dex serves static clients only).
+  EOT
+  default     = true
 }

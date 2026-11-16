@@ -51,7 +51,7 @@ resource "helm_release" "oauth2_proxy" {
   chart            = "oauth2-proxy"
   namespace        = var.dex_namespace
   create_namespace = false
-  timeout          = 120
+  timeout          = 600
   wait_for_jobs    = true
   atomic           = true
   take_ownership   = true

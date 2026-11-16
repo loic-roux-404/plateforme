@@ -109,6 +109,31 @@ in
       default = "/etc/rancher/rke2/rke2.yaml";
     };
 
+    kube.apiserverOidcAuthn = lib.mkOption {
+      default = true;
+      type = lib.types.bool;
+      description = ''
+        Wire the structured apiserver authentication config
+        (--authentication-config, dex JWT issuer) into rke2. Must stay false
+        during local bootstrap: the issuer (dex) is deployed by the paas layer
+        and is unreachable on a fresh node, which breaks all pod service-account
+        token authn (rke2-canal CrashLoop, node NotReady). The paas reset flow
+        deploys phase 1 with the `deploy-bootstrap` attr (false) and re-deploys
+        with `deploy` (true) once the paas layer is green.
+      '';
+    };
+
+    kube.importLocalAcmeCa = lib.mkOption {
+      default = false;
+      type = lib.types.bool;
+      description = ''
+        Trust the local pebble ACME root CA (transient sops secret
+        `pebbleRootCa`, written by the network layer) in the host trust store.
+        Local-env only: lets the apiserver verify the pebble-issued dex ingress
+        certificate during OIDC discovery. Contabo uses public CA chains.
+      '';
+    };
+
     kube.disableServices = lib.mkOption {
       default = [ ];
       type = lib.types.listOf lib.types.str;

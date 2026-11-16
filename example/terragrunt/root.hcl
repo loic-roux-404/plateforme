@@ -35,9 +35,23 @@ remote_state {
 terraform {
   exclude_from_copy = [
     ".git",
+    ".direnv",
+    ".terragrunt",
+    ".terragrunt-cache",
+    # nested wrapper clone (when PLATFORM_DIR points at plateforme with the
+    # wrapper cloned inside): SOPS files + .terragrunt-cache recursion
+    "secrets",
+    "secrets-skeleton",
+    "docs",
+    "example",
+    "nixos",
+    "nixos-darwin",
+    "nixos-options",
+    "nix-lib",
+    "nixpkgs",
     "result",
-    "*.nix",
-    ".direnv"
+    "result/*",
+    "*.nix"
   ]
 }
 

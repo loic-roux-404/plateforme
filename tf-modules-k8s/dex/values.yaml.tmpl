@@ -8,6 +8,7 @@ config:
     config:
       inCluster: true
   connectors:
+%{ if enable_github_connector }
   - type: github
     id: github
     name: GitHub
@@ -18,6 +19,7 @@ config:
       redirectURI: "https://${dex_hostname}/callback"
       orgs:
         ${dex_github_orgs}
+%{ endif }
 
   - type: oidc
     id: github-actions

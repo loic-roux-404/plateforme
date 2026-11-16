@@ -8,7 +8,5 @@ terraform {
   }
 }
 
-provider "github" {
-  owner = var.github_organization
-  token = var.github_token
-}
+# provider "github" is configured by the root module (tf-root-paas) — a
+# module-local provider config forbids count/for_each on module calls.

@@ -122,8 +122,13 @@
       nixosAllModules = rec {
         default = attrValues self.nixosModules;
         contabo = default ++ [ ./nixos/contabo.nix ];
-        deploy = default ++ [ ./nixos/deploy.nix ];
-        deployContabo = deploy ++ [ ./nixos/contabo.nix ];
+        # local (libvirt) images: static IP + pebble CA import — see nixos/local.nix
+        local = default ++ [ ./nixos/local.nix ];
+        deploy = local ++ [ ./nixos/deploy.nix ];
+        # bootstrap phase: same as deploy but WITHOUT the apiserver structured
+        # authn (dex does not exist yet — see paas.kube.apiserverOidcAuthn)
+        deployBootstrap = deploy ++ [{ paas.kube.apiserverOidcAuthn = false; }];
+        deployContabo = default ++ [ ./nixos/deploy.nix ./nixos/contabo.nix ];
       };
 
       darwinModules = {
@@ -201,12 +206,19 @@
 
           initial = nixosSystem {
             inherit system specialArgs;
-            modules = self.nixosAllModules.default;
+            modules = self.nixosAllModules.local;
           };
 
           deploy = nixosSystem {
             inherit system specialArgs;
             modules = self.nixosAllModules.deploy;
+          };
+
+          # local bootstrap phase: no apiserver structured authn (see
+          # nixosAllModules.deployBootstrap) — steady state is `deploy`
+          deploy-bootstrap = nixosSystem {
+            inherit system specialArgs;
+            modules = self.nixosAllModules.deployBootstrap;
           };
 
           ## Contabo-specific configurations

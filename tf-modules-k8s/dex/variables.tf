@@ -64,3 +64,9 @@ variable "dex_extra_volumes" {
     })
   }))
 }
+
+variable "enable_github_connector" {
+  type        = bool
+  default     = true
+  description = "Render the GitHub identity-provider connector. Local env disables it (no real org behind the wrapper); static clients + the github-actions oidc connector stay."
+}

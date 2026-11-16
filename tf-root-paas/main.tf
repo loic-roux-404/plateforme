@@ -3,6 +3,13 @@ module "cluster_infos" {
 }
 
 locals {
+  github = var.enable_github_integration
+  # team names come from the real org when the integration is on; local
+  # placeholders keep dex static clients / oauth2-proxy wiring shaped the same
+  ops_team_name  = local.github ? module.github_ops[0].team_name : "local-ops-team"
+  apps_team_name = local.github ? module.github_apps[0].team_name : "local-apps-team"
+  repositories   = local.github ? module.github_org_repos_config[0].repositories : []
+
   dex_hostname            = "dex.${var.paas_base_domain}"
   all_services_subdomains = concat(["dex", "longhorn"], var.services_subdomains)
   ingress_hosts_internals = [for item in local.all_services_subdomains : "${item}.${var.paas_base_domain}"]
@@ -10,11 +17,13 @@ locals {
   # Bucket names must be lowercase, 3-63 chars, DNS-compliant.
   # Derived here (composition layer) so the contabo-s3 module stays generic.
   repo_bucket_names = {
-    for repo in module.github_org_repos_config.repositories :
+    for repo in local.repositories :
     repo => lower(substr("${var.bucket_prefix}-${replace(repo, "/[^a-z0-9-]/", "-")}", 0, 63))
   }
 
-  gateway_ip = "${substr(module.cluster_infos.ingress_controller_ip, 0, length(module.cluster_infos.ingress_controller_ip) - 1)}1"
+  # bridge gateway (last octet .1) where pebble runs — regex because the
+  # substr+1 trick breaks on multi-digit octets (.100 → .101)
+  gateway_ip = replace(module.cluster_infos.ingress_controller_ip, "/\\.[0-9]+$/", ".1")
 
   # Dynamic local environment URLs using gateway IP
   letsencrypt_envs_dynamic = merge(
@@ -73,6 +82,7 @@ module "internal_ca" {
 }
 
 module "github_ops" {
+  count               = local.github ? 1 : 0
   source              = "../tf-modules-github/team"
   github_token        = var.github_token
   github_organization = var.github_organization
@@ -82,6 +92,7 @@ module "github_ops" {
 }
 
 module "github_apps" {
+  count               = local.github ? 1 : 0
   source              = "../tf-modules-github/team"
   github_token        = var.github_token
   github_organization = var.github_organization
@@ -111,23 +122,25 @@ module "dex" {
   dex_hostname         = local.dex_hostname
   github_client_id     = var.github_client_id
   github_client_secret = var.github_client_secret
-  dex_github_orgs = [{
+  # local: no real org behind the wrapper — static clients only
+  enable_github_connector = local.github
+  dex_github_orgs = local.github ? [{
     name  = var.github_organization
-    teams = [module.github_ops.team_name, module.github_apps.team_name]
-  }]
+    teams = [local.ops_team_name, local.apps_team_name]
+  }] : []
   k8s_ingress_class           = var.k8s_ingress_class
   cert_manager_cluster_issuer = module.cert_manager.issuer
   dex_extra_volume_mounts     = module.cert_manager.root_ca_config_map_volume_mounts
   dex_extra_volumes           = module.cert_manager.root_ca_config_map_volume
   static_clients = [{
-    id           = module.github_apps.team_name
-    name         = module.github_apps.team_name
+    id           = local.apps_team_name
+    name         = local.apps_team_name
     secret       = random_password.github_ops_client_secret.result
     redirectURIs = ["https://oauth2.${var.paas_base_domain}/oauth2/callback"]
     public       = false
     }, {
-    id   = module.github_ops.team_name
-    name = module.github_ops.team_name
+    id   = local.ops_team_name
+    name = local.ops_team_name
     redirectURIs = [
       "http://127.0.0.1/oidc/callback",
       "http://localhost:8000"
@@ -144,7 +157,7 @@ module "dex" {
 }
 
 resource "kubernetes_cluster_role_binding_v1" "dex_github_cluster_admin" {
-  for_each = toset(["${var.github_organization}:${module.github_ops.team_name}"])
+  for_each = local.github ? toset(["${var.github_organization}:${local.ops_team_name}"]) : toset([])
 
   metadata {
     name = "kubeapps-${replace(each.value, ":", "-")}-cluster-admin"
@@ -170,6 +183,7 @@ module "contabo_s3" {
 }
 
 module "github_org_repos_config" {
+  count               = local.github ? 1 : 0
   source              = "../tf-modules-github/repos-config"
   github_token        = var.github_token
   github_organization = var.github_organization
@@ -204,7 +218,7 @@ module "ci_rbac" {
 
   namespaces = setunion(
     toset(var.ci_authorized_namespaces),
-    toset(module.github_org_repos_config.repositories),
+    toset(local.repositories),
     toset([var.arc_namespace]),
   )
 
@@ -246,11 +260,11 @@ output "dex_hostname" {
 }
 
 output "github_apps_team" {
-  value = module.github_apps.team_name
+  value = local.apps_team_name
 }
 
 output "github_ops_team" {
-  value = module.github_ops.team_name
+  value = local.ops_team_name
 }
 
 output "oauth2_proxy_ingress_annotations" {
@@ -262,7 +276,7 @@ locals {
   dex_client_ops = [
     for client in module.dex.dex_clients :
     client
-    if client.id == module.github_ops.team_name
+    if client.id == local.ops_team_name
   ][0]
 }
 

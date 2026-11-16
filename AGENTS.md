@@ -362,6 +362,12 @@ When a service-module apply finishes, verify and report in this order before dec
 
 9. **`docker compose build` fails with `fork/exec ~/.docker/cli-plugins/docker-buildx: no such file or directory`**: a dangling user-level plugin symlink is shadowing the Nix-provided plugin. Delete it — see [Docker CLI plugins come from Nix](#linux-builder-vm-networking).
 
+10. **Local paas apply must never manage the GitHub org**: `tf-root-paas` has `enable_github_integration` (default `true` for contabo). `paas/local/env.hcl` sets it `false` — the wrapper points at the same real org as prod, and `repo_secrets`/`repo_variables` have no env prefix, so a local apply would overwrite prod repo secrets with local values (kube.test CA, local dex client, minioadmin S3). If a local wrapper's state still tracks `github_actions_*` resources from a pre-gate run, the next gate-off apply DESTROYS them on GitHub. Forget them first: strip the resources from `secrets/terragrunt/.terragrunt/local/paas/local/terraform.tfstate` (or `terragrunt state rm` each) before switching the gate off. Restore prod values with the contabo state: `terragrunt --working-dir terragrunt/paas/contabo apply -auto-approve -replace=<each github_actions_secret address>` (secrets are write-only; a plain apply sees no drift).
+
+11. **Fresh local cluster: apiserver structured authn must be phased**: `paas.kube.apiserverOidcAuthn` wires `--authentication-config` to `https://dex.<domain>`. On a fresh node dex does not exist yet and a failing OIDC authenticator rejects ALL pod service-account tokens (rke2-canal CrashLoop, `error getting ClusterInformation: unauthorized`, node NotReady). `paas reset` therefore deploys network with the `deploy-bootstrap` flake attr (flag off), applies paas, then re-deploys `deploy` — the rke2 restart trigger in `nixos/deploy.nix` reloads the apiserver. Local also embeds the pebble root CA (`nixos/pebble-root-ca.pem`) into the jwt issuer `certificateAuthority`; refresh it with `curl -sk https://192.168.2.1:15000/roots/0 > nixos/pebble-root-ca.pem` after a pebble CA rotation.
+
+12. **`cluster-domain` must stay explicit in the rendered rke2 config**: the initial image boots rke2 with `cluster-domain: <dns.name>`; if the deploy template omits it the apiserver falls back to `cluster.local` while kube-controller-manager keeps minting tokens with `svc.<dns.name>` → `invalid bearer token` for every pod (CNI sandboxes stuck `ContainerCreating`).
+
 ## Environment Variables
 
 | Variable | Purpose | Default |

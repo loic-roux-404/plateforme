@@ -117,7 +117,12 @@ let
       ++ map (mkEntry zaiCodingBase "ZAI_API_KEY") glmModels
       ++ glmAliases
       ++ zenAliases;
-    fallbacks = map (p: { ${lib.head p} = [ (lib.elemAt p 1) ]; }) fallbackPairs;
+    router_settings = {
+      # Proxy-only key: top-level fallbacks are ignored. Zero same-model
+      # retries makes the gateway fail over immediately on 429/5xx.
+      fallbacks = map (p: { ${lib.head p} = [ (lib.elemAt p 1) ]; }) fallbackPairs;
+      num_retries = 0;
+    };
     litellm_settings = {
       drop_params = true;
       # Don't reserve budget for in-flight requests: single-user gateway,

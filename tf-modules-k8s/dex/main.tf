@@ -9,7 +9,7 @@ resource "helm_release" "dex" {
   name             = "dex"
   namespace        = kubernetes_namespace_v1.dex.metadata[0].name
   chart            = "dex"
-  timeout          = 180
+  timeout          = 600 # cold-cluster image pull
   wait_for_jobs    = true
   atomic           = true
   take_ownership = true
@@ -20,6 +20,7 @@ resource "helm_release" "dex" {
       github_client_id            = var.github_client_id,
       github_client_secret        = var.github_client_secret,
       dex_github_orgs             = jsonencode(var.dex_github_orgs),
+      enable_github_connector     = var.enable_github_connector,
       k8s_ingress_class           = var.k8s_ingress_class,
       cert_manager_cluster_issuer = var.cert_manager_cluster_issuer,
       dex_extra_volume_mounts      = var.dex_extra_volume_mounts,
