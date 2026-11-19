@@ -4,14 +4,6 @@ resource "kubernetes_namespace_v1" "appsmith" {
   }
 }
 
-data "kubernetes_nodes" "all" {}
-
-locals {
-  appsmith_nodes = [
-    for node in data.kubernetes_nodes.all.nodes : node.metadata.0.name
-  ]
-}
-
 module "valkey" {
   source = "../valkey"
 
@@ -26,10 +18,12 @@ module "valkey" {
 }
 
 module "mongodb" {
-  source                   = "../mongodb"
-  namespace                = kubernetes_namespace_v1.appsmith.metadata[0].name
-  name                     = "appsmith-mongodb"
-  replica_count            = 3
+  source        = "../mongodb"
+  namespace     = kubernetes_namespace_v1.appsmith.metadata[0].name
+  name          = "appsmith-mongodb"
+  replica_count = var.mongodb_replica_count
+  # appsmith uses MongoDB change streams: standalone is rejected at runtime
+  replicaset               = true
   mongodb_persistence_size = var.appsmith_mongodb_persistence_size
   mongodb_storage_class    = var.storage_class
   mongodb_resource_preset  = var.appsmith_mongodb_resource_preset
@@ -57,6 +51,9 @@ resource "helm_release" "appsmith" {
   timeout       = 600
   wait_for_jobs = true
   atomic        = false
+  # chart 3.9.1 bug: values.schema declares persistence.localCluster as object
+  # while its template renders it as a node-name list — skip the chart schema
+  disable_openapi_validation = true
 
   values = [
     yamlencode({
@@ -69,15 +66,17 @@ resource "helm_release" "appsmith" {
         repository = "appsmith/appsmith-ce"
       }
 
+      # workload.kind is StatefulSet (chart default): persistence goes through
+      # volumeClaimTemplates + storageClass. localStorage/storagePath/
+      # localCluster only feed the Deployment-only PV template, and 3.9.1's
+      # schema declares localCluster as an object while the template needs a
+      # node-name list — leaving it unset sidesteps that chart bug.
       persistence = {
         enabled       = true
         storageClass  = var.storage_class
         size          = var.appsmith_persistence_size
         accessModes   = ["ReadWriteOnce"]
         reclaimPolicy = "Delete"
-        localStorage  = true
-        storagePath   = "/appsmith-stacks"
-        localCluster  = local.appsmith_nodes
       }
 
       applicationConfig = {

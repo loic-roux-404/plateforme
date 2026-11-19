@@ -23,7 +23,7 @@ resource "helm_release" "longhorn" {
   name             = "longhorn"
   repository       = "https://charts.longhorn.io"
   chart            = "longhorn"
-  version          = "1.11.1"
+  version          = "1.12.2" # kube >=1.34 only in 1.13; cluster is rke2 1.32
   namespace        = kubernetes_namespace_v1.longhorn.metadata[0].name
   timeout          = 900
   wait_for_jobs    = true
@@ -34,8 +34,9 @@ resource "helm_release" "longhorn" {
   values = [
     yamlencode({
       defaultSettings = {
-        defaultReplicaCount      = var.longhorn_default_replica_count
-        deletingConfirmationFlag = true
+        defaultReplicaCount               = var.longhorn_default_replica_count
+        deletingConfirmationFlag          = true
+        storageMinimalAvailablePercentage = var.storage_minimal_available_percentage
       }
       # In Longhorn 1.11+ the backup target is a BackupTarget CRD seeded from
       # this ConfigMap by longhorn-manager, not a defaultSettings entry.

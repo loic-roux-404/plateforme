@@ -7,7 +7,7 @@ variable "namespace" {
 variable "chart_version" {
   type        = string
   description = "Version of the bokysan/mail Helm chart to deploy"
-  default = "5.1.0"
+  default     = "5.2.1"
 }
 
 variable "allowed_sender_domains" {

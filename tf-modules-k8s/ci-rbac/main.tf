@@ -92,7 +92,9 @@ resource "kubernetes_cluster_role_v1" "aggregated" {
 # so every later apply destroys and the one after recreates (endless churn).
 # Declaring an existing namespace is a no-op read for the provider.
 locals {
-  managed = var.create_namespaces ? toset(var.namespaces) : toset([])
+  # builtin namespaces already exist — creating them always fails
+  builtin = toset(["default", "kube-system", "kube-public", "kube-node-lease"])
+  managed = var.create_namespaces ? setsubtract(toset(var.namespaces), local.builtin) : toset([])
 }
 
 resource "kubernetes_namespace_v1" "ci" {

@@ -25,7 +25,9 @@ resource "libvirt_volume" "nixos_worker" {
   name           = "nixos-worker.qcow2"
   base_volume_id = libvirt_volume.nixos.id
   pool           = libvirt_pool.volumetmp.name
-  size           = 16 * 1024 * 1024 * 1024
+  # 16G death-spirals (kubelet image GC evicts pods mid-pull, Longhorn CSI
+  # dies); 24G is the hard cap — the qcow lives on the macOS host disk
+  size = var.disk_size_gib * 1024 * 1024 * 1024
 }
 
 resource "libvirt_domain" "machine" {
@@ -69,18 +71,18 @@ resource "libvirt_domain" "machine" {
 }
 
 data "external" "get_ip" {
-  depends_on = [ libvirt_domain.machine ]
-  program = ["bash", "${path.module}/get-ip.sh"]
+  depends_on = [libvirt_domain.machine]
+  program    = ["bash", "${path.module}/get-ip.sh"]
   query = {
     timeout = 120
-    mac = var.mac
+    mac     = var.mac
   }
 }
 
 resource "terraform_data" "clean_ssh_known_hosts" {
-  depends_on = [ data.external.get_ip ]
+  depends_on = [data.external.get_ip]
   provisioner "local-exec" {
-    command = "ssh-keygen -R ${data.external.get_ip.result.ip}"
+    command = "ip='${data.external.get_ip.result.ip}'; [ -n \"$ip\" ] && ssh-keygen -R \"$ip\" || true"
   }
 }
 
@@ -94,5 +96,5 @@ output "node_id" {
 }
 
 output "node_ip" {
-  value      = data.external.get_ip.result.ip
+  value = data.external.get_ip.result.ip
 }

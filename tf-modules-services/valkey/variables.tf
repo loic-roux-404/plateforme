@@ -13,13 +13,13 @@ variable "valkey_namespace" {
 variable "valkey_chart_version" {
   type        = string
   description = "Version of the Valkey Helm chart"
-  default     = "0.9.3"
+  default     = "0.12.1"
 }
 
 variable "valkey_helm_repo" {
   type        = string
   description = "OCI or HTTP Helm repository URL for the Valkey chart"
-  default     = "oci://ghcr.io/valkey-io/valkey-helm" # example, adjust to actual repo [web:19][web:22]
+  default     = "https://valkey.io/valkey-helm" # chart repo moved off ghcr OCI (valkey-helm README)
 }
 
 variable "replica_count" {

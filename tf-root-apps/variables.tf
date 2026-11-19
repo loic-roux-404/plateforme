@@ -77,6 +77,34 @@ variable "smtp_main_password" {
   sensitive   = true
 }
 
+# Per-app switches so a local unit can run one stack at a time (RAM);
+# contabo keeps every app enabled by default.
+variable "enable_n8n" {
+  type    = bool
+  default = true
+}
+
+variable "enable_mail_relay" {
+  type    = bool
+  default = true
+}
+
+variable "enable_supabase" {
+  type    = bool
+  default = true
+}
+
+variable "enable_appsmith" {
+  type    = bool
+  default = true
+}
+
+variable "appsmith_mongodb_replica_count" {
+  description = "MongoDB nodes for appsmith: 1 = standalone (local dev), 3 = replicaset"
+  type        = number
+  default     = 3
+}
+
 variable "storage_class" {
   description = "Kubernetes StorageClass for stateful application PVCs (n8n, supabase, appsmith)"
   type        = string

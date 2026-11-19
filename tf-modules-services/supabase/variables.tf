@@ -11,7 +11,7 @@ variable "domain" {
 variable "chart_version" {
   description = "Version du Helm chart"
   type        = string
-  default     = "0.5.2"
+  default     = "0.8.0"
 }
 
 variable "k8s_ingress_class" {

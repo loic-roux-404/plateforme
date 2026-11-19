@@ -4,28 +4,34 @@ variable "namespace" {
 }
 
 variable "name" {
-  type        = string
-  default     = "appsmith-mongodb"
+  type    = string
+  default = "appsmith-mongodb"
 }
 
 variable "chart_version" {
-  type        = string
-  default     = "18.6.20"
+  type    = string
+  default = "20.0.20"
+}
+
+variable "replicaset" {
+  description = "Force replicaset architecture even with replica_count 1 (appsmith needs MongoDB change streams)"
+  type        = bool
+  default     = false
 }
 
 variable "replica_count" {
-  type        = number
-  default     = 1
+  type    = number
+  default = 1
 }
 
 variable "mongodb_storage_class" {
-  type        = string
-  default     = "local-path"
+  type    = string
+  default = "local-path"
 }
 
 variable "mongodb_persistence_size" {
-  type        = string
-  default     = "512Mi"
+  type    = string
+  default = "512Mi"
 }
 
 variable "mongodb_resource_preset" {

@@ -321,6 +321,16 @@ When a service-module apply finishes, verify and report in this order before dec
 3. Ingress reachable: `curl -sI -o /dev/null -w 'HTTP %{http_code}\n' https://<app>.<paas_base_domain>/` — expect a sane code (200/302/401 per the auth design), not a connection error.
 4. Surface login credentials + URL (see **Generated credentials & outputs** above).
 
+### Local apps-layer testing (partial stack, one app at a time)
+
+The local libvirt VM has ~6 GiB RAM and a 24 GiB disk. Rules for testing apps charts locally:
+
+- **One app per run.** Use the single unit `terragrunt/apps/local`; its `env.hcl` has `enable_n8n` / `enable_mail_relay` / `enable_supabase` / `enable_appsmith` flags — flip exactly one on (supabase also needs `enable_mail_relay`), apply via `paas tg apps/local apply`, verify with the post-apply checklist, then `destroy` before testing the next app. Never enable several apps at once.
+- **Check headroom first**: `ssh admin@<node_ip> free -m` and `df -h /`. Under ~2 GiB free RAM or ~3 GiB free disk, prune before applying: delete stale pods (`kubectl delete pods -A --field-selector=status.phase!=Running`), then `crictl rmi --prune` on the node (`--runtime-endpoint unix:///run/k3s/containerd/containerd.sock`), then `sudo fstrim -a` — fstrim both frees the VM and shrinks the host qcow2.
+- **Stale state poisons retries**: after a failed atomic helm install, PVCs and old PGDATA survive. Delete the app namespace (`kubectl delete ns <ns>` — force-delete pods first if PVCs stick Terminating) before re-applying; a fresh DB PVC is mandatory when the chart generates random passwords.
+- **Never grow the VM disk.** `disk_size_gib` is capped at 24 GiB by a variable validation — the qcow2 lives on the macOS host disk, so growth fills the laptop. Disk pressure is fixed by pruning, not resizing.
+- **Retry budget**: after 2 identical helm failures, stop retrying — read pod logs/events (duplicate env keys, invalid secret keys, stale PVC, Node heap OOM, probe timeouts) and fix the module. Chart majors move schemas (supabase 0.5→0.8: env maps→`{name,value}` lists).
+
 ### Secrets
 
 - **Wrapper inversion (2026-01)**: the private `./secrets` repo (org-404/secrets) is the *main flake* — it pins plateforme (this repo) as a flake input and hosts the wrapper `flake.nix`/`Makefile`. plateforme is the public product and takes **no secrets input**. `make bootstrap` in plateforme delegates to `./secrets`, which (a) injects the real `darwin.yaml` via `secretsSopsFile` on `mkDarwinSystem`, and (b) accepts `PLATFORM_DIR=<path>` to add `--override-input plateforme path:<path>` so that checkout's *working tree* is validated instead of the lock pin (default: no override, pure pin).

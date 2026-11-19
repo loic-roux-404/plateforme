@@ -101,6 +101,11 @@ ${lib.optionalString config.paas.kube.importLocalAcmeCa (
     node-external-ip: "${config.sops.placeholder.nodeIp}"
     cluster-cidr: ${kube.podCIDR}
     service-cidr: ${kube.serviceCIDR}
+    # kubelet image GC: default 85/80% of the disk leaves no headroom while a
+    # fresh app chart pulls images — pods get evicted mid-install. GC sooner.
+    kubelet-arg:
+      - "image-gc-high-threshold=70"
+      - "image-gc-low-threshold=60"
     node-taint:
       - "CriticalAddonsOnly=true:NoExecute"
     tls-san:

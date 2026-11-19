@@ -39,15 +39,15 @@ resource "helm_release" "reflector" {
   namespace     = data.kubernetes_namespace_v1.cert-manager.metadata.0.name
   repository    = "https://emberstack.github.io/helm-charts"
   chart         = "reflector"
-  version       = "7.1.262"
+  version       = "10.0.77"
   wait_for_jobs = true
   atomic        = true
   timeout       = 600 # cold-cluster image pull exceeds the 300s default
 
-  set = [ {
+  set = [{
     name  = "targetNamespace"
     value = data.kubernetes_namespace_v1.cert-manager.metadata.0.name
-  } ]
+  }]
 
 }
 
@@ -89,7 +89,7 @@ output "root_ca_config_map_volume" {
 output "root_ca_config_map_volume_mounts" {
   value = flatten([
     for config_map in kubernetes_config_map_v1.acme_internal_root_ca : [{
-      name = config_map.metadata[0].name
+      name      = config_map.metadata[0].name
       mountPath = "/etc/ssl/certs/"
       subPath   = "ca.crt"
       readOnly  = true

@@ -67,6 +67,9 @@ module "longhorn" {
   object_storage              = var.object_storage
   backup_bucket               = module.contabo_s3_longhorn.bucket_name
   ingress_annotations         = module.oauth2_proxy_apps.ingress_annotations
+  # local dev runs on a 16 GiB VM: the 25% default reserve blocks every new
+  # replica once containerd images fill the disk
+  storage_minimal_available_percentage = var.cert_manager_letsencrypt_env == "local" ? 5 : 25
 }
 
 module "contabo_s3_longhorn" {

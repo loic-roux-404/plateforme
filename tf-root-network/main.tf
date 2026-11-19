@@ -14,11 +14,11 @@ locals {
 }
 
 module "gandi_domain" {
-  for_each         = local.is_private_ip ? toset([]) : toset(local.all_domains)
-  source           = "../tf-modules-cloud/gandi"
-  gandi_token      = var.gandi_token
-  domain = each.value
-  target_ip        = var.machine.node_ip
+  for_each    = local.is_private_ip ? toset([]) : toset(local.all_domains)
+  source      = "../tf-modules-cloud/gandi"
+  gandi_token = var.gandi_token
+  domain      = each.value
+  target_ip   = var.machine.node_ip
 }
 
 resource "random_password" "admin_password" {
@@ -31,16 +31,16 @@ resource "random_password" "admin_password" {
 }
 
 module "deploy" {
-  source         = "../tf-modules-nix/deploy"
-  node_id        = var.machine.node_id
-  node_address   = var.machine.node_ip
-  config         = {
+  source       = "../tf-modules-nix/deploy"
+  node_id      = var.machine.node_id
+  node_address = var.machine.node_ip
+  config = {
     node_hostname = var.machine.node_hostname
     node_ip       = var.machine.node_ip
   }
-  nix_flake      = var.nix_flake
+  nix_flake       = var.nix_flake
   nix_flake_reset = var.nix_flake_reset
-  ssh_connection = var.ssh_connection
+  ssh_connection  = var.ssh_connection
   nixos_transient_secrets = {
     nodeIp                   = var.machine.node_ip
     dexClientId              = var.github_team
@@ -51,6 +51,9 @@ module "deploy" {
 }
 
 module "k3s_get_config" {
+  # deploy can reboot the node (switchInhibitors) — the IP must only be used
+  # after that reboot has settled, or the lease has moved on
+  depends_on                 = [module.deploy]
   source                     = "../tf-modules-cloud/k3s-get-config"
   ssh_connection             = var.ssh_connection
   node_hostname              = module.deploy.config.node_ip

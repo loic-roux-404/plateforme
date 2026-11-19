@@ -18,7 +18,13 @@ variable "domain" {
 }
 
 variable "chart_version" {
-  default = "3.6.9"
+  default = "3.9.1"
+}
+
+variable "mongodb_replica_count" {
+  description = "MongoDB nodes: 1 = standalone (local dev), 3 = replicaset"
+  type        = number
+  default     = 3
 }
 
 variable "appsmith_resources" {

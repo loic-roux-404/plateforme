@@ -1,10 +1,10 @@
 resource "terraform_data" "wait_ssh" {
   connection {
-    type    = "ssh"
-    user    = var.ssh_connection.user
-    host    = var.node_hostname
+    type        = "ssh"
+    user        = var.ssh_connection.user
+    host        = var.node_hostname
     private_key = file(pathexpand(var.ssh_connection.private_key))
-    timeout = "4m"
+    timeout     = "4m"
   }
 
   provisioner "remote-exec" {
@@ -14,21 +14,22 @@ resource "terraform_data" "wait_ssh" {
 }
 
 data "external" "k3s_config" {
-  depends_on = [ terraform_data.wait_ssh ]
-  program = ["bash", "${path.module}/fetch-config.sh"]
+  depends_on = [terraform_data.wait_ssh]
+  program    = ["bash", "${path.module}/fetch-config.sh"]
   query = {
-    user   = var.ssh_connection.user
-    host = var.node_hostname
+    user     = var.ssh_connection.user
+    host     = var.node_hostname
     location = var.remote_k3s_config_location
+    key      = pathexpand(var.ssh_connection.private_key)
   }
 }
 
 locals {
   kube_config = yamldecode(data.external.k3s_config.result.config)
-  cluster = one([ for each in toset(local.kube_config.clusters) : 
+  cluster = one([for each in toset(local.kube_config.clusters) :
     each.cluster if each.name == var.context_cluster_name
   ])
-  user = one([for each in toset(local.kube_config.users) : 
+  user = one([for each in toset(local.kube_config.users) :
     each.user if each.name == var.context_user_name
   ])
 }
@@ -45,8 +46,8 @@ output "k3s_config" {
   sensitive = true
   value = {
     cluster_ca_certificate = base64decode(local.cluster["certificate-authority-data"])
-    client_certificate = base64decode(local.user.client-certificate-data)
-    client_key = base64decode(local.user.client-key-data)
+    client_certificate     = base64decode(local.user.client-certificate-data)
+    client_key             = base64decode(local.user.client-key-data)
   }
 }
 

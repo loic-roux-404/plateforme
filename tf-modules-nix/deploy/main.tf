@@ -157,8 +157,13 @@ resource "terraform_data" "deploy" {
     interpreter = ["bash", "-c"]
     environment = {
       NIX_SSHOPTS = var.nix_ssh_options
-      REBUILD     = join(" ", concat(local.nix_rebuild_interpreter, ["--flake", var.nix_flake]))
-      TARGET      = "${var.ssh_connection.user}@${var.node_address}"
+      # Empty = drop nixos-rebuild's built-in SSH ControlMaster. Its socket is
+      # $TMPDIR/nixos-rebuild.XXXXXXXX/ssh-<64-hex>.<16> — >104 chars under the
+      # devShell TMPDIR, so macOS rejects it ("unix_listener: path too long").
+      # Costs extra connections, buys portability.
+      NIXOS_REBUILD_SSH_DEFAULT_OPTS = ""
+      REBUILD                        = join(" ", concat(local.nix_rebuild_interpreter, ["--flake", var.nix_flake]))
+      TARGET                         = "${var.ssh_connection.user}@${var.node_address}"
     }
     command = <<-EOT
       set -euo pipefail
@@ -201,8 +206,11 @@ resource "terraform_data" "reset" {
       self.input.nix_rebuild_interpreter,
       ["--flake", self.input.nix_flake_reset]
     )
-    environment = { NIX_SSHOPTS = self.input.nix_ssh_options }
-    command     = "switch"
+    environment = {
+      NIX_SSHOPTS                    = self.input.nix_ssh_options
+      NIXOS_REBUILD_SSH_DEFAULT_OPTS = ""
+    }
+    command = "switch"
   }
 
   lifecycle {

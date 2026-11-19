@@ -96,14 +96,20 @@ locals {
         secret     = local.supabase_jwt_secret
       }
       db = {
-        secretRefKey = {
-          password = random_password.supabase_db_password.result
-          database = "supabase-pg"
-        }
+        # direct values: `secretRefKey` is a *key-name remapping* map for
+        # existing secrets (secretRef), not where the value goes
+        password = random_password.supabase_db_password.result
+        database = "supabase-pg"
       }
       analytics = {
         publicAccessToken  = random_password.supabase_analytics_public_token.result
         privateAccessToken = random_password.supabase_analytics_private_token.result
+      }
+      # the auth deployment reads SMTP credentials from this secret, not from
+      # environment.auth
+      smtp = {
+        username = var.smtp_user
+        password = var.smtp_pass
       }
       dashboard = {
         username = random_password.supabase_dashboard_username.result
@@ -117,9 +123,7 @@ locals {
         secretKeyBase = random_password.supabase_realtime_secret_key_base.result
       }
       meta = {
-        secretRefRef = {
-          cryptoKey = random_password.supabase_meta_crypto_key.result
-        }
+        cryptoKey = random_password.supabase_meta_crypto_key.result
       }
       minio = {
         user     = "supa-storage"
@@ -128,6 +132,12 @@ locals {
     }
 
     persistence = {
+      # a fresh ext4 volume contains lost+found, so the chart's "volume empty"
+      # check skips seeding /etc/postgresql-custom and postgres dies on missing
+      # config files — use the image's baked config instead
+      pgsodium = {
+        enabled = false
+      }
       db = {
         storageClassName = var.storage_class
         size             = var.persistence_db_size
@@ -159,38 +169,82 @@ locals {
     }
 
     environment = {
-      auth = merge(
-        {
-          GOTRUE_SMTP_ADMIN_EMAIL = var.smtp_user
-          GOTRUE_SITE_URL         = "https://${var.domain}"
-          GOTRUE_JWT_SECRET       = local.supabase_jwt_secret
-          GOTRUE_SMTP_HOST        = var.smtp_host
-          GOTRUE_SMTP_PORT        = var.smtp_port
-          # Explicit origin globs the GoTrue redirect policy accepts. The module
-          # always allows the app's own origin first, then any extra origins.
-          GOTRUE_URI_ALLOW_LIST = join(",", concat(["https://${var.domain}/**"], var.github_redirect_allow_list))
-        },
-        var.github_oauth_enabled ? {
-          GOTRUE_EXTERNAL_GITHUB_ENABLED      = "true"
-          GOTRUE_EXTERNAL_GITHUB_CLIENT_ID    = var.github_client_id
-          GOTRUE_EXTERNAL_GITHUB_SECRET       = var.github_client_secret
-          GOTRUE_EXTERNAL_GITHUB_REDIRECT_URI = "https://${var.domain}/auth/v1/callback"
-          } : {
-          GOTRUE_EXTERNAL_GITHUB_ENABLED = "false"
-        }
-      )
-      studio = {
-        # Base settings
-        SUPABASE_PUBLIC_URL             = "https://${var.domain}"
-        SUPABASE_URL                    = "https://${var.domain}"
-        NEXT_PUBLIC_ENABLE_LOGS         = true
-        NEXT_ANALYTICS_BACKEND_PROVIDER = "postgres"
+      # chart >=0.8 renders env as a list of {name, value} maps (0.5.x took maps)
+      # and our list REPLACES the chart defaults wholesale — so the baseline
+      # below mirrors environment.auth from the chart's values.yaml. Missing
+      # API_EXTERNAL_URL makes GoTrue exit fatally.
+      auth = [
+        for k, v in merge(
+          {
+            API_EXTERNAL_URL                        = "https://${var.domain}"
+            GOTRUE_API_HOST                         = "0.0.0.0"
+            GOTRUE_API_PORT                         = "9999"
+            GOTRUE_SITE_URL                         = "https://${var.domain}"
+            GOTRUE_DISABLE_SIGNUP                   = "false"
+            GOTRUE_JWT_DEFAULT_GROUP_NAME           = "authenticated"
+            GOTRUE_JWT_ADMIN_ROLES                  = "service_role"
+            GOTRUE_JWT_AUD                          = "authenticated"
+            GOTRUE_JWT_EXP                          = "3600"
+            GOTRUE_EXTERNAL_EMAIL_ENABLED           = "true"
+            GOTRUE_MAILER_AUTOCONFIRM               = "true"
+            GOTRUE_EXTERNAL_ANONYMOUS_USERS_ENABLED = "false"
+            GOTRUE_SMTP_ADMIN_EMAIL                 = var.smtp_user
+            GOTRUE_SMTP_HOST                        = var.smtp_host
+            GOTRUE_SMTP_PORT                        = tostring(var.smtp_port)
+            GOTRUE_EXTERNAL_PHONE_ENABLED           = "false"
+            GOTRUE_SMS_AUTOCONFIRM                  = "false"
+            GOTRUE_SMTP_SENDER_NAME                 = "noreply"
+            GOTRUE_MAILER_URLPATHS_INVITE           = "/auth/v1/verify"
+            GOTRUE_MAILER_URLPATHS_CONFIRMATION     = "/auth/v1/verify"
+            GOTRUE_MAILER_URLPATHS_RECOVERY         = "/auth/v1/verify"
+            GOTRUE_MAILER_URLPATHS_EMAIL_CHANGE     = "/auth/v1/verify"
+          },
+          # GOTRUE_JWT_SECRET / GOTRUE_SMTP_{USER,PASS} / DB_* are hardcoded in
+          # the auth template (from secret.*) — repeating them duplicates env
+          # keys and the apiserver rejects the deployment
+          {
+            # Explicit origin globs the GoTrue redirect policy accepts. The module
+            # always allows the app's own origin first, then any extra origins.
+            GOTRUE_URI_ALLOW_LIST = join(",", concat(["https://${var.domain}/**"], var.github_redirect_allow_list))
+            # Explicit origin globs the GoTrue redirect policy accepts. The module
+            # always allows the app's own origin first, then any extra origins.
+            GOTRUE_URI_ALLOW_LIST = join(",", concat(["https://${var.domain}/**"], var.github_redirect_allow_list))
+          },
+          var.github_oauth_enabled ? {
+            GOTRUE_EXTERNAL_GITHUB_ENABLED      = "true"
+            GOTRUE_EXTERNAL_GITHUB_CLIENT_ID    = var.github_client_id
+            GOTRUE_EXTERNAL_GITHUB_SECRET       = var.github_client_secret
+            GOTRUE_EXTERNAL_GITHUB_REDIRECT_URI = "https://${var.domain}/auth/v1/callback"
+            } : {
+            GOTRUE_EXTERNAL_GITHUB_ENABLED = "false"
+          }
+        ) : { name = k, value = tostring(v) }
+      ]
+      # the studio deployment template already renders SUPABASE_URL,
+      # STUDIO_PG_META_URL, POSTGRES_{HOST,PORT,DB,PASSWORD}, PG_META_CRYPTO_KEY
+      # and OPENAI_API_KEY itself — listing them here duplicates the env keys
+      # and the apiserver rejects the deployment
+      studio = [
+        for k, v in {
+          SUPABASE_PUBLIC_URL             = "https://${var.domain}"
+          NEXT_PUBLIC_ENABLE_LOGS         = true
+          NEXT_ANALYTICS_BACKEND_PROVIDER = "postgres"
+        } : { name = k, value = tostring(v) }
+      ]
+    }
 
-        POSTGRES_HOST      = local.db_service_name
-        POSTGRES_PORT      = "5432"
-        POSTGRES_DB        = "supabase-pg"
-        POSTGRES_PASSWORD  = random_password.supabase_db_password.result
-        PG_META_CRYPTO_KEY = random_password.supabase_meta_crypto_key.result
+    # chart bug: init-pgsodium always mounts the pgsodium volume, even with
+    # persistence.pgsodium disabled (-> invalid pod). Supply an emptyDir under
+    # that name: the init container then seeds it from the image and the main
+    # container uses the image's baked /etc/postgresql-custom.
+    deployment = {
+      db = {
+        volumes = [
+          {
+            name     = "pgsodium"
+            emptyDir = {}
+          }
+        ]
       }
     }
 
@@ -237,7 +291,7 @@ resource "helm_release" "supabase" {
   chart      = "supabase"
   version    = var.chart_version
 
-  timeout          = 300
+  timeout          = 900 # 61 resources / ~12 pods: cold image pulls exceed 300s
   wait_for_jobs    = true
   atomic           = true
   take_ownership   = true

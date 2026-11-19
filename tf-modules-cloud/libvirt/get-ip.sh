@@ -21,4 +21,9 @@ while [ -z "$ip_address" ] && [ $elapsed -lt ${timeout:-90} ]; do
   sleep 10
 done
 
+if [ -z "$ip_address" ]; then
+  echo "get-ip.sh: no SSH-reachable candidate for MAC $mac within ${timeout:-90}s; arp candidates: $(arp -a | grep "$mac" | awk -F'[()]' '{print $2}' | sort -u | tr '\n' ' ')" >&2
+  exit 1
+fi
+
 jq -n --arg output "$ip_address" '{"ip": $output}'

@@ -4,6 +4,7 @@ locals {
 
 module "n8n" {
   source                      = "../tf-modules-services/n8n"
+  count                       = var.enable_n8n ? 1 : 0
   n8n_hostname                = local.n8n_hostname
   cert_manager_cluster_issuer = var.cert_manager_cluster_issuer
   ingress_annotations         = var.oauth2_proxy_ingress_annotations
@@ -14,6 +15,7 @@ module "n8n" {
 
 module "mail-relay" {
   source                    = "../tf-modules-services/smtp-relay"
+  count                     = var.enable_mail_relay ? 1 : 0
   relay_username            = var.smtp_main_username
   relay_password            = var.smtp_main_password
   persistence_size          = var.smtp_relay_persistence_size
@@ -22,10 +24,11 @@ module "mail-relay" {
 
 module "supabase" {
   source = "../tf-modules-services/supabase"
+  count  = var.enable_supabase ? 1 : 0
   domain = "supabase.${var.paas_base_domain}"
 
-  smtp_host                   = module.mail-relay.smtp_infos.host
-  smtp_port                   = module.mail-relay.smtp_infos.port
+  smtp_host                   = var.enable_mail_relay ? module.mail-relay[0].smtp_infos.host : ""
+  smtp_port                   = var.enable_mail_relay ? module.mail-relay[0].smtp_infos.port : 587
   smtp_user                   = var.smtp_main_username
   smtp_pass                   = var.smtp_main_password
   cert_manager_cluster_issuer = var.cert_manager_cluster_issuer
@@ -42,25 +45,27 @@ module "supabase" {
 
 module "appsmith" {
   source                      = "../tf-modules-services/appsmith"
+  count                       = var.enable_appsmith ? 1 : 0
   domain                      = "appsmith.${var.paas_base_domain}"
   k8s_ingress_annotations     = var.oauth2_proxy_ingress_annotations
   cert_manager_cluster_issuer = var.cert_manager_cluster_issuer
   storage_class               = var.storage_class
+  mongodb_replica_count       = var.appsmith_mongodb_replica_count
 }
 
 output "appsmith_mongodb_info" {
-  value     = module.appsmith.mongodb_infos
+  value     = var.enable_appsmith ? module.appsmith[0].mongodb_infos : null
   sensitive = true
 }
 
 output "supabase_dashboard_username" {
   description = "Supabase Studio login (username) — printed after apply for the operator to test login"
-  value       = module.supabase.supabase_dashboard_username
+  value       = var.enable_supabase ? module.supabase[0].supabase_dashboard_username : null
   sensitive   = true
 }
 
 output "supabase_dashboard_password" {
   description = "Supabase Studio login (password) — printed after apply for the operator to test login"
-  value       = module.supabase.supabase_dashboard_password
+  value       = var.enable_supabase ? module.supabase[0].supabase_dashboard_password : null
   sensitive   = true
 }

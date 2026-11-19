@@ -48,7 +48,7 @@ resource "helm_release" "mongodb" {
   version          = var.chart_version
   create_namespace = false
 
-  timeout        = 300
+  timeout        = 900 # replicaset: 3 pods + ~1 GiB image pull on cold nodes
   wait_for_jobs  = true
   atomic         = true
   take_ownership = true
@@ -72,7 +72,7 @@ resource "helm_release" "mongodb" {
 
   values = [
     yamlencode({
-      architecture = var.replica_count > 2 ? "replicaset" : "standalone"
+      architecture = var.replicaset || var.replica_count > 2 ? "replicaset" : "standalone"
       replicaCount = var.replica_count
 
       resourcesPreset = var.mongodb_resource_preset
@@ -98,7 +98,7 @@ resource "helm_release" "mongodb" {
 
 data "kubernetes_service_v1" "mongo" {
   metadata {
-    name      = "${var.name}${var.replica_count > 2 ? "-headless" : ""}"
+    name      = "${var.name}${var.replicaset || var.replica_count > 2 ? "-headless" : ""}"
     namespace = var.namespace
   }
 

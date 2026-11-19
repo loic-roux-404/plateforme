@@ -53,3 +53,9 @@ variable "longhorn_default_replica_count" {
   type        = number
   default     = 1
 }
+
+variable "storage_minimal_available_percentage" {
+  description = "Free-disk percentage below which Longhorn stops scheduling replicas on a disk"
+  type        = number
+  default     = 25
+}

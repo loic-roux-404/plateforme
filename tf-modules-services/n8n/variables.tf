@@ -5,7 +5,7 @@ variable "n8n_hostname" {
 variable "n8n_version" {
   description = "community-charts/n8n chart version — see https://artifacthub.io/packages/helm/community-charts/n8n"
   type        = string
-  default     = "1.16.33"
+  default     = "1.24.43"
 }
 
 variable "cert_manager_cluster_issuer" {
@@ -14,12 +14,12 @@ variable "cert_manager_cluster_issuer" {
 
 variable "ingress_annotations" {
   description = "nginx-ingress annotations to enforce Dex login via oauth2-proxy"
-  type = map(string)
-  default = {}
+  type        = map(string)
+  default     = {}
 }
 
 variable "k8s_ingress_class" {
-  type = string
+  type    = string
   default = "nginx"
 }
 
@@ -36,8 +36,9 @@ variable "n8n_resources" {
     }))
   })
   default = {
-    requests = { cpu = "100m", memory = "128Mi" }
-    limits   = { cpu = "500m", memory = "512Mi" }
+    requests = { cpu = "100m", memory = "256Mi" }
+    # must clear the 1024MB node heap (see taskRunners.nodeOptions) + v8 overhead
+    limits = { cpu = "500m", memory = "1536Mi" }
   }
 }
 

@@ -50,6 +50,15 @@ locals {
 
     encryptionKey = random_password.n8n_encryption_key.result
 
+    # the chart templates NODE_OPTIONS for every pod from this list; the
+    # default 300MB heap OOM-kills n8n 2.x at startup ("Ineffective
+    # mark-compacts near heap limit")
+    taskRunners = {
+      external = {
+        nodeOptions = ["--max-old-space-size=1024"]
+      }
+    }
+
     main = {
       count = 1
 
@@ -60,10 +69,35 @@ locals {
         storageClass = var.storage_class
       }
       resources = var.n8n_resources
+
+      # cold start (image pull + db migrations) can exceed the chart's tight
+      # probe defaults on a small shared node — liveness then kill-loops the
+      # pod before n8n ever listens on 5678
+      livenessProbe = {
+        initialDelaySeconds = 240
+        periodSeconds       = 30
+        failureThreshold    = 10
+      }
+      readinessProbe = {
+        initialDelaySeconds = 60
+        periodSeconds       = 15
+        failureThreshold    = 20
+      }
     }
 
     worker = {
       mode = "queue"
+
+      livenessProbe = {
+        initialDelaySeconds = 240
+        periodSeconds       = 30
+        failureThreshold    = 10
+      }
+      readinessProbe = {
+        initialDelaySeconds = 60
+        periodSeconds       = 15
+        failureThreshold    = 20
+      }
     }
 
     externalRedis = {
