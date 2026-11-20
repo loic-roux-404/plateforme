@@ -107,8 +107,10 @@ nix run ../#paas -- build                   # result/nixos.qcow2 (initial image)
 nix run ../#paas -- tg cloud/local apply -auto-approve     # provision the local VM
 nix run ../#paas -- tg network/local apply -auto-approve   # DNS, Nix deploy, fetch kubeconfig
 nix run ../#paas -- reset                   # one-shot: destroy → build → cloud → network (logs in .agent/logs/)
+nix run ../#paas -- down                    # full teardown: destroy apps → paas → network → cloud,
+                                            # drop result/ + terragrunt caches, nix store gc
 # Makefile equivalents (same pin contract):
-make doctor && make build && make reset
+make doctor && make build && make reset && make down
 make tg LAYER=cloud/local ARGS='apply -auto-approve'
 ```
 

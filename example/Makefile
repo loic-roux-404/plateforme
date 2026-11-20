@@ -19,7 +19,7 @@ endif
 # propagate to ./paas (terragrunt sources + nix refs)
 export PLATFORM_DIR
 
-.PHONY: bootstrap bootstrap-contabo update doctor build reset tg
+.PHONY: bootstrap bootstrap-contabo update doctor build reset down tg
 
 bootstrap:
 	@nix --extra-experimental-features "nix-command flakes" \
@@ -37,7 +37,7 @@ update:
 # Deploy-side delegation into ./paas (same pin contract):
 #   make build / make reset / make doctor
 #   make tg LAYER=cloud/local ARGS='apply -auto-approve'
-build reset:
+build reset down:
 	@./paas $@
 
 tg:

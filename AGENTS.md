@@ -163,7 +163,7 @@ nix build .#nixosConfigurations.deploy-contabo   # deploy contabo image
 ### Terragrunt (4-layer apply sequence)
 
 > **Wrapper-first (2026-11)**: canonical deployment runs from the **private
-> wrapper repo** via its `paas` script (`paas build|tg <layer>|doctor|reset|init`)
+> wrapper repo** via its `paas` script (`paas build|tg <layer>|doctor|reset|down|init`)
 > or Makefile targets, pinned by the wrapper `flake.lock`. Terragrunt sources
 > the modules from `git::https://github.com/loic-roux-404/plateforme.git//<module>?ref=<locked rev>`
 > (terraform fetches them itself); `PLATFORM_DIR` overrides everything to a

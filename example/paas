@@ -17,6 +17,10 @@
 #   paas reset              destroy cloud → build initial → cloud → network
 #                          (bootstrap, no apiserver oidc) → [paas → network
 #                          (apiserver oidc on) when terragrunt/paas/local exists]
+#   paas down [env] [--yes] destroy every applied layer (apps → paas → network →
+#                           cloud), drop the built image + terragrunt caches, then
+#                           nix store gc — reclaim a full stack's disk
+#                           (env ∈ local|contabo, default local; non-local needs --yes)
 #   paas login              kubectl OIDC setup (needs the paas layer — milestone 2)
 #   paas ssh [env] [args…]  ssh admin@<node_ip> from the cloud/<env> state
 #                           (env ∈ local|contabo, default local; args pass to ssh)
@@ -200,6 +204,70 @@ cmd_reset() {
   log "reset complete — logs: $LOGS/$ts-*.log"
 }
 
+cmd_down() {
+  local env=local yes=0 layer lg ts state
+  for a in "$@"; do
+    case "$a" in
+      local|contabo) env="$a" ;;
+      --yes|-y)      yes=1 ;;
+      *) die "usage: paas down [local|contabo] [--yes]" ;;
+    esac
+  done
+  [[ $env == local || $yes -eq 1 ]] \
+    || die "refusing to destroy the '$env' env — re-run: paas down $env --yes"
+  mkdir -p "$LOGS"
+  ts="$(date +%Y%m%d-%H%M%S)"
+  local -a failed=()
+  # apps/paas/network resources all live inside the VM (k8s): once the cloud
+  # layer is empty their states are stale history and destroy cannot resolve
+  # its dependency outputs anymore. shortcut: assumes the VM is tf-managed.
+  local cloud_state="$ROOT/terragrunt/.terragrunt/$env/cloud/$env/terraform.tfstate" vm_gone=0
+  if [[ ! -f $cloud_state ]] || grep -q '"resources": \[\]' "$cloud_state"; then vm_gone=1; fi
+  # reverse dependency order; a layer with no state was never applied
+  for layer in apps paas network cloud; do
+    state="$ROOT/terragrunt/.terragrunt/$env/$layer/$env/terraform.tfstate"
+    if [[ ! -f $state ]]; then log "$layer/$env: no state — skip"; continue; fi
+    if grep -q '"resources": \[\]' "$state"; then log "$layer/$env: nothing applied — skip"; continue; fi
+    # local only: contabo's network layer owns real DNS records — never skip it
+    if [[ $env == local && $vm_gone -eq 1 && $layer != cloud ]]; then
+      # stale state would make the next apply think its resources still exist
+      rm -f "$state" "$state.backup"; log "$layer/$env: VM gone — removed stale state"; continue
+    fi
+    lg="$LOGS/$ts-destroy-$layer.log"; log "destroy $layer/$env (log $lg)"
+    # keep going: an upper layer whose dependency outputs are gone cannot even
+    # load its config, yet its resources live inside the VM the cloud layer
+    # removes. Only a surviving cloud layer means leftover infra.
+    if ! cmd_tg "$layer/$env" destroy -auto-approve 2>&1 | tee "$lg"; then
+      failed+=("$layer"); log "destroy $layer/$env FAILED — continuing (see $lg)"
+    fi
+  done
+  if (( ${#failed[@]} )); then
+    log "failed layers: ${failed[*]} — their k8s resources die with the VM"
+  fi
+
+  # storage: image root, then caches, then the store itself
+  rm -f "$ROOT/.paas-image" "$ROOT/result"
+  log "removed result/ image"
+  local d
+  while IFS= read -r d; do rm -rf "$d"; log "removed $d"; done \
+    < <(find "$ROOT/terragrunt" -name .terragrunt-cache -type d -prune 2>/dev/null)
+  # leftover VM disks (lost state / partial destroy) are the biggest hog
+  if command -v virsh >/dev/null 2>&1; then
+    local v
+    while IFS= read -r v _; do
+      [[ -z $v || $v == Name || $v == ----* ]] && continue
+      log "leftover libvirt volume: $v — delete: virsh -c qemu:///system vol-delete --pool libvirt-paas-nixos-pool $v"
+    done < <(virsh -c qemu:///system vol-list libvirt-paas-nixos-pool 2>/dev/null)
+  fi
+  log "nix store gc"
+  "${NIX[@]}" store gc
+  df -h /nix
+  log "down complete — logs: $LOGS/$ts-destroy-*.log"
+  # apps/paas failures are already accounted for (their resources die with the
+  # VM); a surviving cloud layer means the VM is still there
+  [[ " ${failed[*]-} " != *" cloud "* ]] || die "cloud destroy failed — VM may still exist (logs above)"
+}
+
 cmd_init() {
   ROOT="$TEMPLATE_ROOT"  # always install from the template, never a live wrapper
   local dest="${1:?usage: paas init <dest>}"
@@ -226,7 +294,7 @@ cmd_init() {
   log "initialized $dest — fresh template: edit flake.nix identity + encrypt skeletons (README); existing wrapper: paas doctor && paas reset"
 }
 
-usage() { sed -n 's/^# \{0,1\}//p' "${BASH_SOURCE[0]}" | sed -n '2,21p'; }
+usage() { sed -n 's/^# \{0,1\}//p' "${BASH_SOURCE[0]}" | sed -n '2,26p'; }
 
 case "${1:-help}" in
   build)  shift; cmd_build "$@" ;;
@@ -235,6 +303,7 @@ case "${1:-help}" in
   ssh)    shift; cmd_ssh "$@" ;;
   doctor) shift; cmd_doctor "$@" ;;
   reset)  shift; cmd_reset "$@" ;;
+  down)   shift; cmd_down "$@" ;;
   init)   shift; cmd_init "$@" ;;
   *) usage ;;
 esac
